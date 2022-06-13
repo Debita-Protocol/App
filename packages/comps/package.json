@@ -4,6 +4,8 @@
   "private": true,
   "main": "build",
   "types": "build/index.d.ts",
+    "proxy": "https://rpc-mumbai.maticvigil.com/",
+
   "dependencies": {
     "@augurproject/ethereum-multicall": "^1.5.2",
     "@uniswap/sdk": "^3.0.3",

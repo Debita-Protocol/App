@@ -19,10 +19,17 @@ import {
   Constants,
   windowRef,
 } from "@augurproject/comps";
+import {MintProvider} from "./mint/mintcontext"; 
 import { SimpleFooter } from "./common/simple-footer";
 const { MARKET, PORTFOLIO } = Constants;
 const { parsePath, parseQuery } = PathUtils;
-
+// const express = require("express");
+// const app = express()
+// const cors = require("cors");
+// app.use(cors(
+//   {
+//     origin: "*",
+//   }));
 const AppBody = () => {
   const { markets, cashes, ammExchanges, blocknumber, transactions } = useDataStore();
   const { isMobile, modal, isWalletRpc } = useAppStatusStore();
@@ -98,7 +105,10 @@ function App() {
           <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
+              <MintProvider>
                 <AppBody />
+               </MintProvider>
+
               </SimplifiedProvider>
             </AppStatusProvider>
           </DataProvider>

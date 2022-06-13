@@ -5,6 +5,7 @@ import * as MmaDailies from "./derived-mma-dailies";
 import * as CryptoMarkets from "./derived-crypto-markets";
 import * as NflMarkets from "./derived-nfl-dailies";
 import * as GroupedMarkets from "./derived-grouped-data";
+import * as TrustedMarkets from "./derived-trusted-markets";
 import {
   MARKET_FACTORY_TYPES,
   MARKET_STATUS,
@@ -21,6 +22,7 @@ import { MarketFactory } from "@augurproject/smart";
 import * as SportFetcher from "./fetcher-sport";
 import * as CryptoFetcher from "./fetcher-crypto";
 import * as GroupedFetcher from "./fetcher-grouped";
+import * as TrustedFetcher from "./fetcher-trusted";
 import { getDefaultPrice } from "./get-default-price";
 
 export const getResolutionRules = (marketInfo: MarketInfo): string[] => {
@@ -34,6 +36,9 @@ export const getResolutionRules = (marketInfo: MarketInfo): string[] => {
     }
     case MARKET_FACTORY_TYPES.GROUPED: {
       return GroupedMarkets.getResolutionRules(marketInfo);
+    }
+    case MARKET_FACTORY_TYPES.TRUSTED:{
+      return TrustedMarkets.getResolutionRules(marketInfo);
     }
     default:
       // NFL, MLB, NBA, NHL
@@ -83,7 +88,9 @@ export const deriveMarketInfo = (market: MarketInfo, marketData: any, marketFact
     case MARKET_FACTORY_TYPES.GROUPED: {
       return GroupedMarkets.deriveMarketInfo(market, marketData);
     }
-
+    case MARKET_FACTORY_TYPES.TRUSTED:{
+      return TrustedMarkets.deriveMarketInfo(market, marketData);
+    }
     default:
       return market;
   }
@@ -97,24 +104,33 @@ export const fetcherMarketsPerConfig = async (
   const blocknumber = await provider.getBlockNumber();
   let markets = null;
   switch (config?.type) {
-    case MARKET_FACTORY_TYPES.NFL:
-    case MARKET_FACTORY_TYPES.MMA:
-    case MARKET_FACTORY_TYPES.MLB:
+   // case MARKET_FACTORY_TYPES.NFL:
+   // case MARKET_FACTORY_TYPES.MMA:
+   // case MARKET_FACTORY_TYPES.MLB:
     case MARKET_FACTORY_TYPES.NBA: {
       markets = await SportFetcher.fetchContractData(config, provider, account);
+    //  markets=  null;
       break;
     }
     case MARKET_FACTORY_TYPES.CRYPTO: {
       markets = await CryptoFetcher.fetchContractData(config, provider, account);
+      console.log('cryptomarkets?', markets)
+
       break;
     }
     case MARKET_FACTORY_TYPES.GROUPED: {
       markets = await GroupedFetcher.fetchContractData(config, provider, account);
       break;
     }
+    case MARKET_FACTORY_TYPES.TRUSTED: {
+      markets = await TrustedFetcher.fetchContractData(config, provider, account)
+    //  console.log('Trusted lol', markets, config.type)
+      break; 
+
+    }
     default: {
       console.log("Config type not found", config.type);
-      markets = null;
+      markets = null
       break;
     }
   }
@@ -224,7 +240,12 @@ export const decodeMarketDetailsFetcher = (marketData: any, factoryDetails: any,
     rewards: formatRewards(marketData?.rewards),
   };
   const marketInfo = deriveMarketInfo(market, marketData, config.type);
-  marketInfo.amm = decodePool(marketInfo, pool, factoryDetails, config);
+ // console.log('marketinfo, config.type', marketInfo,marketData, config.type)
+  var print = false
+  if (config.type==MARKET_FACTORY_TYPES.TRUSTED){
+    print = true
+  }
+  marketInfo.amm = decodePool(marketInfo, pool, factoryDetails, config, print);
   return marketInfo;
 };
 
@@ -296,13 +317,17 @@ export const decodeGroupedMarketDetailsFetcher = (marketData: any, factoryDetail
   return marketInfo;
 };
 
-const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: MarketFactory): AmmExchange => {
+const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: MarketFactory, 
+  printmarket:boolean = false): AmmExchange => {
   const outcomePrices = calculatePrices(market, pool.ratios || pool.tokenRatios, pool.weights);
   const fee = new BN(String(pool.swapFee || "0")).toFixed();
   const balancesRaw = pool.balances || [];
   const weights = pool.weights ? pool.weights.map((w) => String(w)) : [];
   const id = pool.addr;
   const created = pool.addr !== NULL_ADDRESS;
+  // if (printmarket){
+  //     console.log('ammoutcomes', market)
+  // }
   const ammOutcomes = market.outcomes.map((o, i) => ({
     price: created ? String(outcomePrices[i]) : "",
     ratioRaw: created ? getArrayValue(pool.ratios || pool.tokenRatios, i) : "",
@@ -312,6 +337,7 @@ const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: 
     defaultPrice: String(getDefaultPrice(o.id, weights)),
     ...o,
   }));
+
   const feeDecimal = fee ? new BN(String(fee)).div(new BN(10).pow(18)) : ZERO;
   return {
     id: created ? id : null,

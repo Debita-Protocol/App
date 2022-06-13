@@ -31,10 +31,12 @@ import {
   NFLMarketFactoryV2,
   SportsFetcher,
   CryptoFetcher,
+  TrustedFetcher, 
   CryptoFetcher__factory,
   SportsFetcher__factory,
   GroupFetcher,
   GroupFetcher__factory,
+  TrustedFetcher__factory,
   CryptoCurrencyMarketFactoryV3,
   CryptoCurrencyMarketFactoryV3__factory,
   CryptoCurrencyFetcher,
@@ -78,7 +80,7 @@ export type MarketFactoryContract =
   | NFLMarketFactoryV2
   | NFLMarketFactoryV3;
 
-export type FetcherContract = CryptoFetcher | SportsFetcher | GroupFetcher | CryptoCurrencyFetcher;
+export type FetcherContract = CryptoFetcher | SportsFetcher | GroupFetcher | CryptoCurrencyFetcher| TrustedFetcher;
 
 export function buildContractInterfaces(signerOrProvider: Signer | Provider, chainId: ChainId): ContractInterfaces {
   const contractAddresses = addresses[chainId];
@@ -160,6 +162,7 @@ export function instantiateFetcher(
       NBA: SportsFetcher__factory,
       MLB: SportsFetcher__factory,
       Grouped: GroupFetcher__factory,
+      Trusted: TrustedFetcher__factory,
     },
   };
 

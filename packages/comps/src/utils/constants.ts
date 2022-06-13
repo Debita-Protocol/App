@@ -351,6 +351,7 @@ export const MARKET_FACTORY_TYPES = {
   MLB: "MLB",
   NBA: "NBA",
   MMA: "MMA",
+  TRUSTED: "Trusted"
 };
 
 export const GRAPH_MARKETS = {

@@ -150,6 +150,8 @@ const ModalConnectWallet = ({
       if (connector instanceof WalletConnectConnector && connector.walletConnectProvider?.wc?.uri) {
         connector.walletConnectProvider = undefined;
       }
+                console.log('chainError???')
+                console.log(connector)
 
       setTimeout(() => {
         connector &&
@@ -160,6 +162,8 @@ const ModalConnectWallet = ({
             })
             .catch((error) => {
               if (error instanceof UnsupportedChainIdError) {
+                console.log('chainError???')
+                console.log(error)
                 activate(connector); // a little janky...can't use setError because the connector isn't set
               } else {
                 setPendingError(true);

@@ -187,7 +187,7 @@ const MarketsView = () => {
   const marketKeys = Object.keys(markets);
 
   useScrollToTopOnMount(page);
-
+  // console.log('UI markets', markets)
   const handleFilterSort = () => {
     if (Object.values(markets).length > 0) {
       setLoading(false);

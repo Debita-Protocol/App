@@ -197,6 +197,22 @@ export const addresses: AddressMapping = {
         description: "crypto prices",
         version: "FILL THIS OUT",
       },
+
+      {//0x78a37719caDFBb038359c3A06164c46932EBD29A
+        //0x7445a93A9FBcaFc4B1b383D8e42F56791b085bf8
+        //fetcher:0x108513d02D12E90b47D8f884213A02353897DFBb
+          type:"Trusted",
+          subtype:"V3",
+          address: "0x78a37719caDFBb038359c3A06164c46932EBD29A", 
+         collateral: "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",
+         ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
+          hasRewards: true,
+          fetcher: "0x450c6A1F99d991aA2df36F3dA61652cca07eA135",
+//0x12297ec2FB50EC75ddCB2BD37A5DD60D71D0a2F9
+        masterChef: "0xa976cb47C216Ee71089b10383bDEa4e230551458",
+        description: "crypto prices",
+        version: "FILL THIS OUT",
+      },
     ],
     info: { uploadBlockNumber: 15336699, graphName: "mumbai" },
   },

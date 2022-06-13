@@ -14,6 +14,10 @@ import {
   Components,
   AppStatusStore,
 } from "@augurproject/comps";
+import {
+ 
+  MINT
+} from '../constants';
 const { parsePath, makePath } = PathUtils;
 const { MARKET, MARKETS, PORTFOLIO, LIQUIDITY, SIDEBAR_TYPES, TWELVE_HOUR_TIME, TWENTY_FOUR_HOUR_TIME } = Constants;
 const {
@@ -187,6 +191,11 @@ export const TopNav = () => {
             <li className={classNames({ [Styles.Active]: path === LIQUIDITY })}>
               <Link to={makePath(LIQUIDITY)} placeholder="Pools">
                 Pools
+              </Link>
+            </li>
+            <li className={classNames({ [Styles.Active]: path === MINT })}>
+              <Link to={makePath(MINT)} placeholder="Pools">
+                Mint
               </Link>
             </li>
           </ol>

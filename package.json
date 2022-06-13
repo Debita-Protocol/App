@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "repository": "https://github.com/AugurProject/turbo",
+    "proxy": "https://rpc-mumbai.maticvigil.com/",
+
   "license": "MIT",
   "scripts": {
     "build": "yarn smart build && yarn comps transpile && tsc -b",

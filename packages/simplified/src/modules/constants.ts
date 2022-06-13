@@ -12,6 +12,7 @@ export const MARKETS = "markets";
 export const PORTFOLIO = "portfolio";
 export const LIQUIDITY = "liquidity";
 export const MARKET_LIQUIDITY = "market-liquidity";
+export const MINT = "mint"
 
 // Directions
 export const BUY = "buy";

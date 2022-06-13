@@ -29,6 +29,7 @@ import {
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
+import { addresses } from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -71,6 +72,7 @@ import { PARA_CONFIG } from "../stores/constants";
 import ERC20ABI from "./ERC20ABI.json";
 import ParaShareTokenABI from "./ParaShareTokenABI.json";
 import PriceFeedABI from "./PriceFeedABI.json";
+//import { addresses } from "@augurproject/smart";
 
 import {
   AbstractMarketFactoryV2,
@@ -643,7 +645,6 @@ export async function doTrade(
     minAmountWithSlippage,
     cash.decimals
   ).decimalPlaces(0);
-
   if (tradeDirection === TradingDirection.ENTRY) {
     console.log(
       "address",
@@ -657,7 +658,14 @@ export async function doTrade(
       "min",
       String(onChainMinShares)
     );
-    return ammFactoryContract.buy(marketFactoryAddress, turboId, selectedOutcomeId, amount, onChainMinShares.toFixed());
+    console.log('HELLO???')
+    console.log('ammfactorycontract', ammFactoryContract)
+    const poolweights = await ammFactoryContract.tokenRatios(marketFactoryAddress, 1)
+    console.log('poolweights', poolweights)
+
+    // const response = await ammFactoryContract.buy(marketFactoryAddress, turboId, selectedOutcomeId, amount, onChainMinShares.toFixed());
+    // console.log('tradingrepsonse!!', response)
+    return ammFactoryContract.buy(marketFactoryAddress,turboId , selectedOutcomeId, amount, onChainMinShares.toFixed());
   }
 
   if (tradeDirection === TradingDirection.EXIT) {
@@ -1798,12 +1806,19 @@ export const getMarketInfos = async (
   blocknumber: number
 ): Promise<{ markets: MarketInfos; ammExchanges: AmmExchanges; blocknumber: number }> => {
   const factories = marketFactories(loadtype);
-
+  const addresses_ =   {...addresses["80001"]}
+  // console.log('addresses!!', addresses_)
+  // console.log('paraconfigs!!', PARA_CONFIG)
+  // console.log('factories!!', factories)
+  // console.log('marketINFOSSSSS!!!', markets, ignoreList)
+  // console.log('categories', {...markets.categories})
+  // console.log('provider', provider)
   // TODO: currently filtering out market factories that don't have rewards
   const allMarkets = await Promise.all(
     factories.filter((f) => f.hasRewards).map((config) => fetcherMarketsPerConfig(config, provider, account))
   );
-
+  //console.log('allmarkets', allMarkets)
+ // console.log('ignorlist!!!!', ignor)
   // first market infos get all markets with liquidity
   const aMarkets = allMarkets.reduce((p, data) => ({ ...p, ...data.markets }), {});
   let filteredMarkets = { ...markets, ...aMarkets };
@@ -1824,6 +1839,9 @@ const setIgnoreRemoveMarketList = (
 ): MarketInfos => {
   // <Removal> resolved markets with no liquidity
   const nonLiqResolvedMarkets = Object.values(allMarkets).filter((m) => !m?.amm?.hasLiquidity && m?.hasWinner);
+  const sportsMarkets = Object.values(allMarkets).filter((m) => m?.categories[0]== "Sports");
+  console.log(['ignored', ...nonLiqResolvedMarkets]);
+  console.log(['ignored2', ...sportsMarkets]);
 
   // <Removal> speard marketw with zero line
   const zeroSpreadMarkets = Object.values(allMarkets).filter(
@@ -1852,6 +1870,7 @@ const setIgnoreRemoveMarketList = (
     ...zeroSpreadMarkets,
     ...ignoredSportsMarkets,
     ...openNbaV1Markets,
+    ...sportsMarkets,
   ].reduce((p, m) => ({ ...p, [m.marketFactoryAddress]: [...(p[m.marketFactoryAddress] || []), m.turboId] }), {});
 
   Object.keys(ignoreRemovedMarkets).forEach((factoryAddress) =>

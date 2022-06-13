@@ -187,7 +187,7 @@ const decodeOutcomes = (
 
 const sportsData = {
   [SPORTS_MARKET_TYPE.MONEY_LINE]: {
-    title: `Which team will win?`,
+    title: `Which team will lose?`,
     description: `${NAMING_TEAM.AWAY_TEAM} vs ${NAMING_TEAM.HOME_TEAM}`,
     outcomes: [NO_CONTEST_TIE, `${NAMING_TEAM.AWAY_TEAM}`, `${NAMING_TEAM.HOME_TEAM}`],
   },

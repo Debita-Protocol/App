@@ -63,7 +63,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
           loadType,
           dblock
         );
-
+        console.log('datainfos', infos)
         if (isRpcDown) {
           setIsRpcDown(false);
         }

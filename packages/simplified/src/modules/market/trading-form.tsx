@@ -300,6 +300,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       outcomeShareTokensIn
     )
       .then((response) => {
+        console.log('trading response', response)
         if (response) {
           const { hash } = response;
           setAmount("");
