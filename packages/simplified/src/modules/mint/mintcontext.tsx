@@ -4,7 +4,9 @@ import { ethers } from 'ethers'
 import Web3 from 'web3';
 import { connected } from 'process'
 
-let eth
+let eth;
+
+
 
 if (typeof window !== 'undefined') {
   eth = window.ethereum
@@ -157,6 +159,3 @@ export const MintProvider = ({children})=>{
         </MintContext.Provider>
     )
 }
-
-
-

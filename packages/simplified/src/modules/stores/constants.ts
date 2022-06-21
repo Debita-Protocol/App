@@ -1,6 +1,10 @@
 import { DEFAULT_MARKET_VIEW_SETTINGS, DEFAULT_POOLS_VIEW_SETTINGS, SETTINGS_SLIPPAGE } from "../constants";
 import { Constants } from "@augurproject/comps";
 
+export const TOKEN_ADDRESSES = [
+  "SAMPLE_ADDRESS_HERE"
+];
+
 export const STUBBED_SIMPLIFIED_ACTIONS = {
   setSidebar: (sidebarType) => {},
   setShowTradingForm: (showTradingForm) => {},
