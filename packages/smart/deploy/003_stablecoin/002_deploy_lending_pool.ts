@@ -10,13 +10,14 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 
 
-  
+  if (!(await deployments.getOrNull("Collateral"))) {
     await deployments.deploy("Collateral", {
       contract: "Cash",
       from: deployer,
       args: ["USDC", "USDC", 6],
       log: true,
     });
+  }
   
 
 

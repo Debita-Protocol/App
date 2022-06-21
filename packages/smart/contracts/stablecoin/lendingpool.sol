@@ -1,14 +1,32 @@
 pragma solidity 0.7.6;
+pragma abicoder v2; 
 
 import "./owned.sol";
 import "./DS.sol"; 
 import "./DSS.sol"; 
 import "./TransferHelper.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-//import "hardhat/console.sol";
+import "hardhat/console.sol";
 
-
+//borrowers borrow and repay from this lendingpool 
 contract LendingPool is Owned{
+
+    struct LoanMetadata {
+        ERC20 underlyingToken;
+        uint256 principal;
+        uint256 totalDebt;
+        uint256 amountRepaid;
+        uint256 duration;
+        uint256 repaymentDate;
+        address recipient;
+    }
+
+    struct LoanData{
+        uint256 _total_borrowed_amount; 
+        uint256 _accrued_interest; 
+    }
+
 
     using SafeMath for uint256;
 
@@ -41,10 +59,23 @@ contract LendingPool is Owned{
     uint256 public unclaimedPoolDSS;
     mapping (address => uint256) public lastRedeemed;
 
+    //Borrowers Variable 
+    mapping(address=>bool) public isBorrower; 
+    mapping(address=>uint256) public borrower_allowance; 
+    mapping(address=>uint256) public borrower_debt; 
+    mapping(address=>LoanMetadata) public borrower_data; 
+    uint256 total_borrowed_amount; 
+    uint256 accrued_interest; 
 
     modifier onlyByOwnGov() {
         require(msg.sender == timelock_address || msg.sender == owner, "Not owner or timelock");
         _;
+    }
+
+    modifier onlyBorrower(){
+        require(isBorrower[msg.sender], "Is Not Borrower"); 
+                _;
+
     }
 
     constructor (
@@ -159,5 +190,82 @@ contract LendingPool is Owned{
 
         //emit PoolParametersSet(new_ceiling, new_bonus_rate, new_redemption_delay, new_mint_fee, new_redeem_fee, new_buyback_fee, new_recollat_fee);
     }
+
+
+
+    //Borrowing and Repaying 
+
+    //Approved Borrower is added by owner or governance 
+    function addBorrower(address _recipient, uint256 _principal, 
+        uint256 _totalDebt, uint256 _duration, ERC20 _underlyingToken) public onlyByOwnGov {
+        require(!isBorrower[_recipient], "Already Approved Borrower"); 
+        isBorrower[_recipient] = true; 
+        borrower_allowance[_recipient] = _principal; 
+
+        borrower_data[_recipient] = LoanMetadata(
+            _underlyingToken,
+            _principal,
+            _totalDebt,
+            0,
+            _duration,
+            _duration + block.timestamp,
+            _recipient
+        );
+
+
+
+    }
+
+    function borrow(uint256 amount) external onlyBorrower {
+        require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
+        require(borrower_debt[msg.sender] <= borrower_data[msg.sender].principal, "Already Borrowed"); 
+
+        borrower_allowance[msg.sender] = borrower_allowance[msg.sender].sub(amount); 
+        TransferHelper.safeTransfer(collateral_address, msg.sender, amount);
+        borrower_debt[msg.sender] = borrower_debt[msg.sender].add(amount); 
+        total_borrowed_amount = total_borrowed_amount.add(amount); 
+
+
+
+    }
+
+    function repay(uint256 repay_principal, uint256 repay_interest) external onlyBorrower {
+
+        uint256 total_repayment = repay_principal.add(repay_interest);
+        TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), total_repayment); 
+
+        borrower_debt[msg.sender] = borrower_debt[msg.sender].sub(repay_principal); 
+        accrued_interest.add(repay_interest);
+        console.log('total_borrowed_amount', total_borrowed_amount);
+        total_borrowed_amount = total_borrowed_amount.sub(repay_principal);
+
+        if (borrower_debt[msg.sender]==0){
+            isBorrower[msg.sender] = false; 
+            delete borrower_data[msg.sender]; 
+
+        }
+
+
+
+    }
+
+
+    function getBorrowerData(address borrower_address) public view returns (LoanMetadata memory)  {
+        return borrower_data[borrower_address]; 
+
+    }
+
+    function _isBorrower(address borrower_address) public view returns(bool){
+        return isBorrower[borrower_address]; 
+    }
+
+    function get_loan_data() public view returns(LoanData memory){
+        LoanData memory loandata = LoanData({
+            _total_borrowed_amount: total_borrowed_amount, 
+            _accrued_interest : accrued_interest
+            });
+        return loandata; 
+    }
+
 
 }
