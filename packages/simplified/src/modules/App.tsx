@@ -105,10 +105,9 @@ function App() {
           <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
-              <MintProvider>
+              {/* <MintProvider> */}
                 <AppBody />
-               </MintProvider>
-
+              {/*  </MintProvider> */}
               </SimplifiedProvider>
             </AppStatusProvider>
           </DataProvider>

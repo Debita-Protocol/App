@@ -94,8 +94,8 @@
     "**/react-dom": "^17.0.1"
   },
   "scripts": {
-    "start": "TSC_COMPILE_ON_ERROR=true node scripts/start.js",
-    "build": "TSC_COMPILE_ON_ERROR=true node scripts/build.js"
+    "start": "set TSC_COMPILE_ON_ERROR=true && node scripts/start.js",
+    "build": "set TSC_COMPILE_ON_ERROR=true && node scripts/build.js"
   },
   "eslintConfig": {
     "extends": [

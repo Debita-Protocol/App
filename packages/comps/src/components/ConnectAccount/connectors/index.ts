@@ -6,6 +6,7 @@ import { NetworkConnector } from "./NetworkConnector";
 import { DEFAULT_NETWORK_ID } from "../../../stores/constants";
 export const NETWORK_CHAIN_ID = DEFAULT_NETWORK_ID || "80001";
 
+
 const NETWORK_URL =
   NETWORK_CHAIN_ID === "80001" ? "https://rpc-mumbai.maticvigil.com" : "https://matic-mainnet-full-rpc.bwarelabs.com";
 
