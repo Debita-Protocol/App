@@ -93,8 +93,156 @@ import {
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
+import {approveERC20Contract} from "../stores/use-approval-callback";
+import {TrustedMarketFactoryV3ABI} from "../data/constants";
 
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+
+
+export async function newFunction(
+  // account: string,
+  // provider: Web3Provider,
+  // amm: AmmExchange,
+  // cash: Cash,
+  // cashAmount: string
+) {
+  console.log('wassup')
+}
+
+export async function createMarket_(provider: Web3Provider): Promise<boolean> {
+   const weight1 = new BN(2).shiftedBy(18).toString()
+  const weight2 = new BN(48).shiftedBy(18).toString()
+
+
+  //const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
+  const marketFactoryAddress = "0x323D62F7FC2a1a078787dB5045ae14E0567b0476"
+  const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
+  const dsAddress = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D"
+  const signer = getProviderOrSigner(provider, settlementAddress)
+  console.log('signers', signer)
+  const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+    console.log('new marketfactorycontract', marketFactoryContract)
+
+  // await approveERC20Contract(dsAddress, "name", marketFactoryAddress, loginAccount, string  tokenAddress: string,
+  // approvingName: string,
+  // spender: string,
+  // loginAccount: LoginAccount,
+  // amount: string = APPROVAL_AMOUNT)
+
+  const details = await marketFactoryContract.createMarket(settlementAddress, "testCDS",['longCDS', 'shortCDS'], 
+    [weight1, weight2] ).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+  console.log(details)
+  return true; 
+}
+export async function endMarket(
+  account: string,
+  provider: Web3Provider,
+  // amm: AmmExchange,
+  // cash: Cash,
+  // cashAmount: string
+): Promise<TransactionResponse> {
+
+
+  const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
+  const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
+  const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  console.log('isthisworking', marketFactoryData, marketFactoryContract)
+  // const tx = await marketFactoryContract.getMarketDetails(0); 
+  // console.log('Detail', tx);
+  const totalAmount = sharesDisplayToOnChain("100").toFixed();
+  console.log('totalamount', totalAmount)
+  // const tx = await marketFactoryContract.callStatic.mintShares(
+  //       0, totalAmount, settlementAddress
+  //   )
+
+  const tx = await marketFactoryContract.trustedResolveMarket(2, 0).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+
+
+  // return tx;
+ 
+  return tx; 
+}
+
+export async function createMarket(
+  account: string,
+  provider: Web3Provider,
+  // amm: AmmExchange,
+  // cash: Cash,
+  // cashAmount: string
+): Promise<TransactionResponse> {
+
+  //console.log("hello", BigNumber);
+  console.log('Hello???')
+ //var exp  = BigNumber.from("10").pow(18)
+  const weight1 = new BN(2).shiftedBy(18).toString()
+  const weight2 = new BN(48).shiftedBy(18).toString()
+
+
+
+ // const weight1 = BigNumber.from("2").mul(exp)
+  //const weight2 = BigNumber.from("48").mul(exp)
+
+  const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
+  const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
+  const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  console.log('isthisworking', marketFactoryData, marketFactoryContract)
+  // const tx = await marketFactoryContract.getMarketDetails(0); 
+  // console.log('Detail', tx);
+  const totalAmount = sharesDisplayToOnChain("100").toFixed();
+  console.log('totalamount', totalAmount)
+  // const tx = await marketFactoryContract.callStatic.mintShares(
+  //       0, totalAmount, settlementAddress
+  //   )
+
+  const tx = await marketFactoryContract.createMarket(settlementAddress, "testCDS",['longCDS', 'shortCDS'], 
+    [weight1, weight2] ).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+
+
+  // return tx;
+ 
+  return tx; 
+}
+
+
+export async function mintCompleteSets_(
+  provider: Web3Provider,
+  amount: string,
+  account: string
+): Promise<TransactionResponse> {
+
+  const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
+
+  const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
+  if (!marketFactoryData) return null;
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
+  const totalAmount = sharesDisplayToOnChain(amount).toFixed();
+    console.log('new function', marketFactoryContract); 
+
+  const tx = await marketFactoryContract.mintShares(1, totalAmount, account).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+  return tx;
+}
 
 export const checkConvertLiquidityProperties = (
   account: string,
@@ -130,7 +278,8 @@ export async function mintCompleteSets(
   if (!marketFactoryData) return null;
   const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
   const totalAmount = sharesDisplayToOnChain(amount).toFixed();
-  console.log("mint", marketFactoryContract.address, amm?.market?.turboId, totalAmount, account);
+  console.log("minting!!!",marketFactoryContract, marketFactoryContract.address, amm?.market?.turboId, totalAmount, account, 
+    marketFactoryData);
   const tx = await marketFactoryContract.mintShares(amm?.market?.turboId, totalAmount, account).catch((e) => {
     console.error(e);
     throw e;
@@ -1809,7 +1958,7 @@ export const getMarketInfos = async (
   const addresses_ =   {...addresses["80001"]}
   // console.log('addresses!!', addresses_)
   // console.log('paraconfigs!!', PARA_CONFIG)
-  // console.log('factories!!', factories)
+   console.log('factories!!', factories)
   // console.log('marketINFOSSSSS!!!', markets, ignoreList)
   // console.log('categories', {...markets.categories})
   // console.log('provider', provider)

@@ -40,6 +40,9 @@ export const getResolutionRules = (marketInfo: MarketInfo): string[] => {
     case MARKET_FACTORY_TYPES.TRUSTED:{
       return TrustedMarkets.getResolutionRules(marketInfo);
     }
+    // case MARKET_FACTORY_TYPES.CDS:{
+    //   return TrustedMarkets.getResolutionRules(marketInfo);
+    // }
     default:
       // NFL, MLB, NBA, NHL
       return SimpleSportsDailies.getResolutionRules(marketInfo);
@@ -91,6 +94,10 @@ export const deriveMarketInfo = (market: MarketInfo, marketData: any, marketFact
     case MARKET_FACTORY_TYPES.TRUSTED:{
       return TrustedMarkets.deriveMarketInfo(market, marketData);
     }
+    // case MARKET_FACTORY_TYPES.CDS:{
+    //         return TrustedMarkets.deriveMarketInfo(market, marketData);
+
+    //}
     default:
       return market;
   }
@@ -108,8 +115,8 @@ export const fetcherMarketsPerConfig = async (
    // case MARKET_FACTORY_TYPES.MMA:
    // case MARKET_FACTORY_TYPES.MLB:
     case MARKET_FACTORY_TYPES.NBA: {
-      markets = await SportFetcher.fetchContractData(config, provider, account);
-    //  markets=  null;
+      //markets = await SportFetcher.fetchContractData(config, provider, account);
+     markets=  null;
       break;
     }
     case MARKET_FACTORY_TYPES.CRYPTO: {
@@ -127,7 +134,13 @@ export const fetcherMarketsPerConfig = async (
     //  console.log('Trusted lol', markets, config.type)
       break; 
 
-    }
+    } 
+    // case MARKET_FACTORY_TYPES.CDS: {
+    //   markets = await TrustedFetcher.fetchContractData(config, provider, account)
+    //   console.log('CDS', markets, config.type)
+    //   break; 
+
+    // }
     default: {
       console.log("Config type not found", config.type);
       markets = null

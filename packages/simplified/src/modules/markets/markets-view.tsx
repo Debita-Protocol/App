@@ -13,10 +13,16 @@ import {
   Constants,
   Components,
   getCategoryIconLabel,
+  ContractCalls,
+  useUserStore
 } from "@augurproject/comps";
+
 import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
+createMarket_ } = ContractCalls;
+
 const {
   SelectionComps: { SquareDropdown },
   ButtonComps: { SecondaryThemeButton },
@@ -48,6 +54,33 @@ const {
 
 const PAGE_LIMIT = 21;
 const MIN_LIQUIDITY_AMOUNT = 1;
+
+
+const confirmAction = async ({
+  //addTransaction,
+  
+  account,
+  loginAccount,
+
+  afterSigningAction = () => {},
+}) => {
+   // await endMarket(account, loginAccount.library)
+    //await createMarket(account, loginAccount.library)
+   await createMarket_(loginAccount.library)
+};
+
+ function createmarket(account, provider) {
+  newFunction();
+  console.log('account', account, provider)
+
+ // createMarket(account, provider);
+   mintCompleteSets_( provider, "100", account)
+
+ 
+
+  
+}
+
 
 const applyFiltersAndSort = (
   passedInMarkets,
@@ -186,6 +219,7 @@ const MarketsView = () => {
   });
   const marketKeys = Object.keys(markets);
 
+
   useScrollToTopOnMount(page);
   // console.log('UI markets', markets)
   const handleFilterSort = () => {
@@ -218,6 +252,15 @@ const MarketsView = () => {
     if (marketsViewSettings[setting] !== DEFAULT_MARKET_VIEW_SETTINGS[setting]) changedFilters++;
   });
 
+
+  const {
+      account,
+      loginAccount,
+      balances,
+      actions: { addTransaction },
+    } = useUserStore();
+
+
   return (
     <div
       className={classNames(Styles.MarketsView, {
@@ -244,7 +287,11 @@ const MarketsView = () => {
         </div>
       )}
       <ul>
-        <SquareDropdown
+     {/* <button onClick={() => createmarket(  account,    loginAccount
+)}>CreateMarket</button> */}
+            <button onClick={() => confirmAction( { account,    loginAccount}
+)}>CreateMarket</button>
+       {/* <SquareDropdown
           onChange={(value) => {
             updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });
           }}
@@ -272,7 +319,9 @@ const MarketsView = () => {
             setShowFilter(!showFilter);
           }}
           showFilter={showFilter}
-        />
+        /> */}
+
+
       </ul>
       <SearchInput
         value={filter}

@@ -203,7 +203,8 @@ export const addresses: AddressMapping = {
         //fetcher:0x108513d02D12E90b47D8f884213A02353897DFBb
           type:"Trusted",
           subtype:"V3",
-          address: "0x78a37719caDFBb038359c3A06164c46932EBD29A", 
+          address:"0x323D62F7FC2a1a078787dB5045ae14E0567b0476",
+         // address: "0x78a37719caDFBb038359c3A06164c46932EBD29A", 
          collateral: "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",
          ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
           hasRewards: true,
@@ -213,7 +214,34 @@ export const addresses: AddressMapping = {
         description: "crypto prices",
         version: "FILL THIS OUT",
       },
+            {//0x78a37719caDFBb038359c3A06164c46932EBD29A
+        //0x7445a93A9FBcaFc4B1b383D8e42F56791b085bf8
+        //fetcher:0x108513d02D12E90b47D8f884213A02353897DFBb
+          type:"CDS",
+          subtype:"V1",
+          address: "0xd2c8018E0315E164709AbBC7832321436555ed79", 
+         collateral: "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D",
+         ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
+          hasRewards: true,
+          fetcher: "0x450c6A1F99d991aA2df36F3dA61652cca07eA135",
+//0x12297ec2FB50EC75ddCB2BD37A5DD60D71D0a2F9
+        masterChef: "0xa976cb47C216Ee71089b10383bDEa4e230551458",
+        description: "CDS market",
+        version: "FILL THIS OUT",
+      },
     ],
     info: { uploadBlockNumber: 15336699, graphName: "mumbai" },
   },
 };
+
+// reusing "FeePot" at 0x98D7A218ed8E68b80a1ed52808598D5827dd778F
+// reusing "AMMFactory" at 0x082C7Ef90da3d4fC070ff25669920722C23AB053
+// deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
+// reusing "DS" at 0xc90AfD78f79068184d79beA3b615cAB32D0DC45D
+// reusing "DSS" at 0x578ee85856763334d436C715Bcd42F7610619644
+// reusing "LendingPool" at 0x97Ed87C184b79bD6C34c1C056b6930Fd08C4F8d5
+// reusing "sDS" at 0xbA65F51b2F2e70224D9c6B22497D15468E284873
+// reusing "StakingPool" at 0x7CadFA76453190b10C4d755EbF7e0EC1Fa3DF91c
+// reusing "iDSLocker" at 0x238E4dbb46105bB84027f9fc261D9a482e411777
+// reusing "iDS" at 0xdD40E85c61AfBd5f2e0a2b3b55C433A41561f349
+// reusing "VoteTracker" at 0x388072EcAE4b3208181AF82e1Fa3c0166993085E

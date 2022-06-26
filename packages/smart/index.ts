@@ -40,6 +40,8 @@ import {
   CryptoCurrencyMarketFactoryV3,
   CryptoCurrencyMarketFactoryV3__factory,
   CryptoCurrencyFetcher,
+  CDSMarketFactory__factory,
+  CDSMarketFactory
 } from "./typechain";
 import { addresses } from "./addresses";
 import { Signer } from "ethers";
@@ -78,6 +80,7 @@ export type MarketFactoryContract =
   | NBAMarketFactoryV3
   | MLBMarketFactoryV3
   | NFLMarketFactoryV2
+  | CDSMarketFactory
   | NFLMarketFactoryV3;
 
 export type FetcherContract = CryptoFetcher | SportsFetcher | GroupFetcher | CryptoCurrencyFetcher| TrustedFetcher;
@@ -117,6 +120,8 @@ export function instantiateMarketFactory(
   const mapping: InstantiationByType<MarketFactoryContract> = {
     V1: {
       SportsLink: SportsLinkMarketFactoryV1__factory,
+            CDS: CDSMarketFactory__factory
+
     },
     V2: {
       SportsLink: SportsLinkMarketFactoryV2__factory,
@@ -163,6 +168,11 @@ export function instantiateFetcher(
       MLB: SportsFetcher__factory,
       Grouped: GroupFetcher__factory,
       Trusted: TrustedFetcher__factory,
+      CDS: TrustedFetcher__factory
+    },
+    V1: {
+ 
+      CDS: TrustedFetcher__factory
     },
   };
 
