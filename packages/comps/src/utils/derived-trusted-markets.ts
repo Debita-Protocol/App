@@ -24,8 +24,8 @@ export const deriveMarketInfo = (market: MarketInfo, marketData: any) =>{
 
 
 const getMarketTitle = (): { title: string; description: string } => {
-  const title = `Test market?`;
-  return { title, description: "Hello!" };
+  const title = `Debita dbCDS`;
+  return { title, description: "Bet on Debita's default rate" };
 };
 
 
@@ -33,7 +33,7 @@ const decodeOutcomes = (market: MarketInfo, shareTokens: string[] = []) => {
   return shareTokens.map((shareToken, i) => {
     return {
       id: i,
-      name: i === 0 ? "Yes" : "No",
+      name: i === 0 ? "Long dbCDS" : "Short dbCDS",
       symbol: shareToken,
       isInvalid: false,
       isWinner: market.hasWinner && i === market.winner ? true : false,
