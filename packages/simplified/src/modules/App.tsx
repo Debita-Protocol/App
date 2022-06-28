@@ -20,6 +20,7 @@ import {
   windowRef,
 } from "@augurproject/comps";
 import {MintProvider} from "./mint/mintcontext"; 
+import {RedeemProvider} from "./redeem/redeemcontext"
 import { SimpleFooter } from "./common/simple-footer";
 const { MARKET, PORTFOLIO } = Constants;
 const { parsePath, parseQuery } = PathUtils;
@@ -105,9 +106,13 @@ function App() {
           <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
-              {/* <MintProvider> */}
-                <AppBody />
-              {/*  </MintProvider> */}
+              
+                <MintProvider>
+                  <RedeemProvider>
+                  <AppBody />
+                  </RedeemProvider>
+                </MintProvider>
+
               </SimplifiedProvider>
             </AppStatusProvider>
           </DataProvider>

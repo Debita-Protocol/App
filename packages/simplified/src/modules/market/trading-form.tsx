@@ -446,6 +446,7 @@ export const ApprovalButton = ({
   isApproved = false,
   shareToken = null,
   customClass = null,
+  ds = false, 
 }: {
   amm?: AmmExchange;
   cash: Cash;
@@ -453,6 +454,7 @@ export const ApprovalButton = ({
   isApproved?: boolean;
   shareToken?: string;
   customClass?: any;
+  ds?: boolean; 
 }) => {
   const [isPendingTx, setIsPendingTx] = useState(false);
   const {
@@ -469,8 +471,20 @@ export const ApprovalButton = ({
       setIsPendingTx(false);
     }
   }, [isApproved, loginAccount, isPendingTx]);
+  console.log('need approval!!!', isApproved,loginAccount, isPendingTx )
+  const approve = 
+  //  useCallback(async()=>{
+  //         let approvalAction = approveERC20Contract;
 
-  const approve = useCallback(async () => {
+  //   let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
+  //   let spender = rewardContractAddress || ammFactory; 
+  //   let text = "Liquidity DS"; 
+  //   const tx = await approvalAction(address, text, spender, loginAccount);
+  //     addTransaction(tx);
+
+  // } ,[cash, loginAccount, shareToken, amm])
+
+  useCallback(async () => {
     try {
       setIsPendingTx(true);
       // defaults for ADD_LIQUIDITY/most used values.
@@ -478,6 +492,7 @@ export const ApprovalButton = ({
       let address = cash?.address;
       let spender = ammFactory;
       let text = `Liquidity (${marketCashType})`;
+      console.log('action_tyype!!')
       switch (actionType) {
         case ApprovalAction.EXIT_POSITION: {
           address = shareToken;
@@ -508,12 +523,15 @@ export const ApprovalButton = ({
           break;
         }
         case ApprovalAction.ADD_LIQUIDITY:
+        console.log('spender')
           spender = rewardContractAddress || ammFactory;
         break;
         default: {
+          console.log('default!')
           break;
         }
       }
+      console.log('address!')
       const tx = await approvalAction(address, text, spender, loginAccount);
       tx.marketDescription = marketDescription;
       addTransaction(tx);
@@ -529,6 +547,7 @@ export const ApprovalButton = ({
 
   let buttonText = "";
   let subText = "";
+  console.log('actiontype?', actionType)
   switch (actionType) {
     case ApprovalAction.ENTER_POSITION: {
       buttonText = "Approve to Buy";
@@ -547,7 +566,7 @@ export const ApprovalButton = ({
       buttonText = `Approve ${marketCashType}`;
       break;
   }
-
+  console.log('buttontext', buttonText)
   return (
     <SecondaryThemeButton
       disabled={isPendingTx}

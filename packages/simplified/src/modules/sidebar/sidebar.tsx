@@ -7,6 +7,7 @@ import { SettingsButton } from "../common/top-nav";
 import { Constants, PathUtils, Components, useAppStatusStore } from "@augurproject/comps";
 import { categoryItems, DEFAULT_MARKET_VIEW_SETTINGS } from "../constants";
 import { useSimplifiedStore } from "../stores/simplified";
+import {REDEEM} from "../constants"
 const { MARKETS, PORTFOLIO, LIQUIDITY, SIDEBAR_TYPES, marketStatusItems, sortByItems } = Constants;
 const {
   LinkLogo,
@@ -131,6 +132,11 @@ const NavigationSideBar = () => {
           <li className={classNames({ [Styles.Active]: path === LIQUIDITY })}>
             <Link onClick={() => setSidebar(null)} to={makePath(LIQUIDITY)}>
               Pools
+            </Link>
+          </li>
+         <li className={classNames({ [Styles.Active]: path === REDEEM })}>
+            <Link onClick={() => setSidebar(null)} to={makePath(REDEEM)}>
+              Redeem
             </Link>
           </li>
         </ol>

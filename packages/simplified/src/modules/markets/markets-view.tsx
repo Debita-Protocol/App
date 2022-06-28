@@ -14,14 +14,17 @@ import {
   Components,
   getCategoryIconLabel,
   ContractCalls,
-  useUserStore
+  useUserStore,
+  ApprovalHooks,
+
 } from "@augurproject/comps";
 
 import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_ } = ContractCalls;
+createMarket_, mintDS} = ContractCalls;
+const { approveERC20Contract } = ApprovalHooks;
 
 const {
   SelectionComps: { SquareDropdown },
@@ -55,6 +58,28 @@ const {
 const PAGE_LIMIT = 21;
 const MIN_LIQUIDITY_AMOUNT = 1;
 
+const confirmMint = async ({
+  //addTransaction,
+  
+  account,
+  loginAccount,
+
+  afterSigningAction = () => {},
+}) => {
+
+const marketFactoryAddress = "0x323D62F7FC2a1a078787dB5045ae14E0567b0476";
+const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
+const dsAddress = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
+const lendingPooladdress = "0x97Ed87C184b79bD6C34c1C056b6930Fd08C4F8d5";
+const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
+
+   //const tx = await approveERC20Contract(usdc, "text", lendingPooladdress, loginAccount);
+   console.log('minting account',account)
+  // await newFunction(account, loginAccount.library)
+ await mintDS(settlementAddress, loginAccount.library)
+  // console.log(isdone)
+};
+
 
 const confirmAction = async ({
   //addTransaction,
@@ -66,17 +91,17 @@ const confirmAction = async ({
 }) => {
    // await endMarket(account, loginAccount.library)
     //await createMarket(account, loginAccount.library)
+
    await createMarket_(loginAccount.library)
 };
 
  function createmarket(account, provider) {
-  newFunction();
+  //newFunction();
   console.log('account', account, provider)
 
  // createMarket(account, provider);
    mintCompleteSets_( provider, "100", account)
 
- 
 
   
 }
@@ -291,6 +316,8 @@ const MarketsView = () => {
 )}>CreateMarket</button> */}
             <button onClick={() => confirmAction( { account,    loginAccount}
 )}>CreateMarket</button>
+           <button onClick={() => confirmMint( { account,    loginAccount}
+)}>MintDS</button>
        {/* <SquareDropdown
           onChange={(value) => {
             updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });

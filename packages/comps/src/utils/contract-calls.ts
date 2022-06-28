@@ -90,23 +90,99 @@ import {
   MasterChef,
   MasterChef__factory,
   EvenTheOdds__factory,
+  DS__factory,
+  LendingPool__factory, 
+
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
 import {approveERC20Contract} from "../stores/use-approval-callback";
-import {TrustedMarketFactoryV3ABI} from "../data/constants";
+import {TrustedMarketFactoryV3ABI, marketFactoryAddress,settlementAddress, 
+dsAddress, lendingPooladdress, usdc} from "../data/constants";
 
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 
-export async function newFunction(
-  // account: string,
-  // provider: Web3Provider,
+export async function addDSPool(
+  account: string,
+  provider: Web3Provider,
   // amm: AmmExchange,
   // cash: Cash,
   // cashAmount: string
+): Promise<TransactionResponse> {
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+
+  const tx = await  ds_contract.addpool(lendingPooladdress).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+  return tx; 
+
+}
+export async function mintDS(
+  account: string,
+  provider: Web3Provider,
+  mint_amount: string = "0", 
+  not_faucet: boolean = false
+
+ 
 ) {
-  console.log('wassup')
+  const amount = not_faucet? new BN(mint_amount).shiftedBy(6).toFixed() : new BN(100000).shiftedBy(6).toFixed() 
+  console.log('mintamount', amount)
+  
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
+  await usdc_contract.approve(lendingPooladdress, amount)
+  //await ds_contract.approve(lendingPooladdress, cashAmount)
+  const lendingpool_contract = LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(provider,account))
+  const tx = await  lendingpool_contract.mintDS(amount,0).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+}
+
+export async function redeemDS(
+  account: string,
+  provider: Web3Provider,
+  redeem_amount: string = "0", 
+  not_faucet: boolean = true
+
+) {
+  const amount = not_faucet? new BN(redeem_amount).shiftedBy(6).toFixed() : new BN(100000).shiftedBy(6).toFixed() 
+  console.log('redeem_amount', amount)
+    console.log('collecting redemption...')
+
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
+  //await usdc_contract.approve(lendingPooladdress, amount)
+  await ds_contract.approve(lendingPooladdress, amount)
+  const lendingpool_contract = LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(provider,account))
+  const tx = await  lendingpool_contract.redeemDS(amount,0,0).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+  await lendingpool_contract.collectRedemption(0).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+}
+
+export async function newFunction(
+
+) {
+  const amount = new BN(100000).shiftedBy(6).toFixed()
+    console.log('amount!', amount)
+
+  // const lendingpool_contract = LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(provider,account))
+  // console.log('lendingpool_contract', lendingpool_contract, account )
+
 }
 
 export async function createMarket_(provider: Web3Provider): Promise<boolean> {
@@ -300,6 +376,12 @@ export async function estimateAddLiquidityPool(
   const { amount, marketFactoryAddress, turboId } = shapeAddLiquidityPool(amm, cash, cashAmount);
   const ammAddress = amm?.id;
 
+  //
+  // const dsContract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  // await dsContract.approve(amm.ammFactoryAddress, cashAmount)
+  // console.log('dscontract approves!')
+  //
+
   let results = null;
   let tokenAmount = "0";
   let minAmounts = [];
@@ -308,9 +390,9 @@ export async function estimateAddLiquidityPool(
 
   const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
   const rewardContract = rewardContractAddress ? getRewardContract(provider, rewardContractAddress, account) : null;
-
   if (!ammAddress) {
-    console.log("est add init", marketFactoryAddress, turboId, amount, account);
+    console.log("est add init", marketFactoryAddress, turboId, amount, account, 
+      'rewardcontractaddress' , rewardContractAddress);
     results = rewardContractAddress
       ? await rewardContract.callStatic.createPool(
           amm.ammFactoryAddress,
@@ -321,6 +403,7 @@ export async function estimateAddLiquidityPool(
         )
       : await ammFactoryContract.callStatic.createPool(marketFactoryAddress, turboId, amount, account);
     tokenAmount = trimDecimalValue(sharesOnChainToDisplay(String(results || "0")));
+    console.log('results',results)
   } else {
     // todo: get what the min lp token out is
     console.log("est add additional", marketFactoryAddress, "marketId", turboId, "amount", amount, 0, account);
@@ -421,6 +504,7 @@ export async function addLiquidityPool(
         // gasPrice: "10000000000",
       });
     } else {
+
       tx = ammFactoryContract.addLiquidity(marketFactoryAddress, turboId, amount, minLpTokenAllowed, account, {
         // gasLimit: "800000",
         // gasPrice: "10000000000",
@@ -1810,6 +1894,10 @@ const getRewardContract = (library: Web3Provider, address: string, account?: str
   return MasterChef__factory.connect(address, getProviderOrSigner(library, account));
 };
 
+// const getDSContract = (library: Web3Provider, address: string, account?: string): MasterChef => {
+//   return MasterChef__factory.connect(address, getProviderOrSigner(library, account));
+// };
+
 export const faucetUSDC = async (library: Web3Provider, account?: string) => {
   const { marketFactories } = PARA_CONFIG;
   const usdcContract = marketFactories[0].collateral;
@@ -1818,6 +1906,11 @@ export const faucetUSDC = async (library: Web3Provider, account?: string) => {
   await collateral.faucet(String(amount));
 };
 
+// const getDSContract = (
+//   library: Web3Provider,
+//   marketFactoryData: MarketFactory,
+//   account?: string
+//   ): DSContract
 const getMarketFactoryContract = (
   library: Web3Provider,
   marketFactoryData: MarketFactory,

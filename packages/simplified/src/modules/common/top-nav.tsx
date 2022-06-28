@@ -16,7 +16,8 @@ import {
 } from "@augurproject/comps";
 import {
  
-  MINT
+  MINT,
+  REDEEM
 } from '../constants';
 const { parsePath, makePath } = PathUtils;
 const { MARKET, MARKETS, PORTFOLIO, LIQUIDITY, SIDEBAR_TYPES, TWELVE_HOUR_TIME, TWENTY_FOUR_HOUR_TIME } = Constants;
@@ -198,6 +199,11 @@ export const TopNav = () => {
                 Mint
               </Link>
             </li>
+           <li className={classNames({ [Styles.Active]: path === REDEEM })}>
+              <Link to={makePath(REDEEM)} placeholder="Pools">
+                Redeem
+              </Link>
+            </li>            
           </ol>
         )}
       </section>

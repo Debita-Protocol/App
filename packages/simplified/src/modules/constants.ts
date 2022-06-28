@@ -14,6 +14,7 @@ export const LIQUIDITY = "liquidity";
 export const MARKET_LIQUIDITY = "market-liquidity";
 export const MINT = "mint"
 export const MINT_DS = "mint-ds";
+export const REDEEM = "redeem"
 
 // Directions
 export const BUY = "buy";

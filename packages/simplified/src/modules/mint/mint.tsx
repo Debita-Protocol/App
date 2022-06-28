@@ -19,6 +19,7 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
 import { MintContext } from './mintcontext'; 
+// import { RiSettings3Fill } from 'react-icons/ri'
 
 
 const {
@@ -73,128 +74,57 @@ const SearchButton = (props) => (
 
 
 
-// const MintProvider = ({children})=>{
-//   const [formData, setFormData] = useState({
-//         MintAmount: '',
-//       })
-
-//     const handleChange = (e, name) => {
-//       console.log('fefefef', name, e.target.value);
-//     setFormData(prevState => ({ ...prevState, [name]: e.target.value }))
-
-//     }
-
-//   return (
-//         <MintContext.Provider 
-//         value = {{
-//           formData,
-//             handleChange,
-           
-            
-//         }}>
-//         {children}
-//         </MintContext.Provider>
-//     )
-// }
-
-// const MintContext = React.createContext(MintProvider);
 
 const MintView= () => {
    // const{formData, handleChange, sendTransaction} = useContext(TransactionContext)
- const {formData, handleChange,sendTransaction} = useContext(MintContext);
+ const {formData, handleChange, mint} = useContext(MintContext);
 
-  const { isMobile, isLogged } = useAppStatusStore();
-  const {
-    marketsViewSettings,
-    settings: { showLiquidMarkets, timeFormat },
-    actions: { setSidebar, updateMarketsViewSettings },
-  } = useSimplifiedStore();
-  const { ammExchanges, markets, transactions } = useDataStore();
-  const { subCategories, sortBy, primaryCategory, reportingState, currency } = marketsViewSettings;
   const [loading, setLoading] = useState(true);
   const [filteredMarkets, setFilteredMarkets] = useState([]);
   const [filter, setFilter] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
   const [page, setPage] = useQueryPagination({
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
-  const marketKeys = Object.keys(markets);
+
+  const handleSubmit = async (e: any) => {
+    // const { addressTo, amount } = formData
+    // e.preventDefault()
+
+    // if (!addressTo || !amount) return
+
+    mint()
+  }
 
   useScrollToTopOnMount(page);
   // console.log('UI markets', markets)
 
   let changedFilters = 0;
 
-  Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
-    if (marketsViewSettings[setting] !== DEFAULT_MARKET_VIEW_SETTINGS[setting]) changedFilters++;
-  });
+
 
   return (
     <div
       className={classNames(Styles.MarketsView, {
-        [Styles.SearchOpen]: showFilter,
       })}
     >
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
       <NetworkMismatchBanner />
-      {isLogged ? <AppViewStats small liquidity trading /> : <TopBanner />}
-      {isMobile && (
-        <div>
-          <SecondaryThemeButton
-            text={`filters${changedFilters ? ` (${changedFilters})` : ``}`}
-            icon={FilterIcon}
-            action={() => setSidebar(SIDEBAR_TYPES.FILTERS)}
-          />
-          <SearchButton
-            action={() => {
-              setFilter("");
-              setShowFilter(!showFilter);
-            }}
-            selected={showFilter}
-          />
-        </div>
-      )}
+
       <ul>
-        <SquareDropdown
-          onChange={(value) => {
-            updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });
-          }}
-          options={categoryItems}
-          defaultValue={primaryCategory}
-        />
-        <SquareDropdown
-          onChange={(value) => {
-            updateMarketsViewSettings({ sortBy: value });
-          }}
-          options={sortByItems}
-          defaultValue={sortBy}
-        />
-        <SquareDropdown
-          onChange={(value) => {
-            updateMarketsViewSettings({ reportingState: value });
-          }}
-          options={marketStatusItems}
-          defaultValue={reportingState}
-        />
-        <SearchButton
-          selected={showFilter}
-          action={() => {
-            setFilter("");
-            setShowFilter(!showFilter);
-          }}
-          showFilter={showFilter}
-        />
+
       </ul>
-      <SearchInput
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        clearValue={() => setFilter("")}
-        showFilter={showFilter}
-      />
  
+ 
+
      <div className = {styleMint.wrapper}>  
         <div className = {styleMint.content}>
+          <div className={styleMint.formHeader}>
+            <div>Mint DS for USDC</div>
+          </div>
+
+   
+
           <div className={styleMint.transferPropContainer}>
                 <input
                     type='text'
@@ -203,9 +133,13 @@ const MintView= () => {
                     pattern='^[0-9]*[.,]?[0-9]*$'
                     onChange={e => handleChange(e, 'amount')}
                 />
+
             
           </div>
 
+        <button onClick={e => handleSubmit(e)} className={styleMint.confirmButton}>
+          Confirm
+        </button>
 
         </div>
       </div>
@@ -231,74 +165,3 @@ const MintView= () => {
 };
 
 export default MintView;
-
-export interface SubCategoriesFilterProps {
-  primaryCategory: string;
-  subCategories: Array<string>;
-  updateCategories: (update: any) => void;
-}
-
-export const SubCategoriesFilter = ({ primaryCategory, subCategories, updateCategories }: SubCategoriesFilterProps) => {
-  if (primaryCategory.toLowerCase() !== "sports") return null;
-  const { icon: SportsIcon } = getCategoryIconLabel([primaryCategory]);
-  const { icon: MLBIcon } = getCategoryIconLabel(["Sports", "Baseball", "MLB"]);
-  const { icon: NBAIcon } = getCategoryIconLabel(["Sports", "Basketball", "NBA"]);
-  const { icon: MMAIcon } = getCategoryIconLabel(["Sports", "MMA"]);
-
-  // const { icon: HockeyIcon } = getCategoryIconLabel(["Sports", "Hockey", "NHL"]);
-  const { icon: FootballIcon } = getCategoryIconLabel(["Sports", "American Football", "NFL"]);
-  return (
-    <div className={Styles.SubCategoriesFilter}>
-      <button
-        className={classNames(Styles.SubCategoryFilterButton, {
-          [Styles.selectedFilterCategory]: subCategories.length === 0,
-        })}
-        onClick={() => updateCategories({ subCategories: [] })}
-      >
-        {SportsIcon} All Sports
-      </button>
-      <button
-        className={classNames(Styles.SubCategoryFilterButton, {
-          [Styles.selectedFilterCategory]: subCategories.includes("MLB"),
-        })}
-        onClick={() => updateCategories({ subCategories: ["Baseball", "MLB"] })}
-      >
-        {MLBIcon} MLB
-      </button>
-      <button
-        className={classNames(Styles.SubCategoryFilterButton, {
-          [Styles.selectedFilterCategory]: subCategories.includes("NBA"),
-        })}
-        onClick={() => updateCategories({ subCategories: ["Basketball", "NBA"] })}
-      >
-        {NBAIcon} NBA
-      </button>
-      <button
-        className={classNames(Styles.SubCategoryFilterButton, {
-          [Styles.selectedFilterCategory]: subCategories.includes("MMA"),
-        })}
-        onClick={() => updateCategories({ subCategories: ["MMA"] })}
-      >
-        {MMAIcon} MMA
-      </button>
-      {
-        /* <button
-        className={classNames(Styles.SubCategoryFilterButton, {
-          [Styles.selectedFilterCategory]: subCategories.includes("NHL"),
-        })}
-        onClick={() => updateCategories({ subCategories: ["Hockey", "NHL"] })}
-      >
-        {HockeyIcon} NHL
-      </button> */
-        <button
-          className={classNames(Styles.SubCategoryFilterButton, {
-            [Styles.selectedFilterCategory]: subCategories.includes("NFL"),
-          })}
-          onClick={() => updateCategories({ subCategories: ["American Football", "NFL"] })}
-        >
-          {FootballIcon} NFL
-        </button>
-      }
-    </div>
-  );
-};

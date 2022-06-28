@@ -13,6 +13,7 @@ import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
 import { MARKET_LOAD_TYPE } from "../utils/constants";
+import {dsAddress} from "../data/constants"
 
 export const DataContext = React.createContext({
   ...DEFAULT_DATA_STATE,
@@ -150,6 +151,15 @@ const getCashesInfo = (): any[] => {
   // todo: need to grab all collaterals per market factory
 
   const cashes = [
+    {
+      name: "DS",
+      displayDecimals: 2,
+      decimals: 18,
+      address: dsAddress,
+      shareToken: "",
+      usdPrice: "1",
+      asset: "",
+    }, 
     {
       name: "USDC",
       displayDecimals: 2,

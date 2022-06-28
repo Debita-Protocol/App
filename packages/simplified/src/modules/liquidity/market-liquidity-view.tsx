@@ -311,7 +311,9 @@ const LiquidityForm = ({
   const [breakdown, setBreakdown] = useState(defaultAddLiquidityBreakdown);
   const [estimatedLpAmount, setEstimatedLpAmount] = useState<string>("0");
   const tradingFeeSelection = TRADING_FEE_OPTIONS[2].id;
-  const cash: Cash = cashes ? Object.values(cashes).find((c) => c.name === USDC) : Object.values(cashes)[0];
+ // const cash: Cash = cashes ? Object.values(cashes).find((c) => c.name === USDC) : Object.values(cashes)[0];
+    const cash: Cash = Object.values(cashes)[0];
+
   const userTokenBalance = cash?.name ? balances[cash?.name]?.balance : "0";
   const shareBalance =
     balances && balances.lpTokens && balances.lpTokens[amm?.marketId] && balances.lpTokens[amm?.marketId].balance;
@@ -320,6 +322,7 @@ const LiquidityForm = ({
     "0";
   const userMaxAmount = isRemove ? shareBalance : userTokenBalance;
   const approvedToTransfer = ApprovalState.APPROVED;
+  console.log('approvedToTransfer',approvedToTransfer)
   const isApprovedToTransfer = approvedToTransfer === ApprovalState.APPROVED;
   const approvalActionType = isRemove
     ? ApprovalAction.REMOVE_LIQUIDITY
@@ -375,10 +378,15 @@ const LiquidityForm = ({
     async function getResults() {
       let results: LiquidityBreakdown;
       if (isRemove) {
+        console.log('HI')
         results = await getRemoveLiquidity(amm, loginAccount?.library, amount, account, cash, market?.hasWinner);
       } else if (isResetPrices) {
+                console.log('HI2')
+
         results = await estimateResetPrices(loginAccount?.library, account, amm);
       } else {
+                        console.log('HI3')
+
         results = await estimateAddLiquidityPool(account, loginAccount?.library, amm, cash, amount);
       }
 
@@ -543,6 +551,7 @@ const LiquidityForm = ({
                 cash={cash}
                 actionType={approvalActionType}
                 customClass={ButtonStyles.ReviewTransactionButton}
+                ds = {true}
               />
             )}
             <SecondaryThemeButton
