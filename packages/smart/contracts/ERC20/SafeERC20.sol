@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // OpenZeppelin Contracts (last updated v4.7.0) (token/ERC20/utils/SafeERC20.sol)
 
-pragma solidity ^0.8.0;
+pragma solidity 0.7.6;
 
 import "./IERC20.sol";
 import "./draft-IERC20Permit.sol";
@@ -72,12 +72,16 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        unchecked {
-            uint256 oldAllowance = token.allowance(address(this), spender);
-            require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
-            uint256 newAllowance = oldAllowance - value;
-            _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
-        }
+        // unchecked {
+        //     uint256 oldAllowance = token.allowance(address(this), spender);
+        //     require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+        //     uint256 newAllowance = oldAllowance - value;
+        //     _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+        // }
+        uint256 oldAllowance = token.allowance(address(this), spender);
+        require(oldAllowance >= value, "SafeERC20: decreased allowance below zero");
+        uint256 newAllowance = oldAllowance - value;
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
     function safePermit(

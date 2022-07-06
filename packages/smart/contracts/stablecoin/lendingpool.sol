@@ -256,7 +256,7 @@ contract LendingPool is Owned {
         return proposal_fee;
     }
 
-    function _isRegistered(address addr) public view returns (bool) {
+    function getRegistrationStatus(address addr) external view returns (bool) {
         return isRegistered[addr];
     }
 

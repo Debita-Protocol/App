@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity 0.7.6;
 import "../ERC20/ERC20Custom.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "../Common/AccessControl.sol";
 import "../Common/Ownable.sol";
 
-contract DebitaStableCoin is ERC20Custom, AccessControl, Owned {
+contract DebitaStableCoin is ERC20Custom, AccessControl, Ownable {
     /* ========== STATE VARIABLES ========== */
     
     address[] public pools_array;
@@ -27,7 +27,7 @@ contract DebitaStableCoin is ERC20Custom, AccessControl, Owned {
         address _creator_address,
         address _timelock_address,
         address _dss_address
-    )  ERC20Custom("Debita Stablecoin","DS") Owned(_creator_address)
+    )  ERC20Custom("Debita Stablecoin","DS") Ownable(_creator_address)
     {
         _mint(_creator_address, genesis_supply);
         creator_address = _creator_address;
@@ -35,7 +35,7 @@ contract DebitaStableCoin is ERC20Custom, AccessControl, Owned {
         dss_address = _dss_address;
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         DEFAULT_ADMIN_ADDRESS = _msgSender();
-        _grantRole(deployer_address, DEFAULT_ADMIN_ROLE);
+        _grantRole(DEFAULT_ADMIN_ROLE, _creator_address);
     }
 
     function addPool(address pool_address) public onlyOwner {
@@ -50,7 +50,7 @@ contract DebitaStableCoin is ERC20Custom, AccessControl, Owned {
     
     // Used by pools when user redeems
     function pool_burn_from(address b_address, uint256 b_amount) public onlyPools {
-        super._burnFrom(b_address, b_amount);
+        super._burn(b_address, b_amount);
     }
 
     function pool_mint(address m_address, uint256 m_amount) public onlyPools {
