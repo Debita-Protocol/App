@@ -6,8 +6,6 @@ import "./iDSlocker.sol";
 
 //Returned to insurannce stakers, who stake erc20 stablecoins to get this in return 
 contract iDS  {
-
-
     uint256 public constant  MAX_LOCK_DURATION = 4 * 365 days; // 4 years
     uint256 public constant  MAX_LOCK_MULTIPLIER_BPS = 40000;  // 4X
     uint256 public constant  UNLOCKED_MULTIPLIER_BPS = 10000; // 1X

@@ -5,12 +5,13 @@ import "./owned.sol";
 import "./DS.sol"; 
 import "./DSS.sol"; 
 import "./TransferHelper.sol";
+
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
 
 //borrowers borrow and repay from this lendingpool 
-contract LendingPool is Owned{
+contract LendingPool is Owned {
 
     struct LoanMetadata {
         ERC20 underlyingToken;
@@ -61,11 +62,13 @@ contract LendingPool is Owned{
 
     //Borrowers Variable 
     mapping(address=>bool) public isBorrower; 
+    mapping(address=>bool) public isRegistered;
     mapping(address=>uint256) public borrower_allowance; 
     mapping(address=>uint256) public borrower_debt; 
     mapping(address=>LoanMetadata) public borrower_data; 
-    uint256 total_borrowed_amount; 
-    uint256 accrued_interest; 
+    uint256 total_borrowed_amount;
+    uint256 immutable proposal_fee;
+    uint256 accrued_interest;
 
     modifier onlyByOwnGov() {
         require(msg.sender == timelock_address || msg.sender == owner, "Not owner or timelock");
@@ -74,8 +77,13 @@ contract LendingPool is Owned{
 
     modifier onlyBorrower(){
         require(isBorrower[msg.sender], "Is Not Borrower"); 
-                _;
+        _;
 
+    }
+
+    modifier onlyRegistered(address addr) {
+        require(isRegistered[addr], "is not registered");
+        _;
     }
 
     constructor (
@@ -105,7 +113,7 @@ contract LendingPool is Owned{
         collateral_token = ERC20(_collateral_address); 
         
         missing_decimals = uint(18).sub(collateral_token.decimals());
-        
+        proposal_fee = 1e19;
         
     }
 
@@ -199,8 +207,8 @@ contract LendingPool is Owned{
     function addBorrower(address _recipient, uint256 _principal, 
         uint256 _totalDebt, uint256 _duration, ERC20 _underlyingToken) public onlyByOwnGov {
         require(!isBorrower[_recipient], "Already Approved Borrower"); 
-        isBorrower[_recipient] = true; 
-        borrower_allowance[_recipient] = _principal; 
+        isBorrower[_recipient] = true;
+        borrower_allowance[_recipient] = _principal;
 
         borrower_data[_recipient] = LoanMetadata(
             _underlyingToken,
@@ -211,12 +219,49 @@ contract LendingPool is Owned{
             _duration + block.timestamp,
             _recipient
         );
-
-
-
     }
 
-    function borrow(uint256 amount) external onlyBorrower {
+    function approveBorrower(address _recipient) public onlyByOwnGov onlyRegistered(_recipient) {
+        require(!isBorrower[_recipient], "Already Approved Borrower"); 
+        isBorrower[_recipient] = true;
+    }
+
+    function registerBorrower() external {
+        require(!isRegistered[msg.sender], "already paid proposal fee");
+        TransferHelper.safeTransferFrom(address(collateral_token), msg.sender,address(this), proposal_fee);
+        isRegistered[msg.sender] = true;
+    }
+
+    function submitProposal (
+        address _recipient, 
+        uint256 _principal, 
+        uint256 _totalDebt, 
+        uint256 _duration, 
+        ERC20 _underlyingToken
+    ) public onlyRegistered(_recipient) {
+        require(!isBorrower[_recipient], "Already Approved Borrower");
+        require(_recipient != address(0));
+        borrower_data[_recipient] = LoanMetadata(
+            _underlyingToken,
+            _principal,
+            _totalDebt,
+            0,
+            _duration,
+            _duration + block.timestamp,
+            _recipient
+        );
+    }
+
+    function getProposalFee() external view returns (uint256) {
+        return proposal_fee;
+    }
+
+    function _isRegistered(address addr) public view returns (bool) {
+        return isRegistered[addr];
+    }
+
+
+    function borrow(uint256 amount) external onlyBorrower onlyRegistered(msg.sender) {
         require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
         require(borrower_debt[msg.sender] <= borrower_data[msg.sender].principal, "Already Borrowed"); 
 
@@ -224,7 +269,6 @@ contract LendingPool is Owned{
         TransferHelper.safeTransfer(collateral_address, msg.sender, amount);
         borrower_debt[msg.sender] = borrower_debt[msg.sender].add(amount); 
         total_borrowed_amount = total_borrowed_amount.add(amount); 
-
 
 
     }
@@ -244,9 +288,6 @@ contract LendingPool is Owned{
             delete borrower_data[msg.sender]; 
 
         }
-
-
-
     }
 
 

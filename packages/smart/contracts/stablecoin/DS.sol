@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -8,8 +9,8 @@ contract DS is ERC20, Owned {
   mapping(address => bool) pools;
 
   address[] public pools_array;
-  address deployer_address; 
-  address timelock_address; 
+  address deployer_address;
+  address timelock_address;
 
   uint256 genesis_supply = 1000000e18;
 
@@ -67,6 +68,5 @@ contract DS is ERC20, Owned {
   function pool_burn(address account, uint256 amount) public onlyPools {
    _burn(account, amount);
   }
-
 
 }
