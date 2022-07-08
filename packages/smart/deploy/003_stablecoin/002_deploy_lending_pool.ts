@@ -19,9 +19,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     });
   }
   
-
-
-
   const ds = await deployments.get("DS");
   const dss = await deployments.get("DSS"); 
   const collateral = await deployments.get("Collateral")
@@ -43,6 +40,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
 };
 
+func.tags = ["lendingPool"];
 // func.tags = ["GroupedMarketFactory", "Grouped"];
 // func.dependencies = ["Tokens", "FeePot", "BFactory"];
 

@@ -105,7 +105,6 @@ const LoanRequestForm = () => {
     }
   }
 
-
   return (
   <>
     <div className={Styles.LoanRequestForm}>
@@ -122,7 +121,7 @@ const LoanRequestForm = () => {
           }}
         />
         <label>Loan Duration (Days): </label> <br />
-        <input
+       <input
           type="text"
           placeholder="0"
           value={ duration }
