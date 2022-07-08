@@ -61,13 +61,13 @@ contract LendingPool is Owned {
     mapping (address => uint256) public lastRedeemed;
 
     //Borrowers Variable 
-    mapping(address=>bool) public isBorrower; 
+    mapping(address=>bool) public isBorrower;
     mapping(address=>bool) public isRegistered;
     mapping(address=>uint256) public borrower_allowance; 
     mapping(address=>uint256) public borrower_debt; 
     mapping(address=>LoanMetadata) public borrower_data; 
     uint256 total_borrowed_amount;
-    uint256 immutable proposal_fee;
+    uint256 immutable public proposal_fee;
     uint256 accrued_interest;
 
     modifier onlyByOwnGov() {
@@ -252,10 +252,6 @@ contract LendingPool is Owned {
         );
     }
 
-    function getProposalFee() external view returns (uint256) {
-        return proposal_fee;
-    }
-
     function getRegistrationStatus(address addr) external view returns (bool) {
         return isRegistered[addr];
     }
@@ -296,7 +292,7 @@ contract LendingPool is Owned {
 
     }
 
-    function _isBorrower(address borrower_address) public view returns(bool){
+    function _isBorrower(address borrower_address) public view returns(bool){ // solidity automatically creates getter.
         return isBorrower[borrower_address]; 
     }
 

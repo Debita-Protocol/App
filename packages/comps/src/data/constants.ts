@@ -10,3 +10,4 @@ export const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
 export const dsAddress = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
 export const lendingPooladdress = "0x97Ed87C184b79bD6C34c1C056b6930Fd08C4F8d5";
 export const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
+export const collateral_address = usdc;

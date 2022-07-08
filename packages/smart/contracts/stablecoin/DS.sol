@@ -38,7 +38,7 @@ contract DS is ERC20, Owned {
   modifier onlyPools() {
      require(pools[msg.sender] == true, "Only pools can call this function");
       _;
-  } 
+  }
 
   function addPool(address pool_address) public onlyByOwner {
       require(pool_address != address(0), "Zero address detected");

@@ -31,7 +31,6 @@ describe.only("LendingPool", function () {
     let owner : SignerWithAddress;
 
     before(async () => {
-      console.log("hello world");
       [owner, signer1, signer2] = await ethers.getSigners();
       const deployer_address = owner.address;
       const timelock_addr = signer2.address;
@@ -60,14 +59,14 @@ describe.only("LendingPool", function () {
       });
     it("Should allow someone to register and then be approved", async function () {
 
-      const proposal_fee: BigNumber = await LPool.getProposalFee();
+      const proposal_fee: BigNumber = await LPool.proposal_fee();
       await dss_token.connect(signer1).increaseAllowance(LPool.address, proposal_fee);
 
       let tx = await LPool.connect(signer1).registerBorrower();
       await tx.wait();
 
       const user_addr = signer1.address;
-      expect(await LPool._isRegistered(user_addr)).to.equal(true);
+      expect(await LPool.getRegistrationStatus(user_addr)).to.equal(true);
       
       
       const principal = ethers.utils.parseEther("1.0");
@@ -84,8 +83,16 @@ describe.only("LendingPool", function () {
       await tx.wait();
 
       const borrowerData = await LPool.getBorrowerData(user_addr);
+      let borrowStatus = await LPool._isBorrower(user_addr);
 
       expect(borrowerData.duration).to.equal(duration);
       expect(borrowerData.principal).to.equal(principal);
+      expect(borrowStatus).to.equal(false);
+
+      tx = await LPool.connect(owner).approveBorrower(user_addr);
+      await tx.wait();
+
+      borrowStatus = await LPool.isBorrower(user_addr);
+      expect(borrowStatus).to.equal(true);
     });
 })

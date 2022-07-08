@@ -122,9 +122,6 @@ const MintView= () => {
           <div className={styleMint.formHeader}>
             <div>Mint DS for USDC</div>
           </div>
-
-   
-
           <div className={styleMint.transferPropContainer}>
                 <input
                     type='text'

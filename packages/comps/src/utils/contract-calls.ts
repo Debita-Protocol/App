@@ -1,4 +1,5 @@
 import BigNumber, { BigNumber as BN } from "bignumber.js";
+
 import {
   AddRemoveLiquidity,
   AllMarketsTransactions,
@@ -29,7 +30,7 @@ import {
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
-import { addresses } from "@augurproject/smart";
+import { addresses, DS } from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -64,7 +65,7 @@ import {
   POLYGON_PRICE_FEED_MATIC,
   MAX_LAG_BLOCKS,
   WMATIC_TOKEN_ADDRESS,
-  REWARDS_AMOUNT_CUTOFF,
+  REWARDS_AMOUNT_CUTOFF
 } from "./constants";
 import { getProviderOrSigner } from "../components/ConnectAccount/utils";
 import { createBigNumber } from "./create-big-number";
@@ -91,8 +92,8 @@ import {
   MasterChef__factory,
   EvenTheOdds__factory,
   DS__factory,
-  LendingPool__factory, 
-
+  LendingPool__factory,
+  LendingPool
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -126,8 +127,6 @@ export async function mintDS(
   provider: Web3Provider,
   mint_amount: string = "0", 
   not_faucet: boolean = false
-
- 
 ) {
   const amount = not_faucet? new BN(mint_amount).shiftedBy(6).toFixed() : new BN(100000).shiftedBy(6).toFixed() 
   console.log('mintamount', amount)
@@ -170,8 +169,57 @@ export async function redeemDS(
     console.error(e);
     throw e;
   });
+}
 
+export async function checkLoanRegistration (
+  provider: Web3Provider,
+  account: string
+) : Promise<boolean> {
+  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
+  const result = await lendingPool.isRegistered(account);
+  return result;
+}
 
+export async function checkBorrowStatus (
+  provider: Web3Provider,
+  account: string
+) : Promise<boolean>  {
+  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account)
+  const result = await lendingPool.isBorrower(account);
+  return result;
+}
+
+export async function registerBorrower(
+  provider: Web3Provider,
+  account: string
+): Promise<TransactionResponse> {
+  const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
+  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
+  const proposal_fee = await lendingPool.proposal_fee();
+  let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
+  await tx.wait();
+
+  tx = await lendingPool.registerBorrower();
+  return tx;
+}
+
+export async function submitProposal(
+  provider: Web3Provider,
+  account: string,
+  principal: string, // w/ decimal point
+  totalDebt: string, // w/ decimal point
+  duration: string, //in seconds, no fractions of seconds.
+  underlying_token: string, 
+): Promise<TransactionResponse> {
+  // convert strings to BN.
+  principal = new BN(principal).shiftedBy(6).toFixed(); // 6 is the price precision.
+  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
+  let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
+  return tx;
+}
+
+const getLendingPoolContract = (library: Web3Provider, address: string, account?: string): LendingPool => {
+  return LendingPool__factory.connect(address, getProviderOrSigner(library, account));
 }
 
 export async function newFunction(

@@ -14,7 +14,8 @@ export const LIQUIDITY = "liquidity";
 export const MARKET_LIQUIDITY = "market-liquidity";
 export const MINT = "mint"
 export const MINT_DS = "mint-ds";
-export const REDEEM = "redeem"
+export const REDEEM = "redeem";
+export const BORROW = "borrow";
 
 // Directions
 export const BUY = "buy";
@@ -40,6 +41,12 @@ export const USDT = "USDT";
 export const USDC = "USDC";
 export const SHARES = "SHARES";
 export const ALL_CURRENCIES = "All Currencies";
+
+export const CURRENCY_ADDRESSES = {
+  DAI: "0x00",
+  USDC: "0x00",
+  FRAX: "0x00"
+}
 
 // Portfolio table views
 export const POSITIONS = "positions";
