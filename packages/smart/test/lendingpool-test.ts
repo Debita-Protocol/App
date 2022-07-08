@@ -41,10 +41,10 @@ describe.only("LendingPool", function () {
       
       DSS_Factory = await ethers.getContractFactory("DSS");
       
-      ds_token = await DS_Factory.deploy("Debita Stablecoin", "DS", signer1.address, timelock_addr);
+      ds_token = await DS_Factory.deploy(signer1.address, timelock_addr);
       await ds_token.deployed();
       
-      dss_token = await DSS_Factory.deploy("Debita Share Token", "DSS", signer1.address, timelock_addr);
+      dss_token = await DSS_Factory.deploy(signer1.address, timelock_addr);
       await dss_token.deployed();
 
       LPool_Factory = await ethers.getContractFactory("LendingPool");

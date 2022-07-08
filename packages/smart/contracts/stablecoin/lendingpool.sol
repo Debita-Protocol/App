@@ -5,8 +5,9 @@ import "./owned.sol";
 import "./DS.sol"; 
 import "./DSS.sol"; 
 import "./TransferHelper.sol";
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../ERC20/ERC20.sol";
+import "../Common/SafeMath.sol";
+//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
 

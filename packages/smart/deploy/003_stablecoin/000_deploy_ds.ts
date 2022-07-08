@@ -7,8 +7,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
   console.log('deployer', deployer)
   const args= [
-    "DS",
-    "DS", 
     deployer, 
     owner, //TODO change to null address 
   ];

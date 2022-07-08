@@ -5,7 +5,9 @@ import "../stablecoin/owned.sol";
 import "../stablecoin/TransferHelper.sol";
 
 import "./stakedDS.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../ERC20/ERC20.sol";
+import "../Common/SafeMath.sol";
+//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 
 contract StakingPool is Owned{

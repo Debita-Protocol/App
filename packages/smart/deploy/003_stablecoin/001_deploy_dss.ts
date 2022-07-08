@@ -8,8 +8,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   
   const args= [
-    "DSS",
-    "DSS", 
     deployer, 
     owner, //TODO change to null address 
   ];
