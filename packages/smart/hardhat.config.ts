@@ -126,8 +126,8 @@ export const config: HardhatUserConfig = {
       confirmations: 5,
       accounts: ['5505f9ddf81b3aa83661c849fe8d56ea7a02dd3ede636f47296d85a7fc4e3bd6',
       'f7c11910f42a6cab4436bffea7dca20fed310bd794b7c37a930cc013ae6392d2'],
-      gas: 2100000,
-      gasPrice: 8000000000
+      gas: 33155135733,
+      gasPrice: 33155135733
     },
     maticMainnet: {
       live: true,

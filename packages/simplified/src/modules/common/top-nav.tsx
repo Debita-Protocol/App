@@ -15,7 +15,7 @@ import {
   AppStatusStore,
 } from "@augurproject/comps";
 import {
- 
+  BORROW,
   MINT,
   REDEEM
 } from '../constants';
@@ -203,7 +203,12 @@ export const TopNav = () => {
               <Link to={makePath(REDEEM)} placeholder="Pools">
                 Redeem
               </Link>
-            </li>            
+            </li>
+            <li className={classNames({ [Styles.Active]: path === BORROW })}>
+              <Link to={makePath(BORROW)} placeholder="Pools">
+                Borrow
+              </Link>
+            </li>         
           </ol>
         )}
       </section>
