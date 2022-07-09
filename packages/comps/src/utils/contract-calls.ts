@@ -93,13 +93,21 @@ import {
   EvenTheOdds__factory,
   DS__factory,
   LendingPool__factory,
-  LendingPool
+  LendingPool,
+  ERC20__factory
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
 import {approveERC20Contract} from "../stores/use-approval-callback";
-import {TrustedMarketFactoryV3ABI, marketFactoryAddress,settlementAddress, 
-dsAddress, lendingPooladdress, usdc} from "../data/constants";
+import {
+  TrustedMarketFactoryV3ABI,
+  marketFactoryAddress,
+  settlementAddress, 
+  dsAddress, 
+  lendingPooladdress, 
+  usdc,
+  PRICE_PRECISION
+} from "../data/constants";
 
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
@@ -159,7 +167,7 @@ export async function redeemDS(
   const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
   const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
   //await usdc_contract.approve(lendingPooladdress, amount)
-  await ds_contract.approve(lendingPooladdress, amount)
+  await ds_contract.approve(lendingPooladdress, amount);
   const lendingpool_contract = LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(provider,account))
   const tx = await  lendingpool_contract.redeemDS(amount,0,0).catch((e) => {
     console.error(e);
@@ -198,7 +206,6 @@ export async function registerBorrower(
   const proposal_fee = await lendingPool.proposal_fee();
   let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
   await tx.wait();
-
   tx = await lendingPool.registerBorrower();
   return tx;
 }
@@ -209,14 +216,18 @@ export async function submitProposal(
   principal: string, // w/ decimal point
   totalDebt: string, // w/ decimal point
   duration: string, //in seconds, no fractions of seconds.
-  underlying_token: string, 
+  underlying_token: string,
 ): Promise<TransactionResponse> {
-  // convert strings to BN.
-  principal = new BN(principal).shiftedBy(6).toFixed(); // 6 is the price precision.
+  const token = await ERC20__factory.connect(underlying_token, getProviderOrSigner(provider, account));
+  const decimals = await token.decimals();
+  principal = new BN(principal).shiftedBy(decimals - PRICE_PRECISION).toFixed();
+  totalDebt = new BN(totalDebt).shiftedBy(decimals - PRICE_PRECISION).toFixed();
+
   const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
   let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
   return tx;
 }
+
 
 const getLendingPoolContract = (library: Web3Provider, address: string, account?: string): LendingPool => {
   return LendingPool__factory.connect(address, getProviderOrSigner(library, account));

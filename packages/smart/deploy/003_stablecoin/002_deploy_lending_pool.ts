@@ -10,24 +10,24 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 
 
-  if (!(await deployments.getOrNull("Collateral"))) {
-    await deployments.deploy("Collateral", {
-      contract: "Cash",
-      from: deployer,
-      args: ["USDC", "USDC", 6],
-      log: true,
-    });
-  }
+  // if (!(await deployments.getOrNull("Collateral"))) {
+  //   await deployments.deploy("Collateral", {
+  //     contract: "Cash",
+  //     from: deployer,
+  //     args: ["USDC", "USDC", 6],
+  //     log: true,
+  //   });
+  // }
   
   const ds = await deployments.get("DS");
   const dss = await deployments.get("DSS"); 
-  const collateral = await deployments.get("Collateral")
+  //const collateral = await deployments.get("Collateral")
 
 
   const args= [
       ds.address, 
       dss.address, 
-      collateral.address, 
+      "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",//collateral.address, 
       deployer, 
       owner, //TODO
   ];

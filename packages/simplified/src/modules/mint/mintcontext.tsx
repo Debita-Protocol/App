@@ -3,7 +3,7 @@
 import React, { useEffect,useState } from "react";
 import { DEFAULT_SIMPLIFIED_STATE, STUBBED_SIMPLIFIED_ACTIONS, SIMPLIFIED_STATE_KEYS } from "../stores/constants";
 import { useSimplified } from "../stores/simplified-hooks";
-import { useUserStore, Stores,ContractCalls } from "@augurproject/comps";
+import { useUserStore, Stores, ContractCalls } from "@augurproject/comps";
 
 
 const {mintDS} = ContractCalls;

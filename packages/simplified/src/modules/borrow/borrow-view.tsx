@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import BigNumber, { BigNumber as BN } from "bignumber.js";
+import { calculateTotalDebt } from "utils/interest";
 import {
     useUserStore,
     useAppStatusStore,
@@ -62,21 +63,21 @@ const LoanRequestForm = () => {
 
   const [ principal, setPrincipal ] = useState("0.0");
   const [ duration, setDuration ] = useState("0"); // days
-  const [ underlyingToken, setUnderlyingToken ] = useState("0x00");
-
-  const totalDebt = "1000"; // depends on how we implement interest rate model.
+  const [ underlyingToken, setUnderlyingToken ] = useState("");
+  const [ interestRate, setInterestRate ] = useState("0.0");
   
 
   const buttonProps: BaseThemeButtonProps = {
     text: "Submit Loan Request",
     action: () => {
-      if (principal === "" || duration === "" || underlyingToken === "") {
+      if (principal === "" || duration === "" || underlyingToken === "" || interestRate === "" || underlyingToken === "") {
         console.log("empty fields");
         return;
       }
       else {
+        const totalDebt = calculateTotalDebt(principal, interestRate, duration);
         submitProposal(loginAccount.library, account, principal, totalDebt, duration, underlyingToken).then((response) => {
-          console.log(response);
+        console.log(response);
         }).catch((err) => {
           console.log(err);
         })
@@ -117,6 +118,17 @@ const LoanRequestForm = () => {
           onChange={(e) => {
             if (/^\d*\.?\d*$/.test(e.target.value)) {
               setPrincipal(e.target.value);
+            }
+          }}
+        />
+        <label>Interest Rate (Annual): </label> <br />
+        <input 
+          type="text"
+          placeholder="0.0"
+          value={ interestRate }
+          onChange={(e) => {
+            if (/^\d*\.?\d*$/.test(e.target.value)) {
+              setInterestRate(e.target.value);
             }
           }}
         />
@@ -163,8 +175,14 @@ const BorrowView = () => {
     let loan_status;
     let borrow_status;
     if (isLogged) {
-      loan_status =  await checkLoanRegistration(loginAccount.library, account);
-      borrow_status = await checkBorrowStatus(loginAccount.library, account);
+      try {
+        loan_status =  await checkLoanRegistration(loginAccount.library, account);
+        borrow_status = await checkBorrowStatus(loginAccount.library, account);
+      }
+      catch (err) {
+        console.log("status error", err)
+        return;
+      }
     } else {
       borrow_status = false;
       loan_status = false;
@@ -179,7 +197,8 @@ const BorrowView = () => {
     action: async () => {
       setLoading(true);
       try {
-        await registerBorrower(loginAccount.library, account);
+        let tx = await registerBorrower(loginAccount.library, account);
+        tx.wait();
       } catch (err) {
         console.log(err);
       }
