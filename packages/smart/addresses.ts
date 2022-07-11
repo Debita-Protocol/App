@@ -203,8 +203,8 @@ export const addresses: AddressMapping = {
         //fetcher:0x108513d02D12E90b47D8f884213A02353897DFBb
           type:"Trusted",
           subtype:"V3",
-          address:"0x323D62F7FC2a1a078787dB5045ae14E0567b0476",
-         // address: "0x78a37719caDFBb038359c3A06164c46932EBD29A", 
+         // address:"0x323D62F7FC2a1a078787dB5045ae14E0567b0476",
+          address: "0x77FaA88896c0c1C66a546043bc11617d44D45695", 
          collateral: "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",
          ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
           hasRewards: true,
@@ -220,7 +220,7 @@ export const addresses: AddressMapping = {
           type:"CDS",
           subtype:"V1",
           address: "0xd2c8018E0315E164709AbBC7832321436555ed79", 
-         collateral: "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D",
+         collateral: "0xe3E34E7d6D406838e3d6D36eC8C2116BA3053938",
          ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
           hasRewards: true,
           fetcher: "0x450c6A1F99d991aA2df36F3dA61652cca07eA135",
@@ -245,3 +245,18 @@ export const addresses: AddressMapping = {
 // reusing "iDSLocker" at 0x238E4dbb46105bB84027f9fc261D9a482e411777
 // reusing "iDS" at 0xdD40E85c61AfBd5f2e0a2b3b55C433A41561f349
 // reusing "VoteTracker" at 0x388072EcAE4b3208181AF82e1Fa3c0166993085E
+
+
+
+// deploying "FeePot" (tx: 0xa9657db66939d9560b96a2109e42193255ffca418323d680aae15d803200e1cf)...: deployed at 0x3444DC0F16914C45488744C84b074F5c560e8274 with 1256178 gas
+// deploying "AMMFactory" (tx: 0xb12fe44d60a25e6bdfa1c410d9e64506851f6424cf75b842de6bba14500c2337)...: deployed at 0x183F734427950dBa3e2235314EB926Bb84dCff52 with 3332543 gas
+// deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
+// deploying "DS" (tx: 0xed101f9ace1e6b349b93b39936cec338f64150f2407ef99b8ffead0338066352)...: deployed at 0xe3E34E7d6D406838e3d6D36eC8C2116BA3053938 with 1565671 gas
+// deploying "DSS" (tx: 0x2029f4eb008869428c293068970c3b106efb209749270cc7e8468f985df003c4)...: deployed at 0xd2B269F5a37B70ce7ab098BaeeCCB7A0740B7f8B with 1565737 gas
+// deploying "LendingPool" (tx: 0xe76aade7a832e01f5b4a2ebeea16269726cadc113c409e267ff637a32c4cee3d)...: deployed at 0xcdb0976F4C07bE6124A6457BE79E0D15bdbFE98e with 1885857 gas
+// deploying "sDS" (tx: 0x3af350ca2d3a1128c346048c2acc81092dc6e1a12b773b50e9fd935153a2fb79)...: deployed at 0xD69Ac9183910CD8d2298eD4737ba81028Eb8b0B7 with 1284032 gas
+// deploying "StakingPool" (tx: 0xdb8f4cd48c69f9d5c6836a4d9ad77b0652c15ae1a9f2ec5a5cbd9d598dc7088b)...: deployed at 0x8CBbE7730149507a7631110DD071Fe9ac87Ca50E with 623767 gas
+// deploying "iDSLocker" (tx: 0x081e7c5816333903a2ab07a184b049058bae85ba19a04802b9a09f5c98ff5d45)...: deployed at 0xA764F06eadEAEce5AC8B124F0508B7e6d2e3a8f7 with 2822829 gas
+// deploying "iDS" (tx: 0x591f9735b275c26835a19b516cc48f367eb6f237b238764a37ba4a8c5ae6a911)...: deployed at 0xc6b8bf459bF3C53C0CaE08DD9DCB47780D248E43 with 495893 gas
+// deploying "VoteTracker" (tx: 0x69bbce113ad1d302b22840da9f33f7ce71a446645025720a16ea4eabec9bf1a6)...: deployed at 0x92bC25C5Be800C2ECb1e66281634D9FE30b29Ab9 with 732903 gas
+// deploying "TrustedMarketFactoryV3" (tx: 0xa2f674e240fa1f9f653428e69982d49f14e65bbba608871ab69d5ccf8a4564e8)...: deployed at 0x77FaA88896c0c1C66a546043bc11617d44D45695 with 3564782 gas

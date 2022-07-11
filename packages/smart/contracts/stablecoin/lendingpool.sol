@@ -113,7 +113,8 @@ contract LendingPool is Owned {
         collateral_address = _collateral_address; 
         collateral_token = ERC20(_collateral_address); 
         
-        missing_decimals = uint(18).sub(collateral_token.decimals());
+        //missing_decimals = uint(6).sub(collateral_token.decimals());
+        missing_decimals = uint(0);
         proposal_fee = 1e19;
         
     }

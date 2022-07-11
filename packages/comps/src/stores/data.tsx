@@ -154,7 +154,7 @@ const getCashesInfo = (): any[] => {
     {
       name: "DS",
       displayDecimals: 2,
-      decimals: 18,
+      decimals: 6,
       address: dsAddress,
       shareToken: "",
       usdPrice: "1",

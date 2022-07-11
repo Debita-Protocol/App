@@ -268,6 +268,7 @@ export function useApprovalStatus({
       if (address && spender && loginAccount && transactions) {
         // prevent this from calling if we don't have values for everything
         // effect is approvalCheck remains `UNKOWN` and will check again
+        console.log('addresssesds', address, spender)
         approvalCheck = await checkApprovalFunction(address, spender, loginAccount, transactions);
       }
 

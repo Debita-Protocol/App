@@ -101,6 +101,7 @@ import { getDefaultPrice } from "./get-default-price";
 import {approveERC20Contract} from "../stores/use-approval-callback";
 import {
   TrustedMarketFactoryV3ABI,
+  TrustedMarketFactoryV3Address,
   marketFactoryAddress,
   settlementAddress, 
   dsAddress, 
@@ -250,13 +251,14 @@ export async function createMarket_(provider: Web3Provider): Promise<boolean> {
 
 
   //const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
-  const marketFactoryAddress = "0x323D62F7FC2a1a078787dB5045ae14E0567b0476"
-  const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
-  const dsAddress = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D"
-  const signer = getProviderOrSigner(provider, settlementAddress)
+  const marketFactoryAddress_ = TrustedMarketFactoryV3Address
+  const settlementAddress_ = settlementAddress
+  const dsAddress_ = dsAddress
+  const signer = getProviderOrSigner(provider, settlementAddress_)
   console.log('signers', signer)
-  const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  console.log("marketfactories", marketFactories)
+  const marketFactoryData = getMarketFactoryData(marketFactoryAddress_);
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress_);
     console.log('new marketfactorycontract', marketFactoryContract)
 
   // await approveERC20Contract(dsAddress, "name", marketFactoryAddress, loginAccount, string  tokenAddress: string,
@@ -265,7 +267,7 @@ export async function createMarket_(provider: Web3Provider): Promise<boolean> {
   // loginAccount: LoginAccount,
   // amount: string = APPROVAL_AMOUNT)
 
-  const details = await marketFactoryContract.createMarket(settlementAddress, "testCDS",['longCDS', 'shortCDS'], 
+  const details = await marketFactoryContract.createMarket(settlementAddress_, "testCDS",['longCDS', 'shortCDS'], 
     [weight1, weight2] ).catch((e) => {
     console.error(e);
     throw e;
@@ -318,9 +320,7 @@ export async function createMarket(
   // cashAmount: string
 ): Promise<TransactionResponse> {
 
-  //console.log("hello", BigNumber);
-  console.log('Hello???')
- //var exp  = BigNumber.from("10").pow(18)
+
   const weight1 = new BN(2).shiftedBy(18).toString()
   const weight2 = new BN(48).shiftedBy(18).toString()
 
@@ -379,6 +379,37 @@ export async function mintCompleteSets_(
   return tx;
 }
 
+//called when default OR repayment finished, handles nondefault/default logic 
+export async function resolveMarket(
+  account: string,
+  provider: Web3Provider,
+
+  marketID: number = 1, 
+  isDefault: boolean = false
+  // amm: AmmExchange,
+  // cash: Cash,
+  // cashAmount: string
+): Promise<TransactionResponse> {
+
+  //ok, so this is not default. end market first 
+  const winningOutcome = isDefault ? 0 : 1
+  const marketFactoryData = getMarketFactoryData(TrustedMarketFactoryV3Address)
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);//only deployer can end market for now 
+  const tx = await marketFactoryContract.trustedResolveMarket(marketID, winningOutcome).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+
+
+  // return tx;
+ 
+  return tx; 
+}
+
+
+
 export const checkConvertLiquidityProperties = (
   account: string,
   marketId: string,
@@ -432,6 +463,7 @@ export async function estimateAddLiquidityPool(
 ): Promise<LiquidityBreakdown> {
   if (!provider) console.error("provider is null");
   const ammFactoryContract = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
+  console.log('cashamount', cashAmount)
   const { amount, marketFactoryAddress, turboId } = shapeAddLiquidityPool(amm, cash, cashAmount);
   const ammAddress = amm?.id;
 
@@ -580,6 +612,7 @@ function shapeAddLiquidityPool(
   cashAmount: string
 ): { amount: string; marketFactoryAddress: string; turboId: number } {
   const { marketFactoryAddress, turboId } = amm;
+  console.log('cashdecimals', cash.decimals)
   const amount = convertDisplayCashAmountToOnChainCashAmount(cashAmount, cash.decimals).toFixed();
   return {
     marketFactoryAddress,
@@ -950,13 +983,14 @@ export async function doTrade(
       "min",
       String(onChainMinShares)
     );
-    console.log('HELLO???')
     console.log('ammfactorycontract', ammFactoryContract)
     const poolweights = await ammFactoryContract.tokenRatios(marketFactoryAddress, 1)
     console.log('poolweights', poolweights)
 
-    // const response = await ammFactoryContract.buy(marketFactoryAddress, turboId, selectedOutcomeId, amount, onChainMinShares.toFixed());
-    // console.log('tradingrepsonse!!', response)
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  await ds_contract.approve(amm.ammFactoryAddress, amount)
+
     return ammFactoryContract.buy(marketFactoryAddress,turboId , selectedOutcomeId, amount, onChainMinShares.toFixed());
   }
 
@@ -1190,6 +1224,8 @@ export const getUserBalances = async (
 
   const supportRewards = rewardsSupported(ammFactoryAddresses);
   const rewardsUnsupportedExchanges = exchanges.filter((f) => !supportRewards.includes(f.ammFactoryAddress));
+    console.log("AMMMEXCHANGE", rewardsUnsupportedExchanges)
+
   const supportRewardsExchanges = exchanges.filter((f) => supportRewards.includes(f.ammFactoryAddress));
   const ammFactoryAbi =
     supportRewards.length > 0 ? extractABI(getAmmFactoryContract(provider, supportRewards[0], account)) : null;
@@ -1356,7 +1392,6 @@ export const getUserBalances = async (
     const rawBalance = new BN(balanceValue._hex).toFixed();
     const { dataKey, collection, decimals, marketId, outcomeId, totalSupply } = context;
     const balance = convertOnChainCashAmountToDisplayCashAmount(new BN(rawBalance), new BN(decimals));
-
     if (method === POOL_TOKEN_BALANCE) {
       if (rawBalance !== "0") {
         const lpBalance = lpTokensOnChainToDisplay(rawBalance);

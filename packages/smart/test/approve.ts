@@ -9,14 +9,28 @@ import { BigNumber } from "ethers";
 export async function main() {
   const ds = await ethers.getContract("DS")
   const dss = await ethers.getContract("DSS")
+
+    const collateral = await ethers.getContract("Collateral")
+
  //  const ammFactory = await ethers.getContract("AMMFactory")
  //  const marketFactory = await ethers.getContract("TrustedMarketFactoryV3")
  //  const collateral = await ethers.getContract("Collateral")
  //  console.log('collateral address', collateral.address)
+  const owners = await ethers.getSigners()
   const lendingpool = await ethers.getContract("LendingPool")
-  await dss.addPool(lendingpool.address)
+  // await dss.connect(owners[0]).addPool(lendingpool.address)
+  // console.log('???')
+  await ds.connect(owners[0]).addPool(lendingpool.address)
+  console.log('added pool')
 
- // const owners = await ethers.getSigners()
+
+ await collateral.connect(owners[0]).faucet(1000000000000)
+ console.log('faucet')
+await collateral.connect(owners[0]).approve(lendingpool.address, 1000000000000)
+console.log('owners approved')
+
+ await lendingpool.mintDS(1000000000000, 0)
+
  // console.log('owners', owners[0].address, owners[1].address)
  // console.log('marketfactoryaddress', marketFactory.address)
 

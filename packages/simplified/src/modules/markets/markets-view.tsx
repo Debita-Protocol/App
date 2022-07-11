@@ -23,7 +23,7 @@ import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_, mintDS} = ContractCalls;
+createMarket_, mintDS, resolveMarket} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -80,6 +80,18 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
   // console.log(isdone)
 };
 
+const confirmResolve = async ({
+  //addTransaction,
+  
+  account,
+  loginAccount,
+
+  afterSigningAction = () => {},
+}) => {
+  
+   await resolveMarket(account, loginAccount.library)
+};
+
 
 const confirmAction = async ({
   //addTransaction,
@@ -89,8 +101,7 @@ const confirmAction = async ({
 
   afterSigningAction = () => {},
 }) => {
-   // await endMarket(account, loginAccount.library)
-    //await createMarket(account, loginAccount.library)
+
 
    await createMarket_(loginAccount.library)
 };
@@ -105,6 +116,7 @@ const confirmAction = async ({
 
   
 }
+
 
 
 const applyFiltersAndSort = (
@@ -318,6 +330,8 @@ const MarketsView = () => {
 )}>CreateMarket</button>
            <button onClick={() => confirmMint( { account,    loginAccount}
 )}>MintDS</button>
+                      <button onClick={() => confirmResolve( { account,    loginAccount}
+)}>Relovemarket</button>
        {/* <SquareDropdown
           onChange={(value) => {
             updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });
