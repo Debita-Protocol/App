@@ -24,6 +24,7 @@ contract DS is ERC20Custom, AccessControl, Ownable {
         _;
     }
 
+    /* ========== CONSTRUCTOR ========== */
     constructor (
         address _creator_address,
         address _timelock_address
@@ -43,8 +44,6 @@ contract DS is ERC20Custom, AccessControl, Ownable {
         require(pools[pool_address] == false, "Address already exists");
         pools[pool_address] = true; 
         pools_array.push(pool_address);
-
-        //emit PoolAdded(pool_address);
     }
     
     // Used by pools when user redeems
