@@ -189,6 +189,7 @@ contract LendingPool is Owned {
         }
 
     }
+
     function setPoolParameters(uint256 new_ceiling, uint256 new_bonus_rate, uint256 new_redemption_delay, uint256 new_mint_fee, uint256 new_redeem_fee, uint256 new_buyback_fee, uint256 new_recollat_fee) external onlyByOwnGov {
         pool_ceiling = new_ceiling;
         bonus_rate = new_bonus_rate;
@@ -292,10 +293,6 @@ contract LendingPool is Owned {
     function getBorrowerData(address borrower_address) public view returns (LoanMetadata memory)  {
         return borrower_data[borrower_address]; 
 
-    }
-
-    function _isBorrower(address borrower_address) public view returns(bool){ // solidity automatically creates getter.
-        return isBorrower[borrower_address]; 
     }
 
     function get_loan_data() public view returns(LoanData memory){
