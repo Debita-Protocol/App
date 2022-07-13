@@ -10,9 +10,11 @@ import "../Common/SafeMath.sol";
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
+import "./ILendingPool.sol";
+import "./IManager.sol";
 
 //borrowers borrow and repay from this lendingpool 
-contract LendingPool is Owned {
+contract LendingPool is ILendingPool, Owned {
 
     struct LoanMetadata {
         ERC20 underlyingToken;
@@ -71,8 +73,16 @@ contract LendingPool is Owned {
     uint256 immutable public proposal_fee;
     uint256 accrued_interest;
 
+    //Manager
+    mapping(address=>bool) public isManager; 
+
     modifier onlyByOwnGov() {
         require(msg.sender == timelock_address || msg.sender == owner, "Not owner or timelock");
+        _;
+    }
+
+    modifier onlyManager(){
+        require(isManager[msg.sender], "Is Not Manager"); 
         _;
     }
 
@@ -119,7 +129,8 @@ contract LendingPool is Owned {
         
     }
 
-    function mintDS(uint256 collateral_amount, uint256 DS_out_min) external  {
+    //Currently ds decimals is 6, same as USDC, so collateral amount should also be decimal 6
+    function mintDS(uint256 collateral_amount, uint256 DS_out_min) external override {
         uint256 collateral_amount_d18 = collateral_amount * (10 ** missing_decimals);
       
         uint256 DS_amount_18 = collateral_amount_d18; //1to1
@@ -132,7 +143,7 @@ contract LendingPool is Owned {
     }
 
 
-    function redeemDS(uint256 DS_amount, uint256 DSS_out_min, uint256 COLLATERAL_out_min) external {
+    function redeemDS(uint256 DS_amount, uint256 DSS_out_min, uint256 COLLATERAL_out_min) external override {
         uint256 dss_price = DScontract.dss_price();
         uint256 collateral_ratio = DScontract.get_collateral_ratio(); 
         uint256 DS_amount_18 = DS_amount.mul(10**missing_decimals);
@@ -159,7 +170,7 @@ contract LendingPool is Owned {
 
     }
 
-    function collectRedemption(uint256 col_idx) external returns (uint256 dss_amount, uint256 collateral_amount) {
+    function collectRedemption(uint256 col_idx) external override returns (uint256 dss_amount, uint256 collateral_amount) {
         // require(redeemPaused[col_idx] == false, "Redeeming is paused");
         // require((lastRedeemed[msg.sender].add(redemption_delay)) <= block.number, "Too soon");
         bool sendDSS = false; 
@@ -189,7 +200,7 @@ contract LendingPool is Owned {
         }
 
     }
-    function setPoolParameters(uint256 new_ceiling, uint256 new_bonus_rate, uint256 new_redemption_delay, uint256 new_mint_fee, uint256 new_redeem_fee, uint256 new_buyback_fee, uint256 new_recollat_fee) external onlyByOwnGov {
+    function setPoolParameters(uint256 new_ceiling, uint256 new_bonus_rate, uint256 new_redemption_delay, uint256 new_mint_fee, uint256 new_redeem_fee, uint256 new_buyback_fee, uint256 new_recollat_fee) external override onlyByOwnGov {
         pool_ceiling = new_ceiling;
         bonus_rate = new_bonus_rate;
         redemption_delay = new_redemption_delay;
@@ -200,6 +211,28 @@ contract LendingPool is Owned {
 
         //emit PoolParametersSet(new_ceiling, new_bonus_rate, new_redemption_delay, new_mint_fee, new_redeem_fee, new_buyback_fee, new_recollat_fee);
     }
+
+    //Manager Functions
+
+    function addManager(address manager) external override onlyByOwnGov{
+        isManager[manager] = true; 
+    }
+
+    function managerMintDS(uint256 amount) external override onlyManager {
+        DScontract.pool_mint(msg.sender, amount);
+
+    }
+    function managerBurnDS(uint256 amount) external override onlyManager {
+        DScontract.pool_burn(msg.sender, amount);
+
+    }
+
+    //TODO external for now, but needs to be internal+called when borrower proposes
+    function addValidator(address validator, address manager) external {
+        IManager(manager).addValidator(validator);
+        
+    }
+
 
 
 
