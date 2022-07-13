@@ -23,13 +23,13 @@ export async function main() {
   // await dss.addPool(lendingpool.address)
 
   // await collateral.connect(owners[0]).approve(collateral.address, 100000000000)
-  await collateral.connect(owners[0]).approve(lendingpool.address, 100000000000)
-  await ds.connect(owners[0]).approve(lendingpool.address, 100000000000)
+  // await collateral.connect(owners[0]).approve(lendingpool.address, 100000000000)
+  // await ds.connect(owners[0]).approve(lendingpool.address, 100000000000)
   // await lendingpool.mintDS(10000000000 ,1)
   // await lendingpool.mintDS(10000000000 ,1)
 
-  await lendingpool.connect(owners[0]).redeemDS(10000000000, 1, 1)
- await lendingpool.connect(owners[0]).collectRedemption(0)
+ //  await lendingpool.connect(owners[0]).redeemDS(10000000000, 1, 1)
+ // await lendingpool.connect(owners[0]).collectRedemption(0)
 
 
 }
