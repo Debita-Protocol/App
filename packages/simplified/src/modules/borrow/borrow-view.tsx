@@ -192,19 +192,6 @@ const BorrowView = () => {
     setIsBorrower(borrow_status);
   });
 
-  const FeeButtonProps: BaseThemeButtonProps = {
-    text: "Pay One-Time Loan Establishment Fee",
-    action: async () => {
-      setLoading(true);
-      try {
-        let tx = await registerBorrower(loginAccount.library, account);
-        tx.wait();
-      } catch (err) {
-        console.log(err);
-      }
-    }
-  };
-
   if (!isLogged) {
     return (
       <>
@@ -226,12 +213,6 @@ const BorrowView = () => {
           Borrow Status: { isBorrower ? "Current Borrower" : "None" }
         </div>
         <section>
-          <div className={Styles.RegisterButton}>
-          {!paidFee &&
-            <SecondaryThemeButton {...FeeButtonProps}>
-            </SecondaryThemeButton>
-          }
-          </div>
         </section>
         {/* {paidFee && <LoanRequestForm/> } */}
         <LoanRequestForm />

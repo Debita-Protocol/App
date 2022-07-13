@@ -97,8 +97,6 @@ contract LendingPool is Owned {
         address _creator_address,
         address _timelock_address,
         address _cds_factory
-       // uint256 _pool_ceiling
-        
     ) public Owned(_creator_address){
         require(
             (_ds_address != address(0))
@@ -108,14 +106,14 @@ contract LendingPool is Owned {
             && (_timelock_address != address(0))
             && (_cds_factory != address(0))
         , "Zero address detected"); 
+
         DScontract = DS(_ds_address);
         DSScontract = DSS(_dss_address); 
         ds_address = _ds_address; 
         dss_address = _dss_address; 
         collateral_address = _collateral_address; 
         creator_address = _creator_address; 
-        timelock_address = _timelock_address; 
-        collateral_address = _collateral_address; 
+        timelock_address = _timelock_address;
         cds_factory = CDSMarketFactory(_cds_factory);
         //missing_decimals = uint(6).sub(collateral_token.decimals());
         missing_decimals = uint(0);
@@ -186,7 +184,6 @@ contract LendingPool is Owned {
 
         if (sendCollateral){
             TransferHelper.safeTransfer(collateral_address, msg.sender, collateral_amount);
-
         }
 
     }
@@ -217,7 +214,7 @@ contract LendingPool is Owned {
             require(current_loan_data[msg.sender][i].id != id, "Loan ID must be unique");
         }
         num_proposals[msg.sender]++;
-        borrower_data[msg.sender].push(LoanMetaData({
+        current_loan_data[msg.sender].push(LoanMetaData({
             id: _id,
             principal: _principal,
             totalDebt: _totalDebt,
@@ -235,7 +232,7 @@ contract LendingPool is Owned {
     }
 
     function removeProposal(address recipient, uint8 id) onlyByOwnGov external returns (bool) {
-        for (uint i=0; i < num_proposals[recipient]; i++) {
+        for (uint i = 0; i < num_proposals[recipient]; i++) {
             if (id == current_loan_data[recipient][i].id){
                 emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
                 _removeLoan(recipient, i);
@@ -257,13 +254,11 @@ contract LendingPool is Owned {
 
     function approveLoan(address recipient, uint256 id) onlyByOwnGov internal returns (bool) {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
-        num_loans++;
-        for (uint i=0; i<current_loan_data[recipient].length; i++) {
+        for (uint i = 0; i < current_loan_data[recipient].length; i++) {
             if (id == current_loan_data[recipient][i].id) {
-                require(current_loan_data[recipient][i].approved!, "loan already approved");
+                require(!current_loan_data[recipient][i].approved, "loan already approved");
                 
                 emit LoanApproval(recipient, current_loan_data[recipient][i]);
-                
                 current_loan_data[recipient][i].approved = true;
                 current_loan_data[recipient][i].repaymentDate = block.timestamp + current_loan_data[recipient][i].duration;
                 
@@ -285,8 +280,7 @@ contract LendingPool is Owned {
 
     function borrow(uint256 amount) external onlyBorrower {
         require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
-        require(borrower_debt[msg.sender] <= current_loan_data[msg.sender].principal, "Already Borrowed"); 
-
+        require(amount > 0, "amount must be greater than 0");
         borrower_allowance[msg.sender] = borrower_allowance[msg.sender].sub(amount);
         TransferHelper.safeTransfer(collateral_address, msg.sender, amount);
         borrower_debt[msg.sender] = borrower_debt[msg.sender].add(amount);
@@ -359,7 +353,6 @@ contract LendingPool is Owned {
                 }
         }
     }
-
 
     function get_loan_data() public view returns(LoanData memory){
         LoanData memory loandata = LoanData({
