@@ -380,6 +380,22 @@ contract LendingPool is ILendingPool, Owned {
 
     }
 
+    function checkDefault(address recipient, uint256 index) private {
+        if (current_loan_data[recipient][index].repaymentDate < block.timestamp) {
+            emit Default(recipient, current_loan_data[recipient]);
+            num_loans[recipient]--;
+            // default logic handler => resolve cds market
+        }
+    }
+
+    // restricitons on access?
+    function addressCheckDefault(address reciepient) onlyByOwnGov public {
+        for (uint i = 0; i < current_loan_data[recipient].length; i++) {
+            if (current_loan_data[j].repaymentDate < block.timestamp) {
+                    checkDefault(borrower, j);
+                }
+        }
+    }
 
     function get_loan_data() public view returns(LoanData memory){
         LoanData memory loandata = LoanData({
