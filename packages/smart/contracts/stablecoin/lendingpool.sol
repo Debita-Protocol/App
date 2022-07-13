@@ -341,7 +341,7 @@ contract LendingPool is Owned {
         if (current_loan_data[recipient][index].repaymentDate < block.timestamp) {
             emit Default(recipient, current_loan_data[recipient]);
             num_loans[recipient]--;
-            // default logic handler
+            // default logic handler => resolve cds market
         }
     }
 
