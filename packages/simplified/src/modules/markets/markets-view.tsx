@@ -23,7 +23,7 @@ import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_, mintDS, resolveMarket} = ContractCalls;
+createMarket_, mintDS, resolveMarket, validator_initiate_market} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -79,6 +79,15 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
  await mintDS(settlementAddress, loginAccount.library)
   // console.log(isdone)
 };
+
+const confirmInitiate = async({
+  account, 
+  loginAccount, 
+})=> {
+  await validator_initiate_market(loginAccount.library, account, 
+    "100000",
+    )
+}
 
 const confirmResolve = async ({
   //addTransaction,
@@ -255,6 +264,7 @@ const MarketsView = () => {
     itemCount: filteredMarkets.length,
   });
   const marketKeys = Object.keys(markets);
+  const {amm} = markets;
 
 
   useScrollToTopOnMount(page);
@@ -284,7 +294,6 @@ const MarketsView = () => {
   }, [marketKeys.length]);
 
   let changedFilters = 0;
-
   Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
     if (marketsViewSettings[setting] !== DEFAULT_MARKET_VIEW_SETTINGS[setting]) changedFilters++;
   });
@@ -332,6 +341,10 @@ const MarketsView = () => {
 )}>MintDS</button>
                       <button onClick={() => confirmResolve( { account,    loginAccount}
 )}>Relovemarket</button>
+                      <button onClick={() => confirmInitiate( { account,loginAccount}
+)}>InitiateMarket</button>
+
+
        {/* <SquareDropdown
           onChange={(value) => {
             updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });

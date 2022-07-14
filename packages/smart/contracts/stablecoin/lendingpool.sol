@@ -215,6 +215,7 @@ contract LendingPool is ILendingPool, Owned {
     //Manager Functions
 
     function addManager(address manager) external override onlyByOwnGov{
+        require(!isManager[manager], "Manager already added");
         isManager[manager] = true; 
     }
 
@@ -230,7 +231,7 @@ contract LendingPool is ILendingPool, Owned {
     //TODO external for now, but needs to be internal+called when borrower proposes
     function addValidator(address validator, address manager) external {
         IManager(manager).addValidator(validator);
-        
+
     }
 
 

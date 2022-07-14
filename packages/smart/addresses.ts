@@ -204,8 +204,8 @@ export const addresses: AddressMapping = {
           type:"Trusted",
           subtype:"V3",
          // address:"0x323D62F7FC2a1a078787dB5045ae14E0567b0476",
-          address: "0x77FaA88896c0c1C66a546043bc11617d44D45695", 
-         collateral: "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",
+          address: "0x52637EB4D0a4DE706fd28BE324b2393a00336813", 
+         collateral: "0x970C0f56f0755B2CC3DEeBA00e9e8aE5138d9fBC",
          ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
           hasRewards: true,
           fetcher: "0x450c6A1F99d991aA2df36F3dA61652cca07eA135",
@@ -260,3 +260,16 @@ export const addresses: AddressMapping = {
 // deploying "iDS" (tx: 0x591f9735b275c26835a19b516cc48f367eb6f237b238764a37ba4a8c5ae6a911)...: deployed at 0xc6b8bf459bF3C53C0CaE08DD9DCB47780D248E43 with 495893 gas
 // deploying "VoteTracker" (tx: 0x69bbce113ad1d302b22840da9f33f7ce71a446645025720a16ea4eabec9bf1a6)...: deployed at 0x92bC25C5Be800C2ECb1e66281634D9FE30b29Ab9 with 732903 gas
 // deploying "TrustedMarketFactoryV3" (tx: 0xa2f674e240fa1f9f653428e69982d49f14e65bbba608871ab69d5ccf8a4564e8)...: deployed at 0x77FaA88896c0c1C66a546043bc11617d44D45695 with 3564782 gas
+
+
+// deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
+// deploying "DS" (tx: 0xc57d94c407e68e799c8de76a57d4bb456e1fc1fe8f8cdc3d467d669e1a818d8f)...: deployed at 0x970C0f56f0755B2CC3DEeBA00e9e8aE5138d9fBC with 1565671 gas
+// reusing "DSS" at 0xd2B269F5a37B70ce7ab098BaeeCCB7A0740B7f8B
+// deploying "LendingPool" (tx: 0x07946ac7dba6c5ea76652b7c008b39de113b51f05724bb5726598e919373849b)...: deployed at 0x8447f8865d84c3DaFa0948645872d7522a7e9Ad7 with 2028989 gas
+// deploying "sDS" (tx: 0x48e5adbfa94216140498813cabf13a8f540f9d3570bb35a7deb83a9db97482a3)...: deployed at 0x1C168DF0F7b307B4E63E2f9796ac675eFcDDa51c with 1284032 gas
+// deploying "StakingPool" (tx: 0xa71bf8934d624bfec8f2766d431081056bce90102dd23e7cdebbd02c1ece37aa)...: deployed at 0x9b59B6ef69ab161BCA3F578E1E97A04dc7cc5F9c with 623767 gas
+// reusing "iDSLocker" at 0xA764F06eadEAEce5AC8B124F0508B7e6d2e3a8f7
+// reusing "iDS" at 0xc6b8bf459bF3C53C0CaE08DD9DCB47780D248E43
+// reusing "VoteTracker" at 0x92bC25C5Be800C2ECb1e66281634D9FE30b29Ab9
+// deploying "TrustedMarketFactoryV3" (tx: 0xe0d2e1c093a92d15afe77c83ac524b242e8e828d1be87cf583c2bcb4c1690e99)...: deployed at 0x52637EB4D0a4DE706fd28BE324b2393a00336813 with 3554886 gas
+// deploying "Manager" (tx: 0x18c3639d390aa22d90d1fa2124a4e5f59a2ba0442463f358f836f358a2ec76bf)...: deployed at 0x104b93Fb6d9bC579d9Ab6d661412B80BEBD45AF4 with 968541 gas

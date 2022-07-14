@@ -94,7 +94,8 @@ import {
   DS__factory,
   LendingPool__factory,
   LendingPool,
-  ERC20__factory
+  ERC20__factory,
+  Manager__factory
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -107,6 +108,8 @@ import {
   dsAddress, 
   lendingPooladdress, 
   usdc,
+  manager_address,
+  ammFactoryAddress,
   PRICE_PRECISION
 } from "../data/constants";
 
@@ -179,6 +182,67 @@ export async function redeemDS(
     throw e;
   });
 }
+
+
+
+export async function validator_initiate_market(
+  provider: Web3Provider, 
+  validator_account: string ,
+  liquidityAmount: string, 
+
+  //Binary for now
+  _weight1: string = "2", //determines initial price, which is determined by borrower proposed interest
+  _weight2: string = "48", 
+  _token1:string = "lCDS", 
+  _token2:string = "sCDS", 
+  name: string = "test", 
+
+
+
+  ) {
+  const weight1 = new BN(_weight1).shiftedBy(18).toString()
+  const weight2 = new BN(_weight2).shiftedBy(18).toString()
+
+
+  const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
+  console.log('weights, liquidity', weight1, weight2, liquidity)
+  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+  const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+
+
+}
+
+
+export async function validator_resolve_market(
+  provider: Web3Provider, 
+  validator_account: string ,
+  amm: AmmExchange,
+  liquidityAmount: string, 
+  isDefault: boolean, 
+
+
+
+  ) {
+
+  const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
+  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+  const tx = await manager_contract.initiateMarket(amm.ammFactoryAddress,TrustedMarketFactoryV3Address,
+  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+  
+
+}
+
+
+
 
 export async function checkLoanRegistration (
   provider: Web3Provider,

@@ -14,6 +14,13 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
     }
     MarketDetails[] internal marketDetails;
 
+    modifier onlyOwnerManager() {
+        require(msg.sender == owner || managers[msg.sender] , "Only Validators can call this function");
+        _;
+    }
+
+    mapping(address=>bool) managers; 
+
     constructor(
         address _owner,
         IERC20Full _collateral,
@@ -23,17 +30,19 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
         address _protocol
     ) AbstractMarketFactoryV3(_owner, _collateral, _shareFactor, _feePot, _fees, _protocol) Versioned("v1.1.0") {}
 
+    //TODO add managers 
     function createMarket(
         address _creator,
         string calldata _description,
         string[] calldata _names,
         uint256[] calldata _odds
-    ) public onlyOwner returns (uint256) {
+    ) public  returns (uint256) {
         marketDetails.push(MarketDetails(_description));
         return startMarket(_creator, _names, _odds, true);
     }
 
-    function trustedResolveMarket(uint256 _id, uint256 _winningOutcome) public onlyOwner {
+    //TODO add managers 
+    function trustedResolveMarket(uint256 _id, uint256 _winningOutcome) public {
         endMarket(_id, _winningOutcome);
     }
 
