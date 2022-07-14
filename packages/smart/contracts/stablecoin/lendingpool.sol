@@ -102,9 +102,12 @@ contract LendingPool is ILendingPool, Owned {
         address _dss_address,
         address _collateral_address,
         address _creator_address,
+
+        address _timelock_address,
+        address _cds_factory
+
         address _timelock_address
        // uint256 _pool_ceiling
-        
     ) public Owned(_creator_address){
         require(
             (_ds_address != address(0))
@@ -113,16 +116,16 @@ contract LendingPool is ILendingPool, Owned {
             && (_creator_address != address(0))
             && (_timelock_address != address(0))
         , "Zero address detected"); 
+
         DScontract = DS(_ds_address);
         DSScontract = DSS(_dss_address); 
         ds_address = _ds_address; 
         dss_address = _dss_address; 
         collateral_address = _collateral_address; 
         creator_address = _creator_address; 
-        timelock_address = _timelock_address; 
-        collateral_address = _collateral_address; 
-        collateral_token = ERC20(_collateral_address); 
-        
+
+        timelock_address = _timelock_address;
+        cds_factory = CDSMarketFactory(_cds_factory);
         //missing_decimals = uint(6).sub(collateral_token.decimals());
         missing_decimals = uint(0);
         proposal_fee = 1e19;
@@ -196,7 +199,6 @@ contract LendingPool is ILendingPool, Owned {
 
         if (sendCollateral){
             TransferHelper.safeTransfer(collateral_address, msg.sender, collateral_amount);
-
         }
 
     }
@@ -231,7 +233,27 @@ contract LendingPool is ILendingPool, Owned {
     //TODO external for now, but needs to be internal+called when borrower proposes
     function addValidator(address validator, address manager) external {
         IManager(manager).addValidator(validator);
+// <<<<<<< HEAD
 
+// =======
+        
+
+//         for (uint i=0; i < num_proposals[msg.sender]; i++) {
+//             require(current_loan_data[msg.sender][i].id != id, "Loan ID must be unique");
+//         }
+//         num_proposals[msg.sender]++;
+//         current_loan_data[msg.sender].push(LoanMetaData({
+//             id: _id,
+//             principal: _principal,
+//             totalDebt: _totalDebt,
+//             amountRepaid: 0,
+//             duration: _duration,
+//             repaymentDate: 0,
+//             approved: false
+//         }));
+//         // create CDS Market here???
+//         emit LoanProposal(msg.sender, _id);
+// >>>>>>> 7fe893fc3073c38c9e1521ce7ea86dc7a4a5e723
     }
 
 
@@ -257,9 +279,23 @@ contract LendingPool is ILendingPool, Owned {
         );
     }
 
+
+    function removeProposal(address recipient, uint8 id) onlyByOwnGov external returns (bool) {
+        for (uint i = 0; i < num_proposals[recipient]; i++) {
+            if (id == current_loan_data[recipient][i].id){
+                emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
+                _removeLoan(recipient, i);
+                num_proposals[recipient]--;
+                // delete CDS Market here???
+                return true;
+            }
+        }
+        return false;
+
     function approveBorrower(address _recipient) public onlyByOwnGov onlyRegistered(_recipient) {
         require(!isBorrower[_recipient], "Already Approved Borrower"); 
         isBorrower[_recipient] = true;
+
     }
 
     function registerBorrower() external {
@@ -288,16 +324,37 @@ contract LendingPool is ILendingPool, Owned {
         );
     }
 
-    function getRegistrationStatus(address addr) external view returns (bool) {
-        return isRegistered[addr];
-    }
+
+    function approveLoan(address recipient, uint256 id) onlyByOwnGov internal returns (bool) {
+        require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
+        for (uint i = 0; i < current_loan_data[recipient].length; i++) {
+            if (id == current_loan_data[recipient][i].id) {
+                require(!current_loan_data[recipient][i].approved, "loan already approved");
+                
+                emit LoanApproval(recipient, current_loan_data[recipient][i]);
+                current_loan_data[recipient][i].approved = true;
+                current_loan_data[recipient][i].repaymentDate = block.timestamp + current_loan_data[recipient][i].duration;
+                
+                if (!is_borrower[recipient]) {
+                    is_borrower[recipient] = true;
+                    borrowers_array.push(recipient);
+                }
+                
+                num_loans[recipient]++;
+                num_proposals[recipient]--;
+                borrower_allowance[recipient] += current_loan_data[recipient].principal;
+                borrower_debt[recipient] += current_loan_data[recipient].principal;
+                // do something w/ cds market here?
+                return true;
+            }
+        }
+        return false;
 
 
     function borrow(uint256 amount) external onlyBorrower onlyRegistered(msg.sender) {
         require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
-        require(borrower_debt[msg.sender] <= borrower_data[msg.sender].principal, "Already Borrowed"); 
-
-        borrower_allowance[msg.sender] = borrower_allowance[msg.sender].sub(amount); 
+        require(amount > 0, "amount must be greater than 0");
+        borrower_allowance[msg.sender] = borrower_allowance[msg.sender].sub(amount);
         TransferHelper.safeTransfer(collateral_address, msg.sender, amount);
         borrower_debt[msg.sender] = borrower_debt[msg.sender].add(amount); 
         total_borrowed_amount = total_borrowed_amount.add(amount); 
@@ -328,8 +385,21 @@ contract LendingPool is ILendingPool, Owned {
 
     }
 
-    function _isBorrower(address borrower_address) public view returns(bool){ // solidity automatically creates getter.
-        return isBorrower[borrower_address]; 
+    function checkDefault(address recipient, uint256 index) private {
+        if (current_loan_data[recipient][index].repaymentDate < block.timestamp) {
+            emit Default(recipient, current_loan_data[recipient]);
+            num_loans[recipient]--;
+            // default logic handler => resolve cds market
+        }
+    }
+
+    // restricitons on access?
+    function addressCheckDefault(address reciepient) onlyByOwnGov public {
+        for (uint i = 0; i < current_loan_data[recipient].length; i++) {
+            if (current_loan_data[j].repaymentDate < block.timestamp) {
+                    checkDefault(borrower, j);
+                }
+        }
     }
 
     function get_loan_data() public view returns(LoanData memory){
