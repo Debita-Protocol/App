@@ -2,10 +2,10 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 import "../rewards/MasterChef.sol";
 import "./ILendingPool.sol";
-import "./IManager.sol";
-//Manager contract responsible for providing initial liquidity to the
+import "./IController.sol";
+//Controller contract responsible for providing initial liquidity to the
 //borrower cds market, collect winnings when default, and burn the corresponding DS
-contract Manager is IManager {
+contract Controller is IController {
     using SafeMath for uint256;
 
     struct LiquidityInfo {
@@ -83,7 +83,7 @@ contract Manager is IManager {
     }
 
     //provide initial liquidity when market is created
-    //allow lendingpool to mint DS to manager address, 
+    //allow lendingpool to mint DS to controller address, 
     //liquidityAmountUSD determines how much IL loss Debita is willing to take,
     //which depends on interest rate proposed + principal value of borrowers 
     //It will be computed offchain for now
@@ -102,7 +102,7 @@ contract Manager is IManager {
         lpinfo[marketFactoryAddress][marketID] = info; 
 
         //Minting DS
-        lendingpool.managerMintDS(liquidityAmountUSD); 
+        lendingpool.controllerMintDS(liquidityAmountUSD); 
         AbstractMarketFactoryV3(marketFactoryAddress).collateral().approve(address(masterchef), liquidityAmountUSD);
 
         //Adding minted DS as liquidity to the created market 
@@ -143,7 +143,7 @@ contract Manager is IManager {
         //Whether initial supplied DS is greater or less than payout, they need to be all burned
         //if greater, IL loss is transferred to shortCDS buyers, 
         //if less, then short cds buyer's collateral is used as payout
-        lendingpool.managerBurnDS(_collateralOut); 
+        lendingpool.controllerBurnDS(_collateralOut); 
 
     	// if (isDefault){
     	// 	return handleDefault(marketFactoryAddress, marketID, _collateralOut);
@@ -166,7 +166,7 @@ contract Manager is IManager {
     //     uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].liquidityAmountUSD; 
     //     require(payout > initialSuppliedDS, "Payout not sufficient"); 
 
-    //     lendingpool.managerBurnDS(payout); 
+    //     lendingpool.controllerBurnDS(payout); 
 
 
 

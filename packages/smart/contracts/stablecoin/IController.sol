@@ -2,9 +2,9 @@ pragma solidity ^0.7.6;
 pragma abicoder v2;
 
 
-//Manager contract responsible for providing initial liquidity to the
+//controller contract responsible for providing initial liquidity to the
 //borrower cds market, collect winnings when default, and burn the corresponding DS
-interface IManager  {
+interface IController  {
     
     function addPool(address pool_address) external;
 
