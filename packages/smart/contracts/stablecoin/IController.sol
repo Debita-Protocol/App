@@ -11,8 +11,9 @@ interface IController  {
     function addValidator(address validator_address) external;
 
     function initiateMarket(address ammFactoryAddress,
-             address marketFactoryAddress, uint256 marketID,
-               uint256 liquidityAmountUSD ) external ;
+             address marketFactoryAddress, uint256 liquidityAmountUSD,
+             string calldata description, string[] calldata names, 
+             uint256[] calldata odds  ) external ;
 
 
     function resolveMarket(address ammFactoryAddress, 

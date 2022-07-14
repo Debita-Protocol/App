@@ -56,8 +56,8 @@ contract Controller is IController {
         creator_address = _creator_address;
         MasterChef_address=_MasterChef_address;
 
-        MasterChef masterchef = MasterChef(_MasterChef_address);
-        ILendingPool lendingpool = ILendingPool(_LendingPool_address); 
+        masterchef = MasterChef(_MasterChef_address);
+        lendingpool = ILendingPool(_LendingPool_address); 
         // IERC20Full DScontract = DS(_DS_address);
 
     } 
@@ -88,26 +88,31 @@ contract Controller is IController {
     //which depends on interest rate proposed + principal value of borrowers 
     //It will be computed offchain for now
     function initiateMarket(address ammFactoryAddress,
-             address marketFactoryAddress, uint256 marketID,
-               uint256 liquidityAmountUSD ) external override onlyValidator {
+             address marketFactoryAddress, uint256 liquidityAmountUSD,
+             string calldata description, string[] calldata names, 
+             uint256[] calldata odds ) external override onlyValidator {
 
         AMMFactory amm = AMMFactory(ammFactoryAddress);
-        AbstractMarketFactoryV3 marketFactory = AbstractMarketFactoryV3(marketFactoryAddress);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
 
+        //TODO change create market modifier to including validators 
+        uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
+
+        //Minting DS
+        lendingpool.managerMintDS(liquidityAmountUSD); 
+        marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
+
+        //Creating pool and adding minted DS as liquidity to the created market 
+        masterchef.createPool(amm, marketFactory, marketID, liquidityAmountUSD, address(this));
+        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID,
+        address(this) );
+       
         LiquidityInfo memory info = LiquidityInfo({
-            lptokenamount: 100, 
+            lptokenamount: pooltokenamount, 
             suppliedDS: liquidityAmountUSD
             }); 
 
         lpinfo[marketFactoryAddress][marketID] = info; 
-
-        //Minting DS
-        lendingpool.controllerMintDS(liquidityAmountUSD); 
-        AbstractMarketFactoryV3(marketFactoryAddress).collateral().approve(address(masterchef), liquidityAmountUSD);
-
-        //Adding minted DS as liquidity to the created market 
-        masterchef.addLiquidity(amm, marketFactory, marketID, 
-            liquidityAmountUSD, 0, address(this));
 
 
     }
@@ -124,10 +129,12 @@ contract Controller is IController {
         uint256[] memory _balances; 
     	
     	AMMFactory amm = AMMFactory(ammFactoryAddress);
-    	AbstractMarketFactoryV3 marketFactory = AbstractMarketFactoryV3(marketFactoryAddress);
+    	TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
     	uint256 lptokensIn = lpinfo[marketFactoryAddress][marketID].lptokenamount; 
 
-        require(marketFactory.isMarketResolved(marketID), "Market is not resolved"); 
+        uint256 winning_outcome = isDefault? 0: 1; 
+        marketFactory.trustedResolveMarket( marketID, winning_outcome); 
+        //require(marketFactory.isMarketResolved(marketID), "Market is not resolved"); 
 
     	(_collateralOut, _balances) = masterchef.removeLiquidity(amm, 
     								marketFactory,
@@ -145,13 +152,10 @@ contract Controller is IController {
         //if less, then short cds buyer's collateral is used as payout
         lendingpool.controllerBurnDS(_collateralOut); 
 
-    	// if (isDefault){
-    	// 	return handleDefault(marketFactoryAddress, marketID, _collateralOut);
-    	// }
 
-    	// else {
-    	// 	return handleNoDefault(markee);
-    	// }
+        console.log(initialSuppliedDS, _collateralOut); 
+
+
 
     }
 
