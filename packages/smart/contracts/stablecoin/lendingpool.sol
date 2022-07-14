@@ -260,8 +260,7 @@ contract LendingPool is ILendingPool, Owned {
             repaymentDate: 0,
             approved: false
         }));
-        // create CDS Market here???
-        emit LoanProposal(msg.sender, _id);
+        emit LoanProposal(msg.sender, _id); // validator monitoring event
     }
 
     function removeProposal(string calldata id) onlyRegistered external override returns (bool) {
@@ -302,7 +301,7 @@ contract LendingPool is ILendingPool, Owned {
         revert("loan not found");
     }
 
-    // who is callling this function?
+    // called by controller
     function approveLoan(address recipient, string calldata id) public override returns (bool) {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
         bytes32 hashed_id = keccak256(abi.encodePacked(id));
@@ -323,7 +322,6 @@ contract LendingPool is ILendingPool, Owned {
                 num_proposals[recipient]--;
                 borrower_allowance[recipient] += loan.principal;
                 borrower_debt[recipient] += loan.principal;
-                // do something w/ cds market here?
                 return true;
             }
         }
@@ -399,7 +397,7 @@ contract LendingPool is ILendingPool, Owned {
         if (current_loan_data[recipient][index].repaymentDate < block.timestamp) {
             emit Default(recipient, current_loan_data[recipient][index]);
             num_loans[recipient]--;
-            // default logic handler => resolve cds market
+            // default logic handler => resolve cds market (loan id => marketID)
         }
     }
 

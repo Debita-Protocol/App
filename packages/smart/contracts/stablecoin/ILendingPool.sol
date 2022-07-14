@@ -9,6 +9,7 @@ interface ILendingPool{
         uint256 duration;
         uint256 repaymentDate;
         uint256 amountRepaid;
+        string marketDescription;
         bool approved;
     }
 
