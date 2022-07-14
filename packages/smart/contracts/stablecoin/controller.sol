@@ -3,6 +3,8 @@ pragma abicoder v2;
 import "../rewards/MasterChef.sol";
 import "./ILendingPool.sol";
 import "./IController.sol";
+import "../turbo/TrustedMarketFactoryV3.sol";
+import "hardhat/console.sol";
 //Controller contract responsible for providing initial liquidity to the
 //borrower cds market, collect winnings when default, and burn the corresponding DS
 contract Controller is IController {
@@ -99,7 +101,7 @@ contract Controller is IController {
         uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
 
         //Minting DS
-        lendingpool.managerMintDS(liquidityAmountUSD); 
+        lendingpool.controllerMintDS(liquidityAmountUSD); 
         marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
 
         //Creating pool and adding minted DS as liquidity to the created market 

@@ -7,7 +7,6 @@ import "./DSS.sol";
 import "./TransferHelper.sol";
 import "../ERC20/ERC20.sol";
 import "../Common/SafeMath.sol";
-//import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "hardhat/console.sol";
 import "./ILendingPool.sol";
@@ -203,9 +202,8 @@ contract LendingPool is ILendingPool, Owned {
 
     //Controller Functions
 
-    function addManager(address manager) external override onlyByOwnGov{
-        require(!isManager[manager], "Manager already added");
-        isManager[manager] = true; 
+    function setController(address controller) external override onlyByOwnGov{
+        controller_address = controller; 
     }
 
     function controllerMintDS(uint256 amount) external override onlyController {
@@ -219,8 +217,50 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     //TODO external for now, but needs to be internal+called when borrower proposes
-    function addValidator(address validator, address manager) external {
-        IManager(manager).addValidator(validator);
+    function addValidator(address validator, address controller) external override {
+        IController(controller).addValidator(validator);
+    }
+
+        // registration
+    function registerBorrower() external override {
+        require(!is_registered[msg.sender], "already paid proposal fee");
+        require(ERC20(collateral_address).balanceOf(msg.sender) >= proposal_fee && ERC20(collateral_address).allowance(msg.sender, address(this)) >= proposal_fee, "no allowance");
+        TransferHelper.safeTransferFrom(address(collateral_address), msg.sender, address(this), proposal_fee);
+        is_registered[msg.sender] = true;
+    }
+
+    function deregisterBorrower(address borrower) onlyByOwnGov public override {
+        require(is_registered[borrower], "borrower not registered");
+        is_registered[borrower] = false;
+    }
+
+    // loan proposal
+    function addProposal(
+        string calldata _id,
+        uint256 _principal,
+        uint256 _duration,
+        uint256 _totalDebt,
+        string calldata _description
+    ) external onlyRegistered override {
+        require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
+        bytes32 hashed_id = keccak256(abi.encodePacked(_id));
+        for (uint i = 0; i < num_proposals[msg.sender]; i++) {
+            require(current_loan_data[msg.sender][i].id != hashed_id, "Loan ID must be unique");
+        }
+
+        num_proposals[msg.sender]++;
+
+        current_loan_data[msg.sender].push(LoanMetadata({
+            id: hashed_id,
+            principal: _principal,
+            totalDebt: _totalDebt,
+            duration: _duration,
+            amountRepaid: 0,
+            description: _description,
+            approved: false,
+            repaymentDate: 0
+        }));
+        emit LoanProposal(msg.sender, _id);
     }
 
     function removeProposal(string calldata id) onlyRegistered external override returns (bool) {

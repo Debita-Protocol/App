@@ -13,7 +13,7 @@ interface IController  {
     function initiateMarket(address ammFactoryAddress,
              address marketFactoryAddress, uint256 liquidityAmountUSD,
              string calldata description, string[] calldata names, 
-             uint256[] calldata odds  ) external ;
+             uint256[] calldata odds) external ;
 
 
     function resolveMarket(address ammFactoryAddress, 

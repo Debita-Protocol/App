@@ -9,7 +9,7 @@ interface ILendingPool{
         uint256 duration;
         uint256 repaymentDate;
         uint256 amountRepaid;
-        string marketDescription;
+        string description;
         bool approved;
     }
 
@@ -27,7 +27,7 @@ interface ILendingPool{
     function addValidator(address validator, address controller) external;
     function registerBorrower() external;
     function deregisterBorrower(address borrower) external;
-    function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt) external;
+    function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt, string calldata _description) external;
     function removeProposal(string calldata id) external returns (bool); // called by recipient
     function removeProposal(address recipient, string calldata id) external returns (bool);
     function approveLoan(address recipient, string calldata id) external returns (bool);
