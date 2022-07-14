@@ -183,13 +183,26 @@ export async function redeemDS(
   });
 }
 
+//obtains borrower loan submission data and calculates initial weight(initial price), and name
+export async function getBorrowerMarketInfo(
+    provider: Web3Provider, 
+    validator_account: string ,
+  ) {
+  //TODO,   //Binary for now
 
+  const weight1 = "2"
+  const weight2 = "48"
+  const token1 = "long CDS"
+  const token2 = "short CDS"
+  const name = "test"
+}
 
 export async function validator_initiate_market(
   provider: Web3Provider, 
   validator_account: string ,
-  liquidityAmount: string, 
 
+
+  liquidityAmount: string,
   //Binary for now
   _weight1: string = "2", //determines initial price, which is determined by borrower proposed interest
   _weight2: string = "48", 
@@ -221,7 +234,6 @@ export async function validator_initiate_market(
 export async function validator_resolve_market(
   provider: Web3Provider, 
   validator_account: string ,
-  amm: AmmExchange,
   liquidityAmount: string, 
   isDefault: boolean, 
 
@@ -231,7 +243,7 @@ export async function validator_resolve_market(
 
   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
   const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
-  const tx = await manager_contract.initiateMarket(amm.ammFactoryAddress,TrustedMarketFactoryV3Address,
+  const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
     throw e;
@@ -240,7 +252,34 @@ export async function validator_resolve_market(
   
 
 }
+//TODO validator getting chosen 
+//initial price getting calculated. how much liquidity to supply 
+//validator approve check-> how much short token bought+ how much 
 
+//loan needs to be checked to see if the market criteria are met, 
+//will return true to be shown to validators in UI 
+export async function validator_approve_check(
+    provider: Web3Provider,
+  account: string
+  ): Promise<boolean>{
+
+  return true; 
+}
+
+export async function validator_approve_loan(
+  provider: Web3Provider,
+  account: string,  )
+{
+  //TODO, get from lendingpool
+  const borrower_address = settlementAddress; 
+  const borrower_id = "1";
+
+  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+
+  await manager_contract.approveLoan(borrower_address, borrower_id)
+
+
+}
 
 
 
@@ -269,9 +308,10 @@ export async function registerBorrower(
   const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
   const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
   const proposal_fee = await lendingPool.proposal_fee();
-  let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
-  await tx.wait();
-  tx = await lendingPool.registerBorrower();
+  // let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
+  //  await tx.wait();
+
+  tx = await lendingPool.registerBorrower();"execution reverted: TransferHelper: TRANSFER_FROM_FAILED"
   return tx;
 }
 
@@ -282,16 +322,29 @@ export async function submitProposal(
   totalDebt: string, // w/ decimal point
   duration: string, //in seconds, no fractions of seconds.
   underlying_token: string,
+
+  id: string = "1", 
+  description: string = "example", 
+
 ): Promise<TransactionResponse> {
+
   const token = await ERC20__factory.connect(underlying_token, getProviderOrSigner(provider, account));
   const decimals = await token.decimals();
   principal = new BN(principal).shiftedBy(decimals - PRICE_PRECISION).toFixed();
   totalDebt = new BN(totalDebt).shiftedBy(decimals - PRICE_PRECISION).toFixed();
 
   const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
-  let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
+ // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
+  let tx = await lendingPool.addProposal(id, principal, duration, totalDebt, description)
+
+  //Choose and add validator 
+  const validator_address = settlementAddress; //TODO choose randomly from stakers
+ // await lendingPool.addValidator(validator_address, manager_address);  
   return tx;
 }
+
+
+
 
 
 const getLendingPoolContract = (library: Web3Provider, address: string, account?: string): LendingPool => {

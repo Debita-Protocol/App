@@ -90,8 +90,8 @@ contract LendingPool is ILendingPool, Owned {
         address _dss_address,
         address _collateral_address,
         address _creator_address,
-        address _timelock_address,
-        address _controller_address
+        address _timelock_address
+        // address _controller_address
     ) public Owned(_creator_address){
         require(
             (_ds_address != address(0))
@@ -99,7 +99,7 @@ contract LendingPool is ILendingPool, Owned {
             && (_collateral_address != address(0))
             && (_creator_address != address(0))
             && (_timelock_address != address(0))
-            && (_controller_address != address(0))
+            //&& (_controller_address != address(0))
         , "Zero address detected"); 
 
         DScontract = DS(_ds_address);
@@ -110,7 +110,7 @@ contract LendingPool is ILendingPool, Owned {
         creator_address = _creator_address; 
 
         timelock_address = _timelock_address;
-        controller_address = _controller_address;
+        // controller_address = _controller_address;
         //missing_decimals = uint(6).sub(collateral_token.decimals());
         missing_decimals = uint(0);
         proposal_fee = 1e19;
@@ -241,7 +241,7 @@ contract LendingPool is ILendingPool, Owned {
         uint256 _duration,
         uint256 _totalDebt,
         string calldata _description
-    ) external onlyRegistered override {
+    ) external  override {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         bytes32 hashed_id = keccak256(abi.encodePacked(_id));
         for (uint i = 0; i < num_proposals[msg.sender]; i++) {
@@ -302,7 +302,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // called by controller
-    function approveLoan(address recipient, string calldata id) public override returns (bool) {
+    function approveLoan(address recipient, string calldata id) onlyController public override returns (bool) {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
         bytes32 hashed_id = keccak256(abi.encodePacked(id));
         for (uint i = 0; i < current_loan_data[recipient].length; i++) {

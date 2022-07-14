@@ -7,7 +7,7 @@ import "../turbo/TrustedMarketFactoryV3.sol";
 import "hardhat/console.sol";
 //Controller contract responsible for providing initial liquidity to the
 //borrower cds market, collect winnings when default, and burn the corresponding DS
-contract Controller is IController {
+contract Manager is IController {
     using SafeMath for uint256;
 
     struct LiquidityInfo {
@@ -161,7 +161,12 @@ contract Controller is IController {
 
     }
 
+    function approveLoan(address recipient, string calldata id) external onlyValidator{
+        lendingpool.approveLoan(recipient, id); 
+    }
 
+
+//resolve market fix, resolve market, add borrower
     //Market needs to be resolved and DS liquidity withdrawn before being called, 
     //withdrawn liquidity should be GREATER than initially supplied liquidity, 
     //which will be burnt from circulation

@@ -171,13 +171,22 @@ const BorrowView = () => {
   const [ isBorrower, setIsBorrower ] = useState(false)
   const [ loading, setLoading ] = useState(false);
 
+  const confirmRegister = async({
+    account, 
+    loginAccount, 
+  })=> {
+    await registerBorrower(loginAccount.library, account);
+  }
+
   useEffect(async ()=> {
     let loan_status;
     let borrow_status;
     if (isLogged) {
       try {
-        loan_status =  await checkLoanRegistration(loginAccount.library, account);
-        borrow_status = await checkBorrowStatus(loginAccount.library, account);
+        // loan_status =  await checkLoanRegistration(loginAccount.library, account);
+        // borrow_status = await checkBorrowStatus(loginAccount.library, account);
+        loan_status =  false;
+        borrow_status = false;
       }
       catch (err) {
         console.log("status error", err)
@@ -189,6 +198,7 @@ const BorrowView = () => {
     }
     setLoading(false);
     setPaidFee(loan_status);
+    console.log('amIregistered', loan_status, paidFee);
     setIsBorrower(borrow_status);
   });
 
@@ -208,10 +218,13 @@ const BorrowView = () => {
       <div className={MarketStyles.MarketsView}>
         <div>
           Registration Status: { paidFee ? "Registered" : "Not yet registered" }
+          <button onClick={() => confirmRegister( { account,loginAccount}
+)         }>Register</button>
         </div>
         <div>
           Borrow Status: { isBorrower ? "Current Borrower" : "None" }
         </div>
+
         <section>
         </section>
         {/* {paidFee && <LoanRequestForm/> } */}

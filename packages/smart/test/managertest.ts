@@ -34,11 +34,11 @@ export async function main() {
   const weight1 = BigNumber.from("2").mul(exp)
   const weight2 = BigNumber.from("48").mul(exp)
 
-  // await manager.addPool(lendingpool.address)
-  // await lendingpool.addValidator(owners[0].address, manager.address) 
-  // console.log(owners[0].address)
-//   console.log('added validator')
-  await lendingpool.addManager(manager.address)
+  await manager.addPool(lendingpool.address)
+  await lendingpool.addValidator(owners[0].address, manager.address) 
+  console.log(owners[0].address)
+  console.log('added validator')
+  await lendingpool.setController(manager.address)
 //   await masterchef.trustAMMFactory(ammFactory.address)
 //   await manager.initiateMarket(ammFactory.address, marketFactory.address, 100000000000,  
 //   	"testCDS", ['longCDS', 'shortCDS'], [weight1, weight2] )
