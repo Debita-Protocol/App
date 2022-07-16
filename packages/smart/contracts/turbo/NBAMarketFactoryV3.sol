@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV3.sol";
 import "./FeePot.sol";
-import "../libraries/SafeMathInt256.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
 import "../libraries/Sport.sol";
 import "../libraries/HasSpreadMarket.sol";
 import "../libraries/ResolveByScore.sol";
 import "../libraries/Versioned.sol";
 
 contract NBAMarketFactoryV3 is AbstractMarketFactoryV3, SportView, HasSpreadMarket, ResolvesByScore, Versioned {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     uint256 constant Spread = 0;
     string constant InvalidName = "No Contest";

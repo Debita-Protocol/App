@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV3.sol";
 import "./FeePot.sol";
-import "../libraries/SafeMathInt256.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
 import "./MMAMarketFactoryV3.sol";
 import "./AMMFactory.sol";
 import "./CryptoMarketFactoryV3.sol";
@@ -17,8 +17,8 @@ import "./TrustedMarketFactoryV3.sol";
 
 // Helper contract for grabbing huge amounts of data without overloading multicall.
 abstract contract Fetcher {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     struct CollateralBundle {
         address addr;
@@ -150,7 +150,7 @@ abstract contract Fetcher {
 
 abstract contract SportsFetcher is Fetcher {
     struct SpecificMarketFactoryBundle {
-        MarketFactoryBundle super;
+        MarketFactoryBundle _super;
     }
 
     struct StaticEventBundle {
@@ -181,7 +181,7 @@ abstract contract SportsFetcher is Fetcher {
         view
         returns (SpecificMarketFactoryBundle memory _bundle)
     {
-        _bundle.super = buildMarketFactoryBundle(AbstractMarketFactoryV3(_marketFactory));
+        _bundle._super = buildMarketFactoryBundle(AbstractMarketFactoryV3(_marketFactory));
     }
 
     function fetchInitial(
@@ -399,11 +399,11 @@ contract CryptoFetcher is Fetcher {
     constructor() Fetcher("Crypto", "TBD") {}
 
     struct SpecificMarketFactoryBundle {
-        MarketFactoryBundle super;
+        MarketFactoryBundle _super;
     }
 
     struct SpecificStaticMarketBundle {
-        StaticMarketBundle super;
+        StaticMarketBundle _super;
         uint8 marketType;
         uint256 coinIndex;
         uint256 creationPrice;
@@ -413,7 +413,7 @@ contract CryptoFetcher is Fetcher {
     }
 
     struct SpecificDynamicMarketBundle {
-        DynamicMarketBundle super;
+        DynamicMarketBundle _super;
         uint256 resolutionPrice;
     }
 
@@ -422,7 +422,7 @@ contract CryptoFetcher is Fetcher {
         view
         returns (SpecificMarketFactoryBundle memory _bundle)
     {
-        _bundle.super = buildMarketFactoryBundle(CryptoMarketFactoryV3(_marketFactory));
+        _bundle._super = buildMarketFactoryBundle(CryptoMarketFactoryV3(_marketFactory));
     }
 
     function buildSpecificStaticMarketBundle(
@@ -433,7 +433,7 @@ contract CryptoFetcher is Fetcher {
     ) internal view returns (SpecificStaticMarketBundle memory _bundle) {
         CryptoMarketFactoryV3.MarketDetails memory _details =
             CryptoMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildStaticMarketBundle(
+        _bundle._super = buildStaticMarketBundle(
             CryptoMarketFactoryV3(_marketFactory),
             _ammFactory,
             _masterChef,
@@ -453,7 +453,7 @@ contract CryptoFetcher is Fetcher {
     ) internal view returns (SpecificDynamicMarketBundle memory _bundle) {
         CryptoMarketFactoryV3.MarketDetails memory _details =
             CryptoMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildDynamicMarketBundle(CryptoMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
+        _bundle._super = buildDynamicMarketBundle(CryptoMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
         _bundle.resolutionPrice = _details.resolutionPrice;
     }
 
@@ -562,11 +562,11 @@ contract CryptoCurrencyFetcher is Fetcher {
     constructor() Fetcher("CryptoCurrency", "TBD") {}
 
     struct SpecificMarketFactoryBundle {
-        MarketFactoryBundle super;
+        MarketFactoryBundle _super;
     }
 
     struct SpecificStaticMarketBundle {
-        StaticMarketBundle super;
+        StaticMarketBundle _super;
         uint256 coinIndex;
         uint256 creationValue;
         uint256 resolutionTime;
@@ -575,7 +575,7 @@ contract CryptoCurrencyFetcher is Fetcher {
     }
 
     struct SpecificDynamicMarketBundle {
-        DynamicMarketBundle super;
+        DynamicMarketBundle _super;
         uint256 resolutionValue;
     }
 
@@ -584,7 +584,7 @@ contract CryptoCurrencyFetcher is Fetcher {
         view
         returns (SpecificMarketFactoryBundle memory _bundle)
     {
-        _bundle.super = buildMarketFactoryBundle(CryptoCurrencyMarketFactoryV3(_marketFactory));
+        _bundle._super = buildMarketFactoryBundle(CryptoCurrencyMarketFactoryV3(_marketFactory));
     }
 
     function buildSpecificStaticMarketBundle(
@@ -595,7 +595,7 @@ contract CryptoCurrencyFetcher is Fetcher {
     ) internal view returns (SpecificStaticMarketBundle memory _bundle) {
         CryptoCurrencyMarketFactoryV3.MarketDetails memory _details =
             CryptoCurrencyMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildStaticMarketBundle(
+        _bundle._super = buildStaticMarketBundle(
             CryptoCurrencyMarketFactoryV3(_marketFactory),
             _ammFactory,
             _masterChef,
@@ -614,7 +614,7 @@ contract CryptoCurrencyFetcher is Fetcher {
     ) internal view returns (SpecificDynamicMarketBundle memory _bundle) {
         CryptoCurrencyMarketFactoryV3.MarketDetails memory _details =
             CryptoCurrencyMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildDynamicMarketBundle(CryptoCurrencyMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
+        _bundle._super = buildDynamicMarketBundle(CryptoCurrencyMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
         _bundle.resolutionValue = _details.resolutionValue;
     }
 
@@ -724,11 +724,11 @@ contract CryptoCurrencyFetcher is Fetcher {
 //     constructor() Fetcher("Trusted", "TBD") {}
 
 //     struct SpecificMarketFactoryBundle {
-//         MarketFactoryBundle super;
+//         MarketFactoryBundle _super;
 //     }
 
 //     struct SpecificStaticMarketBundle {
-//         StaticMarketBundle super;
+//         StaticMarketBundle _super;
 //         // uint256 coinIndex;
 //         // uint256 creationValue;
 //         // uint256 resolutionTime;
@@ -738,7 +738,7 @@ contract CryptoCurrencyFetcher is Fetcher {
 //     }
 
 //     struct SpecificDynamicMarketBundle {
-//         DynamicMarketBundle super;
+//         DynamicMarketBundle _super;
 //         //uint256 resolutionValue;
 //         string description;
 
@@ -751,7 +751,7 @@ contract CryptoCurrencyFetcher is Fetcher {
 // ){
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildStaticMarketBundle(
+//         _bundle._super = buildStaticMarketBundle(
 //             TrustedMarketFactoryV3(_marketFactory),
 //             _ammFactory,
 //             _masterChef,
@@ -765,7 +765,7 @@ contract CryptoCurrencyFetcher is Fetcher {
 //         view
 //         returns (SpecificMarketFactoryBundle memory _bundle)
 //     {
-//         _bundle.super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
+//         _bundle._super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
 //     }
 
 //     function buildSpecificStaticMarketBundle(
@@ -776,7 +776,7 @@ contract CryptoCurrencyFetcher is Fetcher {
 //     ) internal view returns (SpecificStaticMarketBundle memory _bundle) {
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildStaticMarketBundle(
+//         _bundle._super = buildStaticMarketBundle(
 //             TrustedMarketFactoryV3(_marketFactory),
 //             _ammFactory,
 //             _masterChef,
@@ -796,7 +796,7 @@ contract CryptoCurrencyFetcher is Fetcher {
 //     ) internal view returns (SpecificDynamicMarketBundle memory _bundle) {
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
+//         _bundle._super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
 //         _bundle.description = _details.description;
 //     }
 

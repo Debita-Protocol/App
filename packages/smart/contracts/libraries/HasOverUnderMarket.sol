@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../turbo/AbstractMarketFactoryV3.sol";
 import "./Sport.sol";
 import "./CalculateLinesToBPoolOdds.sol";
 
 abstract contract HasOverUnderMarket is AbstractMarketFactoryV3, Sport, CalculateLinesToBPoolOdds {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     uint256 private overUnderMarketType;
     string private noContestName;

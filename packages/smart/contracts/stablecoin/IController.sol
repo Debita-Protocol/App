@@ -1,5 +1,4 @@
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 
 //controller contract responsible for providing initial liquidity to the

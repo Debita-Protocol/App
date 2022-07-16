@@ -1,5 +1,4 @@
-pragma solidity ^0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 import "../rewards/MasterChef.sol";
 import "./ILendingPool.sol";
 import "./IController.sol";

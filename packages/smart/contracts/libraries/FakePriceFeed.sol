@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.4;
 
-import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "../utils/AggregatorV3Interface.sol";
 
 contract FakePriceFeed is AggregatorV3Interface {
     uint8 decimals_;

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
-
+pragma solidity ^0.8.4;
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV2.sol";
 import "./FeePot.sol";
 import "../libraries/CalculateLinesToBPoolOdds.sol";
 
+
 contract TrustedMarketFactoryV2 is AbstractMarketFactoryV2, CalculateLinesToBPoolOdds {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     event MarketCreated(uint256 id, address creator, uint256 _endTime, string description, string[] outcomes);
     event MarketResolved(uint256 id, address winner);

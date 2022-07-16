@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../balancer/BPool.sol";
 import "../turbo/AbstractMarketFactoryV3.sol";
 import "hardhat/console.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract EvenTheOdds is BNum {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     uint256 private constant MAX_UINT = 2**256 - 1;
 

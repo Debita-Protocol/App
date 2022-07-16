@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
@@ -9,7 +8,7 @@ import "./FeePot.sol";
 import "../libraries/Rewardable.sol";
 
 abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Rewardable {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     event MarketCreated(uint256 id, string[] names, uint256[] initialOdds);
     event MarketResolved(uint256 id, address winner, uint256 winnerIndex, string winnerName);
@@ -239,7 +238,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
             Market(
                 _settlementAddress,
                 createShareTokens(_names, address(this)),
-                OwnedERC20(0),
+                OwnedERC20(address(0)),
                 0,
                 settlementFee,
                 protocolFee,
@@ -264,7 +263,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
     function makeEmptyMarket() private pure returns (Market memory) {
         OwnedERC20[] memory _tokens = new OwnedERC20[](0);
         uint256[] memory _initialOdds = new uint256[](0);
-        return Market(address(0), _tokens, OwnedERC20(0), 0, 0, 0, 0, 0, 0, _initialOdds, false);
+        return Market(address(0), _tokens, OwnedERC20(address(0)), 0, 0, 0, 0, 0, 0, _initialOdds, false);
     }
 
     function endMarket(uint256 _marketId, uint256 _winningOutcome) internal {
@@ -281,7 +280,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
 
     function isMarketResolved(uint256 _id) public view returns (bool) {
         Market memory _market = markets[_id];
-        return _market.winner != OwnedERC20(0);
+        return _market.winner != OwnedERC20(address(0));
     }
 
     // shares => collateral

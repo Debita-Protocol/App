@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../turbo/AbstractMarketFactoryV3.sol";
 import "./Sport.sol";
 import "./CalculateLinesToBPoolOdds.sol";
 import "./TokenNamesFromTeams.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
 
 abstract contract HasHeadToHeadMarket is
     AbstractMarketFactoryV3,
@@ -13,8 +14,8 @@ abstract contract HasHeadToHeadMarket is
     CalculateLinesToBPoolOdds,
     TokenNamesFromTeams
 {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     uint256 private headToHeadMarketType;
     string private noContestName;

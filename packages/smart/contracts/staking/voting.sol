@@ -1,11 +1,9 @@
-pragma solidity 0.7.6; 
-
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../stablecoin/DSS.sol";
 import "hardhat/console.sol";
-import "../Common/SafeMath.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 //Code borrowed and adapted from Tokemak 
 
