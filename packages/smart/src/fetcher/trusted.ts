@@ -46,7 +46,7 @@ console.log('contract calls2',   rawFactoryBundle, rawMarketBundles, lowestMarke
 
     if (timestamp === null || _timestamp < timestamp) timestamp = _timestamp;
 
-    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle.super);
+    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle._super);
     markets = markets.concat(rawMarketBundles.map(createStaticTrustedMarketBundle));
 
     if (lowestMarketIndex.lte(1)) break; // don't grab the 0th market, which is fake
@@ -101,7 +101,7 @@ function createStaticTrustedMarketBundle(
   raw: RawStaticTrustedMarketBundle
 ): StaticTrustedMarketBundle {
   return {
-    ...createStaticMarketBundle(raw.super),
+    ...createStaticMarketBundle(raw._super),
     // coinIndex: raw.coinIndex,
     // creationValue: raw.creationValue,
     // resolutionValue: raw.resolutionValue,
@@ -120,7 +120,7 @@ interface StaticTrustedMarketBundle extends StaticMarketBundle {
 }
 
 interface RawStaticTrustedMarketBundle {
-  super: RawStaticMarketBundle;
+  _super: RawStaticMarketBundle;
   // coinIndex: BigNumberish;
   // creationValue: BigNumberish;
   // resolutionValue: BigNumberish;
@@ -136,7 +136,7 @@ export interface DynamicTrustedMarketBundle extends DynamicMarketBundle {
 }
 
 interface RawDynamicTrustedMarketBundle {
-  super: RawDynamicMarketBundle;
+  _super: RawDynamicMarketBundle;
   // resolutionValue: BigNumberish;
       description: string;
 
@@ -146,7 +146,7 @@ function createDynamicTrustedMarketBundle(
   raw: RawDynamicTrustedMarketBundle
 ): DynamicTrustedMarketBundle {
   return {
-    ...createDynamicMarketBundle(raw.super),
+    ...createDynamicMarketBundle(raw._super),
     description: raw.description,
   };
 }

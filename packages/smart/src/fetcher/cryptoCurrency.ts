@@ -40,7 +40,7 @@ export async function fetchInitialCryptoCurrency(
 
     if (timestamp === null || _timestamp < timestamp) timestamp = _timestamp;
 
-    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle.super);
+    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle._super);
     markets = markets.concat(rawMarketBundles.map(createStaticCryptoCurrencyMarketBundle));
 
     if (lowestMarketIndex.lte(1)) break; // don't grab the 0th market, which is fake
@@ -94,7 +94,7 @@ function createStaticCryptoCurrencyMarketBundle(
   raw: RawStaticCryptoCurrencyMarketBundle
 ): StaticCryptoCurrencyMarketBundle {
   return {
-    ...createStaticMarketBundle(raw.super),
+    ...createStaticMarketBundle(raw._super),
     coinIndex: raw.coinIndex,
     creationValue: raw.creationValue,
     resolutionValue: raw.resolutionValue,
@@ -110,7 +110,7 @@ interface StaticCryptoCurrencyMarketBundle extends StaticMarketBundle {
 }
 
 interface RawStaticCryptoCurrencyMarketBundle {
-  super: RawStaticMarketBundle;
+  _super: RawStaticMarketBundle;
   coinIndex: BigNumberish;
   creationValue: BigNumberish;
   resolutionValue: BigNumberish;
@@ -122,7 +122,7 @@ export interface DynamicCryptoCurrencyMarketBundle extends DynamicMarketBundle {
 }
 
 interface RawDynamicCryptoCurrencyMarketBundle {
-  super: RawDynamicMarketBundle;
+  _super: RawDynamicMarketBundle;
   resolutionValue: BigNumberish;
 }
 
@@ -130,7 +130,7 @@ function createDynamicCryptoCurrencyMarketBundle(
   raw: RawDynamicCryptoCurrencyMarketBundle
 ): DynamicCryptoCurrencyMarketBundle {
   return {
-    ...createDynamicMarketBundle(raw.super),
+    ...createDynamicMarketBundle(raw._super),
     resolutionValue: raw.resolutionValue,
   };
 }

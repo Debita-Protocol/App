@@ -36,7 +36,7 @@ export async function fetchInitialSports(
 
     if (timestamp === null || _timestamp < timestamp) timestamp = _timestamp;
 
-    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle.super);
+    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle._super);
     eventBundles = eventBundles.concat(rawEventBundles.map(createStaticSportsEventBundle));
 
     if (lowestEventIndex.eq(0)) break;

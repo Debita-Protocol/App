@@ -36,7 +36,7 @@ export async function fetchInitialGroup(
 
     if (timestamp === null || _timestamp < timestamp) timestamp = _timestamp;
 
-    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle.super);
+    if (!factoryBundle) factoryBundle = createMarketFactoryBundle(rawFactoryBundle._super);
     groupBundles = groupBundles.concat(rawGroupBundles.map(createStaticGroupBundle));
 
     if (lowestGroupIndex.eq(0)) break;
