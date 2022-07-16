@@ -231,27 +231,29 @@ export async function validator_initiate_market(
 }
 
 
-export async function validator_resolve_market(
-  provider: Web3Provider, 
-  validator_account: string ,
-  liquidityAmount: string, 
-  isDefault: boolean, 
+// export async function validator_resolve_market(
+//   provider: Web3Provider, 
+//   validator_account: string ,
+//   liquidityAmount: string, 
+//   isDefault: boolean, 
 
 
 
-  ) {
+//   ) {
 
-  const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
-  const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
-  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+//   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
+//   const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+//   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+//   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+//     console.error(e);
+//     throw e;
+//   });
 
   
 
-}
+// }
+//borrower proposes-> their submission will automatically call the controller.initiateMarket 
+//function-> the market page will show borrower info + credit criterion 
 //TODO validator getting chosen 
 //initial price getting calculated. how much liquidity to supply 
 //validator approve check-> how much short token bought+ how much 
@@ -274,7 +276,7 @@ export async function validator_approve_loan(
   const borrower_address = settlementAddress; 
   const borrower_id = "1";
 
-  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, account))
 
   await manager_contract.approveLoan(borrower_address, borrower_id)
 
@@ -311,8 +313,37 @@ export async function registerBorrower(
   // let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
   //  await tx.wait();
 
-  tx = await lendingPool.registerBorrower();"execution reverted: TransferHelper: TRANSFER_FROM_FAILED"
-  return tx;
+  const tx = await lendingPool.registerBorrower();
+  return tx 
+}
+
+
+
+function calculateIntialPriceLiquidity(
+  principal: string, 
+  totalDebt: string
+  ): {liquidity: string, weight1: string, weight2:string}{
+  //TODO
+  const liquidity = totalDebt; 
+
+  const weight1 = new BN("3").shiftedBy(18).toString()
+  const weight2 = new BN("47").shiftedBy(18).toString()
+  
+  return{
+    liquidity, weight1, weight2
+  };
+}
+
+function getInitialMarketNames(
+
+  ) : {_token1: string, _token2: string, name:string} {
+  const _token1 = "lCDS";
+  const _token2= "sCDS";
+  const name =  "test"; 
+  return {
+    _token1, _token2, name
+  };
+
 }
 
 export async function submitProposal(
@@ -328,18 +359,26 @@ export async function submitProposal(
 
 ): Promise<TransactionResponse> {
 
-  const token = await ERC20__factory.connect(underlying_token, getProviderOrSigner(provider, account));
+  const token = await ERC20__factory.connect(usdc, getProviderOrSigner(provider, account));
   const decimals = await token.decimals();
-  principal = new BN(principal).shiftedBy(decimals - PRICE_PRECISION).toFixed();
-  totalDebt = new BN(totalDebt).shiftedBy(decimals - PRICE_PRECISION).toFixed();
-
+  principal = new BN(principal).shiftedBy(decimals ).toFixed();
+  totalDebt = new BN(totalDebt).shiftedBy(decimals ).integerValue().toFixed();
   const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
  // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
-  let tx = await lendingPool.addProposal(id, principal, duration, totalDebt, description)
-
+ // let tx = await lendingPool.addProposal(id, principal, duration, totalDebt, description)
   //Choose and add validator 
   const validator_address = settlementAddress; //TODO choose randomly from stakers
  // await lendingPool.addValidator(validator_address, manager_address);  
+
+  const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
+  const {_token1, _token2, name} = getInitialMarketNames(); 
+  const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, account))
+  console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+  let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+    console.error(e);
+    throw e;
+  });
   return tx;
 }
 
