@@ -9,7 +9,9 @@ import { BigNumber } from "ethers";
 export async function main() {
   const ds = await ethers.getContract("DS")
   const dss = await ethers.getContract("DSS")
+  const ammFactory = await ethers.getContract("AMMFactory")
 
+  const masterchef = await ethers.getContract("MasterChef")
     const collateral = await ethers.getContract("Collateral")
 
  //  const ammFactory = await ethers.getContract("AMMFactory")
@@ -20,7 +22,7 @@ export async function main() {
   const lendingpool = await ethers.getContract("LendingPool")
   // await dss.connect(owners[0]).addPool(lendingpool.address)
   // console.log('???')
-  await ds.connect(owners[0]).addPool(lendingpool.address)
+  // await ds.connect(owners[0]).addPool(lendingpool.address)
   console.log('added pool')
 
 
@@ -30,6 +32,8 @@ await collateral.connect(owners[0]).approve(lendingpool.address, 1000000000000)
 console.log('owners approved')
 
  await lendingpool.mintDS(1000000000000, 0)
+  await masterchef.trustAMMFactory(ammFactory.address)
+  console.log('trusting')
 
  // console.log('owners', owners[0].address, owners[1].address)
  // console.log('marketfactoryaddress', marketFactory.address)

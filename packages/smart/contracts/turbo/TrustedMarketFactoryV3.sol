@@ -14,6 +14,7 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
         string description;
     }
     MarketDetails[] internal marketDetails;
+    // mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
 
     modifier onlyOwnerManager() {
         require(msg.sender == owner || managers[msg.sender] , "Only Validators can call this function");
@@ -54,4 +55,13 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
     function getRewardEndTime(uint256 _marketId) public view override returns (uint256) {
         return 0;
     }
+    
+   // function logTrade(uint256 _marketId, uint256 _outcome, uint256 _collateralIn) external {
+   //      TradeDetails[_marketId][_outcome] = TradeDetails[_marketId][_outcome] + _collateralIn; 
+
+   //  }
+
+   //  function getTradeDetails(uint256 _marketId, uint256 _outcome) external view returns(uint256){
+   //      return TradeDetails[_marketId][_outcome]; 
+   //  }
 }

@@ -23,7 +23,7 @@ import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_, mintDS, resolveMarket, validator_initiate_market} = ContractCalls;
+createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -80,6 +80,12 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
   // console.log(isdone)
 };
 
+const confirmApprove = async({
+  account, loginAccount, 
+}) => {
+  await  contractApprovals(account, loginAccount.library)
+
+}
 const confirmInitiate = async({
   account, 
   loginAccount, 
@@ -343,7 +349,9 @@ const MarketsView = () => {
 )}>Relovemarket</button>
                       <button onClick={() => confirmInitiate( { account,loginAccount}
 )}>InitiateMarket</button>
-
+                      <button onClick={() => confirmApprove( { account,loginAccount}
+)}>Approve</button>
+                    
 
        {/* <SquareDropdown
           onChange={(value) => {

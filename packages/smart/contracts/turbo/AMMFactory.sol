@@ -262,6 +262,7 @@ contract AMMFactory is BNum {
         require(_pool != BPool(address(0)), "Pool needs to be created");
 
         AbstractMarketFactoryV3.Market memory _market = _marketFactory.getMarket(_marketId);
+        _marketFactory.logTrade(_marketId, _outcome, _collateralIn); 
 
         IERC20Full _collateral = _marketFactory.collateral();
         _collateral.transferFrom(msg.sender, address(this), _collateralIn);
