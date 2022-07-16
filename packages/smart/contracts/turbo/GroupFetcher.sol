@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "./Fetcher.sol";
 import "./Grouped.sol";
 
 abstract contract GroupFetcher is Fetcher {
     struct SpecificMarketFactoryBundle {
-        MarketFactoryBundle super;
+        MarketFactoryBundle _super;
     }
 
     struct StaticGroupBundle {
@@ -35,7 +34,7 @@ abstract contract GroupFetcher is Fetcher {
         view
         returns (SpecificMarketFactoryBundle memory _bundle)
     {
-        _bundle.super = buildMarketFactoryBundle(AbstractMarketFactoryV3(_marketFactory));
+        _bundle._super = buildMarketFactoryBundle(AbstractMarketFactoryV3(_marketFactory));
     }
 
     function fetchInitial(

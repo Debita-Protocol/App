@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
@@ -8,7 +7,7 @@ import "./TurboShareTokenFactory.sol";
 import "./FeePot.sol";
 
 abstract contract AbstractMarketFactoryV1 is TurboShareTokenFactoryV1, Ownable {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     // Should always have ID. Others are optional.
     // event MarketCreated(uint256 id, address settlementAddress, uint256 endTime, ...);
@@ -104,7 +103,7 @@ abstract contract AbstractMarketFactoryV1 is TurboShareTokenFactoryV1, Ownable {
     // Can check market existence of the return struct by checking that shareTokens[0] isn't the null address
     function getMarket(uint256 _id) public view returns (Market memory) {
         if (_id >= markets.length) {
-            return Market(address(0), new OwnedERC20[](0), 0, OwnedERC20(0), 0, 0, 0, 0);
+            return Market(address(0), new OwnedERC20[](0), 0, OwnedERC20(address(0)), 0, 0, 0, 0);
         } else {
             return markets[_id];
         }
@@ -246,7 +245,7 @@ abstract contract AbstractMarketFactoryV1 is TurboShareTokenFactoryV1, Ownable {
             _settlementAddress,
             createShareTokens(_names, _symbols, address(this)),
             _endTime,
-            OwnedERC20(0),
+            OwnedERC20(address(0)),
             settlementFee,
             protocolFee,
             stakerFee,
@@ -256,7 +255,7 @@ abstract contract AbstractMarketFactoryV1 is TurboShareTokenFactoryV1, Ownable {
 
     function isMarketResolved(uint256 _id) public view returns (bool) {
         Market memory _market = markets[_id];
-        return _market.winner != OwnedERC20(0);
+        return _market.winner != OwnedERC20(address(0));
     }
 
     // Only usable off-chain. Gas cost can easily eclipse block limit.

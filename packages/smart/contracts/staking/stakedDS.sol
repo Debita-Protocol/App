@@ -1,10 +1,10 @@
-pragma solidity 0.7.6;
+pragma solidity ^0.8.4;
 
 //import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../ERC20/ERC20.sol";
 import "../stablecoin/owned.sol";
 import "../stablecoin/TransferHelper.sol";
-import "../Common/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 //import "../stablecoin/safemath.sol";
 
 

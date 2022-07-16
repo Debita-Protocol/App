@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV3.sol";
 import "./FeePot.sol";
-import "../libraries/SafeMathInt256.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
 import "./MMAMarketFactoryV3.sol";
 import "./AMMFactory.sol";
 import "./CryptoMarketFactoryV3.sol";
@@ -21,11 +21,11 @@ contract TrustedFetcher is Fetcher {
     constructor() Fetcher("Trusted", "TBD") {}
 
     struct SpecificMarketFactoryBundle {
-        MarketFactoryBundle super;
+        MarketFactoryBundle _super;
     }
 
     struct SpecificStaticMarketBundle {
-        StaticMarketBundle super;
+        StaticMarketBundle _super;
         // uint256 coinIndex;
         // uint256 creationValue;
         // uint256 resolutionTime;
@@ -35,7 +35,7 @@ contract TrustedFetcher is Fetcher {
     }
 
     struct SpecificDynamicMarketBundle {
-        DynamicMarketBundle super;
+        DynamicMarketBundle _super;
         //uint256 resolutionValue;
         string description;
 
@@ -52,7 +52,7 @@ contract TrustedFetcher is Fetcher {
 ){
     TrustedMarketFactoryV3.MarketDetails memory _details =
         TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-    _bundle.super = buildStaticMarketBundle(
+    _bundle._super = buildStaticMarketBundle(
         TrustedMarketFactoryV3(_marketFactory),
         _ammFactory,
         _masterChef,
@@ -106,7 +106,7 @@ contract TrustedFetcher is Fetcher {
         view
         returns (SpecificMarketFactoryBundle memory _bundle)
     {
-        _bundle.super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
+        _bundle._super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
     }
 
 
@@ -118,7 +118,7 @@ contract TrustedFetcher is Fetcher {
     ) internal view returns (SpecificStaticMarketBundle memory _bundle) {
         TrustedMarketFactoryV3.MarketDetails memory _details =
             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildStaticMarketBundle(
+        _bundle._super = buildStaticMarketBundle(
             TrustedMarketFactoryV3(_marketFactory),
             _ammFactory,
             _masterChef,
@@ -203,7 +203,7 @@ function listOfInterestingMarkets(
     ) internal view returns (SpecificDynamicMarketBundle memory _bundle) {
         TrustedMarketFactoryV3.MarketDetails memory _details =
             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-        _bundle.super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId+1);
+        _bundle._super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId+1);
         _bundle.description = _details.description;
     }
 
@@ -219,11 +219,11 @@ function listOfInterestingMarkets(
 //     constructor() Fetcher("Trusted", "TBD") {}
 
 //     struct SpecificMarketFactoryBundle {
-//         MarketFactoryBundle super;
+//         MarketFactoryBundle _super;
 //     }
 
 //     struct SpecificStaticMarketBundle {
-//         StaticMarketBundle super;
+//         StaticMarketBundle _super;
 //         // uint256 coinIndex;
 //         // uint256 creationValue;
 //         // uint256 resolutionTime;
@@ -233,7 +233,7 @@ function listOfInterestingMarkets(
 //     }
 
 //     struct SpecificDynamicMarketBundle {
-//         DynamicMarketBundle super;
+//         DynamicMarketBundle _super;
 //         //uint256 resolutionValue;
 //         string description;
 
@@ -246,7 +246,7 @@ function listOfInterestingMarkets(
 // ){
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildStaticMarketBundle(
+//         _bundle._super = buildStaticMarketBundle(
 //             TrustedMarketFactoryV3(_marketFactory),
 //             _ammFactory,
 //             _masterChef,
@@ -260,7 +260,7 @@ function listOfInterestingMarkets(
 //         view
 //         returns (SpecificMarketFactoryBundle memory _bundle)
 //     {
-//         _bundle.super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
+//         _bundle._super = buildMarketFactoryBundle(TrustedMarketFactoryV3(_marketFactory));
 //     }
 
 //     function buildSpecificStaticMarketBundle(
@@ -271,7 +271,7 @@ function listOfInterestingMarkets(
 //     ) internal view returns (SpecificStaticMarketBundle memory _bundle) {
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildStaticMarketBundle(
+//         _bundle._super = buildStaticMarketBundle(
 //             TrustedMarketFactoryV3(_marketFactory),
 //             _ammFactory,
 //             _masterChef,
@@ -291,7 +291,7 @@ function listOfInterestingMarkets(
 //     ) internal view returns (SpecificDynamicMarketBundle memory _bundle) {
 //         TrustedMarketFactoryV3.MarketDetails memory _details =
 //             TrustedMarketFactoryV3(_marketFactory).getMarketDetails(_marketId);
-//         _bundle.super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
+//         _bundle._super = buildDynamicMarketBundle(TrustedMarketFactoryV3(_marketFactory), _ammFactory, _marketId);
 //         _bundle.description = _details.description;
 //     }
 

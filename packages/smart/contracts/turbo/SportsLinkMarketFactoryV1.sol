@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV1.sol";
 import "./FeePot.sol";
-import "../libraries/SafeMathInt256.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
 
 contract SportsLinkMarketFactoryV1 is AbstractMarketFactoryV1 {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     event MarketCreated(
         uint256 id,

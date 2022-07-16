@@ -1,12 +1,12 @@
-pragma solidity 0.7.6;
-pragma abicoder v2; 
+pragma solidity ^0.8.4;
 
 import "./owned.sol";
 import "./DS.sol"; 
 import "./DSS.sol"; 
 import "./TransferHelper.sol";
-import "../ERC20/ERC20.sol";
-import "../Common/SafeMath.sol";
+import "../ERC20/IERC20.sol";
+import "../ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "hardhat/console.sol";
 import "./ILendingPool.sol";
@@ -16,6 +16,7 @@ import "./IController.sol";
 contract LendingPool is ILendingPool, Owned {
 
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     address ds_address; 
     address dss_address; 
@@ -125,7 +126,8 @@ contract LendingPool is ILendingPool, Owned {
         DS_amount_18 = (DS_amount_18.mul(uint(1e6).sub(minting_fee))).div(uint(1e6));
         require(DS_out_min <= DS_amount_18); 
 
-        TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), collateral_amount);
+        IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), collateral_amount);
+        //TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), collateral_amount);
         DScontract.pool_mint(msg.sender, DS_amount_18);
         
     }
@@ -179,11 +181,13 @@ contract LendingPool is ILendingPool, Owned {
         }
 
         if (sendDSS){
-            TransferHelper.safeTransfer(address(DSScontract), msg.sender, dss_amount);
+            //TransferHelper.safeTransfer(address(DSScontract), msg.sender, dss_amount);
+            IERC20(address(DSScontract)).safeTransfer(msg.sender, dss_amount);
         }
 
         if (sendCollateral){
-            TransferHelper.safeTransfer(collateral_address, msg.sender, collateral_amount);
+            //TransferHelper.safeTransfer(collateral_address, msg.sender, collateral_amount);
+            IERC20(address(collateral_address)).safeTransfer(msg.sender, collateral_amount);
         }
 
     }
@@ -224,8 +228,9 @@ contract LendingPool is ILendingPool, Owned {
         // registration
     function registerBorrower() external override {
         require(!is_registered[msg.sender], "already paid proposal fee");
-        require(ERC20(collateral_address).balanceOf(msg.sender) >= proposal_fee && ERC20(collateral_address).allowance(msg.sender, address(this)) >= proposal_fee, "no allowance");
-        TransferHelper.safeTransferFrom(address(collateral_address), msg.sender, address(this), proposal_fee);
+        require(IERC20(collateral_address).balanceOf(msg.sender) >= proposal_fee && IERC20(collateral_address).allowance(msg.sender, address(this)) >= proposal_fee, "no allowance");
+        //TransferHelper.safeTransferFrom(address(collateral_address), msg.sender, address(this), proposal_fee);
+        IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), proposal_fee);
         is_registered[msg.sender] = true;
     }
 

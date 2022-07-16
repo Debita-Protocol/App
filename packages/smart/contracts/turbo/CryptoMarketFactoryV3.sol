@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "../libraries/IERC20Full.sol";
 import "../balancer/BPool.sol";
 import "./AbstractMarketFactoryV3.sol";
 import "./FeePot.sol";
-import "../libraries/SafeMathInt256.sol";
-import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SignedSafeMath.sol";
+import "../utils/AggregatorV3Interface.sol";
 import "../libraries/CalculateLinesToBPoolOdds.sol";
 import "../libraries/Versioned.sol";
 import "../libraries/ManagedByLink.sol";
 import "../libraries/Rewardable.sol";
 
 contract CryptoMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoolOdds, Versioned, ManagedByLink {
-    using SafeMathUint256 for uint256;
-    using SafeMathInt256 for int256;
+    using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     event CoinAdded(uint256 indexed id, string name);
 
@@ -63,7 +63,7 @@ contract CryptoMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPool
         ManagedByLink(_linkNode)
     {
         string memory _name = "";
-        coins.push(makeCoin(_name, AggregatorV3Interface(0), 0));
+        coins.push(makeCoin(_name, AggregatorV3Interface(address(0)), 0));
     }
 
     function getMarketDetails(uint256 _marketId) public view returns (MarketDetails memory) {

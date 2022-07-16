@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma abicoder v2;
+pragma solidity ^0.8.4;
 
 import "./AbstractMarketFactoryV3.sol";
 import "../libraries/CalculateLinesToBPoolOdds.sol";
 import "../libraries/Versioned.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract CDSMarketFactory is AbstractMarketFactoryV3, CalculateLinesToBPoolOdds, Versioned {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     struct MarketDetails {
         string description;

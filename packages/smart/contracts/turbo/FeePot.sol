@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../libraries/SafeMathUint256.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../libraries/IERC20Full.sol";
 
 contract FeePot is ERC20 {
-    using SafeMathUint256 for uint256;
+    using SafeMath for uint256;
 
     uint256 internal constant magnitude = 2**128;
 
@@ -29,7 +29,7 @@ contract FeePot is ERC20 {
         collateral = _collateral;
         reputationToken = _reputationToken;
 
-        require(_collateral != IERC20Full(0));
+        require(_collateral != IERC20Full(address(0)));
     }
 
     function depositFees(uint256 _amount) public returns (bool) {
