@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState, useContext  } from "react";
 import classNames from "classnames";
 
 import Styles from "./market-card.styles.less";
@@ -10,6 +10,8 @@ import { MARKET_FACTORY_TYPES, MARKET_STATUS, TWELVE_HOUR_TIME } from "../../uti
 import { MarketLink } from "../../utils/links/links";
 import { ConfirmedCheck } from "../common/icons";
 import { TinyThemeButton } from "../common/buttons";
+
+import { MarketCardContext } from './market-card-context'; 
 
 export const LoadingMarketCard = () => {
   return (
@@ -146,6 +148,9 @@ export const MarketCardView = ({
   noLiquidityDisabled?: boolean;
   timeFormat?: string;
 }) => {
+   const {formData, handleChange} = useContext(MarketCardContext);
+   console.log('market in marketcard', amm, market);
+
   const { categories, marketId, reportingState, hasWinner } = market;
   const formattedLiquidity = useMemo(() => formatLiquidity(amm?.liquidityUSD || "0.00", { bigUnitPostfix: true }).full, [amm?.liquidityUSD]);
   const formattedApy = useMemo(() => marketTransactions?.apy && formatApy(marketTransactions.apy).full, [
@@ -195,8 +200,14 @@ export const MarketCardView = ({
           {!hasWinner && extraOutcomes > 0 && (
             <span className={Styles.ExtraOutcomes}>{`+ ${extraOutcomes} more Outcomes`}</span>
           )}
+
         </section>
+
       </MarketLink>
+        <button size="small" color="primary" >
+          Select 
+        </button>
+        
     </article>
   );
 };

@@ -18,12 +18,14 @@ import {
   PathUtils,
   Constants,
   windowRef,
+  Components
 } from "@augurproject/comps";
 import {MintProvider} from "./mint/mintcontext"; 
 import {RedeemProvider} from "./redeem/redeemcontext"
 import { SimpleFooter } from "./common/simple-footer";
 const { MARKET, PORTFOLIO } = Constants;
 const { parsePath, parseQuery } = PathUtils;
+const {MarketCardProvider} = Components
 // const express = require("express");
 // const app = express()
 // const cors = require("cors");
@@ -106,13 +108,13 @@ function App() {
           <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
-              
+                <MarketCardProvider>
                 <MintProvider>
                   <RedeemProvider>
                   <AppBody />
                   </RedeemProvider>
                 </MintProvider>
-
+                </MarketCardProvider>
               </SimplifiedProvider>
             </AppStatusProvider>
           </DataProvider>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import Styles from "./markets-view.styles.less";
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
@@ -34,6 +34,7 @@ const {
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
   InputComps: { SearchInput },
   LabelComps: { NetworkMismatchBanner },
+  MarketCardContext, 
 } = Components;
 const {
   SIDEBAR_TYPES,
@@ -253,6 +254,8 @@ const SearchButton = (props) => (
 );
 
 const MarketsView = () => {
+  const {formData, handleChange} = useContext(MarketCardContext);
+
   const { isMobile, isLogged } = useAppStatusStore();
   const {
     marketsViewSettings,
@@ -415,8 +418,9 @@ const MarketsView = () => {
               noLiquidityDisabled={!isLogged}
               timeFormat={timeFormat}
               marketTransactions={transactions[market.marketId]}
-            />
+            />         
           ))}
+          
         </section>
       ) : (
         <span className={Styles.EmptyMarketsMessage}>No markets to show. Try changing the filter options.</span>
