@@ -15,7 +15,7 @@ interface IController  {
              uint256[] calldata odds) external ;
 
 
-    function resolveMarket(address ammFactoryAddress, 
-    	address marketFactoryAddress, uint256 marketID, bool isDefault) external; 
+    function resolveMarket(address ammFactoryAddress, address marketFactoryAddress, uint256 marketID, bool isDefault) external;
+    function verified(address _addr) external returns (bool);
 
 }
