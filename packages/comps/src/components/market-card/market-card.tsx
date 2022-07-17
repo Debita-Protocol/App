@@ -149,7 +149,7 @@ export const MarketCardView = ({
   timeFormat?: string;
 }) => {
    const {formData, handleChange} = useContext(MarketCardContext);
-   console.log('market in marketcard', amm, market);
+   //console.log('market in marketcard', amm, market);
 
   const { categories, marketId, reportingState, hasWinner } = market;
   const formattedLiquidity = useMemo(() => formatLiquidity(amm?.liquidityUSD || "0.00", { bigUnitPostfix: true }).full, [amm?.liquidityUSD]);
@@ -204,10 +204,11 @@ export const MarketCardView = ({
         </section>
 
       </MarketLink>
-        <button size="small" color="primary" >
+        <button onClick={() => handleChange(market.turboId)} >
           Select 
         </button>
         
+
     </article>
   );
 };

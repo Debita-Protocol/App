@@ -22,14 +22,18 @@ export const MarketCardProvider = ({ children }: any) => {
     // balances,
     // actions: { addTransaction },
     // } = useUserStore();
-    const [formData, setFormData] = useState({
-        addressTo: '',
-        amount: '',
-      })
+    // const [formData, setFormData] = useState({
+    //     // addressTo: '',
+    //     // amount: '',
+    //     marketID : null, 
+    //   })
+    const [formData, setFormData] = useState([])
 
-    const handleChange = (e, name) => {
-    console.log(name, e.target.value)
-    setFormData(prevState => ({ ...prevState, [name]: e.target.value }))
+    const handleChange = (e) => {
+    console.log('changing', e)
+    setFormData([...formData, e])
+    // setFormData(prevState => ({ ...prevState, [market]: e}))
+
     }
     const handleSubmit =  () => {
   
