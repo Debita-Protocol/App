@@ -4,9 +4,11 @@ import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import "hardhat/console.sol";
+import "@interep/contracts/IInterep.sol";
+
 //Controller contract responsible for providing initial liquidity to the
 //borrower cds market, collect winnings when default, and burn the corresponding DS
-contract Manager is IController {
+contract Controller is IController {
     using SafeMath for uint256;
 
     struct LiquidityInfo {
@@ -15,7 +17,8 @@ contract Manager is IController {
     }
 
     mapping(address => bool) validators; 
-    mapping(address => bool) pools; 
+    mapping(address => bool) pools;
+    mapping(address => bool) public override verified;
 
     mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
 
@@ -27,7 +30,10 @@ contract Manager is IController {
     address MasterChef_address;
 
     MasterChef masterchef; 
-    ILendingPool lendingpool; 
+    ILendingPool lendingpool;
+    IInterep interep;
+    uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
+    bytes32 constant private signal = bytes32("twitter-unrated");
 
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
@@ -49,7 +55,8 @@ contract Manager is IController {
         address _timelock_address,
         address _MasterChef_address, 
         address _LendingPool_address, 
-        address _DS_address
+        address _DS_address,
+        address _interep_address
     )   
     {   // _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         // DEFAULT_ADMIN_ADDRESS = _msgSender();
@@ -60,8 +67,18 @@ contract Manager is IController {
         masterchef = MasterChef(_MasterChef_address);
         lendingpool = ILendingPool(_LendingPool_address); 
         // IERC20Full DScontract = DS(_DS_address);
+        interep = IInterep(_interep_address);
 
-    } 
+    }
+
+    function verifyAddress(
+        uint256 nullifier_hash, 
+        uint256[8] calldata proof
+    ) external {
+        require(!verified[msg.sender], "address already verified");
+        interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, TWITTER_UNRATED_GROUP_ID, proof);
+        verified[msg.sender] = true;
+    }
 
     //Pool added when contract is deployed 
     function addPool(address pool_address) external override onlyOwner {
