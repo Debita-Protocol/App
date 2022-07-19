@@ -15,7 +15,7 @@ import {
   NetworkUserConfig,
 } from "hardhat/types";
 
-task("deploy", "Deploy Turbo").setAction(async (args, hre, runSuper) => {
+task("deploy", "Deploy Turbo").setAction(async (args, hre: any, runSuper) => {
   await runSuper(args);
 
   // Verify deploy

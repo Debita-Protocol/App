@@ -11,8 +11,8 @@
     "build:watch": "tsc -b -w",
     "build:typescript": "tsc -b",
     "test": "hardhat test",
-    "contracts:build": "hardhat --config hardhat.typechain.config.ts typechain && hardhat compile",
-    "contracts:typechain": "hardhat --config hardhat.typechain.config.ts typechain",
+    "contracts:build": "hardhat --config hardhat.config.ts typechain && hardhat compile",
+    "contracts:typechain": "hardhat --config hardhat.config.ts typechain",
     "contracts:deploy": "yarn hardhat deploy",
     "contracts:verify": "hardhat verify",
     "ethereumNode": "hardhat node --no-deploy",
@@ -60,5 +60,9 @@
     "ethers": "^5.0.0",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
     "typechain": "^4.0.3"
-  }
+  },
+  "nohoist": [
+  "**/typechain",
+  "**/@typechain/*"
+]
 }

@@ -73,12 +73,12 @@ export async function main() {
 // const _totalDesiredOutcome = await ammFactory.buy(
 //        marketFactory.address, 1, 0, 100000, 1
       
-//     ) 
+// //     ) 
 
-// console.log('totaldesieredoutcome', _totalDesiredOutcome)
-}
+// // console.log('totaldesieredoutcome', _totalDesiredOutcome)
+// }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+// main().catch((error) => {
+//   console.error(error);
+//   process.exitCode = 1;
+// });
