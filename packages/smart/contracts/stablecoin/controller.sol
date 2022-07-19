@@ -35,6 +35,7 @@ contract Controller is IController {
 
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
+    uint256 insurance_constant = 5e5; //1 is 1e6, also needs to be able to be changed 
 
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
@@ -106,11 +107,31 @@ contract Controller is IController {
     //liquidityAmountUSD determines how much IL loss Debita is willing to take,
     //which depends on interest rate proposed + principal value of borrowers 
     //It will be computed offchain for now
-    function initiateMarket(
+    function initiateMarket(   
+        address borrower,
+        address ammFactoryAddress, 
+        address marketFactoryAddress, 
+        uint256 liquidityAmountUSD, 
+        string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
+        string calldata loanID, 
+        string[] memory names, 
+        uint256[] memory odds
+        )external override onlyValidator{
+
+        //Market id is initially set 10000, will be modified later
+        MarketInfo memory marketInfo = MarketInfo(
+            ammFactoryAddress, marketFactoryAddress, liquidityAmountUSD, 10000, description, 
+            names, odds
+            ); 
+       
+        initiateMarket_(marketInfo, borrower, loanID ); 
+    }
+
+    function initiateMarket_(
         MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
         address recipient,
         string calldata loanID
-    ) external override onlyValidator {
+    ) internal {
         
 
         // STACK TOO DEEP
@@ -121,9 +142,8 @@ contract Controller is IController {
         string[] memory names = marketData.names;
         uint256[] memory odds = marketData.odds;
 
-        lendingpool.approveLoan(recipient, loanID);
+        //lendingpool.approveLoan(recipient, loanID);
 
-        
 
         AMMFactory amm = AMMFactory(ammFactoryAddress);
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
@@ -155,12 +175,6 @@ contract Controller is IController {
     }
 
 
-    //Ends market when default occurs OR all loan is payed 
-    //first withdraw all liquidity
-    //Then if default, handle default 
-    //If not default, handle not default-> just burn 
-    //Market is first resolved, and winning outcome is determined before this funciton is called 
-    // called by lending pool on resolved
     function resolveMarket(
         address recipient,
         bytes32 loanID, // hashed id
@@ -211,31 +225,26 @@ contract Controller is IController {
     }
 
 
-//resolve market fix, resolve market, add borrower
-    //Market needs to be resolved and DS liquidity withdrawn before being called, 
-    //withdrawn liquidity should be GREATER than initially supplied liquidity, 
-    //which will be burnt from circulation
-    // function handleDefault(address marketFactoryAddress, uint256 marketID, uint256 payout) internal{
-    // 	AbstractMarketFactoryV3 marketFactory = AbstractMarketFactoryV3(marketFactoryAddress);
+    //If true, it means net short CDS buys > required collateral and validator can approve the loan 
+    function canBeApproved(address borrower, 
+        string calldata loanID, 
+        address marketFactoryAddress ) external returns(bool){
 
-        
-    //     uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].liquidityAmountUSD; 
-    //     require(payout > initialSuppliedDS, "Payout not sufficient"); 
+        MarketInfo memory marketInfo  = borrower_market_data[borrower][keccak256(abi.encodePacked(loanID))];
+        uint256 marketId = marketInfo.marketID; 
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
 
-    //     lendingpool.controllerBurnDS(payout);
-    // }
+        //TODO include case for multiple outcomes, for now outcome0 is long outcome1 is short 
+        uint256 longs = marketFactory.getTradeDetails(marketId, 0);
+        uint256 shorts = marketFactory.getTradeDetails(marketId, 1);
+        uint256 netShorts = (shorts-longs); //DS amount with decimals 
 
-    //
-    // function handleNoDefault(address marketFactoryAddress, uint256 marketID) internal{
-    // 	AbstractMarketFactoryV3 marketFactory = AbstractMarketFactoryV3(marketFactoryAddress);
-    // 	//supplieedDS-withdrawn liquidity is the impermanent loss, given to the 
-    // 	//short CDS holders in the form of a premium, 
+        ILendingPool.LoanMetadata memory loanmetadata = lendingpool.getBorrowerLoanData(borrower); 
+        uint256 principal = loanmetadata.principal; //this is in decimals format
+        uint256 required_net_shorts = (principal * insurance_constant/1e6);   //Hardcoded for now
 
+        return (required_net_shorts <= netShorts); 
+    }
 
-    // 	burn()
-
-    // }    //When default,need to collect longCDS winnings from the market 
-    // function collectWinnings() internal {
-    // }
 
 }

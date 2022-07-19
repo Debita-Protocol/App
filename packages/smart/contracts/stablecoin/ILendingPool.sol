@@ -39,4 +39,5 @@ interface ILendingPool{
     function borrower_debt(address addr) external returns (uint256);
     function num_loans(address addr) external returns (uint256);
     function num_proposals(address addr) external returns (uint256);
+    function getBorrowerLoanData(address recipient) external returns(LoanMetadata memory);
 } 

@@ -39,7 +39,6 @@ contract LendingPool is ILendingPool, Owned {
     uint256 immutable MAX_PROPOSALS = 1;
     uint256 immutable public proposal_fee = 1e10;
 
-
     // mint/redeem
     mapping (address => uint256) public redeemDSSBalances;
     mapping (address => uint256) public redeemCollateralBalances;
@@ -99,6 +98,7 @@ contract LendingPool is ILendingPool, Owned {
         timelock_address = _timelock_address;
         missing_decimals = uint(0);
     }
+
 
     //Currently ds decimals is 6, same as USDC, so collateral amount should also be decimal 6
     function mintDS(uint256 collateral_amount, uint256 DS_out_min) external override {
@@ -182,6 +182,8 @@ contract LendingPool is ILendingPool, Owned {
         //emit PoolParametersSet(new_ceiling, new_bonus_rate, new_redemption_delay, new_mint_fee, new_redeem_fee, new_buyback_fee, new_recollat_fee);
     }
 
+
+
     //Controller Functions
 
     function setController(address _controller) external override onlyByOwnGov{
@@ -203,6 +205,9 @@ contract LendingPool is ILendingPool, Owned {
         controller.addValidator(validator);
     }
 
+
+
+
     // loan functions
     function addProposal(
         string calldata _id,
@@ -212,6 +217,7 @@ contract LendingPool is ILendingPool, Owned {
         string calldata _description
     ) external onlyVerified override {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
+        require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format"); 
         bytes32 hashed_id = keccak256(abi.encodePacked(_id));
         for (uint i = 0; i < num_proposals[msg.sender]; i++) {
             require(current_loan_data[msg.sender][i].id != hashed_id, "Loan ID must be unique");
@@ -267,6 +273,11 @@ contract LendingPool is ILendingPool, Owned {
             }
         }
         revert("loan not found");
+    }
+
+    function isApproved(address borrower, uint256 idx) public view returns(bool){
+        LoanMetadata memory loan = current_loan_data[borrower][idx]; 
+        return loan.approved; 
     }
 
     // called by controller
@@ -397,6 +408,12 @@ contract LendingPool is ILendingPool, Owned {
             checkDefault(recipient, i);
         }
     }
+
+    function getBorrowerLoanData(address recipient) public view override returns(LoanMetadata memory){
+        uint256 id = 0; //get first loandata
+        return current_loan_data[recipient][id];
+
+        }
 
     function getLoanData() public view override returns(LoanData memory){
         LoanData memory loandata = LoanData({
