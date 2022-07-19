@@ -1,5 +1,5 @@
 import { deployments, ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
 import { expect, use as chaiUse } from "chai";
 
 import chaiAsPromised from "chai-as-promised";

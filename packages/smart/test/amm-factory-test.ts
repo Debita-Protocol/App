@@ -15,7 +15,7 @@ import {
 import { BigNumber, Contract } from "ethers";
 import { calcShareFactor } from "../src";
 import { buyWithValues, calculateSellCompleteSets, calculateSellCompleteSetsWithValues } from "../src/bmath";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
 
 describe("AMMFactory", () => {
   let BPool__factory: BPool__factory;

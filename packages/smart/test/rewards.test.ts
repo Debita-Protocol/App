@@ -1,7 +1,7 @@
 import { deployments, ethers, network } from "hardhat";
 
 import { Cash, MasterChef } from "../typechain";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
 import { BigNumber } from "ethers";
 
 import { expect } from "chai";

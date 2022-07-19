@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 const { expect } = require("chai");
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/src/signers";
 import type {
   LendingPool,
   DS,
