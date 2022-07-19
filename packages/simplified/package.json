@@ -51,6 +51,9 @@
     "highcharts": "7.2.2",
     "html-webpack-plugin": "4.5.0",
     "identity-obj-proxy": "3.0.0",
+    "@interep/api": "0.7.0",
+    "@interep/identity": "0.1.1",
+    "@interep/proof": "0.5.0",
     "jazzicon": "^1.5.0",
     "mini-css-extract-plugin": "0.11.3",
     "optimize-css-assets-webpack-plugin": "5.0.4",
@@ -80,7 +83,8 @@
     "webpack": "4.44.2",
     "webpack-dev-server": "3.11.0",
     "webpack-manifest-plugin": "2.2.0",
-    "workbox-webpack-plugin": "5.1.4"
+    "workbox-webpack-plugin": "5.1.4",
+    "@zk-kit/protocols": "^1.11.0"
   },
   "devDependencies": {
     "@teamsupercell/typings-for-css-modules-loader": "2.4.0",

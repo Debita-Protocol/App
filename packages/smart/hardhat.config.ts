@@ -1,12 +1,11 @@
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
 import "hardhat-contract-sizer";
 import "hardhat-abi-exporter";
 import "hardhat-docgen";
 import "@tenderly/hardhat-tenderly";
 import "hardhat-gas-reporter";
-<<<<<<< Updated upstream
-=======
 import "hardhat-typechain";
 import "./tasks/deploy-interep"
 import "./tasks/deploy-verifier";
@@ -18,7 +17,17 @@ import "./tasks/deploy-lendingpool";
 import "./tasks/deploy-masterchef";
 
 
->>>>>>> Stashed changes
+
+import "./tasks/deploy-interep"
+import "./tasks/deploy-verifier";
+import "./tasks/deploy-ds";
+import "./tasks/deploy-dss";
+import "./tasks/deploy-collateral";
+import "./tasks/deploy-controller";
+import "./tasks/deploy-lendingpool";
+import "./tasks/deploy-masterchef";
+
+
 
 import "./tasks";
 import { mapOverObject } from "./src/";
@@ -101,11 +110,19 @@ export const config: HardhatUserConfig = {
       default: 0,
       maticMainnet: "0x6FBD37365bac1fC61EAb2b35ba4024B32b136be6",
     },
-    // This exists for tests.
+    // These exists for tests.
     plebeian: {
       default: 1,
       maticMainnet: NULL_ADDRESS,
     },
+    borrower: {
+      default: 2,
+      maticMainnet: NULL_ADDRESS,
+    },
+    validator: {
+      default: 3,
+      maticMainnet: NULL_ADDRESS
+    }
   },
   networks: {
     localhost: {
@@ -155,16 +172,13 @@ export const config: HardhatUserConfig = {
     path: "./docs",
     clear: true,
   },
-<<<<<<< Updated upstream
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
   },
-=======
   typechain: {
     outDir: "types",
     target: "ethers-v5",
   }
->>>>>>> Stashed changes
 };
 
 const PRIVATE_KEY = process.env["PRIVATE_KEY"];

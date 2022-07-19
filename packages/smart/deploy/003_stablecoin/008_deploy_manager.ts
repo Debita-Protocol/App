@@ -4,7 +4,7 @@ import { GroupedMarketFactoryV3__factory } from "../../typechain";
 import { getCollateral, getFees } from "../../src/utils/deploy";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const { deployments, getNamedAccounts } = hre;
+  const { deployments, getNamedAccounts, ethers } = hre;
   const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
 
   const { collateralAddress, shareFactor } = await getCollateral(deployments);
@@ -39,8 +39,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   ];
 
 
-    await deployments.deploy("Manager", {
-    contract: "Manager",
+    await deployments.deploy("Controller", {
+    contract: "Controller",
     from: deployer,
     args,
     log: true,

@@ -21,7 +21,7 @@ task("deploy", "Deploy Turbo").setAction(async (args, hre: any, runSuper) => {
   // Verify deploy
   if (["kovan", "mainnet"].includes(hre.network.name)) {
     console.log("Verifying deployment on etherscan");
-    await hre.run("etherscan-verify", hre.config.etherscan);
+    await hre.run("etherscan-verify", hre.config.verify.etherscan);
   } else if (["maticMumbai", "maticMainnet"].includes(hre.network.name)) {
     console.log("Verifying deployment on tenderly");
     await hre.run("tenderly:verify:all");

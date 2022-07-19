@@ -5,9 +5,8 @@ import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
-
-//Controller contract responsible for providing initial liquidity to the
-//borrower cds market, collect winnings when default, and burn the corresponding DS
+// Controller contract responsible for providing initial liquidity to the
+// borrower cds market, collect winnings when default, and burn the corresponding DS
 contract Controller is IController {
     using SafeMath for uint256;
 
@@ -19,19 +18,21 @@ contract Controller is IController {
     mapping(address => bool) validators; 
     mapping(address => bool) pools;
     mapping(address => bool) public override verified;
+    mapping(address => mapping(bytes32 => MarketInfo)) public borrower_market_data; // maps address + loan id => market information, called by lendingpool
 
     mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
 
     address[] validators_array; 
     address[] pools_array;
 
-    address creator_address; 
+    address creator_address;
     address timelock_address;
     address MasterChef_address;
 
     MasterChef masterchef; 
     ILendingPool lendingpool;
     IInterep interep;
+
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
 
@@ -50,6 +51,7 @@ contract Controller is IController {
         require(msg.sender == creator_address, "Only Pools can call this function");
         _;
     }
+
     constructor (
         address _creator_address,
         address _timelock_address,
@@ -66,17 +68,16 @@ contract Controller is IController {
 
         masterchef = MasterChef(_MasterChef_address);
         lendingpool = ILendingPool(_LendingPool_address); 
-        // IERC20Full DScontract = DS(_DS_address);
         interep = IInterep(_interep_address);
-
     }
 
     function verifyAddress(
         uint256 nullifier_hash, 
+        uint256 external_nullifier,
         uint256[8] calldata proof
     ) external {
         require(!verified[msg.sender], "address already verified");
-        interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, TWITTER_UNRATED_GROUP_ID, proof);
+        interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
     }
 
@@ -105,10 +106,24 @@ contract Controller is IController {
     //liquidityAmountUSD determines how much IL loss Debita is willing to take,
     //which depends on interest rate proposed + principal value of borrowers 
     //It will be computed offchain for now
-    function initiateMarket(address ammFactoryAddress,
-             address marketFactoryAddress, uint256 liquidityAmountUSD,
-             string calldata description, string[] calldata names, 
-             uint256[] calldata odds ) external override onlyValidator {
+    function initiateMarket(
+        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
+        address recipient,
+        string calldata loanID
+    ) external override onlyValidator {
+        
+
+        // STACK TOO DEEP
+        address ammFactoryAddress = marketData.ammFactoryAddress;
+        address marketFactoryAddress = marketData.marketFactoryAddress;
+        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
+        string memory description = marketData.description;
+        string[] memory names = marketData.names;
+        uint256[] memory odds = marketData.odds;
+
+        lendingpool.approveLoan(recipient, loanID);
+
+        
 
         AMMFactory amm = AMMFactory(ammFactoryAddress);
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
@@ -116,14 +131,20 @@ contract Controller is IController {
         //TODO change create market modifier to including validators 
         uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
 
+        marketData.marketID = marketID;
+
+        // Store marketID <=> loan
+        borrower_market_data[recipient][keccak256(abi.encodePacked(loanID))] = marketData; // remember to delete to save storage
+
         //Minting DS
         lendingpool.controllerMintDS(liquidityAmountUSD); 
         marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
 
-        //Creating pool and adding minted DS as liquidity to the created market 
+        //Creating pool and adding minted DS as liquidity to the created market
+
         masterchef.createPool(amm, marketFactory, marketID, liquidityAmountUSD, address(this));
-        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID,
-        address(this) );
+        
+        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID, address(this));
        
         LiquidityInfo memory info = LiquidityInfo({
             lptokenamount: pooltokenamount, 
@@ -131,8 +152,6 @@ contract Controller is IController {
             }); 
 
         lpinfo[marketFactoryAddress][marketID] = info; 
-
-
     }
 
 
@@ -141,11 +160,21 @@ contract Controller is IController {
     //Then if default, handle default 
     //If not default, handle not default-> just burn 
     //Market is first resolved, and winning outcome is determined before this funciton is called 
-    function resolveMarket(address ammFactoryAddress, 
-    	address marketFactoryAddress, uint256 marketID, bool isDefault) external override onlyValidator{
+    // called by lending pool on resolved
+    function resolveMarket(
+        address recipient,
+        bytes32 loanID, // hashed id
+        bool isDefault
+    ) external override {
         uint256 _collateralOut;
         uint256[] memory _balances; 
-    	
+
+        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
+
+        address ammFactoryAddress = marketInfo.ammFactoryAddress;
+        address marketFactoryAddress = marketInfo.marketFactoryAddress;
+        uint256 marketID = marketInfo.marketID;
+
     	AMMFactory amm = AMMFactory(ammFactoryAddress);
     	TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
     	uint256 lptokensIn = lpinfo[marketFactoryAddress][marketID].lptokenamount; 
@@ -173,7 +202,7 @@ contract Controller is IController {
 
         console.log(initialSuppliedDS, _collateralOut); 
 
-
+        delete borrower_market_data[recipient][loanID];
 
     }
 
@@ -193,11 +222,7 @@ contract Controller is IController {
     //     uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].liquidityAmountUSD; 
     //     require(payout > initialSuppliedDS, "Payout not sufficient"); 
 
-    //     lendingpool.controllerBurnDS(payout); 
-
-
-
-
+    //     lendingpool.controllerBurnDS(payout);
     // }
 
     //
@@ -211,8 +236,6 @@ contract Controller is IController {
 
     // }    //When default,need to collect longCDS winnings from the market 
     // function collectWinnings() internal {
-
-
     // }
 
 }
