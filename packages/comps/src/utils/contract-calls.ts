@@ -381,12 +381,14 @@ export async function doBulkTrade(
   amounts: number[] =[10,10] //no decimals
 
   ) {
-  const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress, getProviderOrSigner(provider, 
-    account)) 
+  const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress,
+   getProviderOrSigner(provider, account)) 
 
-  const totalamount = amounts[0] + amounts[1]
+  const amount = amounts[0] + amounts[1]
   const amount1 = new BN(amounts[0]).shiftedBy(PRICE_PRECISION).toFixed()
   const amount2 = new BN(amounts[1]).shiftedBy(PRICE_PRECISION).toFixed()
+  const totalamount = new BN(amount).shiftedBy(PRICE_PRECISION).toFixed()
+  console.log(totalamount.toString())
 
   const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
   await ds_contract.approve(indexCDSAddress, totalamount)
@@ -395,7 +397,7 @@ export async function doBulkTrade(
     marketIds, outcomes, [amount1, amount2])
 
   console.log('LockID', lockId.toString())
-  
+
 }
 
 // export async function fetchRequiredCollateral(

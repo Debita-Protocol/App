@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Styles from "./portfolio-view.styles.less";
 import Activity from "./activity";
-import { PositionsLiquidityViewSwitcher } from "../common/tables";
+import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher } from "../common/tables";
 import { AppViewStats } from "../common/labels";
 import {
   ContractCalls,
@@ -241,10 +241,18 @@ export const PortfolioView = () => {
           claimableFirst
         />
         {view === ACTIVITY && <Activity />}
+        <NFTPositionsLiquidityViewSwitcher
+          showActivityButton={isMobile}
+          setTables={() => setView(TABLES)}
+          setActivity={() => setView(ACTIVITY)}
+          claimableFirst
+        />
+        {view === ACTIVITY && <Activity />}
       </section>
-      <section>
+
+     {/* <section>
         <Activity />
-      </section>
+      </section> */}
     </div>
   );
 };

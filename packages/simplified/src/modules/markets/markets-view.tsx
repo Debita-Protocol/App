@@ -135,11 +135,11 @@ const confirmAction = async ({
 }
 
 const confirmBulkTrade = async({
-  account,  loginAccount,
-  // formData:any
+  account,  loginAccount, formData, 
+  afterSigningAction = () => {}
 }) => {
-
- await doBulkTrade(account, loginAccount.library,[2,2])
+  // console.log('formData', formData[0])
+  await doBulkTrade( loginAccount.library,account, formData)
  // formData)
 }
 
@@ -273,7 +273,8 @@ const SearchButton = (props) => (
 //   }) 
 
 const MarketsView = () => {
-
+  const {formData, handleChange} = useContext(MarketCardContext);
+  // console.log('formdata in markets',formData)
   const { isMobile, isLogged } = useAppStatusStore();
   const {
     marketsViewSettings,
@@ -333,8 +334,6 @@ const MarketsView = () => {
       actions: { addTransaction },
     } = useUserStore();
 
-  const {formData, handleChange} = useContext(MarketCardContext);
-  console.log('formdata in markets',formData)
   return (
     <div
       className={classNames(Styles.MarketsView, {
@@ -439,7 +438,7 @@ const MarketsView = () => {
               marketTransactions={transactions[market.marketId]}
             />         
           ))}
-     <button onClick={() => confirmBulkTrade( { account,loginAccount}
+     <button onClick={() => confirmBulkTrade( { account, loginAccount, formData}
 )}>Buy</button>
         </section>
 

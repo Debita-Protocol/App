@@ -381,12 +381,12 @@ export const AllPositionTable = ({ page, claimableFirst = false }) => {
 
   return (
     <>
-      <SearchInput
+      {/*<SearchInput
         placeHolder="Search Positions"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         clearValue={() => setFilter("")}
-      />
+      />*/}
       {positionVis}
     </>
   );
@@ -545,7 +545,6 @@ export const PositionsLiquidityViewSwitcher = ({
     itemCount: tableView === POSITIONS ? positions.length : liquidities.length,
     itemsPerPage: POSITIONS_LIQUIDITY_LIMIT,
   });
-
   useEffect(() => {
     setPage(1);
   }, [showResolvedPositions]);
@@ -562,7 +561,7 @@ export const PositionsLiquidityViewSwitcher = ({
             [Styles.Selected]: tableView === POSITIONS,
           })}
         >
-          {POSITIONS}
+          {"CDS Positions"}
         </span>
         <span />
         {showActivityButton && (
@@ -580,7 +579,7 @@ export const PositionsLiquidityViewSwitcher = ({
         <div>
           {!marketId && (positions.length > 0 || liquidities.length > 0) && (
             <>{tableView === POSITIONS && <AllPositionTable page={page} claimableFirst={claimableFirst} />}</>
-          )}
+          )} 
           {!marketId &&
             ((positions.length > 0 && tableView === POSITIONS) ||
               (liquidities.length > 0 && tableView === LIQUIDITY)) && (
@@ -589,6 +588,7 @@ export const PositionsLiquidityViewSwitcher = ({
                 useFull
                 itemCount={tableView === POSITIONS ? positions.length : liquidities.length}
                 itemsPerPage={POSITIONS_LIQUIDITY_LIMIT}
+                showPagination = {false}
                 action={(page) => setPage(page)}
                 updateLimit={() => null}
                 usePageLocation
@@ -764,6 +764,129 @@ export const TransactionsTable = ({ transactions }: TransactionsProps) => {
         </div>
       )}
       {filteredTransactions.length === 0 && <span>No transactions to show</span>}
+    </div>
+  );
+};
+
+
+
+
+export const NFTPositionsLiquidityViewSwitcher = ({
+  ammExchange,
+  showActivityButton,
+  setActivity,
+  setTables,
+  claimableFirst = false,
+}: PositionsLiquidityViewSwitcherProps) => {
+  const {
+    balances: { lpTokens, marketShares },
+  }: UserState = useUserStore();
+  const {
+    settings: { showResolvedPositions },
+  } = useSimplifiedStore();
+
+  const { ammExchanges, markets } = useDataStore();
+  const marketId = ammExchange?.marketId;
+
+  let userPositions = [];
+  let winnings = null;
+  if (marketId && marketShares) {
+    userPositions = marketShares[marketId] ? marketShares[marketId].positions : [];
+    winnings = marketShares[marketId] ? marketShares[marketId]?.claimableWinnings : null;
+  }
+  const market = ammExchange?.market;
+
+  const positions = marketShares
+    ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
+        ammExchange: AmmExchange;
+        positions: PositionBalance[];
+        claimableWinnings: Winnings;
+      }[]).filter(
+        (position) =>
+          showResolvedPositions ||
+          position?.claimableWinnings ||
+          (!showResolvedPositions && !position.ammExchange.market.hasWinner)
+      )
+    : [];
+  const liquidities = lpTokens
+    ? Object.keys(lpTokens).map((marketId) => ({
+        ammExchange: ammExchanges[marketId],
+        market: markets[marketId],
+        lpTokens: lpTokens[marketId],
+      }))
+    : [];
+
+  const [tableView, setTableView] = useState(POSITIONS);
+  const [page, setPage] = useQueryPagination({
+    itemCount: tableView === POSITIONS ? positions.length : liquidities.length,
+    itemsPerPage: POSITIONS_LIQUIDITY_LIMIT,
+  });
+  useEffect(() => {
+    setPage(1);
+  }, [showResolvedPositions]);
+
+  return (
+    <div className={Styles.PositionsLiquidityViewSwitcher}>
+      <div>
+        <span
+          onClick={() => {
+            setTables && setTables();
+            setTableView(POSITIONS);
+          }}
+          className={classNames({
+            [Styles.Selected]: tableView === POSITIONS,
+          })}
+        >
+          {"IndexCDS(NFT) Positions"}
+        </span>
+        <span />
+        {showActivityButton && (
+          <TinyThemeButton
+            action={() => {
+              setTableView(null);
+              setActivity();
+            }}
+            text="your activity"
+            selected={tableView === null}
+          />
+        )}
+      </div>
+      {tableView !== null && (
+        <div>
+          {!marketId && (positions.length > 0 || liquidities.length > 0) && (
+            <>{tableView === POSITIONS && <AllPositionTable page={page} claimableFirst={claimableFirst} />}</>
+          )} 
+          {!marketId &&
+            ((positions.length > 0 && tableView === POSITIONS) ||
+              (liquidities.length > 0 && tableView === LIQUIDITY)) && (
+              <Pagination
+                page={page}
+                useFull
+                itemCount={tableView === POSITIONS ? positions.length : liquidities.length}
+                itemsPerPage={POSITIONS_LIQUIDITY_LIMIT}
+                showPagination = {false}
+                action={(page) => setPage(page)}
+                updateLimit={() => null}
+                usePageLocation
+              />
+            )}
+          {marketId && (
+            <>
+              {tableView === POSITIONS && (
+                <PositionTable
+                  singleMarket
+                  market={market}
+                  ammExchange={ammExchange}
+                  positions={userPositions}
+                  claimableWinnings={winnings}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {positions?.length === 0 && !marketId && tableView === POSITIONS && <span>No positions to show</span>}
+      {liquidities?.length === 0 && !marketId && tableView === LIQUIDITY && <span>No liquidity to show</span>}
     </div>
   );
 };

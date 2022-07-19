@@ -169,7 +169,7 @@ export const TopNav = () => {
       })}
     >
       <section>
-        <LinkLogo />
+        {/*<LinkLogo />*/}
         {!isMobile && (
           <ol>
             <li className={classNames({ [Styles.Active]: path === MARKETS })}>
