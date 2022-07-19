@@ -244,20 +244,17 @@ export const addresses: AddressMapping = {
 // deploying "TrustedMarketFactoryV3" (tx: 0xbcd1721d946fa10416f786bf6d30cf80886802218cc343f14dd1c67625aa23fb)...: deployed at 0x453693835A40289553b155F354f7a45819c7753D with 4286247 gas
 // deploying "Manager" (tx: 0x57358b01ff295410d92a04ce41c7f7172323f49141730c3ceaaa51a202c22d6d)...: deployed at 0xEFa17081CE1C50077E944C58796D6F937c117e8d with 1351552 gas
 
-
-// deploying "FeePot" (tx: 0xa9657db66939d9560b96a2109e42193255ffca418323d680aae15d803200e1cf)...: deployed at 0x3444DC0F16914C45488744C84b074F5c560e8274 with 1256178 gas
-// deploying "AMMFactory" (tx: 0xb12fe44d60a25e6bdfa1c410d9e64506851f6424cf75b842de6bba14500c2337)...: deployed at 0x183F734427950dBa3e2235314EB926Bb84dCff52 with 3332543 gas
+// deploying "TrustedFetcher" (tx: 0x6426c4a05b266d404777743a8eb419ec5a5b8b2d1c4fcde70db318f63a0b414f)...: deployed at 0xa672AB31D3526bC54B2500a6eB1e4bFfAE608C6f with 1832562 gas
+// deploying "MasterChef" (tx: 0xc6bdfdb85185b9dc005f28eb643dc52cb2c99a5daf46fbab8387b5c66472f029)...: deployed at 0x471Ea79E8355f60EafB7432FF645992860c81ecC with 3119695 gas
+// deploying "AMMFactory" (tx: 0x64396728c8f333ae29c90e3f8421b8ead59865bc4118c52e122a433371ff308a)...: deployed at 0xA7a0cAb2D46756248345e3E2Ff83CfcA288F272c with 3615252 gas
 // deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
-// deploying "DS" (tx: 0xed101f9ace1e6b349b93b39936cec338f64150f2407ef99b8ffead0338066352)...: deployed at 0xe3E34E7d6D406838e3d6D36eC8C2116BA3053938 with 1565671 gas
-// deploying "DSS" (tx: 0x2029f4eb008869428c293068970c3b106efb209749270cc7e8468f985df003c4)...: deployed at 0xd2B269F5a37B70ce7ab098BaeeCCB7A0740B7f8B with 1565737 gas
-// deploying "LendingPool" (tx: 0xe76aade7a832e01f5b4a2ebeea16269726cadc113c409e267ff637a32c4cee3d)...: deployed at 0xcdb0976F4C07bE6124A6457BE79E0D15bdbFE98e with 1885857 gas
-// deploying "sDS" (tx: 0x3af350ca2d3a1128c346048c2acc81092dc6e1a12b773b50e9fd935153a2fb79)...: deployed at 0xD69Ac9183910CD8d2298eD4737ba81028Eb8b0B7 with 1284032 gas
-// deploying "StakingPool" (tx: 0xdb8f4cd48c69f9d5c6836a4d9ad77b0652c15ae1a9f2ec5a5cbd9d598dc7088b)...: deployed at 0x8CBbE7730149507a7631110DD071Fe9ac87Ca50E with 623767 gas
-// deploying "iDSLocker" (tx: 0x081e7c5816333903a2ab07a184b049058bae85ba19a04802b9a09f5c98ff5d45)...: deployed at 0xA764F06eadEAEce5AC8B124F0508B7e6d2e3a8f7 with 2822829 gas
-// deploying "iDS" (tx: 0x591f9735b275c26835a19b516cc48f367eb6f237b238764a37ba4a8c5ae6a911)...: deployed at 0xc6b8bf459bF3C53C0CaE08DD9DCB47780D248E43 with 495893 gas
-// deploying "VoteTracker" (tx: 0x69bbce113ad1d302b22840da9f33f7ce71a446645025720a16ea4eabec9bf1a6)...: deployed at 0x92bC25C5Be800C2ECb1e66281634D9FE30b29Ab9 with 732903 gas
-// deploying "TrustedMarketFactoryV3" (tx: 0xa2f674e240fa1f9f653428e69982d49f14e65bbba608871ab69d5ccf8a4564e8)...: deployed at 0x77FaA88896c0c1C66a546043bc11617d44D45695 with 3564782 gas
-
+// deploying "DS" (tx: 0xf6571fbee653339784e948ca9bd4b46c5d07343150a54485e6c58d235a388093)...: deployed at 0xd52654d5D4b08366E33bDd2FFC1C2Bd8eF6f70aC with 1467877 gas
+// deploying "DSS" (tx: 0xc0b4243292ae4988e824b04517412cba0222e3efad16d3ecf8e5c49e95ea7712)...: deployed at 0x3FB816bc51020F3F61f4F6F85c6147a7144c9818 with 1467981 gas
+// collateral address 0x5799bFe361BEea69f808328FF4884DF92f1f66f0
+// deploying "LendingPool" (tx: 0x5234403af465ee14af9b55b58a9c1518124ceecf8b5bdd92b3616ca40b175c87)...: deployed at 0x8e98BD7EE6B00Cc26E3dd4E09Ad3Ecd99ffA4972 with 3333172 gas
+// deploying "TrustedMarketFactoryV3" (tx: 0x2d3dcad147f1dcf46d3e080b8d8d72f2c7973f431307e599cf4cca4656871e51)...: deployed at 0xdDad503883590Dd2066fc6297872d4850ed34DE1 with 3569894 gas
+// deploying "Manager" (tx: 0x8aec419bf5ff8b7843c439bccc2a04b06bc82d11837a85e366c932460b9ffa84)...: deployed at 0x35a09821223E874cEb365529e6B58BBD4f38e9c5 with 1034862 gas
+// deploying "IndexCDS" (tx: 0xe3aed096e54bfa9cfb1036c1f637d3586ca3ff1a36a826cbe87e7a8694e80764)...: deployed at 0x23ECD6642811345aFde48D26Be2f2CF9489E755D with 2723330 gas
 
 // deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
 // deploying "DS" (tx: 0xc57d94c407e68e799c8de76a57d4bb456e1fc1fe8f8cdc3d467d669e1a818d8f)...: deployed at 0x970C0f56f0755B2CC3DEeBA00e9e8aE5138d9fBC with 1565671 gas

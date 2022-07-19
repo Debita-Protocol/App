@@ -13,6 +13,7 @@ export const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
 export const collateral_address = "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
 export const manager_address = "0xEFa17081CE1C50077E944C58796D6F937c117e8d";
 export const ammFactoryAddress = "0x7fc5F526A8be47f9D6460b26D59532C35bd54931";
+export const indexCDSAddress = "0x23ECD6642811345aFde48D26Be2f2CF9489E755D"; 
 
 export const PRICE_PRECISION = 6;
 

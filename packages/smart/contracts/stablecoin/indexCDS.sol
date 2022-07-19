@@ -186,6 +186,7 @@ contract IndexCDS is ERC721, ReentrancyGuard{
 
 
  		collateral.transferFrom(recipient, address(this), variable.amount); 
+ 		collateral.approve(address(amm), variable.amount); 
 
  		return amm.buy(marketFactory, variable.marketId,
  			variable.outcome,variable.amount, 0);
@@ -216,9 +217,12 @@ contract IndexCDS is ERC721, ReentrancyGuard{
  			for(uint256 j=0; j<num_outcomes; j++){
  				//outcome[i] is 0 or 1 (if it is binary)
  				//0 if outcome[i] != j, info.token_amounts[i] otherwise
- 				bool isZero = (info.outcomes[i] != j);
- 				shareTokensIn[j] = isZero ? 0: info.token_amounts[i];
+ 				//bool isZero = (info.outcomes[i] != j);
+ 				//shareTokensIn[j] = isZero ? 0: info.token_amounts[i];
+ 				shareTokensIn[j] = info.token_amounts[i];
  			}
+ 			//need to approve amm for the sharetokens; 
+ 			sell_approve(marketFactory, amm, info.marketIds[i], info.outcomes[i], shareTokensIn); 
 
  			total_collateral_out = total_collateral_out + amm.sellForCollateral(
  				marketFactory, 
@@ -234,6 +238,16 @@ contract IndexCDS is ERC721, ReentrancyGuard{
 
 
 
+ 	}
+
+ 	function sell_approve(AbstractMarketFactoryV3 marketFactory, 
+ 		AMMFactory amm ,
+ 		uint256 marketId, 
+ 		uint256 outcome, 
+ 		uint256[] memory shareTokensIn ) private {
+ 		require(shareTokensIn[outcome] > 0); 
+ 		 AbstractMarketFactoryV3.Market memory _market = marketFactory.getMarket(marketId);
+ 		 _market.shareTokens[outcome].approve(address(amm), shareTokensIn[outcome]); 
  	}
 
 

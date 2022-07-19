@@ -95,7 +95,8 @@ import {
   LendingPool__factory,
   LendingPool,
   ERC20__factory,
-  Manager__factory
+  Manager__factory, 
+  IndexCDS__factory
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -110,6 +111,7 @@ import {
   usdc,
   manager_address,
   ammFactoryAddress,
+  indexCDSAddress, 
   PRICE_PRECISION
 } from "../data/constants";
 
@@ -370,12 +372,38 @@ export async function fetchTradeData(
 
 }
 
+export async function doBulkTrade(
+  provider: Web3Provider, 
+  account: string,
+
+  marketIds: number[],
+  outcomes: number[] = [0,0],
+  amounts: number[] =[10,10] //no decimals
+
+  ) {
+  const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress, getProviderOrSigner(provider, 
+    account)) 
+
+  const totalamount = amounts[0] + amounts[1]
+  const amount1 = new BN(amounts[0]).shiftedBy(PRICE_PRECISION).toFixed()
+  const amount2 = new BN(amounts[1]).shiftedBy(PRICE_PRECISION).toFixed()
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  await ds_contract.approve(indexCDSAddress, totalamount)
+
+  const lockId = await indexCDS_contract.buyBulk(account, TrustedMarketFactoryV3Address, ammFactoryAddress, 
+    marketIds, outcomes, [amount1, amount2])
+
+  console.log('LockID', lockId.toString())
+  
+}
+
 // export async function fetchRequiredCollateral(
 //   provider: Web3Provider, 
 //   account: string, 
 //   turboId: number, 
 //   ): Promise<string> {
-  
+
 
 // }
 export async function submitProposal(
@@ -480,7 +508,6 @@ export async function endMarket(
   const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
   const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
   const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
-  console.log('isthisworking', marketFactoryData, marketFactoryContract)
   // const tx = await marketFactoryContract.getMarketDetails(0); 
   // console.log('Detail', tx);
   const totalAmount = sharesDisplayToOnChain("100").toFixed();

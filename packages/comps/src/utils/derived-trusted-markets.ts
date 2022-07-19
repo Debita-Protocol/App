@@ -5,24 +5,30 @@ import { getMarketEndtimeDate } from "./date-utils";
 import { formatCashPrice } from "./format-number";
 
 export const deriveMarketInfo = (market: MarketInfo, marketData: any) =>{
-
+ // console.log('derivemarketinfo', market, marketData.description)
 
   const categories = [CRYPTO, 'Trusted', ""];
   const {shareTokens} = market; 
   const outcomes = decodeOutcomes(market, shareTokens);
-  const { title, description } = getMarketTitle();
+  const {description} = marketData; 
+  const {title, description_} = getMarketTitle_(description); 
+ // const { title, description2 } = getMarketTitle();
 
   return {
     ...market,
     title,
-    description,
+    description: description_,
     categories,
     outcomes,
   };
 
 }
 
-
+const getMarketTitle_ = (name: string): {title:string; description_:string}=>{
+  const title = name + " " + "CDS"; 
+  const description_ = "Bet on " + name + "'s default rate";
+  return {title, description_}; 
+}
 const getMarketTitle = (): { title: string; description: string } => {
   const title = `Debita dbCDS`;
   return { title, description: "Bet on Debita's default rate" };

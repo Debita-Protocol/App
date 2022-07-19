@@ -25,7 +25,8 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals} = ContractCalls;
+createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals,
+doBulkTrade} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -131,9 +132,17 @@ const confirmAction = async ({
  // createMarket(account, provider);
    mintCompleteSets_( provider, "100", account)
 
-
-  
 }
+
+const confirmBulkTrade = async({
+  account,  loginAccount,
+  // formData:any
+}) => {
+
+ await doBulkTrade(account, loginAccount.library,[2,2])
+ // formData)
+}
+
 
 
 
@@ -255,9 +264,16 @@ const SearchButton = (props) => (
   <SecondaryThemeButton {...{ ...props, icon: SearchIcon, customClass: Styles.SearchButton }} />
 );
 
+// const numberfy = (data) => (
+//   var numbers:numbers[] = new Array(data.length);
+
+//   for( let i=0; i< data.length; i++){
+//     numbers[i] = data[i];
+
+//   }) 
+
 const MarketsView = () => {
-  const {formData, handleChange} = useContext(MarketCardContext);
-  console.log('formdata in markets', formData)
+
   const { isMobile, isLogged } = useAppStatusStore();
   const {
     marketsViewSettings,
@@ -317,7 +333,8 @@ const MarketsView = () => {
       actions: { addTransaction },
     } = useUserStore();
 
-
+  const {formData, handleChange} = useContext(MarketCardContext);
+  console.log('formdata in markets',formData)
   return (
     <div
       className={classNames(Styles.MarketsView, {
@@ -422,7 +439,7 @@ const MarketsView = () => {
               marketTransactions={transactions[market.marketId]}
             />         
           ))}
-     <button onClick={() => confirmApprove( { account,loginAccount}
+     <button onClick={() => confirmBulkTrade( { account,loginAccount}
 )}>Buy</button>
         </section>
 

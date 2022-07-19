@@ -36,12 +36,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const collateral = (await deployments.get("Collateral")).address;
   const reputationToken = (await deployments.get("Reputation")).address;
-
+if (!(await deployments.getOrNull("FeePot"))){
   await deployments.deploy("FeePot", {
     from: deployer,
     args: [collateral, reputationToken],
     log: true,
-  });
+  });}
 };
 
 func.tags = ["FeePot"];

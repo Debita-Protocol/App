@@ -21,12 +21,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   
   const ds = await deployments.get("DS");
   const dss = await deployments.get("DSS"); 
-  //const collateral = await deployments.get("Collateral")
-
+  const collateral = await deployments.get("Collateral")
+console.log('collateral address', collateral.address)
 
   const args= [
       ds.address, 
       dss.address, 
+      //collateral.address, 
       "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",//collateral.address, 
       deployer, 
       owner, //TODO

@@ -65,6 +65,7 @@ const LoanRequestForm = () => {
   const [ duration, setDuration ] = useState("0"); // days
   const [ underlyingToken, setUnderlyingToken ] = useState("");
   const [ interestRate, setInterestRate ] = useState("0.0");
+  const [ name, setName ] = useState(""); 
   
 
   const buttonProps: BaseThemeButtonProps = {
@@ -140,6 +141,18 @@ const LoanRequestForm = () => {
           onChange={(e) => {
               if (/^\d*$/.test(e.target.value)) {
                   setDuration(e.target.value);
+              }
+            }
+          }
+        />
+      <label>Name: </label> <br />
+       <input
+          type="text"
+          placeholder="0"
+          value={ duration }
+          onChange={(e) => {
+              if (/^\d*$/.test(e.target.value)) {
+                  setName(e.target.value);
               }
             }
           }
