@@ -13,12 +13,17 @@ import { BigNumber } from "ethers";
 
 
 export async function main() {
-  const ds = await ethers.getContract("DS")
-  const ammFactory = await ethers.getContract("AMMFactory")
-  const marketFactory = await ethers.getContract("CDSMarketFactory")
-  const collateral = await ethers.getContract("Collateral")
+  const ds_factory = await ethers.getContractFactory("DS")
+  const ds = await ds_factory.deploy()
+  const ammFactory_factory = await ethers.getContractFactory("AMMFactory")
+  const ammFactory = await ammFactory_factory.deploy()
+  const marketFactory_factory = await ethers.getContractFactory("CDSMarketFactory")
+  const marketFactory = await marketFactory_factory.deploy()
+  const collateral_factory = await ethers.getContractFactory("Collateral")
+  const collateral = await collateral_factory.deploy();
   console.log('collateral address', collateral.address)
-  const lendingpool = await ethers.getContract("LendingPool")
+  const lendingpool_factory = await ethers.getContractFactory("LendingPool")
+  const lendingpool = await lendingpool_factory.deploy()
 
  const owners = await ethers.getSigners()
 

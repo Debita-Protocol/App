@@ -17,6 +17,7 @@ export const indexCDSAddress = "0x23ECD6642811345aFde48D26Be2f2CF9489E755D";
 
 export const PRICE_PRECISION = 6;
 
+
 // testnet addresses here
 
 // // deploying "FeePot" (tx: 0xa69cf1d2f58b4c3b180a15fbdd860ca5fdc463bc1be4ac2682a019298649fbe7)...: deployed at 0xd0780FD29f17cF568f45d26d4F71f66ed747e605 with 1465627 gas

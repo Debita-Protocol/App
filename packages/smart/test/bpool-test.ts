@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { deployments, ethers } from "hardhat";
 import { BFactory, BPool, BPool__factory, Cash, Cash__factory } from "../typechain";
 import { expect } from "chai";
@@ -23,8 +23,8 @@ describe("AMM contract", () => {
 
     [signer] = await ethers.getSigners();
 
-    const bFactory = (await ethers.getContract("BFactory")) as BFactory;
-    await bFactory.newBPool().then((i) => i.wait());
+    const bFactory = (await ethers.getContractFactory("BFactory")) as any;
+    await bFactory.newBPool().then((i: any) => i.wait());
     const filter = bFactory.filters.LOG_NEW_POOL(signer.address, null);
     const [log] = await bFactory.queryFilter(filter);
 

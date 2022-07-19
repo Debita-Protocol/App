@@ -1,5 +1,4 @@
 import { deployments, ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai";
 
 import {
@@ -16,6 +15,7 @@ import {
 import { BigNumber, Contract } from "ethers";
 import { calcShareFactor } from "../src";
 import { buyWithValues, calculateSellCompleteSets, calculateSellCompleteSetsWithValues } from "../src/bmath";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 describe("AMMFactory", () => {
   let BPool__factory: BPool__factory;
@@ -50,8 +50,8 @@ describe("AMMFactory", () => {
   const INVALID_OUTCOME = 0;
 
   before(async () => {
-    BPool__factory = await ethers.getContractFactory("BPool");
-    ERC20__factory = await ethers.getContractFactory("ERC20");
+    BPool__factory = await ethers.getContractFactory("BPool") as any;
+    ERC20__factory = await ethers.getContractFactory("ERC20") as any;
   });
 
   beforeEach(async () => {
@@ -59,8 +59,8 @@ describe("AMMFactory", () => {
 
     [signer, secondSigner] = await ethers.getSigners();
 
-    collateral = (await ethers.getContract("Collateral")) as Cash;
-    const feePot = (await ethers.getContract("FeePot")) as FeePot;
+    collateral = (await ethers.getContractFactory("Collateral")) as any;
+    const feePot = (await ethers.getContractFactory("FeePot")) as any;
     shareFactor = calcShareFactor(await collateral.decimals());
     marketFactory = await new TrustedMarketFactoryV3__factory(signer).deploy(
       signer.address,
@@ -71,8 +71,8 @@ describe("AMMFactory", () => {
       signer.address
     );
 
-    ammFactory = (await ethers.getContract("AMMFactory")) as AMMFactory;
-    masterChef = (await ethers.getContract("MasterChef")) as MasterChef;
+    ammFactory = (await ethers.getContractFactory("AMMFactory")) as any;
+    masterChef = (await ethers.getContractFactory("MasterChef")) as any;
 
     const description = "Who will win Wrestlemania III?";
     const odds = calcWeights([2, 49, 49]);
@@ -321,7 +321,7 @@ describe("AMMFactory", () => {
           secondSigner.address
         );
         const sharesAfter = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(signer.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -335,7 +335,7 @@ describe("AMMFactory", () => {
         await addLiquidity(100000);
 
         const sharesAfter = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(signer.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -364,7 +364,7 @@ describe("AMMFactory", () => {
         );
 
         const sharesAfter = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(signer.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -394,7 +394,7 @@ describe("AMMFactory", () => {
         );
 
         const sharesBefore = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(secondSigner.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -436,7 +436,7 @@ describe("AMMFactory", () => {
         expect(collateralAfter.gt(collateralBefore), "collateral gained").to.be.true;
 
         const sharesAfter = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(secondSigner.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -450,7 +450,7 @@ describe("AMMFactory", () => {
 
       it("liquidity removal for collateral and burn sets", async () => {
         const sharesBefore = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(signer.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -463,7 +463,7 @@ describe("AMMFactory", () => {
           ammFactory.address,
           marketFactory.address,
           marketId,
-          signer.address
+         signer.address
         );
         await masterChef.removeLiquidity(
           ammFactory.address,
@@ -471,7 +471,7 @@ describe("AMMFactory", () => {
           marketId,
           poolTokens,
           BigNumber.from(0),
-          signer.address
+         signer.address
         );
 
         const collateralAfter = await collateral.balanceOf(signer.address);
@@ -480,7 +480,7 @@ describe("AMMFactory", () => {
         expect(collateralAfter.gt(collateralBefore)).to.be.true;
 
         const sharesAfter = await Promise.all(
-          shareTokens.map((shareToken: Contract) =>
+          shareTokens.map(async (shareToken: Contract) =>
             shareToken.balanceOf(signer.address).then((r: BigNumber) => r.toString())
           )
         );
@@ -499,7 +499,7 @@ describe("AMMFactory", () => {
           ammFactory.address,
           marketFactory.address,
           marketId,
-          signer.address
+         signer.address
         );
         await masterChef.removeLiquidity(
           ammFactory.address,
@@ -507,7 +507,7 @@ describe("AMMFactory", () => {
           marketId,
           lpTokenBal,
           ZERO,
-          signer.address
+         signer.address
         );
         await masterChef.addLiquidity(
           ammFactory.address,
@@ -515,7 +515,7 @@ describe("AMMFactory", () => {
           marketId,
           collateralIn,
           ZERO,
-          signer.address
+         signer.address
         );
       });
     });
@@ -530,7 +530,7 @@ describe("AMMFactory", () => {
         ammFactory.address,
         marketFactory.address,
         marketId,
-        signer.address
+       signer.address
       );
       await masterChef.removeLiquidity(
         ammFactory.address,
@@ -538,7 +538,7 @@ describe("AMMFactory", () => {
         marketId,
         lpTokens,
         0,
-        signer.address
+       signer.address
       );
     });
   });

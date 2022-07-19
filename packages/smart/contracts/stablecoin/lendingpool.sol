@@ -2,29 +2,28 @@ pragma solidity ^0.8.4;
 
 import "./owned.sol";
 import "./DS.sol"; 
-import "./DSS.sol"; 
-import "./TransferHelper.sol";
+import "./DSS.sol";
 import "../ERC20/IERC20.sol";
 import "../ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
 import "hardhat/console.sol";
 import "./ILendingPool.sol";
 import "./IController.sol";
 
+
 //borrowers borrow and repay from this lendingpool 
 contract LendingPool is ILendingPool, Owned {
-
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address ds_address; 
-    address dss_address; 
-    address collateral_address; 
-    address creator_address; 
-    address timelock_address; 
+    // addresses
+    address private collateral_address; 
+    address private creator_address; 
+    address private timelock_address;
+    IController private controller;
+    DS private DScontract;
+    DSS private DSScontract;
 
 
+    // pool parameters
     uint256 pool_ceiling;
     uint256 bonus_rate;
     uint256 redemption_delay;
@@ -33,37 +32,29 @@ contract LendingPool is ILendingPool, Owned {
     uint256 buyback_fee;
     uint256 recollat_fee;
     uint256 missing_decimals; 
-
     uint256 private constant PRICE_PRECISION = 1e6;
+    uint256 total_borrowed_amount;
+    uint256 accrued_interest;
+    uint256 immutable MAX_LOANS = 1;
+    uint256 immutable MAX_PROPOSALS = 1;
+    uint256 immutable public proposal_fee = 1e10;
 
-    DS private DScontract;
-    DSS private DSScontract;
 
+    // mint/redeem
     mapping (address => uint256) public redeemDSSBalances;
     mapping (address => uint256) public redeemCollateralBalances;
     uint256 public unclaimedPoolCollateral;
     uint256 public unclaimedPoolDSS;
     mapping (address => uint256) public lastRedeemed;
 
-    //Borrowers Variable 
-
+    // loan 
     mapping(address=>bool) public override is_borrower;
-    mapping(address=>bool) public override is_registered;
     mapping(address=>uint256) public override borrower_allowance; 
     mapping(address=>uint256) public override borrower_debt; 
-    address[] public borrowers_array;
     mapping(address=>LoanMetadata[]) public current_loan_data;
     mapping(address => uint256) public override num_loans;
     mapping(address => uint256) public override num_proposals;
-    uint256 immutable MAX_LOANS = 1;
-    uint256 immutable MAX_PROPOSALS = 1;
-
-    uint256 total_borrowed_amount;
-    uint256 immutable public proposal_fee;
-    uint256 accrued_interest;
-
-    // controller
-    address private controller_address;
+    address[] public borrowers_array;
 
     modifier onlyByOwnGov() {
         require(msg.sender == timelock_address || msg.sender == owner, "Not owner or timelock");
@@ -71,7 +62,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     modifier onlyController(){
-        require(controller_address == msg.sender, "is not controller"); 
+        require(address(controller) == msg.sender, "is not controller"); 
         _;
     }
 
@@ -81,8 +72,8 @@ contract LendingPool is ILendingPool, Owned {
 
     }
 
-    modifier onlyRegistered {
-        require(is_registered[msg.sender], "is not registered");
+    modifier onlyVerified() {
+        require(controller.verified(msg.sender), "sender not verified");
         _;
     }
 
@@ -92,7 +83,6 @@ contract LendingPool is ILendingPool, Owned {
         address _collateral_address,
         address _creator_address,
         address _timelock_address
-        // address _controller_address
     ) public Owned(_creator_address){
         require(
             (_ds_address != address(0))
@@ -100,22 +90,14 @@ contract LendingPool is ILendingPool, Owned {
             && (_collateral_address != address(0))
             && (_creator_address != address(0))
             && (_timelock_address != address(0))
-            //&& (_controller_address != address(0))
         , "Zero address detected"); 
 
         DScontract = DS(_ds_address);
-        DSScontract = DSS(_dss_address); 
-        ds_address = _ds_address; 
-        dss_address = _dss_address; 
+        DSScontract = DSS(_dss_address);
         collateral_address = _collateral_address; 
-        creator_address = _creator_address; 
-
+        creator_address = _creator_address;
         timelock_address = _timelock_address;
-        // controller_address = _controller_address;
-        //missing_decimals = uint(6).sub(collateral_token.decimals());
         missing_decimals = uint(0);
-        proposal_fee = 1e19;
-        
     }
 
     //Currently ds decimals is 6, same as USDC, so collateral amount should also be decimal 6
@@ -123,7 +105,7 @@ contract LendingPool is ILendingPool, Owned {
         uint256 collateral_amount_d18 = collateral_amount * (10 ** missing_decimals);
       
         uint256 DS_amount_18 = collateral_amount_d18; //1to1
-        DS_amount_18 = (DS_amount_18.mul(uint(1e6).sub(minting_fee))).div(uint(1e6));
+        DS_amount_18 = DS_amount_18 * (1e6 - minting_fee) / 1e6;  // (DS_amount_18.mul(uint(1e6).sub(minting_fee))).div(uint(1e6));
         require(DS_out_min <= DS_amount_18); 
 
         IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), collateral_amount);
@@ -132,32 +114,28 @@ contract LendingPool is ILendingPool, Owned {
         
     }
 
-
     function redeemDS(uint256 DS_amount, uint256 DSS_out_min, uint256 COLLATERAL_out_min) external override {
         uint256 dss_price = DScontract.dss_price();
         uint256 collateral_ratio = DScontract.get_collateral_ratio(); 
-        uint256 DS_amount_18 = DS_amount.mul(10**missing_decimals);
+        uint256 DS_amount_18 = DS_amount * 10**missing_decimals;// DS_amount.mul(10**missing_decimals);
 
-        uint256 DS_amount_post_fee = (DS_amount.mul(uint(1e6).sub(redemption_fee))).div(uint(1e6)); 
-        uint256 dss_dollar_value = DS_amount_post_fee.sub(DS_amount_post_fee.mul(collateral_ratio).div(PRICE_PRECISION)); 
-        uint256 dss_amount = dss_dollar_value.mul(PRICE_PRECISION).div(dss_price); 
+        uint256 DS_amount_post_fee = DS_amount * (1e6 - redemption_fee) / 1e6;// (DS_amount.mul(uint(1e6).sub(redemption_fee))).div(uint(1e6)); 
+        uint256 dss_dollar_value = DS_amount_post_fee - (DS_amount_post_fee * collateral_ratio / PRICE_PRECISION); // DS_amount_post_fee.sub(DS_amount_post_fee.mul(collateral_ratio).div(PRICE_PRECISION)); 
+        uint256 dss_amount = dss_dollar_value * PRICE_PRECISION / dss_price; // dss_dollar_value.mul(PRICE_PRECISION).div(dss_price); 
 
         uint256 DS_amount_precision = DS_amount_post_fee;
-        uint256 collateral_dollar_value = DS_amount_precision.mul(collateral_ratio).div(PRICE_PRECISION);
+        uint256 collateral_dollar_value = DS_amount_precision * collateral_ratio / PRICE_PRECISION;// DS_amount_precision.mul(collateral_ratio).div(PRICE_PRECISION);
         uint256 collateral_amount = collateral_dollar_value;//.mul(10**missing_decimals); //for now assume collateral is stable 
 
-        redeemCollateralBalances[msg.sender] = redeemCollateralBalances[msg.sender].add(collateral_amount);
-        unclaimedPoolCollateral = unclaimedPoolCollateral.add(collateral_amount);
+        redeemCollateralBalances[msg.sender] = redeemCollateralBalances[msg.sender] + collateral_amount; // redeemCollateralBalances[msg.sender].add(collateral_amount);
+        unclaimedPoolCollateral = unclaimedPoolCollateral + collateral_amount; // unclaimedPoolCollateral.add(collateral_amount);
 
-        redeemDSSBalances[msg.sender] = redeemDSSBalances[msg.sender].add(dss_amount);
-        unclaimedPoolDSS = unclaimedPoolDSS.add(dss_amount);
+        redeemDSSBalances[msg.sender] = redeemDSSBalances[msg.sender] + dss_amount; // redeemDSSBalances[msg.sender].add(dss_amount);
+        unclaimedPoolDSS = unclaimedPoolDSS + dss_amount; // unclaimedPoolDSS.add(dss_amount);
 
         lastRedeemed[msg.sender] = block.number; 
         DScontract.pool_burn(msg.sender, DS_amount_18);
-        DSScontract.pool_mint(address(this), dss_amount);
-
-
-
+        DSScontract.pool_mint(address(this), dss_amount); 
     }
 
     function collectRedemption(uint256 col_idx) external override returns (uint256 dss_amount, uint256 collateral_amount) {
@@ -169,14 +147,14 @@ contract LendingPool is ILendingPool, Owned {
         if (redeemDSSBalances[msg.sender]>0){
             dss_amount = redeemDSSBalances[msg.sender]; 
             redeemDSSBalances[msg.sender] = 0; 
-            unclaimedPoolDSS = unclaimedPoolDSS.sub(dss_amount); 
+            unclaimedPoolDSS = unclaimedPoolDSS - dss_amount; // unclaimedPoolDSS.sub(dss_amount); 
             sendDSS = true;
         }
 
         if (redeemCollateralBalances[msg.sender]>0){
             collateral_amount = redeemCollateralBalances[msg.sender]; 
             redeemCollateralBalances[msg.sender] = 0; 
-            unclaimedPoolCollateral = unclaimedPoolCollateral.sub(collateral_amount);
+            unclaimedPoolCollateral = unclaimedPoolCollateral - collateral_amount;// unclaimedPoolCollateral.sub(collateral_amount);
             sendCollateral = true;
         }
 
@@ -206,8 +184,8 @@ contract LendingPool is ILendingPool, Owned {
 
     //Controller Functions
 
-    function setController(address controller) external override onlyByOwnGov{
-        controller_address = controller; 
+    function setController(address _controller) external override onlyByOwnGov{
+        controller = IController(_controller); 
     }
 
     function controllerMintDS(uint256 amount) external override onlyController {
@@ -221,32 +199,18 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     //TODO external for now, but needs to be internal+called when borrower proposes
-    function addValidator(address validator, address controller) external override {
-        IController(controller).addValidator(validator);
+    function addValidator(address validator) external override {
+        controller.addValidator(validator);
     }
 
-        // registration
-    function registerBorrower() external override {
-        require(!is_registered[msg.sender], "already paid proposal fee");
-        require(IERC20(collateral_address).balanceOf(msg.sender) >= proposal_fee && IERC20(collateral_address).allowance(msg.sender, address(this)) >= proposal_fee, "no allowance");
-        //TransferHelper.safeTransferFrom(address(collateral_address), msg.sender, address(this), proposal_fee);
-        IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), proposal_fee);
-        is_registered[msg.sender] = true;
-    }
-
-    function deregisterBorrower(address borrower) onlyByOwnGov public override {
-        require(is_registered[borrower], "borrower not registered");
-        is_registered[borrower] = false;
-    }
-
-    // loan proposal
+    // loan functions
     function addProposal(
         string calldata _id,
         uint256 _principal,
         uint256 _duration,
         uint256 _totalDebt,
         string calldata _description
-    ) external  override {
+    ) external onlyVerified override {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         bytes32 hashed_id = keccak256(abi.encodePacked(_id));
         for (uint i = 0; i < num_proposals[msg.sender]; i++) {
@@ -268,7 +232,7 @@ contract LendingPool is ILendingPool, Owned {
         emit LoanProposal(msg.sender, _id);
     }
 
-    function removeProposal(string calldata id) onlyRegistered external override returns (bool) {
+    function removeProposal(string calldata id) onlyVerified external override returns (bool) {
         return _removeProposal(msg.sender, keccak256(abi.encodePacked(id)));
     }
 
@@ -282,7 +246,6 @@ contract LendingPool is ILendingPool, Owned {
                 emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
                 _removeLoan(recipient, i);
                 num_proposals[recipient]--;
-                // delete CDS Market here???
                 return true;
             }
         }
@@ -344,37 +307,45 @@ contract LendingPool is ILendingPool, Owned {
     }
 
 
-    function borrow(uint256 amount) external onlyBorrower onlyRegistered override {
+    function borrow(uint256 amount) external onlyBorrower onlyVerified override {
         require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
         require(amount > 0, "amount must be greater than 0");
         
-        borrower_allowance[msg.sender] = borrower_allowance[msg.sender].sub(amount);
-        TransferHelper.safeTransfer(collateral_address, msg.sender, amount);
-        borrower_debt[msg.sender] = borrower_debt[msg.sender].add(amount);
-        total_borrowed_amount = total_borrowed_amount.add(amount);
+        borrower_allowance[msg.sender] = borrower_allowance[msg.sender] - amount;
+
+        IERC20(collateral_address).safeTransfer(msg.sender, amount);
+        borrower_debt[msg.sender] = borrower_debt[msg.sender] + amount;
+        total_borrowed_amount = total_borrowed_amount + amount;
         emit FundsBorrowed(msg.sender, amount);
     }
 
     function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external onlyBorrower override returns (bool) {
-        uint256 total_repayment = repay_principal.add(repay_interest);
+        uint256 total_repayment = repay_principal + repay_interest;
         bytes32 hashed_id = keccak256(abi.encodePacked(loan_id));
         for (uint i = 0; i< current_loan_data[msg.sender].length; i++) {
             if (hashed_id == current_loan_data[msg.sender][i].id) {
                 LoanMetadata storage loan = current_loan_data[msg.sender][i];
                 require(loan.amountRepaid + total_repayment <= loan.principal, "overpaid for specified loan");
+                require(loan.repaymentDate > block.timestamp, "Loan has already reached maturity");
 
                 loan.amountRepaid += total_repayment;
-                borrower_debt[msg.sender] = borrower_debt[msg.sender].sub(repay_principal);
-                accrued_interest.add(repay_interest);
+                borrower_debt[msg.sender] = borrower_debt[msg.sender] - repay_principal;
+                accrued_interest += repay_interest;
                 console.log('total_borrowed_amount', total_borrowed_amount);
-                total_borrowed_amount = total_borrowed_amount.sub(repay_principal);
+                total_borrowed_amount = total_borrowed_amount - repay_principal;
 
-                TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), total_repayment); 
+                //TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), total_repayment); 
+                IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), total_repayment);
+
                 if (loan.amountRepaid == loan.totalDebt) {
                     emit FullRepayment(msg.sender, loan);
-                    // do something w/ cds here.
+                    
+                    controller.resolveMarket(msg.sender, hashed_id, false);
+                    
                     num_loans[msg.sender]--;
+                    
                     _removeLoan(msg.sender, i);
+                    
                     if (num_loans[msg.sender] == 0) {
                         is_borrower[msg.sender] = false;
                         removeBorrower(msg.sender);
@@ -398,10 +369,24 @@ contract LendingPool is ILendingPool, Owned {
         }   
     }
 
-    function checkDefault(address recipient, uint256 index) private {
-        if (current_loan_data[recipient][index].repaymentDate < block.timestamp) {
-            emit Default(recipient, current_loan_data[recipient][index]);
+    function checkDefault(address recipient, uint256 index) public {
+        LoanMetadata storage loan = current_loan_data[recipient][index];
+
+        if (loan.repaymentDate < block.timestamp && loan.amountRepaid < loan.totalDebt) {
+            emit Default(recipient, loan);
+            
+            controller.resolveMarket(recipient, loan.id, true);
+
             num_loans[recipient]--;
+
+            _removeLoan(msg.sender, index);
+            
+            if (num_loans[msg.sender] == 0) {
+                is_borrower[msg.sender] = false;
+            
+                removeBorrower(msg.sender);
+            }
+            
             // default logic handler => resolve cds market (loan id => marketID)
         }
     }

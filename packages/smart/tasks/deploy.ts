@@ -15,13 +15,13 @@ import {
   NetworkUserConfig,
 } from "hardhat/types";
 
-task("deploy", "Deploy Turbo").setAction(async (args, hre, runSuper) => {
+task("deploy", "Deploy Turbo").setAction(async (args, hre: any, runSuper) => {
   await runSuper(args);
 
   // Verify deploy
   if (["kovan", "mainnet"].includes(hre.network.name)) {
     console.log("Verifying deployment on etherscan");
-    await hre.run("etherscan-verify", hre.config.etherscan);
+    await hre.run("etherscan-verify", hre.config.verify.etherscan);
   } else if (["maticMumbai", "maticMainnet"].includes(hre.network.name)) {
     console.log("Verifying deployment on tenderly");
     await hre.run("tenderly:verify:all");

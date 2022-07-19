@@ -7,21 +7,21 @@ import { BigNumber } from "ethers";
 
 export async function main() {
 
-  const collateral = await ethers.getContract("Collateral")
-  const locker = await ethers.getContract("iDSLocker")
-  const insurance = await ethers.getContract('iDS')
-  const owners = await ethers.getSigners();
-await collateral.connect(owners[0]).faucet(100000000000)
+//   const collateral = await ethers.getContract("Collateral")
+//   const locker = await ethers.getContract("iDSLocker")
+//   const insurance = await ethers.getContract('iDS')
+//   const owners = await ethers.getSigners();
+// await collateral.connect(owners[0]).faucet(100000000000)
 
-  console.log('hey', owners[0].address)
-  await collateral.connect(owners[0]).approve(locker.address, 10000000000)
-    console.log('hey2')
+//   console.log('hey', owners[0].address)
+//   await collateral.connect(owners[0]).approve(locker.address, 10000000000)
+//     console.log('hey2')
 
-  await locker.createLock(owners[0].address, 10000000000, 100)
-    console.log('hey3')
+//   await locker.createLock(owners[0].address, 10000000000, 100)
+//     console.log('hey3')
 
-  const balance = await insurance.balanceOf(owners[0].address)
-  console.log('balance', balance.toString())
+//   const balance = await insurance.balanceOf(owners[0].address)
+//   console.log('balance', balance.toString())
   // await collateral.connect(owners[0]).faucet(100000000000)
 
 
