@@ -5,6 +5,20 @@ import "hardhat-abi-exporter";
 import "hardhat-docgen";
 import "@tenderly/hardhat-tenderly";
 import "hardhat-gas-reporter";
+<<<<<<< Updated upstream
+=======
+import "hardhat-typechain";
+import "./tasks/deploy-interep"
+import "./tasks/deploy-verifier";
+import "./tasks/deploy-ds";
+import "./tasks/deploy-dss";
+import "./tasks/deploy-collateral";
+import "./tasks/deploy-controller";
+import "./tasks/deploy-lendingpool";
+import "./tasks/deploy-masterchef";
+
+
+>>>>>>> Stashed changes
 
 import "./tasks";
 import { mapOverObject } from "./src/";
@@ -141,9 +155,16 @@ export const config: HardhatUserConfig = {
     path: "./docs",
     clear: true,
   },
+<<<<<<< Updated upstream
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
   },
+=======
+  typechain: {
+    outDir: "types",
+    target: "ethers-v5",
+  }
+>>>>>>> Stashed changes
 };
 
 const PRIVATE_KEY = process.env["PRIVATE_KEY"];
