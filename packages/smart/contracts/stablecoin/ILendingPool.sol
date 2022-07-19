@@ -23,9 +23,7 @@ interface ILendingPool{
     function setController(address controller) external;
     function controllerMintDS(uint256 amount) external;
     function controllerBurnDS(uint256 amount) external;
-    function addValidator(address validator, address controller) external;
-    function registerBorrower() external;
-    function deregisterBorrower(address borrower) external;
+    function addValidator(address validator) external;
     function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt, string calldata _description) external;
     function removeProposal(string calldata id) external returns (bool); // called by recipient
     function removeProposal(address recipient, string calldata id) external returns (bool);
@@ -36,7 +34,6 @@ interface ILendingPool{
     function fullDefaultCheck() external;
     function getLoanData() external returns(LoanData memory);
     function is_borrower(address addr) external returns (bool);
-    function is_registered(address addr) external returns (bool);
     function retrieveLoan(address borrower, string calldata id) external returns (LoanMetadata memory);
     function borrower_allowance(address addr) external returns (uint256);
     function borrower_debt(address addr) external returns (uint256);
