@@ -113,8 +113,17 @@ import {
   PRICE_PRECISION
 } from "../data/constants";
 
+import { SemaphorePublicSignals, SemaphoreSolidityProof } from "@zk-kit/protocols"
+
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
+
+  const rewardContractAddress = getRewardsContractAddress(TrustedMarketFactoryV3Address);
+  console.log('rewardcontractaddress', rewardContractAddress)
+  const rewardContract = getRewardContract(provider, rewardContractAddress, account); 
+  await rewardContract.trustAMMFactory(ammFactoryAddress)
+
+}
 
 export async function addDSPool(
   account: string,
@@ -134,6 +143,7 @@ export async function addDSPool(
   return tx; 
 
 }
+
 export async function mintDS(
   account: string,
   provider: Web3Provider,
@@ -225,11 +235,21 @@ export async function validator_initiate_market(
     console.error(e);
     throw e;
   });
-
-
-
 }
 
+const getControllerContract = (library: Web3Provider, address: string, account?: string): Controller => {
+  return Controller__factory.connect(address, getProviderOrSigner(library, account));
+}
+
+export async function verify_address(
+  account: string,
+  provider: Web3Provider,
+  public_signals: SemaphorePublicSignals,
+  proof: SemaphoreSolidityProof
+) {
+  const controller = getControllerContract(provider, manager_address, account);
+  // finish
+}
 
 // export async function validator_resolve_market(
 //   provider: Web3Provider, 
@@ -353,7 +373,6 @@ export async function submitProposal(
   totalDebt: string, // w/ decimal point
   duration: string, //in seconds, no fractions of seconds.
   underlying_token: string,
-
   id: string = "1", 
   description: string = "example", 
 
@@ -389,6 +408,7 @@ export async function submitProposal(
 const getLendingPoolContract = (library: Web3Provider, address: string, account?: string): LendingPool => {
   return LendingPool__factory.connect(address, getProviderOrSigner(library, account));
 }
+
 
 export async function newFunction(
 

@@ -14,5 +14,3 @@ export const manager_address = "0x3A56b40dC817eDC1B2843A710C6488E27cd33352";
 export const ammFactoryAddress = "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34";
 
 export const PRICE_PRECISION = 6;
-
-// testnet addresses here
