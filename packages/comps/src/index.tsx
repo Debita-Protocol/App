@@ -70,6 +70,7 @@ import * as _GraphClient from "./apollo/client";
 import ModalConnectWallet from "./components/modal/modal-connect-wallet";
 import { ToggleSwitch, BuySellToggleSwitch } from "./components/common/toggle-switch";
 import { Toasts } from "./components/toasts/toasts";
+import {MarketCardProvider, MarketCardContext} from "./components/market-card/market-card-context"; 
 
 export const ContractCalls = _ContractCalls;
 export const Calculations = _Calculations;
@@ -204,6 +205,8 @@ export const Components = {
   PaginationComps,
   SEO,
   SelectionComps,
+  MarketCardContext, 
+  MarketCardProvider, 
 };
 export const Modals = {
   ModalConnectWallet,

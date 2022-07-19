@@ -204,13 +204,13 @@ export const addresses: AddressMapping = {
           type:"Trusted",
           subtype:"V3",
          // address:"0x323D62F7FC2a1a078787dB5045ae14E0567b0476",
-          address: "0x52637EB4D0a4DE706fd28BE324b2393a00336813", 
-         collateral: "0x970C0f56f0755B2CC3DEeBA00e9e8aE5138d9fBC",
-         ammFactory: "0xDcf4173FC3947bC2CbAB929559b7f38Cb25Bef34",
+          address: "0x453693835A40289553b155F354f7a45819c7753D", 
+         collateral: "0xC9a5FfC14d68c511e83E758d186C249580d5f111",
+         ammFactory: "0x7fc5F526A8be47f9D6460b26D59532C35bd54931",
           hasRewards: true,
-          fetcher: "0x450c6A1F99d991aA2df36F3dA61652cca07eA135",
+          fetcher: "0xcE5c2E8FA35bED364593e63974930D4fE942eCB1",
 //0x12297ec2FB50EC75ddCB2BD37A5DD60D71D0a2F9
-        masterChef: "0xa976cb47C216Ee71089b10383bDEa4e230551458",
+        masterChef: "0x81D0609d4FDe0efa1661dB340b99E730285b592e",
         description: "crypto prices",
         version: "FILL THIS OUT",
       },
@@ -233,19 +233,16 @@ export const addresses: AddressMapping = {
     info: { uploadBlockNumber: 15336699, graphName: "mumbai" },
   },
 };
-
-// reusing "FeePot" at 0x98D7A218ed8E68b80a1ed52808598D5827dd778F
-// reusing "AMMFactory" at 0x082C7Ef90da3d4fC070ff25669920722C23AB053
+// deploying "FeePot" (tx: 0xa69cf1d2f58b4c3b180a15fbdd860ca5fdc463bc1be4ac2682a019298649fbe7)...: deployed at 0xd0780FD29f17cF568f45d26d4F71f66ed747e605 with 1465627 gas
+// deploying "TrustedFetcher" (tx: 0x62b150e295b9c4b65414cd4d7ca0fd9870948686cca0daf1e016e0a2c2fcb0d4)...: deployed at 0xcE5c2E8FA35bED364593e63974930D4fE942eCB1 with 2233816 gas
+// deploying "MasterChef" (tx: 0x728df5c61f75f1a9343430ff0697e0bd6084101cd5c8b72a2f197643dd3e5d59)...: deployed at 0x81D0609d4FDe0efa1661dB340b99E730285b592e with 3798866 gas
+// deploying "AMMFactory" (tx: 0x4ec8ed081fc3f384a99c0578806ed2d4fa8a7d6debab0810134e4322acf28190)...: deployed at 0x7fc5F526A8be47f9D6460b26D59532C35bd54931 with 4624583 gas
 // deployer 0xFD84b7AC1E646580db8c77f1f05F47977fAda692
-// reusing "DS" at 0xc90AfD78f79068184d79beA3b615cAB32D0DC45D
-// reusing "DSS" at 0x578ee85856763334d436C715Bcd42F7610619644
-// reusing "LendingPool" at 0x97Ed87C184b79bD6C34c1C056b6930Fd08C4F8d5
-// reusing "sDS" at 0xbA65F51b2F2e70224D9c6B22497D15468E284873
-// reusing "StakingPool" at 0x7CadFA76453190b10C4d755EbF7e0EC1Fa3DF91c
-// reusing "iDSLocker" at 0x238E4dbb46105bB84027f9fc261D9a482e411777
-// reusing "iDS" at 0xdD40E85c61AfBd5f2e0a2b3b55C433A41561f349
-// reusing "VoteTracker" at 0x388072EcAE4b3208181AF82e1Fa3c0166993085E
-
+// deploying "DS" (tx: 0x9ae5ca8111abb901aef09d3ff3e8d468eced426e6337f34e24f3b76ead914bba)...: deployed at 0xC9a5FfC14d68c511e83E758d186C249580d5f111 with 1938526 gas
+// deploying "DSS" (tx: 0x8758b82cfdb416bd34e7e67eb554127bb97cd05e79c19a3415e81e90c941570c)...: deployed at 0x9ee05EBdD94e1779072634b4C8C636f68f3088a2 with 1938630 gas
+// deploying "LendingPool" (tx: 0xe0bfe77a4b2086923e2cb7b140c8beeb5e421383d1bd6ed95c8cfc7a3253e310)...: deployed at 0x7eEea60c374187FAF1c00D82427788BAb3a096CD with 4222573 gas
+// deploying "TrustedMarketFactoryV3" (tx: 0xbcd1721d946fa10416f786bf6d30cf80886802218cc343f14dd1c67625aa23fb)...: deployed at 0x453693835A40289553b155F354f7a45819c7753D with 4286247 gas
+// deploying "Manager" (tx: 0x57358b01ff295410d92a04ce41c7f7172323f49141730c3ceaaa51a202c22d6d)...: deployed at 0xEFa17081CE1C50077E944C58796D6F937c117e8d with 1351552 gas
 
 
 // deploying "FeePot" (tx: 0xa9657db66939d9560b96a2109e42193255ffca418323d680aae15d803200e1cf)...: deployed at 0x3444DC0F16914C45488744C84b074F5c560e8274 with 1256178 gas

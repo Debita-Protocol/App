@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import Styles from "./markets-view.styles.less";
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
@@ -22,8 +22,10 @@ import {
 import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+
+
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
-createMarket_, mintDS, resolveMarket, validator_initiate_market} = ContractCalls;
+createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -34,6 +36,7 @@ const {
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
   InputComps: { SearchInput },
   LabelComps: { NetworkMismatchBanner },
+  MarketCardContext, 
 } = Components;
 const {
   SIDEBAR_TYPES,
@@ -80,6 +83,12 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
   // console.log(isdone)
 };
 
+const confirmApprove = async({
+  account, loginAccount, 
+}) => {
+  await  contractApprovals(account, loginAccount.library)
+
+}
 const confirmInitiate = async({
   account, 
   loginAccount, 
@@ -247,6 +256,8 @@ const SearchButton = (props) => (
 );
 
 const MarketsView = () => {
+  const {formData, handleChange} = useContext(MarketCardContext);
+  console.log('formdata in markets', formData)
   const { isMobile, isLogged } = useAppStatusStore();
   const {
     marketsViewSettings,
@@ -343,7 +354,9 @@ const MarketsView = () => {
 )}>Relovemarket</button>
                       <button onClick={() => confirmInitiate( { account,loginAccount}
 )}>InitiateMarket</button>
-
+                      <button onClick={() => confirmApprove( { account,loginAccount}
+)}>Approve</button>
+                    
 
        {/* <SquareDropdown
           onChange={(value) => {
@@ -407,9 +420,12 @@ const MarketsView = () => {
               noLiquidityDisabled={!isLogged}
               timeFormat={timeFormat}
               marketTransactions={transactions[market.marketId]}
-            />
+            />         
           ))}
+     <button onClick={() => confirmApprove( { account,loginAccount}
+)}>Buy</button>
         </section>
+
       ) : (
         <span className={Styles.EmptyMarketsMessage}>No markets to show. Try changing the filter options.</span>
       )}

@@ -117,6 +117,9 @@ import { SemaphorePublicSignals, SemaphoreSolidityProof } from "@zk-kit/protocol
 
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
+export async function contractApprovals(
+  account: string, 
+  provider: Web3Provider) {
 
   const rewardContractAddress = getRewardsContractAddress(TrustedMarketFactoryV3Address);
   console.log('rewardcontractaddress', rewardContractAddress)
@@ -124,6 +127,7 @@ const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).d
   await rewardContract.trustAMMFactory(ammFactoryAddress)
 
 }
+
 
 export async function addDSPool(
   account: string,
@@ -365,7 +369,30 @@ function getInitialMarketNames(
   };
 
 }
+export async function fetchTradeData(
+  provider: Web3Provider, 
+  account: string, 
+  turboId: number, 
+  ) : Promise<string> {
 
+
+  const marketFactoryData = getMarketFactoryData(TrustedMarketFactoryV3Address);
+  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  const amount = await marketFactoryContract.getTradeDetails(turboId, 1)//TODO get for all outcomes 
+
+  return amount.toString()
+
+
+}
+
+// export async function fetchRequiredCollateral(
+//   provider: Web3Provider, 
+//   account: string, 
+//   turboId: number, 
+//   ): Promise<string> {
+  
+
+// }
 export async function submitProposal(
   provider: Web3Provider,
   account: string,
@@ -384,7 +411,7 @@ export async function submitProposal(
   totalDebt = new BN(totalDebt).shiftedBy(decimals ).integerValue().toFixed();
   const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
  // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
- // let tx = await lendingPool.addProposal(id, principal, duration, totalDebt, description)
+  // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
   //Choose and add validator 
   const validator_address = settlementAddress; //TODO choose randomly from stakers
  // await lendingPool.addValidator(validator_address, manager_address);  
@@ -393,6 +420,8 @@ export async function submitProposal(
   const {_token1, _token2, name} = getInitialMarketNames(); 
   const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, account))
   console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+  console.log('ammFactory', ammFactoryAddress
+    )
   let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);

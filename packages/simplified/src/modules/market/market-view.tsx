@@ -16,6 +16,8 @@ import {
   DerivedMarketData,
   ProcessData,
   Stores,
+  ContractCalls, 
+  useUserStore
 } from "@augurproject/comps";
 import type { MarketInfo, AmmOutcome, MarketOutcome, AmmExchange } from "@augurproject/comps/build/types";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
@@ -41,6 +43,8 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
+const{ fetchTradeData} = ContractCalls; 
+
 let timeoutId = null;
 
 export const combineOutcomeData = (ammOutcomes: AmmOutcome[], marketOutcomes: MarketOutcome[]) => {
@@ -132,6 +136,7 @@ const NonexistingMarketView = ({ text, showLink = false }) => {
 const MarketView = ({ defaultMarket = null }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [marketNotFound, setMarketNotFound] = useState(false);
+  const [storedCollateral, setstoredCollateral] = useState(false);
   const marketId = useMarketQueryId();
   const { isMobile } = useAppStatusStore();
   const {
@@ -146,6 +151,24 @@ const MarketView = ({ defaultMarket = null }) => {
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
 
+  const {
+      account,
+      loginAccount,
+      balances,
+      actions: { addTransaction },
+    } = useUserStore();
+  useEffect(async ()=> {
+    let stored 
+      try{
+      stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
+    }
+    catch (err){console.log("status error", err)
+   return;}
+    setstoredCollateral(stored);
+
+
+
+  });
   useEffect(() => {
     if (!market) {
       timeoutId = setTimeout(() => {
@@ -167,6 +190,10 @@ const MarketView = ({ defaultMarket = null }) => {
     }
   }, [market]);
 
+
+
+
+
   if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
 
   if (!market) return <EmptyMarketView />;
@@ -177,6 +204,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = isMarketFinal(market);
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
+      //console.log('amm!!', market.amm.turboId)
+
+
   return (
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={description} ogTitle={description} twitterTitle={description} />
@@ -193,16 +223,21 @@ const MarketView = ({ defaultMarket = null }) => {
         {!!startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />}
         <ul className={Styles.StatsRow}>
-          <li>
-            <span>24hr Volume</span>
-            <span>{marketHasNoLiquidity ? "-" : formatDai(volume24hrTotalUSD || "0.00").full}</span>
+<li>
+            <span>Net Short CDS buyers </span>
+            <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
           </li>
           <li>
-            <span>Total Volume</span>
-            <span>{marketHasNoLiquidity ? "-" : formatDai(volumeTotalUSD || "0.00").full}</span>
+            <span>Required Net Short CDS buyers </span>
+            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span>
           </li>
           <li>
-            <span>Liquidity</span>
+            <span>Credit Criterion met </span>
+            <span>{"False"}</span>
+          </li>
+
+          <li>
+            <span>Supplied Liquidity</span>
             <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
           </li>
         </ul>

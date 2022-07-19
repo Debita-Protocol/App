@@ -86,7 +86,17 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
         // First market is always empty so that marketid zero means "no market"
         markets.push(makeEmptyMarket());
     }
+        
+    mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
 
+    function logTrade(uint256 _marketId, uint256 _outcome, uint256 _collateralIn) external {
+        TradeDetails[_marketId][_outcome] = TradeDetails[_marketId][_outcome] + _collateralIn; 
+
+    }
+
+    function getTradeDetails(uint256 _marketId, uint256 _outcome) external view returns(uint256){
+        return TradeDetails[_marketId][_outcome]; 
+    }
     // Returns an empty struct if the market doesn't exist.
     // Can check market existence before calling this by comparing _id against markets.length.
     // Can check market existence of the return struct by checking that shareTokens[0] isn't the null address
