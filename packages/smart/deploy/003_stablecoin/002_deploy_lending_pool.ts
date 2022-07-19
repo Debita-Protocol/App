@@ -21,16 +21,18 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   
   const ds = await deployments.get("DS");
   const dss = await deployments.get("DSS"); 
-  //const collateral = await deployments.get("Collateral")
+  const collateral = await deployments.get("Collateral");
+  console.log(collateral.address);
 
 
   const args= [
       ds.address, 
       dss.address, 
-      "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",//collateral.address, 
+      "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       deployer, 
-      owner, //TODO
+      owner
   ];
+  
 
   await deployments.deploy("LendingPool", {
     contract: "LendingPool",
@@ -41,7 +43,5 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 func.tags = ["lendingPool"];
-// func.tags = ["GroupedMarketFactory", "Grouped"];
-// func.dependencies = ["Tokens", "FeePot", "BFactory"];
 
 export default func;

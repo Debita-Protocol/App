@@ -1,31 +1,33 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   AMMFactory,
   AMMFactory__factory,
   BFactory,
   BFactory__factory,
-  BPool__factory,
+  BPool,
   Cash,
+  FeePot,
   Cash__factory,
   FeePot__factory,
   MasterChef,
   MasterChef__factory,
   TrustedMarketFactoryV3,
+  BPool__factory,
   TrustedMarketFactoryV3__factory,
 } from "../typechain";
 import { BigNumber, Contract } from "ethers";
 import { calcShareFactor } from "../src";
 
 describe.skip("AMMFactory", () => {
-  let AMMFactory__factory: AMMFactory__factory;
-  let BFactory__factory: BFactory__factory;
-  let BPool__factory: BPool__factory;
-  let Cash__factory: Cash__factory;
-  let FeePot__factory: FeePot__factory;
-  let MasterChef__factory: MasterChef__factory;
-  let TrustedMarketFactoryV3__factory: TrustedMarketFactoryV3__factory;
+  let AMMFactory: AMMFactory__factory;
+  let BFactory: BFactory__factory;
+  let BPool: BPool__factory;
+  let Cash: Cash__factory;
+  let FeePot: FeePot__factory;
+  let MasterChef: MasterChef__factory;
+  let TrustedMarketFactoryV3: TrustedMarketFactoryV3__factory;
 
   let signer: SignerWithAddress;
   let secondSigner: SignerWithAddress;
@@ -53,13 +55,13 @@ describe.skip("AMMFactory", () => {
   let bPool: Contract;
 
   before(async () => {
-    AMMFactory__factory = (await ethers.getContractFactory("AMMFactory")) as AMMFactory__factory;
-    BFactory__factory = (await ethers.getContractFactory("BFactory")) as BFactory__factory;
-    BPool__factory = (await ethers.getContractFactory("BPool")) as BPool__factory;
-    Cash__factory = (await ethers.getContractFactory("Cash")) as Cash__factory;
-    FeePot__factory = (await ethers.getContractFactory("FeePot")) as FeePot__factory;
-    MasterChef__factory = (await ethers.getContractFactory("MasterChef")) as MasterChef__factory;
-    TrustedMarketFactoryV3__factory = (await ethers.getContractFactory(
+    AMMFactory = (await ethers.getContractFactory("AMMFactory")) as AMMFactory__factory;
+    BFactory = (await ethers.getContractFactory("BFactory")) as BFactory__factory;
+    BPool = (await ethers.getContractFactory("BPool")) as BPool__factory;
+    Cash = (await ethers.getContractFactory("Cash")) as Cash__factory;
+    FeePot = (await ethers.getContractFactory("FeePot")) as FeePot__factory;
+    MasterChef = (await ethers.getContractFactory("MasterChef")) as MasterChef__factory;
+    TrustedMarketFactoryV3 = (await ethers.getContractFactory(
       "TrustedMarketFactoryV3"
     )) as TrustedMarketFactoryV3__factory;
   });
@@ -67,16 +69,16 @@ describe.skip("AMMFactory", () => {
   beforeEach(async () => {
     [signer, secondSigner] = await ethers.getSigners();
 
-    collateral = await Cash__factory.deploy("USDC", "USDC", 6); // 6 decimals to mimic USDC
-    const reputationToken = await Cash__factory.deploy("REPv2", "REPv2", 18);
-    const feePot = await FeePot__factory.deploy(collateral.address, reputationToken.address);
+    collateral = await Cash.deploy("USDC", "USDC", 6); // 6 decimals to mimic USDC
+    const reputationToken = await Cash.deploy("REPv2", "REPv2", 18);
+    const feePot = await FeePot.deploy(collateral.address, reputationToken.address);
     shareFactor = calcShareFactor(await collateral.decimals());
 
-    bFactory = await BFactory__factory.deploy();
+    bFactory = await BFactory.deploy();
 
-    ammFactory = await AMMFactory__factory.deploy(bFactory.address, swapFee);
+    ammFactory = await AMMFactory.deploy(bFactory.address, swapFee);
 
-    marketFactory = await TrustedMarketFactoryV3__factory.deploy(
+    marketFactory = await TrustedMarketFactoryV3.deploy(
       signer.address,
       collateral.address,
       shareFactor,
@@ -98,7 +100,7 @@ describe.skip("AMMFactory", () => {
     await ammFactory.createPool(marketFactory.address, marketId, initialLiquidity, signer.address);
 
     const bPoolAddress = await ammFactory.getPool(marketFactory.address, marketId);
-    bPool = BPool__factory.attach(bPoolAddress).connect(signer);
+    bPool = BPool.attach(bPoolAddress).connect(signer);
     await bPool.approve(ammFactory.address, MAX_APPROVAL);
   });
 
