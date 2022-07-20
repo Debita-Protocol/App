@@ -76,7 +76,7 @@ contract Controller is IController {
         uint256 nullifier_hash, 
         uint256 external_nullifier,
         uint256[8] calldata proof
-    ) external {
+    ) external override {
         require(!verified[msg.sender], "address already verified");
         interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
@@ -124,14 +124,14 @@ contract Controller is IController {
             names, odds
             ); 
        
-        initiateMarket_(marketInfo, borrower, loanID ); 
+        _initiateMarket(marketInfo, borrower, loanID ); 
     }
 
-    function initiateMarket_(
+    function _initiateMarket(
         MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
         address recipient,
         string calldata loanID
-    ) internal {
+    ) public override {
         
 
         // STACK TOO DEEP
@@ -141,8 +141,6 @@ contract Controller is IController {
         string memory description = marketData.description;
         string[] memory names = marketData.names;
         uint256[] memory odds = marketData.odds;
-
-        //lendingpool.approveLoan(recipient, loanID);
 
 
         AMMFactory amm = AMMFactory(ammFactoryAddress);
@@ -220,15 +218,15 @@ contract Controller is IController {
 
     }
 
-    function approveLoan(address recipient, string calldata id) external onlyValidator{
-        lendingpool.approveLoan(recipient, id); 
+    function approveLoan(address recipient, string calldata id, address marketFactory) external onlyValidator{
+        lendingpool.approveLoan(recipient, id, marketFactory); 
     }
 
 
     //If true, it means net short CDS buys > required collateral and validator can approve the loan 
     function canBeApproved(address borrower, 
         string calldata loanID, 
-        address marketFactoryAddress ) external returns(bool){
+        address marketFactoryAddress ) external override returns(bool){
 
         MarketInfo memory marketInfo  = borrower_market_data[borrower][keccak256(abi.encodePacked(loanID))];
         uint256 marketId = marketInfo.marketID; 

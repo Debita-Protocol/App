@@ -218,7 +218,8 @@ contract LendingPool is ILendingPool, Owned {
         uint256 _principal,
         uint256 _duration,
         uint256 _totalInterest,
-        string calldata _description
+        string calldata _description,
+        IController.MarketInfo memory market_info 
     ) external onlyVerified override {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format"); 
@@ -241,23 +242,33 @@ contract LendingPool is ILendingPool, Owned {
             allowance: 0,
             repaymentDate: 0
         }));
+
+        controller._initiateMarket(
+            market_info,
+            msg.sender,
+            _id
+        );
+
         emit LoanProposal(msg.sender, _id);
     }
 
     function removeProposal(string calldata id) onlyVerified external override returns (bool) {
-        return _removeProposal(msg.sender, keccak256(abi.encodePacked(id)));
+        return _removeProposal(msg.sender, id);
     }
 
     function removeProposalGov(address recipient, string calldata id) onlyByOwnGov external override returns (bool) {
-        return _removeProposal(recipient, keccak256(abi.encodePacked(id)));
+        return _removeProposal(recipient, id);
     }
 
-    function _removeProposal(address recipient, bytes32 id) internal returns (bool) {
+    function _removeProposal(address recipient, string calldata id ) internal returns (bool) {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+
         for (uint i = 0; i < num_proposals[recipient]; i++) {
-            if (id == current_loan_data[recipient][i].id){
+            if (hashed_id == current_loan_data[recipient][i].id){
                 emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
-                // remove market HERE!
+                
                 _removeLoan(recipient, i);
+                
                 num_proposals[recipient]--;
                 return true;
             }
@@ -281,16 +292,21 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // called by controller
-    function approveLoan(address recipient, string calldata id) onlyValidator public override {
+    function approveLoan(address recipient, string calldata id, address marketFactoryAddress) onlyValidator public override {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
+
         bytes32 hashed_id = keccak256(abi.encodePacked(id));
         for (uint i = 0; i < current_loan_data[recipient].length; i++) {
+            
             if (hashed_id == current_loan_data[recipient][i].id) {
                 require(!current_loan_data[recipient][i].approved, "loan already approved");
-                console.log(id);
+
+                require(controller.canBeApproved(recipient, id, marketFactoryAddress), "not market approved");
+
                 LoanMetadata storage loan = current_loan_data[recipient][i];
                 
                 loan.approved = true;
+                
                 loan.repaymentDate = block.timestamp + loan.duration;
 
                 emit LoanApproval(recipient, current_loan_data[recipient][i]);
@@ -400,7 +416,7 @@ contract LendingPool is ILendingPool, Owned {
                 require(loan.approved, "must be an active loan");
                 require(loan.amountBorrowed == 0, "not fully paid back principal");
                 require(loan.interestPaid == loan.totalInterest, "not fully paid back interest");
-
+                require(loan.repaymentDate > block.timestamp, "loan already matured");
                 checkLoanStatus(msg.sender, i);
             }
         }
@@ -419,12 +435,16 @@ contract LendingPool is ILendingPool, Owned {
         LoanMetadata storage loan = current_loan_data[borrower][i];
         if (loan.amountBorrowed > 0 || loan.interestPaid < loan.totalInterest) {
             if (block.timestamp > loan.repaymentDate) {
+                controller.resolveMarket(borrower, loan.id, true);
+                
                 emit Default(borrower, loan);
-                // resolve market
+                
                 num_loans[borrower]--;
+                
                 _removeLoan(borrower, i);
             }
         } else {
+            controller.resolveMarket(borrower, loan.id, false);
             emit FullRepayment(borrower, loan);
             // resolve market
             num_loans[borrower]--;

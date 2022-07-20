@@ -1,4 +1,5 @@
 pragma solidity ^0.8.4;
+import "./IController.sol";
 
 interface ILendingPool{
     struct LoanMetadata {
@@ -11,7 +12,8 @@ interface ILendingPool{
         uint256 allowance;
         uint256 amountBorrowed; // how much currently borrowed, should be 0 on full loan repayment
         string description;
-        bool approved;
+        bool approved; // proposal => false, active loan => true
+        // bool marketApproved;
     }
 
     struct LoanData{
@@ -26,10 +28,10 @@ interface ILendingPool{
     function controllerMintDS(uint256 amount) external;
     function controllerBurnDS(uint256 amount) external;
     function addValidator(address validator) external;
-    function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt, string calldata _description) external;
+    function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt, string calldata _description, IController.MarketInfo memory market_info ) external;
     function removeProposal(string calldata id) external returns (bool); // called by recipient
     function removeProposalGov(address recipient, string calldata id) external returns (bool);
-    function approveLoan(address recipient, string calldata id) external;
+    function approveLoan(address recipient, string calldata id, address marketFactoryAddress) external;
     function borrow(uint256 amount, string calldata loan_id) external;
     function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external;
     function checkAddressLoans(address recipient) external;

@@ -18,17 +18,37 @@ interface IController  {
 
     function addValidator(address validator_address) external;
 
-    function initiateMarket(address borrower,
+    function initiateMarket(
+        address borrower,
         address ammFactoryAddress, 
         address marketFactoryAddress, 
         uint256 liquidityAmountUSD, 
         string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
         string calldata loanID, 
         string[] memory names, 
-        uint256[] memory odds) external;
+        uint256[] memory odds
+    ) external;
 
     function resolveMarket(address recipient, bytes32 loanID, bool isDefault) external;
     function verified(address _addr) external returns (bool);
     function validators(address _addr) external returns (bool);
+    function canBeApproved (
+        address borrower, 
+        string calldata loanID, 
+        address marketFactoryAddress 
+    ) external returns(bool);
+    
+    function _initiateMarket(
+        MarketInfo memory data,
+        address borrower,
+        string calldata loanID
+    ) external;
+    
+    function verifyAddress(
+        uint256 nullifier_hash, 
+        uint256 external_nullifier,
+        uint256[8] calldata proof
+    ) external;
 
+    
 }
