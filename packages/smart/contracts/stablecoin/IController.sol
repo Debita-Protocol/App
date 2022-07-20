@@ -29,5 +29,6 @@ interface IController  {
 
     function resolveMarket(address recipient, bytes32 loanID, bool isDefault) external;
     function verified(address _addr) external returns (bool);
+    function validators(address _addr) external returns (bool);
 
 }

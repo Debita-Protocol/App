@@ -434,7 +434,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // checks all user's loan's 
-    function checkAddressLoans(address borrower) public {
+    function checkAddressLoans(address borrower) public override {
         for (uint i = 0; i < current_loan_data[borrower].length; i++) {
             if (current_loan_data[borrower][i].approved) {
                 checkLoanStatus(borrower, i);

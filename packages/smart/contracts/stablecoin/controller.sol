@@ -15,7 +15,7 @@ contract Controller is IController {
     	uint256 suppliedDS; 
     }
 
-    mapping(address => bool) validators; 
+    mapping(address => bool) public override validators; 
     mapping(address => bool) pools;
     mapping(address => bool) public override verified;
     mapping(address => mapping(bytes32 => MarketInfo)) public borrower_market_data; // maps address + loan id => market information, called by lendingpool
