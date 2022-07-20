@@ -33,11 +33,10 @@ contract LendingPool is ILendingPool, Owned {
     uint256 recollat_fee;
     uint256 missing_decimals; 
     uint256 private constant PRICE_PRECISION = 1e6;
-    uint256 total_borrowed_amount;
-    uint256 accrued_interest;
-    uint256 immutable MAX_LOANS = 1;
-    uint256 immutable MAX_PROPOSALS = 1;
-    uint256 immutable public proposal_fee = 1e10;
+    uint256 public total_borrowed_amount;
+    uint256 public accrued_interest;
+    uint256 immutable MAX_LOANS = 2;
+    uint256 immutable MAX_PROPOSALS = 2;
 
     // mint/redeem
     mapping (address => uint256) public redeemDSSBalances;
@@ -48,9 +47,9 @@ contract LendingPool is ILendingPool, Owned {
 
     // loan 
     mapping(address=>bool) public override is_borrower;
-    mapping(address=>uint256) public override borrower_allowance; 
-    mapping(address=>uint256) public override borrower_debt; 
-    mapping(address=>LoanMetadata[]) public current_loan_data;
+    mapping(address=>uint256) public override borrower_allowance; // borrower total allowance
+    mapping(address=>uint256) public override amount_borrowed; // borrower total amount borrowed
+    mapping(address=>LoanMetadata[]) public current_loan_data; // current pending proposals and active loans for each user.
     mapping(address => uint256) public override num_loans;
     mapping(address => uint256) public override num_proposals;
     address[] public borrowers_array;
@@ -72,7 +71,12 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     modifier onlyVerified() {
-        require(controller.verified(msg.sender), "sender not verified");
+        require(controller.verified(msg.sender), "address not verified");
+        _;
+    }
+
+    modifier onlyValidator() {
+        require(controller.validators(msg.sender), "address must be validator");
         _;
     }
 
@@ -213,7 +217,7 @@ contract LendingPool is ILendingPool, Owned {
         string calldata _id,
         uint256 _principal,
         uint256 _duration,
-        uint256 _totalDebt,
+        uint256 _totalInterest,
         string calldata _description
     ) external onlyVerified override {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
@@ -228,11 +232,13 @@ contract LendingPool is ILendingPool, Owned {
         current_loan_data[msg.sender].push(LoanMetadata({
             id: hashed_id,
             principal: _principal,
-            totalDebt: _totalDebt,
+            totalInterest: _totalInterest,
             duration: _duration,
-            amountRepaid: 0,
+            interestPaid: 0,
+            amountBorrowed: 0,
             description: _description,
             approved: false,
+            allowance: 0,
             repaymentDate: 0
         }));
         emit LoanProposal(msg.sender, _id);
@@ -242,7 +248,7 @@ contract LendingPool is ILendingPool, Owned {
         return _removeProposal(msg.sender, keccak256(abi.encodePacked(id)));
     }
 
-    function removeProposal(address recipient, string calldata id) onlyByOwnGov external override returns (bool) {
+    function removeProposalGov(address recipient, string calldata id) onlyByOwnGov external override returns (bool) {
         return _removeProposal(recipient, keccak256(abi.encodePacked(id)));
     }
 
@@ -250,19 +256,13 @@ contract LendingPool is ILendingPool, Owned {
         for (uint i = 0; i < num_proposals[recipient]; i++) {
             if (id == current_loan_data[recipient][i].id){
                 emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
+                // remove market HERE!
                 _removeLoan(recipient, i);
                 num_proposals[recipient]--;
                 return true;
             }
         }
         return false;
-    }
-
-    function _removeLoan(address addr, uint i) private {
-        require(i < current_loan_data[addr].length, "invalid array index");
-        uint256 terminal_index = current_loan_data[addr].length - 1;
-        current_loan_data[addr][i] = current_loan_data[addr][terminal_index];
-        current_loan_data[addr].pop();
     }
 
     function retrieveLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
@@ -281,16 +281,19 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // called by controller
-    function approveLoan(address recipient, string calldata id) onlyController public override returns (bool) {
+    function approveLoan(address recipient, string calldata id) onlyValidator public override {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
         bytes32 hashed_id = keccak256(abi.encodePacked(id));
         for (uint i = 0; i < current_loan_data[recipient].length; i++) {
             if (hashed_id == current_loan_data[recipient][i].id) {
                 require(!current_loan_data[recipient][i].approved, "loan already approved");
+                console.log(id);
                 LoanMetadata storage loan = current_loan_data[recipient][i];
-                emit LoanApproval(recipient, current_loan_data[recipient][i]);
+                
                 loan.approved = true;
                 loan.repaymentDate = block.timestamp + loan.duration;
+
+                emit LoanApproval(recipient, current_loan_data[recipient][i]);
                 
                 if (!is_borrower[recipient]) {
                     is_borrower[recipient] = true;
@@ -300,11 +303,11 @@ contract LendingPool is ILendingPool, Owned {
                 num_loans[recipient]++;
                 num_proposals[recipient]--;
                 borrower_allowance[recipient] += loan.principal;
-                borrower_debt[recipient] += loan.principal;
-                return true;
+                loan.allowance = loan.principal;
+                return;
             }
         }
-        return false; 
+        revert("loan not found");
     }
 
     function removeBorrower(address borrower) private {
@@ -318,102 +321,138 @@ contract LendingPool is ILendingPool, Owned {
     }
 
 
-    function borrow(uint256 amount) external onlyBorrower onlyVerified override {
-        require(amount <= borrower_allowance[msg.sender], "Exceeds borrow allowance");
-        require(amount > 0, "amount must be greater than 0");
+    function borrow(uint256 amount, string calldata id) external onlyBorrower onlyVerified override {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
         
-        borrower_allowance[msg.sender] = borrower_allowance[msg.sender] - amount;
+        for (uint i=0; i < current_loan_data[msg.sender].length; i++) {
+            if (current_loan_data[msg.sender][i].id == hashed_id) {
+                LoanMetadata storage loan = current_loan_data[msg.sender][i];
 
-        IERC20(collateral_address).safeTransfer(msg.sender, amount);
-        borrower_debt[msg.sender] = borrower_debt[msg.sender] + amount;
-        total_borrowed_amount = total_borrowed_amount + amount;
-        emit FundsBorrowed(msg.sender, amount);
+                require(loan.approved, "loan not approved");
+                
+                require(loan.repaymentDate > block.timestamp, "Loan has already reached maturity");
+
+                require(loan.allowance >= amount, "amount exceed's loan allowance");
+                
+                loan.allowance -= amount;
+
+                borrower_allowance[msg.sender] = borrower_allowance[msg.sender] - amount;
+
+                IERC20(collateral_address).safeTransfer(msg.sender, amount);
+                
+                amount_borrowed[msg.sender] += amount;
+
+                loan.amountBorrowed += amount;
+                
+                total_borrowed_amount += amount;
+                
+                emit FundsBorrowed(msg.sender, amount);
+                
+                return;
+            }
+        }
+        revert("loan not found");
     }
 
-    function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external onlyBorrower override returns (bool) {
+    function repay(uint256 repay_principal, uint256 repay_interest, string calldata id) external onlyBorrower override {
         uint256 total_repayment = repay_principal + repay_interest;
-        bytes32 hashed_id = keccak256(abi.encodePacked(loan_id));
+        
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+
         for (uint i = 0; i< current_loan_data[msg.sender].length; i++) {
             if (hashed_id == current_loan_data[msg.sender][i].id) {
                 LoanMetadata storage loan = current_loan_data[msg.sender][i];
-                require(loan.amountRepaid + total_repayment <= loan.principal, "overpaid for specified loan");
+
+                require(loan.approved, "loan not approved");
+                
                 require(loan.repaymentDate > block.timestamp, "Loan has already reached maturity");
 
-                loan.amountRepaid += total_repayment;
-                borrower_debt[msg.sender] = borrower_debt[msg.sender] - repay_principal;
+                require(loan.interestPaid + repay_interest <= loan.totalInterest, "overpaid for loan interest");
+                
+                require(loan.amountBorrowed >= repay_principal, "overpaid for loan principal");
+                
+                amount_borrowed[msg.sender] -= repay_principal;
+
+                loan.amountBorrowed -= repay_principal;
+
+                loan.interestPaid += repay_interest;
+                
                 accrued_interest += repay_interest;
+                
                 console.log('total_borrowed_amount', total_borrowed_amount);
+                
                 total_borrowed_amount = total_borrowed_amount - repay_principal;
 
                 //TransferHelper.safeTransferFrom(collateral_address, msg.sender, address(this), total_repayment); 
                 IERC20(collateral_address).safeTransferFrom(msg.sender, address(this), total_repayment);
-
-                if (loan.amountRepaid == loan.totalDebt) {
-                    emit FullRepayment(msg.sender, loan);
-                    
-                    controller.resolveMarket(msg.sender, hashed_id, false);
-                    
-                    num_loans[msg.sender]--;
-                    
-                    _removeLoan(msg.sender, i);
-                    
-                    if (num_loans[msg.sender] == 0) {
-                        is_borrower[msg.sender] = false;
-                        removeBorrower(msg.sender);
-                    }
-                }
-                return true;
+                return;
             }
         }
-        return false;
+        revert("loan not found");
+    }
+
+    function resolveLoan(string calldata id) public onlyBorrower onlyVerified {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+        for (uint i = 0; i < current_loan_data[msg.sender].length; i++) {
+            if (hashed_id == current_loan_data[msg.sender][i].id) {
+                LoanMetadata storage loan = current_loan_data[msg.sender][i];
+
+                require(loan.approved, "must be an active loan");
+                require(loan.amountBorrowed == 0, "not fully paid back principal");
+                require(loan.interestPaid == loan.totalInterest, "not fully paid back interest");
+
+                checkLoanStatus(msg.sender, i);
+            }
+        }
     }
 
     // restrictions on acccess?
-    function fullDefaultCheck() public override {
+    function fullLoanCheck() public override {
         for (uint i = 0; i < borrowers_array.length; i++) {
             address borrower = borrowers_array[i];
-            LoanMetadata[] storage loans = current_loan_data[borrower];
-            uint length = loans.length;
-            for (uint j = 0; j < length; j++) {
-                checkDefault(borrower, j);
-            }
+            checkAddressLoans(borrower);
         }   
     }
 
-    function checkDefault(address recipient, uint256 index) public {
-        LoanMetadata storage loan = current_loan_data[recipient][index];
-
-        if (loan.repaymentDate < block.timestamp && loan.amountRepaid < loan.totalDebt) {
-            emit Default(recipient, loan);
-            
-            controller.resolveMarket(recipient, loan.id, true);
-
-            num_loans[recipient]--;
-
-            _removeLoan(msg.sender, index);
-            
-            if (num_loans[msg.sender] == 0) {
-                is_borrower[msg.sender] = false;
-            
-                removeBorrower(msg.sender);
+    // helper function: check individual loan
+    function checkLoanStatus(address borrower, uint256 i) private {
+        LoanMetadata storage loan = current_loan_data[borrower][i];
+        if (loan.amountBorrowed > 0 || loan.interestPaid < loan.totalInterest) {
+            if (block.timestamp > loan.repaymentDate) {
+                emit Default(borrower, loan);
+                // resolve market
+                num_loans[borrower]--;
+                _removeLoan(borrower, i);
             }
-            
-            // default logic handler => resolve cds market (loan id => marketID)
+        } else {
+            emit FullRepayment(borrower, loan);
+            // resolve market
+            num_loans[borrower]--;
+            _removeLoan(borrower, i);
         }
+        
     }
 
-    // restrictions on access?
-    function addressCheckDefault(address recipient) public override {
-        for (uint i = 0; i < current_loan_data[recipient].length; i++) {
-            checkDefault(recipient, i);
+    // checks all user's loan's 
+    function checkAddressLoans(address borrower) public {
+        for (uint i = 0; i < current_loan_data[borrower].length; i++) {
+            if (current_loan_data[borrower][i].approved) {
+                checkLoanStatus(borrower, i);
+            }
         }
+    }
+    
+    function _removeLoan(address addr, uint i) private {
+        require(i < current_loan_data[addr].length, "invalid array index");
+        uint256 terminal_index = current_loan_data[addr].length - 1;
+        current_loan_data[addr][i] = current_loan_data[addr][terminal_index];
+        current_loan_data[addr].pop();
     }
 
     function getBorrowerLoanData(address recipient) public view override returns(LoanMetadata memory){
         uint256 id = 0; //get first loandata
         return current_loan_data[recipient][id];
-
-        }
+    }
 
     function getLoanData() public view override returns(LoanData memory){
         LoanData memory loandata = LoanData({

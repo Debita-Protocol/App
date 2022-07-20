@@ -4,10 +4,12 @@ interface ILendingPool{
     struct LoanMetadata {
         bytes32 id;
         uint256 principal; 
-        uint256 totalDebt;
+        uint256 totalInterest; // total interest paid over duration
         uint256 duration;
         uint256 repaymentDate;
-        uint256 amountRepaid;
+        uint256 interestPaid; // how much paid toward interest
+        uint256 allowance;
+        uint256 amountBorrowed; // how much currently borrowed, should be 0 on full loan repayment
         string description;
         bool approved;
     }
@@ -26,17 +28,17 @@ interface ILendingPool{
     function addValidator(address validator) external;
     function addProposal(string calldata _id, uint256 _principal, uint256 _duration, uint256 _totalDebt, string calldata _description) external;
     function removeProposal(string calldata id) external returns (bool); // called by recipient
-    function removeProposal(address recipient, string calldata id) external returns (bool);
-    function approveLoan(address recipient, string calldata id) external returns (bool);
-    function borrow(uint256 amount) external;
-    function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external returns (bool);
-    function addressCheckDefault(address recipient) external;
-    function fullDefaultCheck() external;
+    function removeProposalGov(address recipient, string calldata id) external returns (bool);
+    function approveLoan(address recipient, string calldata id) external;
+    function borrow(uint256 amount, string calldata loan_id) external;
+    function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external;
+    function checkAddressLoans(address recipient) external;
+    function fullLoanCheck() external;
     function getLoanData() external returns(LoanData memory);
     function is_borrower(address addr) external returns (bool);
     function retrieveLoan(address borrower, string calldata id) external returns (LoanMetadata memory);
     function borrower_allowance(address addr) external returns (uint256);
-    function borrower_debt(address addr) external returns (uint256);
+    function amount_borrowed(address addr) external returns (uint256);
     function num_loans(address addr) external returns (uint256);
     function num_proposals(address addr) external returns (uint256);
     function getBorrowerLoanData(address recipient) external returns(LoanMetadata memory);
