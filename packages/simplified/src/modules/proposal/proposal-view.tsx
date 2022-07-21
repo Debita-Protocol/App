@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useContext, useMemo } from "react";
 import BigNumber, { BigNumber as BN } from "bignumber.js";
 import { calculateTotalDebt } from "utils/interest";
 import {
@@ -12,12 +12,14 @@ import {
     Components,
     getCategoryIconLabel,
   } from "@augurproject/comps";
-import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
+import { BaseThemeButtonProps, TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import Styles from "./proposal-view.styles.less";
 import MarketStyles from "../markets/markets-view.styles.less";
 //import Calendar from 'react-calendar'; => to do later.
 import { DropdownProps } from "@augurproject/comps/build/components/common/selection";
+
+// ALL CURRENCY ADDRESSES ARE JUST USDC
 import { CURRENCY_ADDRESSES } from "../constants";
 
 const {
@@ -53,6 +55,21 @@ const {
 const { addProposal } = ContractCalls;
 
 
+const DurationInput = ({onChange, label, value}) => {
+  return (
+    <>
+      <label>{ label }</label>
+      <input
+        type="text"
+        placeholder="0"
+        value={ value }
+        onChange={ onChange }
+      />
+      <br />
+    </>
+  );
+}
+
 const LoanRequestForm = () => {
   const {
     account,
@@ -62,31 +79,31 @@ const LoanRequestForm = () => {
   } = useUserStore();
 
   const [ principal, setPrincipal ] = useState("0.0");
-  const [ duration, setDuration ] = useState("0"); // days
+  const [ duration, setDuration ] = useState({
+    years: "0",
+    months: "0",
+    weeks: "0",
+    days: "0",
+    minutes: "0",
+  });
+  const [ inputError, setInputError ] = useState(false);
+  const [ proposalLimit, setProposalLimit ] = useState(false);
   const [ underlyingToken, setUnderlyingToken ] = useState("");
   const [ interestRate, setInterestRate ] = useState("0.0");
-  const [ name, setName ] = useState(""); 
+  const [ ID, setID ] = useState(""); 
+  const [ description, setDescription] = useState("");
+  const [ loanType, setLoanType ] = useState("");
   
+  const addProposal = useCallback(async ()=> {
+
+  })
 
   const buttonProps: BaseThemeButtonProps = {
     text: "Submit Loan Request",
-    action: () => {
-      if (principal === "" || duration === "" || underlyingToken === "" || interestRate === "" || underlyingToken === "") {
-        console.log("empty fields");
-        return;
-      }
-      else {
-        const totalDebt = calculateTotalDebt(principal, interestRate, duration);
-        addProposal(loginAccount.library, account, principal, totalDebt, duration, underlyingToken).then((response) => {
-        console.log(response);
-        }).catch((err) => {
-          console.log(err);
-        })
-      }
-    }
+    action: addProposal
   };
 
-  const dropdownProps: DropdownProps  = {
+  const tokenDropDownProps: DropdownProps  = {
     options: [
       {
         label: "USDC",
@@ -106,62 +123,119 @@ const LoanRequestForm = () => {
       setUnderlyingToken(val);
     }
   }
+  
+  const loanTypeDropDownProps: DropdwonProps = {
+    options: [
+      {
+        label: "discretionary loan",
+        value: "discretionary"
+      },
+      {
+        label: "smart contract loan",
+        value: "smart"
+      }
+    ],
+    defaultValue: "discretionary loan",
+    onChange: (val) => {
+      setLoanType(val);
+    }
+  }
 
   return (
   <>
     <div className={Styles.LoanRequestForm}>
       <div>
-        <label>Principal: </label> <br />
-        <input 
-          type="text"
-          placeholder="0.0"
-          value={ principal }
-          onChange={(e) => {
-            if (/^\d*\.?\d*$/.test(e.target.value)) {
-              setPrincipal(e.target.value);
-            }
-          }}
-        />
-        <label>Interest Rate (Annual): </label> <br />
-        <input 
-          type="text"
-          placeholder="0.0"
-          value={ interestRate }
-          onChange={(e) => {
-            if (/^\d*\.?\d*$/.test(e.target.value)) {
-              setInterestRate(e.target.value);
-            }
-          }}
-        />
-        <label>Loan Duration (Days): </label> <br />
-       <input
-          type="text"
-          placeholder="0"
-          value={ duration }
-          onChange={(e) => {
-              if (/^\d*$/.test(e.target.value)) {
-                  setDuration(e.target.value);
+        <div className="principal">
+          <label>Principal: </label> <br />
+          <input 
+            type="text"
+            placeholder="0.0"
+            value={ principal }
+            onChange={(e) => {
+              if (/^\d*\.?\d*$/.test(e.target.value)) {
+                setPrincipal(e.target.value)
               }
-            }
-          }
-        />
-      <label>Name: </label> <br />
-       <input
-          type="text"
-          placeholder="0"
-          value={ duration }
-          onChange={(e) => {
-              if (/^\d*$/.test(e.target.value)) {
-                  setName(e.target.value);
+            }}
+          />
+        </div>
+        <div className="interest">
+          <label>Interest Rate (Annual): </label> <br />
+          <input 
+            type="text"
+            placeholder="0.0"
+            value={ interestRate }
+            onChange={(e) => {
+              if (/^\d*\.?\d*$/.test(e.target.value)) {
+                setInterestRate(e.target.value);
               }
+            }}
+          />
+        </div>
+        <div className="duration">
+          <label>Loan Duration: </label> <br />
+          <DurationInput label="years" value={duration.years} onChange={(e)=> {
+            if (/^\d*$/.test(e.target.value)) {
+              setDuration((prev) => { return {...prev, years: e.target.value}})
             }
-          }
-        />
-        <label>Underlying Token: </label> <br />
-        <SquareDropdown { ...dropdownProps }/>
+          }}/>
+          <DurationInput label="months" value={duration.months} onChange={(e)=> {
+            if (/^\d*$/.test(e.target.value)) {
+              setDuration((prev) => { return {...prev, months: e.target.value}})
+            }
+          }}/>
+          <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
+            if (/^\d*$/.test(e.target.value)) {
+              setDuration((prev) => { return {...prev, weeks: e.target.value}})
+            }
+          }}/>
+          <DurationInput label="days" value={duration.days} onChange={(e)=> {
+            if (/^\d*$/.test(e.target.value)) {
+              setDuration((prev) => { return {...prev, days: e.target.value}})
+            }
+          }}/>
+          <DurationInput label="minutes" value={duration.minutes} onChange={(e)=> {
+            if (/^\d*$/.test(e.target.value)) {
+              setDuration((prev) => { return {...prev, minutes: e.target.value}})
+            }
+          }}/>
+        </div>
+        <div className="loan-id">
+          <label>Loan ID: </label> <br />
+          <input
+              type="text"
+              placeholder="0"
+              value={ duration }
+              onChange={(e) => {
+                  if (/^\w*$/.test(e.target.value)) {
+                      setID(e.target.value);
+                  }
+                }
+              }
+            />
+        </div>
+        <div className="description">
+          <label>Description: </label> <br />
+          <input
+              type="text"
+              placeholder=""
+              value={ duration }
+              onChange={(e) => {
+                  setDescription(e.target.value)
+                }
+              }
+            />
+        </div>
+        <div className="token">
+          <label>Underlying Token: </label> <br />
+          <SquareDropdown { ...tokenDropDownProps }/>
+        </div>
+        <div className="loan-type">
+          <label>Loan Type: </label> <br />
+          <SquareDropdown { ...loanTypeDropDownProps }/>
+        </div>
       </div>
       <div className={Styles.SubmitButton}>
-        <SecondaryThemeButton {... buttonProps} />
+        <TinyThemeButton {... buttonProps} />
       </div>
     </div>
   </>
@@ -184,37 +258,6 @@ const LoanProposalView = () => {
   const [ isBorrower, setIsBorrower ] = useState(false)
   const [ loading, setLoading ] = useState(false);
 
-  const confirmRegister = async({
-    account, 
-    loginAccount, 
-  })=> {
-    await registerBorrower(loginAccount.library, account);
-  }
-
-  useEffect(async ()=> {
-    let loan_status;
-    let borrow_status;
-    if (isLogged) {
-      try {
-        // loan_status =  await checkLoanRegistration(loginAccount.library, account);
-        // borrow_status = await checkBorrowStatus(loginAccount.library, account);
-        loan_status =  false;
-        borrow_status = false;
-      }
-      catch (err) {
-        console.log("status error", err)
-        return;
-      }
-    } else {
-      borrow_status = false;
-      loan_status = false;
-    }
-    setLoading(false);
-    setPaidFee(loan_status);
-    console.log('amIregistered', loan_status, paidFee);
-    setIsBorrower(borrow_status);
-  });
-
   if (!isLogged) {
     return (
       <>
@@ -229,18 +272,6 @@ const LoanProposalView = () => {
     return (
       <>
       <div className={MarketStyles.MarketsView}>
-        <div>
-          Registration Status: { paidFee ? "Registered" : "Not yet registered" }
-          <button onClick={() => confirmRegister( { account,loginAccount}
-)         }>Register</button>
-        </div>
-        <div>
-          Borrow Status: { isBorrower ? "Current Borrower" : "None" }
-        </div>
-
-        <section>
-        </section>
-        {/* {paidFee && <LoanRequestForm/> } */}
         <LoanRequestForm />
       </div>
       </>

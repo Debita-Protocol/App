@@ -43,10 +43,11 @@ export const USDC = "USDC";
 export const SHARES = "SHARES";
 export const ALL_CURRENCIES = "All Currencies";
 
+const colateral_address = "0x5799bFe361BEea69f808328FF4884DF92f1f66f0"
 export const CURRENCY_ADDRESSES = {
-  DAI: "0x00",
-  USDC: "0x00",
-  FRAX: "0x00"
+  DAI: colateral_address,
+  USDC: colateral_address,
+  FRAX: colateral_address
 }
 
 // Portfolio table views

@@ -484,10 +484,6 @@ contract LendingPool is ILendingPool, Owned {
             }
         }
     }
-    
-
-
-    
 
     // GETTERS
 
