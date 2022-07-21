@@ -326,15 +326,27 @@ contract LendingPool is ILendingPool, Owned {
         revert("loan not found");
     }
 
-    function removeBorrower(address borrower) private {
+    function _removeBorrower(address borrower) private {
         uint length = borrowers_array.length;
+        
         for (uint i = 0; i < length; i++) {
             if (borrower == borrowers_array[i]) {
                 borrowers_array[i] = borrowers_array[length - 1];
+
                 borrowers_array.pop();
+
+                return;
             }
         }
     }
+
+    function _removeLoan(address addr, uint i) private {
+        require(i < current_loan_data[addr].length, "invalid array index");
+        uint256 terminal_index = current_loan_data[addr].length - 1;
+        current_loan_data[addr][i] = current_loan_data[addr][terminal_index];
+        current_loan_data[addr].pop();
+    }
+
 
 
     function borrow(uint256 amount, string calldata id) external onlyBorrower onlyVerified override {
@@ -442,13 +454,28 @@ contract LendingPool is ILendingPool, Owned {
                 num_loans[borrower]--;
                 
                 _removeLoan(borrower, i);
+
+                if (num_loans[borrower] == 0) {
+                    _removeBorrower(borrower);
+
+                    is_borrower[borrower] = false;
+                }
             }
         } else {
             controller.resolveMarket(borrower, loan.id, false);
+            
             emit FullRepayment(borrower, loan);
             // resolve market
+            
             num_loans[borrower]--;
+            
             _removeLoan(borrower, i);
+
+            if (num_loans[borrower] == 0) {
+                _removeBorrower(borrower);
+
+                is_borrower[borrower] = false;
+            }
         }
         
     }
@@ -462,13 +489,6 @@ contract LendingPool is ILendingPool, Owned {
         }
     }
     
-    function _removeLoan(address addr, uint i) private {
-        require(i < current_loan_data[addr].length, "invalid array index");
-        uint256 terminal_index = current_loan_data[addr].length - 1;
-        current_loan_data[addr][i] = current_loan_data[addr][terminal_index];
-        current_loan_data[addr].pop();
-    }
-
     function getBorrowerLoanData(address recipient) public view override returns(LoanMetadata memory){
         uint256 id = 0; //get first loandata
         return current_loan_data[recipient][id];

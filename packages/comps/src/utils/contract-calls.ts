@@ -286,26 +286,6 @@ export async function validator_initiate_market(
   });
 }
 
-// const getControllerContract = (library: Web3Provider, address: string, account?: string): Controller => {
-//   return Controller__factory.connect(address, getProviderOrSigner(library, account));
-// }
-
-// export async function verify_address(
-//   account: string,
-//   provider: Web3Provider,
-//   public_signals: SemaphorePublicSignals,
-//   proof: SemaphoreSolidityProof
-// ) {
-//   const controller = getControllerContract(provider, controller_address, account);
-//   // finish
-// }
-
-// export async function validator_resolve_market(
-//   provider: Web3Provider, 
-//   validator_account: string ,
-//   liquidityAmount: string, 
-//   isDefault: boolean, 
-
 
 
 //   ) {

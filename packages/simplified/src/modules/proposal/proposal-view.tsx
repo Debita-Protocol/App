@@ -14,7 +14,7 @@ import {
   } from "@augurproject/comps";
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
-import Styles from "./borrow-view.styles.less";
+import Styles from "./proposal-view.styles.less";
 import MarketStyles from "../markets/markets-view.styles.less";
 //import Calendar from 'react-calendar'; => to do later.
 import { DropdownProps } from "@augurproject/comps/build/components/common/selection";
@@ -101,7 +101,7 @@ const LoanRequestForm = () => {
         value: CURRENCY_ADDRESSES.FRAX
       },
     ],
-    defaultValue: "DAI",
+    defaultValue: "USDC",
     onChange: (val) => {
       setUnderlyingToken(val);
     }
@@ -170,7 +170,7 @@ const LoanRequestForm = () => {
 
 //to do => register user and then, have user submit a loan.
 
-const BorrowView = () => {
+const LoanProposalView = () => {
   const {
     account,
     balances,
@@ -249,4 +249,4 @@ const BorrowView = () => {
   
 };
 
-export default BorrowView;
+export default LoanProposalView;
