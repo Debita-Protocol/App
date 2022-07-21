@@ -110,15 +110,57 @@ import {
   dsAddress, 
   lendingPooladdress, 
   usdc,
-  manager_address,
+  controller_address,
   ammFactoryAddress,
   indexCDSAddress, 
   PRICE_PRECISION
 } from "../data/constants";
 
-import { SemaphorePublicSignals, SemaphoreSolidityProof } from "@zk-kit/protocols"
+import createIdentity from "@interep/identity"
+import createProof from "@interep/proof"
 
 const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+
+export async function verifyAddress(
+  account: string,
+  provider: Web3Provider
+): Promise<TransactionResponse> {
+  const wasmFilePath = "../static/semaphore.wasm";
+  const zkeyFilePath = "../static/semaphore_final.zkey";
+  
+  const signer = provider.getSigner(account)
+  
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
+  
+  const group = {
+    provider: "twitter",
+    name: "unrated"
+  }
+
+  const externalNullifier = 1
+
+  const snarkArtifacts = {
+    wasmFilePath,
+    zkeyFilePath
+  }
+
+  const signal_string = "twitter-unrated"
+
+  const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
+
+  return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
+}
+
+export async function getVerificationStatus(
+  account: string,
+  provider: Web3Provider
+) : Promise<boolean> {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  return controller.verified(account)
+}
 
 export async function contractApprovals(
   account: string, 
@@ -236,7 +278,7 @@ export async function validator_initiate_market(
 
   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
   console.log('weights, liquidity', weight1, weight2, liquidity)
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
@@ -254,7 +296,7 @@ export async function validator_initiate_market(
 //   public_signals: SemaphorePublicSignals,
 //   proof: SemaphoreSolidityProof
 // ) {
-//   const controller = getControllerContract(provider, manager_address, account);
+//   const controller = getControllerContract(provider, controller_address, account);
 //   // finish
 // }
 
@@ -269,7 +311,7 @@ export async function validator_initiate_market(
 //   ) {
 
 //   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-//   const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+//   const manager_contract = Manager__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
 //   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
 //   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
 //     console.error(e);
@@ -303,7 +345,7 @@ export async function validator_approve_loan(
   const borrower_address = settlementAddress; 
   const borrower_id = "1";
 
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
 
   await manager_contract.approveLoan(borrower_address, borrower_id)
 
@@ -445,11 +487,11 @@ export async function submitProposal(
   // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
   //Choose and add validator 
   const validator_address = settlementAddress; //TODO choose randomly from stakers
- // await lendingPool.addValidator(validator_address, manager_address);  
+ // await lendingPool.addValidator(validator_address, controller_address);  
 
   const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
   const {_token1, _token2, name} = getInitialMarketNames(); 
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
   console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
   console.log('ammFactory', ammFactoryAddress
     )

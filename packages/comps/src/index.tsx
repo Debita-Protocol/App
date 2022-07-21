@@ -206,7 +206,7 @@ export const Components = {
   SEO,
   SelectionComps,
   MarketCardContext, 
-  MarketCardProvider, 
+  MarketCardProvider
 };
 export const Modals = {
   ModalConnectWallet,

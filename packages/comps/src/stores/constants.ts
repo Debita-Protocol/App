@@ -42,6 +42,7 @@ export const STUBBED_USER_ACTIONS = {
   updateTransaction: (hash, updates) => {},
   updateUserBalances: (balances) => {},
   logout: () => {},
+  updateVerificationStatus: (isVerified) => {},
 };
 
 export const DEFAULT_USER_STATE: UserState = {
@@ -77,6 +78,7 @@ export const DEFAULT_USER_STATE: UserState = {
   loginAccount: null,
   seenPositionWarnings: {},
   transactions: [],
+  verificationStatus: false
 };
 
 export const USER_KEYS = {
@@ -84,7 +86,7 @@ export const USER_KEYS = {
   BALANCES: "balances",
   LOGIN_ACCOUNT: "loginAccount",
   SEEN_POSITION_WARNINGS: "seenPositionWarnings",
-  TRANSACTIONS: "transactions",
+  TRANSACTIONS: "transactions"
 };
 
 export const USER_ACTIONS = {
@@ -97,6 +99,7 @@ export const USER_ACTIONS = {
   SET_LOGIN_ACCOUNT: "SET_LOGIN_ACCOUNT",
   UPDATE_USER_BALANCES: "UPDATE_USER_BALANCES",
   LOGOUT: "LOGOUT",
+  UPDATE_VERIFICATION_STATUS: "UPDATE_VERIFICATION_STATUS"
 };
 
 export const STUBBED_APP_STATUS_ACTIONS = {

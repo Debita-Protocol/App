@@ -715,6 +715,7 @@ export interface UserState {
     [id: string]: SeenPositionWarnings;
   };
   transactions: TransactionDetails[];
+  verificationStatus: boolean;
 }
 
 export interface TransactionDetails {
