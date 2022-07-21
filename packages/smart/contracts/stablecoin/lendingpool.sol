@@ -431,7 +431,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // restrictions on acccess?
-    function fullLoanCheck() public override {
+    function checkAllLoans() public override {
         for (uint i = 0; i < borrowers_array.length; i++) {
             address borrower = borrowers_array[i];
             checkAddressLoans(borrower);

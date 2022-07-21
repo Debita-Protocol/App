@@ -50,7 +50,7 @@ const {
     SPORTS,
   } = Constants;
 
-const { checkLoanRegistration, registerBorrower, submitProposal, checkBorrowStatus } = ContractCalls;
+const { addProposal } = ContractCalls;
 
 
 const LoanRequestForm = () => {
@@ -77,7 +77,7 @@ const LoanRequestForm = () => {
       }
       else {
         const totalDebt = calculateTotalDebt(principal, interestRate, duration);
-        submitProposal(loginAccount.library, account, principal, totalDebt, duration, underlyingToken).then((response) => {
+        addProposal(loginAccount.library, account, principal, totalDebt, duration, underlyingToken).then((response) => {
         console.log(response);
         }).catch((err) => {
           console.log(err);

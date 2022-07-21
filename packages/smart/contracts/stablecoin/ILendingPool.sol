@@ -35,7 +35,7 @@ interface ILendingPool{
     function borrow(uint256 amount, string calldata loan_id) external;
     function repay(uint256 repay_principal, uint256 repay_interest, string calldata loan_id) external;
     function checkAddressLoans(address recipient) external;
-    function fullLoanCheck() external;
+    function checkAllLoans() external;
     function getProtocolLoanData() external returns(LoanData memory);
     function is_borrower(address addr) external returns (bool);
     function retrieveLoan(address borrower, string calldata id) external returns (LoanMetadata memory);

@@ -1,4 +1,4 @@
-import BigNumber, { BigNumber as BN } from "bignumber.js";
+import { BigNumber as BN } from "bignumber.js";
 
 import {
   AddRemoveLiquidity,
@@ -27,6 +27,7 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
+  Web3,
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -67,7 +68,7 @@ import {
   WMATIC_TOKEN_ADDRESS,
   REWARDS_AMOUNT_CUTOFF
 } from "./constants";
-import { getProviderOrSigner } from "../components/ConnectAccount/utils";
+import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 import { createBigNumber } from "./create-big-number";
 import { PARA_CONFIG } from "../stores/constants";
 import ERC20ABI from "./ERC20ABI.json";
@@ -117,11 +118,13 @@ import {
   collateral_address
 } from "../data/constants";
 
+
+import {BigNumber} from "ethers"
 import { Loan } from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 
-const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 //  LENDING POOL FUNCTIONS
 
@@ -161,29 +164,126 @@ export async function addProposal(
     odds: [weight1, weight2]
   }
 
-  let transaction = lpool.addProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
+  let transaction = lpool.connect(getSigner(provider, account)).addProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
 
   return transaction;
 }
 
+export async function borrow(
+  account: string,
+  provider: Web3Provider,
+  loan_id: string, // decimal format
+  amount: string //decimal format
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+
+  amount = new BN(amount).shiftedBy(decimals).toFixed()
+
+  return lpool.connect(getSigner(provider, account)).borrow(amount, loan_id)
+}
+
+export async function repay(
+  account: string,
+  provider: Web3Provider,
+  repay_principal: string, // decimal format
+  repay_interest: string, // decimal format
+  id: string
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+
+  repay_principal = new BN(repay_principal).shiftedBy(decimals).toFixed()
+  repay_interest = new BN(repay_interest).shiftedBy(decimals).toFixed()
+
+  return lpool.connect(getSigner(provider, account)).repay(repay_principal, repay_interest, id)
+}
+
+export async function checkAllLoans(
+  account : string,
+  provider: Web3Provider
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.checkAllLoans();
+}
+
+export async function checkAddressLoans(
+  account: string,
+  provider: Web3Provider,
+  address: string // address to check default
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.checkAddressLoans(address)
+}
+// called by owner of loan to optionally resolve loan early.
+export async function personalResolveLoan(
+  account: string,
+  provider: Web3Provider,
+  id: string
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(id)
+}
+
 export async function retrieveLoan(
   account: string,
-  library: Web3Provider,
+  provider: Web3Provider,
+  address: string, // address for loan data
   loan_id: string
 ): Promise<Loan> {
-  const lpool = getLendingPoolContract(library, account)
+  const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.retrieveLoan(account, loan_id)
+  return lpool.retrieveLoan(address, loan_id)
 }
 
 export async function retrieveLoans(
   account: string, // current connected account
-  library: Web3Provider,
+  provider: Web3Provider,
   address: string // address for returned loan data
 ) : Promise<Loan[]> {
-  const lpool = getLendingPoolContract(library, account)
+  const lpool = getLendingPoolContract(provider, account)
 
   return lpool.retrieveLoans(address)
+}
+
+
+
+export async function getBorrowers(
+  account: string,
+  provider: Web3Provider,
+) : Promise<string[]> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.getCurrentBorrowers()
+}
+
+export async function getNumberLoans(
+  account: string,
+  provider: Web3Provider,
+  address: string
+) : Promise<BigNumber> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.num_loans(address)
+}
+
+export async function getNumberProposals(
+  account: string,
+  provider: Web3Provider,
+  address: string
+) : Promise<BigNumber> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.num_proposals(address)
 }
 
 
@@ -1357,7 +1457,7 @@ export const cashOutAllShares = (
     return null;
   }
   const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
-  const shareAmount = BigNumber.min(...balancesRaw);
+  const shareAmount = BN.min(...balancesRaw);
   const normalizedAmount = shareAmount
     .div(new BN(shareFactor))
     .decimalPlaces(0, 1)
@@ -1375,7 +1475,7 @@ export const cashOutAllShares = (
 export const getCompleteSetsAmount = (outcomeShares: string[], ammOutcomes): string => {
   if (!outcomeShares) return "0";
   const shares = (ammOutcomes || []).map((s, i) => new BN(outcomeShares[i] || "0"));
-  const amount = BigNumber.min(...shares);
+  const amount = BN.min(...shares);
   if (isNaN(Number(amount.toFixed()))) return "0";
   const isDust = amount.lte(DUST_POSITION_AMOUNT);
   return isDust ? "0" : amount.toFixed();
@@ -2118,7 +2218,7 @@ const accumSharesPrice = (
   outcome: string,
   account: string,
   cutOffTimestamp: number
-): { shares: BigNumber; cashAmount: BigNumber; avgPrice: BigNumber } => {
+): { shares: BN; cashAmount: BN; avgPrice: BN } => {
   if (!transactions || transactions.length === 0) return { shares: ZERO, cashAmount: ZERO, avgPrice: ZERO };
   const result = transactions
     .filter(
@@ -2148,8 +2248,8 @@ const accumLpSharesPrice = (
   account: string,
   cutOffTimestamp: number,
   shareFactor: string,
-  outcomeDefaultAvgPrice: BigNumber
-): { shares: BigNumber; cashAmount: BigNumber; avgPrice: BigNumber } => {
+  outcomeDefaultAvgPrice: BN
+): { shares: BN; cashAmount: BN; avgPrice: BN } => {
   if (!transactions || transactions.length === 0) return { shares: ZERO, cashAmount: ZERO, avgPrice: ZERO };
   const result = transactions
     .filter((t) => isSameAddress(t?.sender?.id, account) && Number(t.timestamp) > cutOffTimestamp)

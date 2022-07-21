@@ -1,5 +1,4 @@
 import "./assets/styles/shared.less";
-import { checkLoanRegistration, registerBorrower, submitProposal } from "./utils/contract-calls";
 import * as _ContractCalls from "./utils/contract-calls";
 import * as _Calculations from "./utils/calculations";
 import * as _DerivedMarketData from "./utils/derived-market-data";
