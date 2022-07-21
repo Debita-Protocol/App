@@ -12,6 +12,8 @@ import { ConfirmedCheck } from "../common/icons";
 import { TinyThemeButton } from "../common/buttons";
 
 import { MarketCardContext } from './market-card-context'; 
+import {useUserStore} from "../../stores/user"; 
+import {isBorrowerApproved} from "../../utils/contract-calls"; 
 
 export const LoadingMarketCard = () => {
   return (
@@ -148,8 +150,23 @@ export const MarketCardView = ({
   noLiquidityDisabled?: boolean;
   timeFormat?: string;
 }) => {
+
+  const[isApproved, setIsApproved] = useState(false)
    const {formData, handleChange} = useContext(MarketCardContext);
    //console.log('market in marketcard', amm, market);
+       const {
+    account,
+    loginAccount,
+    balances,
+    actions: { addTransaction },
+    } = useUserStore();
+
+  useEffect(async() => {
+    let approved 
+    approved = await isBorrowerApproved(loginAccount.library, account)
+    setIsApproved(approved); 
+  })
+
 
   const { categories, marketId, reportingState, hasWinner } = market;
   const formattedLiquidity = useMemo(() => formatLiquidity(amm?.liquidityUSD || "0.00", { bigUnitPostfix: true }).full, [amm?.liquidityUSD]);
@@ -175,9 +192,9 @@ export const MarketCardView = ({
             [Styles.Trading]: reportingState === MARKET_STATUS.TRADING,
           })}
         >
+          {/* <CategoryLabel {...{ categories }} /> */}
           <ReportingStateLabel {...{ reportingState }} />
-          <CategoryIcon {...{ categories }} />
-          <CategoryLabel {...{ categories }} />
+        {/*  <CategoryIcon {...{ categories }} /> */ }
           <div>
             <ReportingStateLabel {...{ reportingState }} />
             {marketHasNoLiquidity ? (
@@ -190,7 +207,20 @@ export const MarketCardView = ({
             ) : (
               <ValueLabel label="Liquidity Provider APR" value={formattedApy || "-"} />
             )}
+
           </div>
+
+          <div>
+            {(
+              <ValueLabel label="Short CDS APR" value={formattedApy || "-"} />
+            )}
+          </div>
+    <div>
+            {(
+              <ValueLabel label="Is Approved" value={formattedApy || "False"} />
+            )}
+          </div>
+
         </article>
         <section>
           <MarketTitleArea {...{ ...market, timeFormat }} />

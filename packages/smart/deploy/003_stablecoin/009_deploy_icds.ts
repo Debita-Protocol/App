@@ -16,8 +16,11 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 };
 
-func.tags = ["TrustedMarketFactory", "Trusted"];
-func.dependencies = ["Tokens", "FeePot", "BFactory"];
+// func.tags = ["TrustedMarketFactory", "Trusted"];
+// func.dependencies = ["Tokens", "FeePot", "BFactory"];
+
+func.tags = ["icds"];
+func.dependencies = [""];
 
 export default func;
 

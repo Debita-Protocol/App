@@ -1,14 +1,25 @@
 @import (reference) '~assets/styles/shared';
+  // display: grid;
+  // grid-template-columns: 1fr auto;
+  // grid-auto-rows: 0fr;
+  // grid-gap: @size-8 @size-16;
+  // padding: @size-40 @size-88 @size-48;
 
 .PortfolioView {
-  .TwoTonePage;
-  .TwoTonePageGrid;
+   // .FixedBoxShadow;
+   // .ThemeBorder;
+    align-items: center;
 
+ padding: @size-40 @size-88 @size-48;
+ //  .TwoTonePage;
+  // .TwoTonePageGrid;
   > section:first-of-type {
     flex-flow: column nowrap;
 
     > div[class*="PositionsLiquidityViewSwitcher"] {
       margin-top: @size-64;
+     // margin: @size-16 0 @size-24 0;
+  //   column-width: @size-128
     }
 
     > div[class*="Activity"] {

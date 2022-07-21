@@ -258,23 +258,6 @@ export async function validator_initiate_market(
 //   // finish
 // }
 
-// export async function validator_resolve_market(
-//   provider: Web3Provider, 
-//   validator_account: string ,
-//   liquidityAmount: string, 
-//   isDefault: boolean, 
-
-
-
-//   ) {
-
-//   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-//   const manager_contract = Manager__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
-//   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
-//   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
-//     console.error(e);
-//     throw e;
-//   });
 
   
 
@@ -424,6 +407,31 @@ export async function doBulkTrade(
 
 
 // }
+
+export async function getNFTPositionInfo(
+  provider: Web3Provider, 
+  account: string
+  ) : Promise<any>{
+
+  const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress,
+   getProviderOrSigner(provider, account)) ; 
+  const infos = await indexCDS_contract.getUserTotalBalance(account); 
+
+  return infos; 
+
+}
+
+export async function isBorrowerApproved(
+  provider: Web3Provider, 
+  account: string,
+//marketid, needs a marketid->borrowerid/idx mapping 
+  ): Promise<boolean>{
+
+  //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
+  //const isapproved = await lendingpool.isApproved(borrower, idx)
+
+  return false;  
+}
 export async function submitProposal(
   provider: Web3Provider,
   account: string,
