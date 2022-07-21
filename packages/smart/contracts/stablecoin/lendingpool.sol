@@ -35,8 +35,8 @@ contract LendingPool is ILendingPool, Owned {
     uint256 private constant PRICE_PRECISION = 1e6;
     uint256 public total_borrowed_amount;
     uint256 public accrued_interest;
-    uint256 immutable MAX_LOANS = 2;
-    uint256 immutable MAX_PROPOSALS = 2;
+    uint256 immutable public MAX_LOANS = 1;
+    uint256 immutable public MAX_PROPOSALS = 1;
 
     // mint/redeem
     mapping (address => uint256) public redeemDSSBalances;
@@ -276,16 +276,6 @@ contract LendingPool is ILendingPool, Owned {
         return false;
     }
 
-    function retrieveLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
-        for (uint i = 0; i < current_loan_data[borrower].length; i++) {
-            if (hashed_id == current_loan_data[borrower][i].id) {
-                return current_loan_data[borrower][i];
-            }
-        }
-        revert("loan not found");
-    }
-
     function isApproved(address borrower, uint256 idx) public view returns(bool){
         LoanMetadata memory loan = current_loan_data[borrower][idx]; 
         return loan.approved; 
@@ -313,12 +303,16 @@ contract LendingPool is ILendingPool, Owned {
                 
                 if (!is_borrower[recipient]) {
                     is_borrower[recipient] = true;
+                    
                     borrowers_array.push(recipient);
                 }
                 
                 num_loans[recipient]++;
+                
                 num_proposals[recipient]--;
+                
                 borrower_allowance[recipient] += loan.principal;
+                
                 loan.allowance = loan.principal;
                 return;
             }
@@ -326,6 +320,7 @@ contract LendingPool is ILendingPool, Owned {
         revert("loan not found");
     }
 
+    //helper function
     function _removeBorrower(address borrower) private {
         uint length = borrowers_array.length;
         
@@ -340,6 +335,7 @@ contract LendingPool is ILendingPool, Owned {
         }
     }
 
+    // helper function
     function _removeLoan(address addr, uint i) private {
         require(i < current_loan_data[addr].length, "invalid array index");
         uint256 terminal_index = current_loan_data[addr].length - 1;
@@ -364,7 +360,7 @@ contract LendingPool is ILendingPool, Owned {
                 
                 loan.allowance -= amount;
 
-                borrower_allowance[msg.sender] = borrower_allowance[msg.sender] - amount;
+                borrower_allowance[msg.sender] -= amount;
 
                 IERC20(collateral_address).safeTransfer(msg.sender, amount);
                 
@@ -489,18 +485,45 @@ contract LendingPool is ILendingPool, Owned {
         }
     }
     
-    function getBorrowerLoanData(address recipient) public view override returns(LoanMetadata memory){
-        uint256 id = 0; //get first loandata
-        return current_loan_data[recipient][id];
+
+
+    
+
+    // GETTERS
+
+    function getCurrentBorrowers() public view override returns (address[] memory) {
+        return borrowers_array;
     }
 
-    function getLoanData() public view override returns(LoanData memory){
+    function getProtocolLoanData() public view override returns(LoanData memory){
         LoanData memory loandata = LoanData({
             _total_borrowed_amount: total_borrowed_amount, 
             _accrued_interest : accrued_interest
             });
         return loandata;
     }
+
+    // gets address current loan data
+    function retrieveLoans(address borrower) public view override returns (LoanMetadata[] memory) {
+        return current_loan_data[borrower];
+    }
+
+    function retrieveLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+        for (uint i = 0; i < current_loan_data[borrower].length; i++) {
+            if (hashed_id == current_loan_data[borrower][i].id) {
+                return current_loan_data[borrower][i];
+            }
+        }
+        revert("loan not found");
+    }
+
+    function getBorrowerLoanData(address recipient) public view override returns(LoanMetadata memory){
+        uint256 id = 0; //get first loandata
+        return current_loan_data[recipient][id];
+    }
+
+
 
     event LoanProposal(address indexed recipient, string loan_id);
     event LoanApproval(address indexed recipient, LoanMetadata loan);

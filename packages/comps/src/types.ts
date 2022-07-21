@@ -1,8 +1,21 @@
 import { MouseEvent } from "react";
-import type { BigNumber } from "./utils/create-big-number";
+import type { BigNumber as BN } from "./utils/create-big-number";
 import type { TradingDirection } from "./utils/constants";
-import { ethers } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
+
+export interface Loan {
+  id: string,
+  principal: BigNumber,
+  totalInterest: BigNumber,
+  duration: BigNumber,
+  repaymentDate: BigNumber,
+  interestPaid: BigNumber,
+  allowance: BigNumber,
+  amountBorrowed: BigNumber,
+  description: string,
+  approved: boolean
+}
 
 export interface TextLink {
   text: string;
@@ -526,9 +539,9 @@ export interface PriceTimeSeriesData {
 export interface MarketClaimablePositions {
   markets: MarketInfo[];
   totals: {
-    totalUnclaimedProfit: BigNumber;
-    totalUnclaimedProceeds: BigNumber;
-    totalFees: BigNumber;
+    totalUnclaimedProfit: BN;
+    totalUnclaimedProceeds: BN;
+    totalFees: BN;
   };
   positions: {
     [marketId: string]: {
@@ -704,6 +717,7 @@ export interface GraphDataState {
   loading?: boolean;
   transactions?: any;
 }
+
 
 export interface DataState extends GraphDataState {}
 
