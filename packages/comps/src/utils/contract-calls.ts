@@ -110,7 +110,7 @@ import {
   dsAddress, 
   lendingPooladdress, 
   usdc,
-  manager_address,
+  controller_address,
   ammFactoryAddress,
   indexCDSAddress, 
   PRICE_PRECISION
@@ -236,7 +236,7 @@ export async function validator_initiate_market(
 
   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
   console.log('weights, liquidity', weight1, weight2, liquidity)
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, validator_account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
@@ -286,7 +286,7 @@ export async function validator_approve_loan(
   const borrower_address = settlementAddress; 
   const borrower_id = "1";
 
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
 
   await manager_contract.approveLoan(borrower_address, borrower_id)
 
@@ -457,7 +457,7 @@ export async function submitProposal(
 
   const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
   const {_token1, _token2, name} = getInitialMarketNames(); 
-  const manager_contract = Controller__factory.connect(manager_address, getProviderOrSigner(provider, account))
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
   console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
   console.log('ammFactory', ammFactoryAddress
     )

@@ -39,12 +39,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   ];
 
 
-    await deployments.deploy("Controller", {
+    const controller = await deployments.deploy("Controller", {
     contract: "Controller",
     from: deployer,
     args,
     log: true,
-  });
+    });
 
 };
 

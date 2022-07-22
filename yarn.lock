@@ -4161,6 +4161,13 @@
   dependencies:
     "@zk-kit/identity" "^1.4.1"
 
+"@interep/identity@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@interep/identity/-/identity-0.2.0.tgz#b6fa00af79dd65a64630d8c38ffb966ed6793356"
+  integrity sha512-YOpNno9nL/OaEZ0nfoyQDy1CErgxhPY8RjDyZ9WwNQqnYx6PLMC9inLTxpKU/LyTfMoFfycJy/qrcCL588Q1ZQ==
+  dependencies:
+    "@semaphore-protocol/identity" "2.0.0"
+
 "@interep/proof@0.5.0":
   version "0.5.0"
   resolved "https://registry.yarnpkg.com/@interep/proof/-/proof-0.5.0.tgz#0105765e59d37fa5a79da8227ade335d03de7205"
@@ -4173,6 +4180,18 @@
     "@zk-kit/incremental-merkle-tree" "^0.4.3"
     "@zk-kit/protocols" "^1.11.0"
     circomlibjs "0.0.8"
+
+"@interep/proof@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@interep/proof/-/proof-0.6.0.tgz#7cfe2a6fcd3f78ef420c34970d08a646767e0967"
+  integrity sha512-T7sYO6ngKztS+jN3xfd5H1IL3hMXAq8U5vfuvvnOU+9WD4EmyCOsHW+/ECUQRYREma6KbqcBNFdf7k+zQDPFUg==
+  dependencies:
+    "@ethersproject/solidity" "^5.5.0"
+    "@ethersproject/strings" "^5.5.0"
+    "@interep/api" "^0.7.0"
+    "@semaphore-protocol/group" "2.0.0"
+    "@semaphore-protocol/identity" "2.0.0"
+    "@semaphore-protocol/proof" "2.2.0"
 
 "@interep/reputation@^0.1.0":
   version "0.1.0"
@@ -5639,6 +5658,39 @@
   dependencies:
     "@noble/hashes" "~1.1.1"
     "@scure/base" "~1.1.0"
+
+"@semaphore-protocol/group@2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@semaphore-protocol/group/-/group-2.0.0.tgz#9e7bfad7ee04882bcf07f13437fb53c1053690db"
+  integrity sha512-WFe8QWz8m6kBUR3WKfeiVbKUqXZsdyOylA6O6AlrqqS8jC8D1BjV4ufz0sD4ZjkRVjRwmIppXjgdxw8OVtZrug==
+  dependencies:
+    "@zk-kit/incremental-merkle-tree" "0.4.3"
+    circomlibjs "0.0.8"
+
+"@semaphore-protocol/identity@2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@semaphore-protocol/identity/-/identity-2.0.0.tgz#45d9dc98978217102e887d070b48cc125e2c3c42"
+  integrity sha512-S67x+7CBYWZVDvmfO3OX7H1M8s7ZGVjTH5ipaFsLbQsm/1AM31OurEY11wR2b8tDociMTOCjRtO9BsHvHU3O/A==
+  dependencies:
+    "@ethersproject/bignumber" "^5.5.0"
+    "@ethersproject/random" "^5.5.1"
+    "@ethersproject/sha2" "^5.6.1"
+    "@ethersproject/strings" "^5.6.1"
+    circomlibjs "0.0.8"
+
+"@semaphore-protocol/proof@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@semaphore-protocol/proof/-/proof-2.2.0.tgz#e24adbbdd6cf9b3d7d77fcbdd7bfd6a5758d5289"
+  integrity sha512-sLTBpbW8MVI0/+P2wWas2fe62xQPTcFskG3oU81nZpQFIMRC4cqu7InwRqM6xjW3gOryibsvSlGhQ9x9VV4kyA==
+  dependencies:
+    "@ethersproject/bytes" "^5.5.0"
+    "@ethersproject/solidity" "^5.5.0"
+    "@ethersproject/strings" "^5.5.0"
+    "@semaphore-protocol/group" "2.0.0"
+    "@semaphore-protocol/identity" "2.0.0"
+    "@zk-kit/incremental-merkle-tree" "0.4.3"
+    circomlibjs "0.0.8"
+    snarkjs "^0.4.13"
 
 "@sentry/core@5.30.0":
   version "5.30.0"
@@ -7745,7 +7797,7 @@
   resolved "https://registry.yarnpkg.com/@zk-kit/incremental-merkle-tree.sol/-/incremental-merkle-tree.sol-0.3.1.tgz#904fa76028803f6340e23bd0929d94398659a070"
   integrity sha512-85rZpeSJGeR0yEiIbJwWrZgA68ovc62XiOHcMvAZmJtISsYMVHqzN6w4ax9Ke6bE70sj5V0OSPZ89vgJZ0zxgg==
 
-"@zk-kit/incremental-merkle-tree@^0.4.3":
+"@zk-kit/incremental-merkle-tree@0.4.3", "@zk-kit/incremental-merkle-tree@^0.4.3":
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/@zk-kit/incremental-merkle-tree/-/incremental-merkle-tree-0.4.3.tgz#197f72102d35dd9c546a6a432896d6d6f6de05f4"
   integrity sha512-2qHfrJXtPx8/UmF0wFAUr4VqCLr3J/P859fk/e3fwKLUnf3baeIUAO6inY4wrh0NGy4bzpKUWYjDph0yTbPz6A==
@@ -9759,10 +9811,6 @@ bcrypt-pbkdf@^1.0.0:
   integrity sha1-pDAdOJtqQ/m2f/PKEaP2Y342Dp4=
   dependencies:
     tweetnacl "^0.14.3"
-
-"bcrypto@https://github.com/AugurProject/blackhole.git", "puppeteer@https://github.com/AugurProject/blackhole.git", "scrypt@https://github.com/AugurProject/blackhole.git":
-  version "1.0.0"
-  resolved "https://github.com/AugurProject/blackhole.git#f8230443bf4fc9d5921655e06ebe2755d84afbcd"
 
 bech32@1.1.4:
   version "1.1.4"
@@ -22049,11 +22097,6 @@ optionator@^0.9.1:
     type-check "^0.4.0"
     word-wrap "^1.2.3"
 
-options@>=0.0.5:
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/options/-/options-0.0.6.tgz#ec22d312806bb53e731773e7cdaefcf1c643128f"
-  integrity sha512-bOj3L1ypm++N+n7CEbbe473A414AB7z+amKYshRb//iuL3MpdDCLhPnw6aVTdKB9g5ZRVHIEp8eUln6L2NUStg==
-
 ora@^3.4.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/ora/-/ora-3.4.0.tgz#bf0752491059a3ef3ed4c85097531de9fdbcd318"
@@ -24250,14 +24293,6 @@ pull-window@^2.1.4:
   dependencies:
     looper "^2.0.0"
 
-"pull-ws@https://github.com/pull-stream/pull-ws.git":
-  version "3.3.2"
-  resolved "https://github.com/pull-stream/pull-ws.git#9c1a9cf612ff6d1a030b763cb64b02922ae3c824"
-  dependencies:
-    relative-url "^1.0.2"
-    safe-buffer "^5.1.1"
-    ws "^1.1.0"
-
 pump@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/pump/-/pump-1.0.3.tgz#5dfe8311c33bbf6fc18261f9f34702c47c08a954"
@@ -25156,11 +25191,6 @@ relateurl@0.2.x, relateurl@^0.2.7:
   version "0.2.7"
   resolved "https://registry.yarnpkg.com/relateurl/-/relateurl-0.2.7.tgz#54dbf377e51440aca90a4cd274600d3ff2d888a9"
   integrity sha1-VNvzd+UUQKypCkzSdGANP/LYiKk=
-
-relative-url@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/relative-url/-/relative-url-1.0.2.tgz#d21c52a72d6061018bcee9f9c9fc106bf7d65287"
-  integrity sha512-jI1AmBVFFMXwQ3I6tIYVmVOjy8f+ogHbqkeb8/LL9tszEQiTV8I0l8XT4oEomUOoxfm698f92gYlNKeA/9LJVQ==
 
 relay-compiler@10.1.0:
   version "10.1.0"
@@ -28160,11 +28190,6 @@ uint8arrays@^2.0.5, uint8arrays@^2.1.3, uint8arrays@^2.1.4:
   dependencies:
     multibase "^4.0.1"
 
-ultron@1.0.x:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.0.2.tgz#ace116ab557cd197386a4e88f4685378c8b2e4fa"
-  integrity sha512-QMpnpVtYaWEeY+MwKDN/UdKlE/LsFZXM5lO1u7GaZzNgmIbGixHEmVMIKT+vqYOALu3m5GYQy9kz4Xu4IVn7Ow==
-
 ultron@~1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.1.1.tgz#9fe1536a10a664a65266a1e3ccf85fd36302bc9c"
@@ -31001,14 +31026,6 @@ ws@7.4.6:
   version "7.4.6"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.6.tgz#5654ca8ecdeee47c33a9a4bf6d28e2be2980377c"
   integrity sha512-YmhHDO4MzaDLB+M9ym/mDA5z0naX8j7SIlT8f8z+I0VtzsRbekxEutHSme7NPS2qE8StCYQNUnfWdXta/Yu85A==
-
-ws@^1.1.0:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-1.1.5.tgz#cbd9e6e75e09fc5d2c90015f21f0c40875e0dd51"
-  integrity sha512-o3KqipXNUdS7wpQzBHSe180lBGO60SoK0yVo3CYJgb2MkobuWuBX6dhkYP5ORCLd55y+SaflMOV5fqAB53ux4w==
-  dependencies:
-    options ">=0.0.5"
-    ultron "1.0.x"
 
 ws@^3.0.0:
   version "3.3.3"

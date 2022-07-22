@@ -15,6 +15,7 @@ const {
   UPDATE_USER_BALANCES,
   UPDATE_TRANSACTION,
   LOGOUT,
+  UPDATE_VERIFICATION_STATUS
 } = USER_ACTIONS;
 const { ACCOUNT, BALANCES, LOGIN_ACCOUNT, SEEN_POSITION_WARNINGS, TRANSACTIONS } = USER_KEYS;
 
@@ -46,6 +47,10 @@ export function UserReducer(state, action) {
   const now = new Date().getTime();
 
   switch (action.type) {
+    case UPDATE_VERIFICATION_STATUS: {
+      updatedState["verificationStatus"] = action.isVerified;
+      break;
+    }
     case LOGOUT: {
       window.localStorage.setItem("lastUser", null);
       updatedState = { ...DEFAULT_USER_STATE };
@@ -153,6 +158,7 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
       addSeenPositionWarnings: (seenPositionWarnings) =>
         dispatch({ type: ADD_SEEN_POSITION_WARNINGS, seenPositionWarnings }),
       logout: () => dispatch({ type: LOGOUT }),
+      updateVerificationStatus: (isVerified: boolean) => dispatch({type: UPDATE_VERIFICATION_STATUS, isVerified})
     },
   };
 };

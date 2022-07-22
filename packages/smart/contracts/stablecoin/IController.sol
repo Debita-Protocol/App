@@ -49,6 +49,4 @@ interface IController  {
         uint256 external_nullifier,
         uint256[8] calldata proof
     ) external;
-
-    
 }
