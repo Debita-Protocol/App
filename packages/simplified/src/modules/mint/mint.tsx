@@ -145,7 +145,7 @@ const MintView= () => {
           </div>
 
         <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
-        &nbsp; &nbsp;  &nbsp; Confirm &nbsp; &nbsp; &nbsp; 
+        &nbsp; &nbsp;  &nbsp; <span>Confirm</span> &nbsp; &nbsp; &nbsp; 
         </button>
 
         </div>
