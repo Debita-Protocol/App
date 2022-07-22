@@ -555,31 +555,7 @@ export async function validator_initiate_market(
     console.error(e);
     throw e;
   });
-<<<<<<< HEAD
-} 
-
-
-
-// const getControllerContract = (library: Web3Provider, address: string, account?: string): Controller => {
-//   return Controller__factory.connect(address, getProviderOrSigner(library, account));
-// }
-
-// export async function verify_address(
-//   account: string,
-//   provider: Web3Provider,
-//   public_signals: SemaphorePublicSignals,
-//   proof: SemaphoreSolidityProof
-// ) {
-//   const controller = getControllerContract(provider, manager_address, account);
-//   // finish
-// }
-
-<<<<<<< HEAD
-=======
-
-  
-
->>>>>>> 019d77eb1f319ec6c24fa1cfdd163372378e31ce
+  }
 // }
 //borrower proposes-> their submission will automatically call the controller.initiateMarket 
 //function-> the market page will show borrower info + credit criterion 
@@ -692,6 +668,7 @@ export async function doBulkTrade(
 
 
 // }
+
 
 export async function getNFTPositionInfo(
   provider: Web3Provider, 
