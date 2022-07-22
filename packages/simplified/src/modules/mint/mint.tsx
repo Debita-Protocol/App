@@ -21,7 +21,7 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import { MintContext } from './mintcontext'; 
 
 import buttonStyles from "../common/buttons.styles.less";
-
+import inputStyles from "../common/inputs.styles.less";
 // import { RiSettings3Fill } from 'react-icons/ri'
 
 
@@ -31,7 +31,7 @@ const {
   Icons: { FilterIcon, SearchIcon },
   MarketCardComps: { LoadingMarketCard, MarketCard },
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
-  InputComps: { SearchInput },
+  InputComps: { SearchInput, AmountInput },
   LabelComps: { NetworkMismatchBanner },
 } = Components;
 const {
