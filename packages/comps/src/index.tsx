@@ -203,6 +203,7 @@ export const Components = {
   Toasts,
   Icons,
   MarketCardComps,
+  LoanCardComps,
   PaginationComps,
   SEO,
   SelectionComps,

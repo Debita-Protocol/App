@@ -22,8 +22,7 @@ contract Controller is IController {
 
     mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
 
-    address[] validators_array; 
-    address[] pools_array;
+    address[] validators_array;
 
     address creator_address;
     address timelock_address;
@@ -44,12 +43,12 @@ contract Controller is IController {
     }
 
     modifier onlyPools() {
-        require(pools[msg.sender] == true, "Only Pools can call this function");
+        require(msg.sender == address(lendingpool), "Only Pools can call this function");
         _;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == creator_address, "Only Pools can call this function");
+        require(msg.sender == creator_address, "Only Owner can call this function");
         _;
     }
 
@@ -83,14 +82,14 @@ contract Controller is IController {
     }
 
     //Pool added when contract is deployed 
-    function addPool(address pool_address) external override onlyOwner {
-        require(pool_address != address(0), "Zero address detected");
-        require(pools[pool_address] == false, "Address already exists");
+    // function addPool(address pool_address) external override onlyOwner {
+    //     require(pool_address != address(0), "Zero address detected");
+    //     require(pools[pool_address] == false, "Address already exists");
 
-        pools[pool_address] = true; 
-        pools_array.push(pool_address);
+    //     pools[pool_address] = true; 
+    //     pools_array.push(pool_address);
 
-    }
+    // }
 
     //Validator should be added for each borrower
     function addValidator(address validator_address) external override onlyPools {

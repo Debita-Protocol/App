@@ -14,7 +14,7 @@ interface IController  {
         uint256[] odds;
     }
     
-    function addPool(address pool_address) external;
+    // function addPool(address pool_address) external;
 
     function addValidator(address validator_address) external;
 

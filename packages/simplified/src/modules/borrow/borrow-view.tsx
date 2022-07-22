@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext } from "react";
-import Styles from "./markets-view.styles.less";
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -31,6 +30,7 @@ const {
   ButtonComps: { SecondaryThemeButton },
   Icons: { FilterIcon, SearchIcon },
   MarketCardComps: { LoadingMarketCard, MarketCard },
+  LoanCardComps: { LoanCard},
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
   InputComps: { SearchInput },
   LabelComps: { NetworkMismatchBanner },
@@ -93,14 +93,15 @@ const BorrowView = () => {
             <LoadingMarketCard key={index} />
           ))}
         </section>
-      ) : ( true
-        // <section>
-        // {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
-        //   <LoanCard
-        //     {... loan}
-        //   />         
-        // ))}
-        // </section>
+      ) : (
+        <section>
+        {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
+          <LoanCard
+            {... loan}
+            key={`loan-${loan.id}-${index}`}
+          />         
+        ))}
+        </section>
       ) }
       {loans.length > 0 && (
         <Pagination

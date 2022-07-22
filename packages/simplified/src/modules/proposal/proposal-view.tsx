@@ -97,7 +97,7 @@ const LoanRequestForm = () => {
 
   let proposal_limit = 3;
   let loan_limit = 3;
-
+  
   useEffect(() => {
     (async () => {
       let result = await getLoanLimits(account, loginAccount.library);

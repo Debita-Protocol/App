@@ -5,7 +5,7 @@ import { getCollateral, getFees } from "../../src/utils/deploy";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts, ethers } = hre;
-  const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
+  const { deployer, linkNode, protocol, timelock, interep } = await getNamedAccounts();
 
   const { collateralAddress, shareFactor } = await getCollateral(deployments);
   const ds = await deployments.get("DS");
@@ -31,11 +31,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   // }
 
   const args = [
-    owner,
-    owner, 
+    deployer,
+    timelock, 
     masterchef.address, 
     lendingpool.address, 
-    ds.address
+    ds.address,
+    interep
   ];
 
 

@@ -114,7 +114,9 @@ import {
   ammFactoryAddress,
   indexCDSAddress, 
   PRICE_PRECISION,
-  collateral_address
+  collateral_address,
+  deployer_pk,
+  zeke_test_account
 } from "../data/constants";
 
 
@@ -124,6 +126,23 @@ import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+
+// ONLY FOR TESTING.
+const setupContracts = async (account: string, provider: Web3Provider) => {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
+  const deployer = new ethers.Wallet(deployer_pk)
+  const lpool = getLendingPoolContract(provider, account)
+  try {
+    let tx = await lpool.connect(deployer).setController(controller.address)
+  } catch (err) {
+    console.log("error setting controller", err.reason)
+  }
+  try {
+    let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
+  } catch (err) {
+    console.log("error adding validator", err.reason)
+  }
+}
 
 //  LENDING POOL FUNCTIONS
 

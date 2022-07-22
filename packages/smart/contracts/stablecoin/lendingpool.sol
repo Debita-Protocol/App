@@ -35,8 +35,8 @@ contract LendingPool is ILendingPool, Owned {
     uint256 private constant PRICE_PRECISION = 1e6;
     uint256 public total_borrowed_amount;
     uint256 public accrued_interest;
-    uint256 immutable public MAX_LOANS = 1;
-    uint256 immutable public MAX_PROPOSALS = 1;
+    uint256 immutable public MAX_LOANS = 20;
+    uint256 immutable public MAX_PROPOSALS = 20;
 
     // mint/redeem
     mapping(address => uint256) public redeemDSSBalances;
@@ -70,7 +70,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     modifier onlyVerified() {
-        require(controller.verified(msg.sender), "address not verified");
+        //require(controller.verified(msg.sender), "address not verified");
         _;
     }
 
