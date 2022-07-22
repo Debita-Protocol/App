@@ -12,25 +12,32 @@ import "hardhat/console.sol";
 
 contract IndexCDS is ERC721, ReentrancyGuard{
 
-
+	//For each lockID
  	struct Index{
  		uint256 value;
  		uint256[] amounts; 
  		address[] tokens; 
-
  		
  	}
+
  	struct Index_info{
  		uint256[] token_amounts;
  		uint256[] marketIds; 
  		uint256[] outcomes; 
+ 		uint256 lockId; 
+ 	}
+
+ 	struct Variable{
+ 		uint256 amount;
+ 		uint256 marketId;
+ 		uint256 outcome;
  	}
 
  	uint256 public totalNumMints;
  	uint256 num_outcomes = 2; //TODO this is only for binary outcomes 
- 	mapping(uint256=> Index_info) index_infos; 
+ 	mapping(uint256=> Index_info) index_infos; //lockid to indiexinfo
  	mapping(uint256 => Index) indexes; 
- 	mapping(address=>uint256) address_to_id;
+ 	mapping(address=>uint256[]) address_to_id;
 
  	constructor()
         ERC721("IndexCDS", "iCDS"){
@@ -47,22 +54,22 @@ contract IndexCDS is ERC721, ReentrancyGuard{
  		return 1; 
  	}
 
- 	function curValue(address holder) public view returns(uint256){
- 		uint256 lockID = address_to_id[holder]; 
- 		address[] memory tokens_ = indexes[lockID].tokens; 
- 		uint256[] memory amounts = indexes[lockID].amounts; 
+ 	// function curValue(address holder) public view returns(uint256){
+ 	// 	uint256 lockID = address_to_id[holder]; 
+ 	// 	address[] memory tokens_ = indexes[lockID].tokens; 
+ 	// 	uint256[] memory amounts = indexes[lockID].amounts; 
 
- 		uint256 num_tokens = tokens_.length;
- 		uint256 price; 
- 		uint256 value;
- 	//	uint256[] memory prices; 
- 		for (uint256 i=0; i< num_tokens; i++){ 
- 			price = getPrice(tokens_[i]); 
- 			value = value + (price * amounts[i]); 
- 		}
+ 	// 	uint256 num_tokens = tokens_.length;
+ 	// 	uint256 price; 
+ 	// 	uint256 value;
+ 	// //	uint256[] memory prices; 
+ 	// 	for (uint256 i=0; i< num_tokens; i++){ 
+ 	// 		price = getPrice(tokens_[i]); 
+ 	// 		value = value + (price * amounts[i]); 
+ 	// 	}
 
 
- 	}
+ 	// }
 
  	//Mints nft for current price of each cds 
  	//Token addresses are for CDS(sharetokens in marketfactory) tokens 
@@ -86,7 +93,7 @@ contract IndexCDS is ERC721, ReentrancyGuard{
 
  		Index memory index = Index(value,amounts, tokens_addresses); 
  		indexes[lockID] = index; 
- 		address_to_id[recipient] = lockID; 
+ 		address_to_id[recipient].push(lockID); 
 
 		_safeMint(recipient, lockID); 
 
@@ -113,13 +120,10 @@ contract IndexCDS is ERC721, ReentrancyGuard{
 
  } 	
 
- 	struct Variable{
- 		uint256 amount;
- 		uint256 marketId;
- 		uint256 outcome;
- 	}
 
- 	function getVariable(uint256[] memory marketIds, 
+
+ 	function getVariable(
+ 		uint256[] memory marketIds, 
  		uint256[] memory outcomes, 
  		uint256[] memory amounts) internal returns(Variable[] memory){
 
@@ -130,11 +134,52 @@ contract IndexCDS is ERC721, ReentrancyGuard{
  		return variables; 
  	}
 
- 	//This is the function called by contract calls, it first transfers the DS
- 	//from the msg.sender to this contract, and this contract will buy all the sharetokens
- 	//in behalf. It will then mint the nft and give it back to msg.sender
- 	//does the minting nft as well.
- 	//User gives collateral to this contract, this contract buys sharetokens + mints nft and gives back
+ 	//Public View Functions
+ 	function getUserLockId(address user) public view returns(uint256[] memory){
+ 		return address_to_id[user];
+ 	}
+
+ 	// function getUserIndexInfo(address user) public view returns(Index_info memory){
+ 	// 	uint256[] memory lockId = address_to_id[user]; 
+ 	// 	return index_infos[lockId];
+ 	// }
+
+ 	// function getUserCDSBalance() public view returns(uint256[] memory){
+ 	// 	uint256[] memory lockIds = address_to_id[user]; //nfts that this user has 
+
+
+ 	// 	Index memory index = indexes[lockId]; 
+ 	// 	address[] memory tokens = index.tokens; 
+ 	// 	uint256[] memory balance; 
+ 	// 	for (i=0; i< tokens.length; i++){
+ 	// 		balance[i] = tokens[i].balanceOf(address(this)); 
+
+ 	// 	}
+ 	// 	return balance; 
+ 	// }
+
+ 	function getUserTotalBalance(address user) public view returns(Index_info[] memory){
+ 		uint256[] memory lockIds = address_to_id[user];
+ 		Index_info[] memory user_infos = new Index_info[](lockIds.length);
+ 		for (uint256 i=0; i<lockIds.length; i++){
+ 			user_infos[i] = index_infos[lockIds[i]]; 
+ 		}
+
+ 		return user_infos; 
+
+ 	}
+
+
+
+ 	//State Changing Functions
+
+
+ 	/* This is the function called by contract calls, it first transfers the DS
+ 	from the msg.sender to this contract, and this contract will buy all the sharetokens
+ 	in behalf. It will then mint the nft and give it back to msg.sender
+ 	does the minting nft as well.
+ 	User gives collateral to this contract, this contract buys sharetokens + mints nft and gives back
+ 	*/
  	function buyBulk(address recipient,  
  		address marketFactoryAddress, 
  		address ammFactoryAddress, 
@@ -166,7 +211,7 @@ contract IndexCDS is ERC721, ReentrancyGuard{
  		}
 
  		uint256 lockId = mintIndex(msg.sender,false, prices, token_amounts, outcometokens  );
- 		index_infos[lockId] = Index_info(token_amounts, marketIds, outcomes);
+ 		index_infos[lockId] = Index_info(token_amounts, marketIds, outcomes, lockId);
  		
  		return lockId;
  	}

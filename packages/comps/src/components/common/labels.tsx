@@ -67,7 +67,8 @@ interface CategoriesProps {
 
 export const CategoryLabel = ({ categories, big = false }: CategoriesProps) => (
   <div data-big={big} className={Styles.CategoryLabel}>
-    {!!categories[2] ? categories[2] : !!categories[1] ? categories[1] : categories[0]}
+    {'Discretionary Loan'}
+    {/*{!!categories[2] ? categories[2] : !!categories[1] ? categories[1] : categories[0]}*/}
   </div>
 );
 
@@ -320,13 +321,13 @@ export const NetworkMismatchBanner = () => {
         >
           MetaMask RPC rate limit error. Please try again in a bit and slow down to avoid hitting public rate limits.
       </article>}
-      {isDegraded && <article
+      {/*{isDegraded && <article
           className={classNames(Styles.NetworkMismatch, Styles.NetworkWarningBanner, {
             [Styles.Market]: path === MARKET,
           })}
         >
           Degraded Service. Some data will be slow to load or unavailable.
-      </article>}      
+      </article>}  */}   
       {isLowRewards && <article
           className={classNames(Styles.NetworkMismatch, Styles.NetworkWarningBanner, {
             [Styles.Market]: path === MARKET,

@@ -16,6 +16,7 @@ export const ammFactoryAddress = "0x7fc5F526A8be47f9D6460b26D59532C35bd54931";
 export const indexCDSAddress = "0x23ECD6642811345aFde48D26Be2f2CF9489E755D"; 
 
 export const PRICE_PRECISION = 6;
+//deploying "IndexCDS" (tx: 0xc3596377d7296f8ccb786e54b3c9b103558bb7d54ae5538295f2d5371159b23f)...: deployed at 0x8D875C3D2fFda1847BD30963cC4AA7127D4fC169 with 2868916 gas
 
 
 // testnet addresses here

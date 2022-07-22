@@ -70,6 +70,32 @@ export const MarketLink = ({ id, dontGoToMarket, children }: MarketLinkProps) =>
   );
 };
 
+export const BorrowerLoanLink = ({ id, dontGoToMarket, children }: MarketLinkProps ) => {
+  return (
+    <>
+      {!dontGoToMarket ? (
+        <Link
+          data-testid={`link-${id}`}
+          to={
+            !dontGoToMarket
+              ? {
+                  pathname: makePath(MARKET),
+                  search: makeQuery({
+                    id
+                  }),
+                }
+              : null
+          }
+        >
+          {children}
+        </Link>
+      ) : (
+        <section>{children}</section>
+      )}
+    </>
+  );
+};
+
 interface ExternalLinkProps {
   URL: string;
   label: string;

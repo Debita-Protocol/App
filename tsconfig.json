@@ -39,7 +39,7 @@
       "path": "./packages/comps"
     }
   ],
-  "exclude": ["**/node_modules", "**/build", "**/dist"],
+  "exclude": ["**/node_modules", "**/build/", "**/dist"],
   "files": [],
   "include": []
 }

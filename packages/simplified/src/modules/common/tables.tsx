@@ -64,7 +64,7 @@ const MarketTableHeader = ({
         {!!description && <span>{description}</span>}
       </span>
       {reportingState !== MARKET_STATUS.TRADING && <ReportingStateLabel {...{ reportingState }} />}
-      {ammExchange.cash.name === USDC ? UsdIcon : EthIcon}
+      {/*{ammExchange.cash.name === USDC ? UsdIcon : "DS"}*/}
     </MarketLink>
     {!!startTimestamp && <div>{getMarketEndtimeFull(startTimestamp, timeFormat)}</div>}
   </div>
@@ -331,7 +331,7 @@ const applyFiltersAndSort = (passedInPositions, filter, setFilteredMarketPositio
   setFilteredMarketPositions(updatedFilteredPositions);
 };
 
-export const AllPositionTable = ({ page, claimableFirst = false }) => {
+export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition = true}) => {
   const {
     balances: { marketShares },
   }: UserState = useUserStore();
@@ -341,7 +341,7 @@ export const AllPositionTable = ({ page, claimableFirst = false }) => {
   const [filter, setFilter] = useState("");
   const [filteredMarketPositions, setFilteredMarketPositions] = useState([]);
 
-  const positions = marketShares
+  const positions = marketShares 
     ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
         ammExchange: AmmExchange;
         positions: PositionBalance[];
@@ -368,15 +368,25 @@ export const AllPositionTable = ({ page, claimableFirst = false }) => {
   }, [positions.length, Object.values(marketShares || {}).length]);
 
   const positionVis = sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT).map((position) => {
-    return (
+    return isCDSPosition ? (
       <PositionTable
         key={`${position.ammExchange.marketId}-PositionsTable`}
         market={position.ammExchange.market}
         ammExchange={position.ammExchange}
         positions={position.positions}
         claimableWinnings={position.claimableWinnings}
-      />
-    );
+      />  
+    ) : (
+      <NFTPositionTable
+        key={`${position.ammExchange.marketId}-PositionsTable`}
+        market={position.ammExchange.market}
+        ammExchange={position.ammExchange}
+        positions={position.positions}
+        claimableWinnings={position.claimableWinnings}
+      />  
+    )
+
+    ;
   });
 
   return (
@@ -548,7 +558,6 @@ export const PositionsLiquidityViewSwitcher = ({
   useEffect(() => {
     setPage(1);
   }, [showResolvedPositions]);
-
   return (
     <div className={Styles.PositionsLiquidityViewSwitcher}>
       <div>
@@ -771,6 +780,252 @@ export const TransactionsTable = ({ transactions }: TransactionsProps) => {
 
 
 
+
+
+
+
+
+
+interface NFTinfo {
+  token_amounts: string[],
+  marketIds: string[], 
+  outcomes: string[],
+  lockId: string  }
+
+
+export const AllNFTPositionTable = ({ page, claimableFirst = false}) => {
+  const {
+    balances: { marketShares },
+  }: UserState = useUserStore();
+  const {
+    settings: { showResolvedPositions },
+  } = useSimplifiedStore();
+  const [filter, setFilter] = useState("");
+  const [filteredMarketPositions, setFilteredMarketPositions] = useState([]);
+
+  const positions = marketShares 
+    ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
+        ammExchange: AmmExchange;
+        positions: PositionBalance[];
+        claimableWinnings: Winnings;
+        outcomeShares?: string[];
+      }[]).filter(
+        (position) =>
+          showResolvedPositions ||
+          position?.claimableWinnings ||
+          (!showResolvedPositions && !position.ammExchange.market.hasWinner)
+      )
+    : [];
+
+  //need to get 
+  //all nfts that the address has 
+  //and for each, the 
+  //name of the market, outcome token, quantity owned, -> from chain get marketIds to get marketname+outcomename, 
+    //outcomes,  and quantity owned
+  //avg price paid, init value, curvalue-> from offchain
+  console.log('positions format', positions)
+  let nft_info:NFTinfo = {
+    token_amounts: [10,10],
+    marketIds: [5,2], 
+    outcomes: [1,0],
+    lockId: 0
+  }
+  const nft_infos:NFTinfo[] = [nft_info]
+
+  const {token_amounts, marketIds, outcomes, lockId} = nft_info //for a single nft 
+  console.log('varaibles are:', token_amounts,marketIds, outcomes, lockId)
+
+
+
+  const handleFilterSort = () => {
+    applyFiltersAndSort(positions, filter, setFilteredMarketPositions, claimableFirst);
+  };
+
+  useEffect(() => {
+    handleFilterSort();
+  }, [filter]);
+
+  useEffect(() => {
+    handleFilterSort();
+  }, [positions.length, Object.values(marketShares || {}).length]);
+
+  const positionVis = sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT).map((position) => {
+    return (
+      <NFTPositionTable
+        key={`${position.ammExchange.marketId}-PositionsTable`}
+        market={position.ammExchange.market}
+        ammExchange={position.ammExchange}
+        positions={position.positions}
+        claimableWinnings={position.claimableWinnings}
+      />  
+    )
+
+    ;
+  });
+
+  return (
+    <>
+      {/*<SearchInput
+        placeHolder="Search Positions"
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        clearValue={() => setFilter("")}
+      />*/}
+      {positionVis}
+    </>
+  );
+};
+
+
+const NFTPositionRow = ({
+  position,
+  hasLiquidity = true,
+}: {
+  position: PositionBalance;
+  hasLiquidity: boolean;
+  key?: string;
+}) => (
+  <ul className={Styles.PositionRow}>
+    <li>{position.outcomeName}</li>
+    <li>{position.outcomeName}</li>
+    <li>{formatSimpleShares(position.quantity).formattedValue}</li>
+    <li>{formatSimplePrice(position.avgPrice).full}</li>
+    <li>{formatDai(position.initCostUsd).full}</li>
+    <li>{hasLiquidity ? formatDai(position.usdValue).full : "-"}</li>
+    <li>
+      {hasLiquidity ? (
+        <MovementLabel value={formatDai(position.totalChangeUsd)} numberValue={parseFloat(position.totalChangeUsd)} />
+      ) : (
+        "-"
+      )}
+    </li>
+  </ul>
+);
+
+
+const NFTPositionHeader = () => {
+  const { isMobile } = useAppStatusStore();
+  return (
+    <ul className={Styles.PositionHeader}>
+      <li>Borrower</li> 
+      <li>outcome</li>
+      <li>
+        {isMobile ? (
+          <>
+            qty
+            <br />
+            owned
+          </>
+        ) : (
+          "quantity owned"
+        )}
+      </li>
+      <li>
+        {isMobile ? (
+          <>
+            avg.
+            <br />
+            price
+          </>
+        ) : (
+          "avg. price paid"
+        )}
+      </li>
+      <li>init. value</li>
+      <li>cur.{isMobile ? <br /> : " "}value</li>
+      <li>
+        p/l{" "}
+        {generateTooltip(
+          "Display values might be rounded. Dashes are displayed when liquidity is depleted.",
+          "pnltip-positionheader"
+        )}
+      </li>
+    </ul>
+  );
+};
+
+
+export const NFTPositionTable = ({
+  market,
+  ammExchange,
+  positions,
+  claimableWinnings,
+  singleMarket,
+}: PositionsTableProps) => {
+  const {
+    seenPositionWarnings,
+    actions: { updateSeenPositionWarning },
+  } = useUserStore();
+  const {
+    settings: { timeFormat },
+  } = useSimplifiedStore();
+
+  const marketAmmId = market?.marketId;
+  const seenMarketPositionWarningAdd = seenPositionWarnings && seenPositionWarnings[marketAmmId]?.add;
+  const seenMarketPositionWarningRemove = seenPositionWarnings && seenPositionWarnings[marketAmmId]?.remove;
+  const { hasLiquidity } = ammExchange;
+
+  //HACK 
+  var nftPositions:PositionBalance[];
+  nftPositions = [Object.assign({}, positions[0])]; 
+  if (positions[0]){
+    nftPositions[0].avgPrice = "123"
+    nftPositions[0].avgPrice = "123"
+  }
+  console.log("nft why not showing!!", nftPositions[0])
+
+  const createRow = (p_) => {
+    return p_.filter((p) => p.visible).map((position, id) => <NFTPositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)
+  }; 
+  const nftPositions_ = [nftPositions, nftPositions]
+  return (
+    <>
+      <div className={Styles.PositionTable}>
+        {!singleMarket && <MarketTableHeader timeFormat={timeFormat} market={market} ammExchange={ammExchange} />}
+        <NFTPositionHeader />
+        {nftPositions.length === 0 && <span>No positions to show</span>}
+        {nftPositions_.map((p)=> createRow(p))}
+
+       {/* {//nftPositions &&
+          nftPositions
+            .filter((p) => p.visible)
+            .map((position, id) => <NFTPositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)}
+        {//nftPositions &&
+          nftPositions
+            .filter((p) => p.visible)
+            .map((position, id) => <NFTPositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)}
+          */}
+        <PositionFooter showTradeButton={!singleMarket} market={market} claimableWinnings={claimableWinnings} />
+      </div>
+      {!seenMarketPositionWarningAdd &&
+        singleMarket &&
+        positions.filter((position) => positions.positionFromAddLiquidity).length > 0 && (
+          <WarningBanner
+            className={Styles.MarginTop}
+            title="Why do I have a position after adding liquidity?"
+            subtitle={
+              "To maintain the Yes to No percentage ratio, a number of shares are returned to the liquidity provider."
+            }
+            onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
+          />
+        )}
+      {!seenMarketPositionWarningRemove &&
+        singleMarket &&
+        positions.filter((position) => positions.positionFromRemoveLiquidity).length > 0 && (
+          <WarningBanner
+            className={Styles.MarginTop}
+            title="Why do I have a position after removing liquidity?"
+            subtitle={`To give liquidity providers the most options available to manage their positions. Shares can be sold for ${market?.amm?.cash?.name}.`}
+            onClose={() => updateSeenPositionWarning(marketAmmId, true, REMOVE)}
+          />
+        )}
+    </>
+  );
+};
+
+//Get sharetoken address for each markets 
+//Get lock ID of user 
+//Use lock id of user to get the indexes 
 export const NFTPositionsLiquidityViewSwitcher = ({
   ammExchange,
   showActivityButton,
@@ -795,7 +1050,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
     winnings = marketShares[marketId] ? marketShares[marketId]?.claimableWinnings : null;
   }
   const market = ammExchange?.market;
-
+  //console.log('userpostions', userPositions)
   const positions = marketShares
     ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
         ammExchange: AmmExchange;
@@ -825,6 +1080,13 @@ export const NFTPositionsLiquidityViewSwitcher = ({
     setPage(1);
   }, [showResolvedPositions]);
 
+  var nftPositions : PositionBalance = Object.assign({}, positions[0]?.positions[0]);
+ // let nftPositions : PositionBalance
+  console.log('userpositoins', positions[0]?.positions[0], userPositions)
+  if (positions[0]){
+    nftPositions.avgPrice = "130";
+  }
+  const f = 3
   return (
     <div className={Styles.PositionsLiquidityViewSwitcher}>
       <div>
@@ -854,7 +1116,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
       {tableView !== null && (
         <div>
           {!marketId && (positions.length > 0 || liquidities.length > 0) && (
-            <>{tableView === POSITIONS && <AllPositionTable page={page} claimableFirst={claimableFirst} />}</>
+            <>{tableView === POSITIONS && <AllNFTPositionTable page={page} claimableFirst={claimableFirst} isCDSPosition={false} />}</>
           )} 
           {!marketId &&
             ((positions.length > 0 && tableView === POSITIONS) ||
@@ -873,11 +1135,11 @@ export const NFTPositionsLiquidityViewSwitcher = ({
           {marketId && (
             <>
               {tableView === POSITIONS && (
-                <PositionTable
+                <NFTPositionTable
                   singleMarket
                   market={market}
                   ammExchange={ammExchange}
-                  positions={userPositions}
+                  positions={f}
                   claimableWinnings={winnings}
                 />
               )}
@@ -890,3 +1152,32 @@ export const NFTPositionsLiquidityViewSwitcher = ({
     </div>
   );
 };
+
+// export interface CurrencyBalance extends SimpleBalance {
+//   usdValue: string;
+// }
+
+// export interface Winnings {
+//   claimableBalance: string;
+//   userBalances: string[];
+// }
+// export interface PositionWinnings {
+//   [ammId: string]: Winnings;
+// }
+// export interface PositionBalance extends SimpleBalance {
+//   usdValue: string;
+//   past24hrUsdValue?: string;
+//   change24hrPositionUsd: string;
+//   avgPrice: string;
+//   initCostUsd: string;
+//   outcomeName: string;
+//   outcomeId: number;
+//   maxUsdValue: string;
+//   totalChangeUsd: string;
+//   quantity: string;
+//   visible: boolean;
+//   positionFromAddLiquidity: boolean;
+//   positionFromRemoveLiquidity: boolean;
+//   timestamp: number;
+//   marketId: string;
+// }

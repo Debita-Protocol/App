@@ -107,11 +107,13 @@ interface ILendingPool {
 
     function fullLoanCheck() external;
 
-    function getLoanData() external returns (LoanData memory);
+    function checkLoanStatus (address owner, string calldata id) external;
 
     function is_borrower(address addr) external returns (bool);
 
-    function retrieveLoan(address borrower, string calldata id) external returns (LoanMetadata memory);
+    function getLoan(address borrower, string calldata id) external returns (LoanMetadata memory);
+
+    function getLoans(address borrower) external returns (LoanMetadata[] memory);
 
     function borrower_allowance(address addr) external returns (uint256);
 
@@ -122,4 +124,6 @@ interface ILendingPool {
     function num_proposals(address addr) external returns (uint256);
 
     function getBorrowerLoanData(address recipient) external returns (LoanMetadata memory);
+
+    function getProtocolLoanData() external returns (LoanData memory);
 }

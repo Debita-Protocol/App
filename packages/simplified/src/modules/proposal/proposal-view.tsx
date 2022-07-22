@@ -52,7 +52,7 @@ const {
     SPORTS,
   } = Constants;
 
-const { addProposal } = ContractCalls;
+const { addDiscretionaryLoanProposal, addContractLoanProposal, getNumberProposals, getLoanLimits } = ContractCalls;
 
 
 const DurationInput = ({onChange, label, value}) => {
@@ -81,26 +81,106 @@ const LoanRequestForm = () => {
   const [ principal, setPrincipal ] = useState("0.0");
   const [ duration, setDuration ] = useState({
     years: "0",
-    months: "0",
     weeks: "0",
     days: "0",
     minutes: "0",
   });
+  const [ recipient, setRecipient ] = useState("");
   const [ inputError, setInputError ] = useState(false);
-  const [ proposalLimit, setProposalLimit ] = useState(false);
+  const [ showError, setShowError ] = useState(false);
+  const [ numProposals, setNumProposals ] = useState(false);
   const [ underlyingToken, setUnderlyingToken ] = useState("");
   const [ interestRate, setInterestRate ] = useState("0.0");
   const [ ID, setID ] = useState(""); 
   const [ description, setDescription] = useState("");
   const [ loanType, setLoanType ] = useState("");
-  
-  const addProposal = useCallback(async ()=> {
 
+  let proposal_limit = 3;
+  let loan_limit = 3;
+
+  useEffect(() => {
+    (async () => {
+      let result = await getLoanLimits(account, loginAccount.library);
+      proposal_limit = result.proposal_limit;
+      loan_limit = result.loan_limit;
+    })();
+  }
+  ,[]);
+
+  useEffect(() =>{
+    if (Number(duration.years) + Number(duration.months) + Number(duration.weeks) + Number(duration.days) + Number(duration.minutes) == 0) {
+      setInputError(true);
+    } else if (
+      interestRate === "" ||
+      principal === "" ||
+      (loanType === "contract" && recipient === "") ||
+      interestRate === "" ||
+      /^0x[a-fA-F0-9]{40}$/.test(recipient)
+    ) {
+      setInputError(true);
+    } else if (
+      Number(principal) === 0 ||
+      Number(interestRate) === 0
+    ) {
+      setInputError(true);
+    }
+    else {
+      setInputError(false);
+      setShowError(false);
+    }
+  },[duration, underlyingToken, principal, ID, description, loanType]);
+
+  const retrieveProposalNumber = useCallback(async () => {
+    setNumProposals(await getNumberProposals(account, loginAccount.library, account));
+  })
+
+  useEffect(retrieveProposalNumber, [account, loginAccount])
+
+  const submitPropsal = useCallback(async ()=> {
+    if (!inputError) {
+      const total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
+      const interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate)).toString()
+      if (loanType === "discretionary") {
+        try {
+          const tx = await addDiscretionaryLoanProposal(
+            account,
+            loginAccount.library,
+            ID,
+            principal,
+            total_duration,
+            interest,
+            description
+          )
+          await tx.wait()
+        } catch (err) {
+          console.log(err.reason);
+        }
+      } else if (loanType === "contract") {
+        try {
+          const tx = await addContractLoanProposal(
+            account,
+            loginAccount.library,
+            recipient,
+            ID,
+            principal,
+            total_duration,
+            interest,
+            description
+          );
+          await tx.wait()
+        } catch (err) {
+          console.log(err.reason);
+        }
+      }
+    } else {
+      setShowError(true);
+    }
+    retrieveProposalNumber();
   })
 
   const buttonProps: BaseThemeButtonProps = {
     text: "Submit Loan Request",
-    action: addProposal
+    action: submitPropsal
   };
 
   const tokenDropDownProps: DropdownProps  = {
@@ -124,7 +204,7 @@ const LoanRequestForm = () => {
     }
   }
   
-  const loanTypeDropDownProps: DropdwonProps = {
+  const loanTypeDropDownProps: DropdownProps = {
     options: [
       {
         label: "discretionary loan",
@@ -132,10 +212,10 @@ const LoanRequestForm = () => {
       },
       {
         label: "smart contract loan",
-        value: "smart"
+        value: "contract"
       }
     ],
-    defaultValue: "discretionary loan",
+    defaultValue: "discretionary",
     onChange: (val) => {
       setLoanType(val);
     }
@@ -178,11 +258,6 @@ const LoanRequestForm = () => {
               setDuration((prev) => { return {...prev, years: e.target.value}})
             }
           }}/>
-          <DurationInput label="months" value={duration.months} onChange={(e)=> {
-            if (/^\d*$/.test(e.target.value)) {
-              setDuration((prev) => { return {...prev, months: e.target.value}})
-            }
-          }}/>
           <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
             if (/^\d*$/.test(e.target.value)) {
               setDuration((prev) => { return {...prev, weeks: e.target.value}})
@@ -204,7 +279,7 @@ const LoanRequestForm = () => {
           <input
               type="text"
               placeholder="0"
-              value={ duration }
+              value={ ID }
               onChange={(e) => {
                   if (/^\w*$/.test(e.target.value)) {
                       setID(e.target.value);
@@ -218,7 +293,7 @@ const LoanRequestForm = () => {
           <input
               type="text"
               placeholder=""
-              value={ duration }
+              value={ description }
               onChange={(e) => {
                   setDescription(e.target.value)
                 }
@@ -233,12 +308,36 @@ const LoanRequestForm = () => {
           <label>Loan Type: </label> <br />
           <SquareDropdown { ...loanTypeDropDownProps }/>
         </div>
-      </div>
-      <div className={Styles.SubmitButton}>
-        <TinyThemeButton {... buttonProps} />
+        <div className="recipient">
+          <label>Recipient: </label> <br />
+          <input
+              type="text"
+              placeholder=""
+              value={ recipient }
+              onChange={(e) => {
+                setRecipient(e.target.value);
+                }
+              }
+            />
+        </div>
+        { showError && 
+          <div>
+          Incorrect Input
+          </div>
+        }
+        { numProposals < proposal_limit &&
+        <div className={Styles.SubmitButton}>
+          <TinyThemeButton {... buttonProps} />
+        </div>
+        }
+        { numProposals === proposal_limit &&
+          <div>
+            Reached Proposal Limit
+          </div>
+        }
       </div>
     </div>
-  </>
+    </>
   );
 }
 
