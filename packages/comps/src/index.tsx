@@ -15,6 +15,7 @@ import * as _TeamHelpers from "./utils/team-helpers";
 import * as _Icons from "./components/common/icons";
 import * as _Inputs from "./components/common/inputs";
 import * as _MarketCard from "./components/market-card/market-card";
+import * as _LoanCard from "./components/loan-card/borrower-loan-card";
 import _Logo, { LinkLogo } from "./components/common/logo";
 import * as _Labels from "./components/common/labels";
 import * as _Buttons from "./components/common/buttons";
@@ -150,6 +151,7 @@ export const Utils = {
 };
 export const PaginationComps = _Pagination;
 export const MarketCardComps = _MarketCard;
+export const LoanCardComps = _LoanCard;
 export const Logo = _Logo;
 export const ButtonComps = _Buttons;
 export const LabelComps = _Labels;

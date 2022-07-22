@@ -93,14 +93,14 @@ const BorrowView = () => {
             <LoadingMarketCard key={index} />
           ))}
         </section>
-      ) : (
-        <section>
-        {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
-          <LoanCard
-            {... loan}
-          />         
-        ))}
-        </section>
+      ) : ( true
+        // <section>
+        // {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
+        //   <LoanCard
+        //     {... loan}
+        //   />         
+        // ))}
+        // </section>
       ) }
       {loans.length > 0 && (
         <Pagination

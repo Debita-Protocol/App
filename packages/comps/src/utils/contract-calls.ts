@@ -27,7 +27,6 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
-  Web3,
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -167,6 +166,11 @@ export async function addDiscretionaryLoanProposal(
   let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
 
   return transaction;
+}
+
+export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
+  const lpool = getLendingPoolContract(provider, account);
+  return lpool.isApproved(account, 0)
 }
 
 export async function addContractLoanProposal(

@@ -1,12 +1,12 @@
-import makePath from "utils/links/make-path";
-import makeQuery from "utils/links/make-query";
+import makePath from "../../utils/links/make-path";
+import makeQuery from "../../utils/links/make-query";
 import React, { useState} from "react";
 import Link from "react-router-dom";
 import classNames from "classnames";
 import Styles from "../market-card/market-card.styles.less";
-import { ValueLabel } from "components/common/labels";
+import {ValueLabel} from "../common/labels";
 import BN from "bignumber.js"
-import { PRICE_PRECISION } from "data/constants";
+import { PRICE_PRECISION } from "../../data/constants";
 import {Loan} from "../../types"
 
 
