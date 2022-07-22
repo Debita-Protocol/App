@@ -124,7 +124,7 @@ const LoanRequestForm = () => {
     }
   }
   
-  const loanTypeDropDownProps: DropdwonProps = {
+  const loanTypeDropDownProps: DropdownProps = {
     options: [
       {
         label: "discretionary loan",
