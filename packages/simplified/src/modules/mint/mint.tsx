@@ -19,6 +19,9 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
 import { MintContext } from './mintcontext'; 
+
+import buttonStyles from "../common/buttons.styles.less";
+
 // import { RiSettings3Fill } from 'react-icons/ri'
 
 
@@ -134,8 +137,8 @@ const MintView= () => {
             
           </div>
 
-        <button onClick={e => handleSubmit(e)} className={styleMint.confirmButton}>
-          Confirm
+        <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
+        &nbsp; &nbsp;  &nbsp; Confirm &nbsp; &nbsp; &nbsp; 
         </button>
 
         </div>
