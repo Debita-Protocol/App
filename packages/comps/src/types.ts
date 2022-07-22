@@ -5,16 +5,17 @@ import { ethers, BigNumber } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 
 export interface Loan {
-  id: string,
-  principal: BigNumber,
-  totalInterest: BigNumber,
-  duration: BigNumber,
-  repaymentDate: BigNumber,
-  interestPaid: BigNumber,
-  allowance: BigNumber,
-  amountBorrowed: BigNumber,
-  description: string,
-  approved: boolean
+  id: string;
+  principal: BigNumber;
+  totalInterest: BigNumber;
+  duration: BigNumber;
+  repaymentDate: BigNumber;
+  interestPaid: BigNumber;
+  allowance: BigNumber;
+  amountBorrowed: BigNumber;
+  description: string;
+  approved: boolean;
+  recipient: string;
 }
 
 export interface TextLink {

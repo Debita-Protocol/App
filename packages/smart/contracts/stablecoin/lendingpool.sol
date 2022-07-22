@@ -35,8 +35,8 @@ contract LendingPool is ILendingPool, Owned {
     uint256 private constant PRICE_PRECISION = 1e6;
     uint256 public total_borrowed_amount;
     uint256 public accrued_interest;
-    uint256 immutable MAX_LOANS = 2;
-    uint256 immutable MAX_PROPOSALS = 2;
+    uint256 immutable public MAX_LOANS = 1;
+    uint256 immutable public MAX_PROPOSALS = 1;
 
     // mint/redeem
     mapping(address => uint256) public redeemDSSBalances;
@@ -232,6 +232,9 @@ contract LendingPool is ILendingPool, Owned {
         string calldata _description,
         IController.MarketInfo memory market_info
     ) external override onlyVerified {
+        require(_principal > 0, "principal must be greater than 0");
+        require(_duration > 0, "duration must be greater than 0");
+        require(_totalInterest > 0, "total interst must be greater than 0");
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format");
 
@@ -273,6 +276,9 @@ contract LendingPool is ILendingPool, Owned {
         string calldata _description,
         IController.MarketInfo memory market_info
     ) external override onlyVerified {
+        require(_principal > 0, "principal must be greater than 0");
+        require(_duration > 0, "duration must be greater than 0");
+        require(_totalInterest > 0, "total interst must be greater than 0");
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format");
         require(address(_recipient).isContract(), "Recipient must be contract");
@@ -326,21 +332,6 @@ contract LendingPool is ILendingPool, Owned {
             }
         }
         return false;
-    }
-
-    function retrieveLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
-        for (uint256 i = 0; i < current_loan_data[borrower].length; i++) {
-            if (hashed_id == current_loan_data[borrower][i].id) {
-                return current_loan_data[borrower][i];
-            }
-        }
-        revert("loan not found");
-    }
-
-    function isApproved(address borrower, uint256 idx) public view returns (bool) {
-        LoanMetadata memory loan = current_loan_data[borrower][idx];
-        return loan.approved;
     }
 
     // called by controller
@@ -536,6 +527,7 @@ contract LendingPool is ILendingPool, Owned {
         revert("loan not found");
     }
 
+    // called by debtor if they want to resolve loan early.
     function resolveLoan(string calldata id) public override onlyBorrower onlyVerified {
         bytes32 hashed_id = keccak256(abi.encodePacked(id));
         for (uint256 i = 0; i < current_loan_data[msg.sender].length; i++) {
@@ -546,7 +538,7 @@ contract LendingPool is ILendingPool, Owned {
                 require(loan.amountBorrowed == 0, "not fully paid back principal");
                 require(loan.interestPaid == loan.totalInterest, "not fully paid back interest");
                 require(loan.repaymentDate > block.timestamp, "loan already matured");
-                checkLoanStatus(msg.sender, i);
+                _checkLoanStatus(msg.sender, i);
             }
         }
     }
@@ -563,7 +555,7 @@ contract LendingPool is ILendingPool, Owned {
                 require(loan.amountBorrowed == 0, "not fully paid back principal");
                 require(loan.interestPaid == loan.totalInterest, "not fully paid back interest");
                 require(loan.repaymentDate > block.timestamp, "loan already matured");
-                checkLoanStatus(owner, i);
+                _checkLoanStatus(owner, i);
             }
         }
     }
@@ -577,7 +569,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // helper function: check individual loan
-    function checkLoanStatus(address borrower, uint256 i) private {
+    function _checkLoanStatus(address borrower, uint256 i) private {
         LoanMetadata storage loan = current_loan_data[borrower][i];
         if (loan.amountBorrowed > 0 || loan.interestPaid < loan.totalInterest) {
             if (block.timestamp > loan.repaymentDate) {
@@ -602,9 +594,23 @@ contract LendingPool is ILendingPool, Owned {
     function checkAddressLoans(address borrower) public override {
         for (uint256 i = 0; i < current_loan_data[borrower].length; i++) {
             if (current_loan_data[borrower][i].approved) {
-                checkLoanStatus(borrower, i);
+                _checkLoanStatus(borrower, i);
             }
         }
+    }
+
+    function checkLoanStatus (address owner, string calldata id) public override {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+
+        for (uint256 i = 0; i < current_loan_data[owner].length; i++) {
+            if (hashed_id == current_loan_data[owner][i].id) {
+                require(current_loan_data[owner][i].approved, "loan not approved");
+
+                _checkLoanStatus(owner, i);
+                return;
+            }
+        }
+        revert("loan not found");
     }
 
     function _removeLoan(address addr, uint256 i) private {
@@ -614,17 +620,39 @@ contract LendingPool is ILendingPool, Owned {
         current_loan_data[addr].pop();
     }
 
+    // GETTERS
+    
+    function getLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
+        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+        for (uint256 i = 0; i < current_loan_data[borrower].length; i++) {
+            if (hashed_id == current_loan_data[borrower][i].id) {
+                return current_loan_data[borrower][i];
+            }
+        }
+        revert("loan not found");
+    }
+
+    function getLoans(address borrower) public view override returns (LoanMetadata[] memory) {
+        return current_loan_data[borrower];
+    }
+
+
     function getBorrowerLoanData(address recipient) public view override returns (LoanMetadata memory) {
         uint256 id = 0; //get first loandata
         return current_loan_data[recipient][id];
     }
 
-    function getLoanData() public view override returns (LoanData memory) {
+    function getProtocolLoanData() public view override returns (LoanData memory) {
         LoanData memory loandata = LoanData({
             _total_borrowed_amount: total_borrowed_amount,
             _accrued_interest: accrued_interest
         });
         return loandata;
+    }
+
+    function isApproved(address borrower, uint256 idx) public view returns (bool) {
+        LoanMetadata memory loan = current_loan_data[borrower][idx];
+        return loan.approved;
     }
 
     event LoanProposal(address indexed recipient, string loan_id);

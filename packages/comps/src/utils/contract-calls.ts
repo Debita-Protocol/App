@@ -1,4 +1,4 @@
-import BigNumber, { BigNumber as BN } from "bignumber.js";
+import { BigNumber as BN } from "bignumber.js";
 
 import {
   AddRemoveLiquidity,
@@ -27,6 +27,7 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
+  Web3,
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -67,7 +68,7 @@ import {
   WMATIC_TOKEN_ADDRESS,
   REWARDS_AMOUNT_CUTOFF
 } from "./constants";
-import { getProviderOrSigner } from "../components/ConnectAccount/utils";
+import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 import { createBigNumber } from "./create-big-number";
 import { PARA_CONFIG } from "../stores/constants";
 import ERC20ABI from "./ERC20ABI.json";
@@ -113,42 +114,291 @@ import {
   controller_address,
   ammFactoryAddress,
   indexCDSAddress, 
-  PRICE_PRECISION
+  PRICE_PRECISION,
+  collateral_address
 } from "../data/constants";
 
-import { SemaphorePublicSignals, SemaphoreSolidityProof } from "@zk-kit/protocols"
 
-const trimDecimalValue = (value: string | BigNumber) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+import {BigNumber} from "ethers"
+import { Loan } from "../types"
+import createIdentity from "@interep/identity"
+import createProof from "@interep/proof"
 
-export async function contractApprovals(
-  account: string, 
-  provider: Web3Provider) {
+const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
-  const rewardContractAddress = getRewardsContractAddress(TrustedMarketFactoryV3Address);
-  console.log('rewardcontractaddress', rewardContractAddress)
-  const rewardContract = getRewardContract(provider, rewardContractAddress, account); 
-  await rewardContract.trustAMMFactory(ammFactoryAddress)
+//  LENDING POOL FUNCTIONS
 
+export async function isBorrowerApproved(
+  provider: Web3Provider, 
+  account: string,
+//marketid, needs a marketid->borrowerid/idx mapping 
+  ): Promise<boolean>{
+
+  //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
+  //const isapproved = await lendingpool.isApproved(borrower, idx)
+
+  return false;  
+}
+const getLendingPoolContract = (library: Web3Provider, account: string): LendingPool => {
+  return LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(library, account));
+}
+
+// parameters be BigNumber? or string?
+export async function addDiscretionaryLoanProposal(
+  account: string,
+  provider: Web3Provider,
+  loan_id: string,
+  principal: string, // w/ decimal point
+  duration: string, //in seconds, no fractions of seconds.
+  totalInterest: string, // w/ decimal point
+  description: string
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+  
+  principal = new BN(principal).shiftedBy(decimals).toFixed()
+
+  totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
+
+  const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
+  const {_token1, _token2, name} = getInitialMarketNames(); 
+  const marketInfo = {
+    ammFactoryAddress,
+    marketFactoryAddress: TrustedMarketFactoryV3Address,
+    liquidityAmountUSD: liquidity,
+    marketID: 0,
+    description,
+    names: [_token1, _token2],
+    odds: [weight1, weight2]
+  }
+
+  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
+
+  return transaction;
+}
+
+export async function addContractLoanProposal(
+  account: string,
+  provider: Web3Provider,
+  recipient: string, // address of smart contract
+  loan_id: string,
+  principal: string, // w/ decimal point
+  duration: string, //in seconds, no fractions of seconds.
+  totalInterest: string, // w/ decimal point
+  description: string
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+  
+  principal = new BN(principal).shiftedBy(decimals).toFixed()
+
+  totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
+
+  const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
+  const {_token1, _token2, name} = getInitialMarketNames(); 
+  const marketInfo = {
+    ammFactoryAddress,
+    marketFactoryAddress: TrustedMarketFactoryV3Address,
+    liquidityAmountUSD: liquidity,
+    marketID: 0,
+    description,
+    names: [_token1, _token2],
+    odds: [weight1, weight2]
+  }
+
+  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(loan_id, recipient, principal, duration, totalInterest, description, marketInfo)
+
+  return transaction;
+}
+
+export async function borrow(
+  account: string,
+  provider: Web3Provider,
+  loan_id: string, // decimal format
+  amount: string //decimal format
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+
+  amount = new BN(amount).shiftedBy(decimals).toFixed()
+
+  return lpool.connect(getSigner(provider, account)).borrow(loan_id, amount)
+}
+
+export async function repay(
+  account: string,
+  provider: Web3Provider,
+  repay_principal: string, // decimal format
+  repay_interest: string, // decimal format
+  id: string
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+
+  const decimals = await collateral.decimals()
+
+  repay_principal = new BN(repay_principal).shiftedBy(decimals).toFixed()
+  repay_interest = new BN(repay_interest).shiftedBy(decimals).toFixed()
+
+  return lpool.connect(getSigner(provider, account)).repay(id, repay_principal, repay_interest)
+}
+
+export async function checkAllLoans(
+  account : string,
+  provider: Web3Provider
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.checkAllLoans();
+}
+
+export async function checkAddressLoans(
+  account: string,
+  provider: Web3Provider,
+  address: string // address to check default
+): Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.checkAddressLoans(address)
+}
+// called by owner of loan to optionally resolve loan early.
+export async function personalResolveLoan(
+  account: string,
+  provider: Web3Provider,
+  id: string
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(id)
+}
+
+export async function contractResolveLoan(
+  account: string,
+  provider: Web3Provider,
+  owner: string,
+  id: string
+) : Promise<TransactionResponse> {
+  const lpool = getLendingPoolContract(provider, account)
+
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).contractResolveLoan(owner, id)
+}
+
+export async function getLoan(
+  account: string,
+  provider: Web3Provider,
+  address: string, // address for loan data
+  loan_id: string
+): Promise<Loan> {
+  const lpool = getLendingPoolContract(provider, account)
+
+  return lpool.getLoan(address, loan_id);
+}
+
+export async function getLoans(
+  account: string, // current connected account
+  provider: Web3Provider,
+  address: string // address for returned loan data
+) : Promise<Loan[]> {
+  const lpool = getLendingPoolContract(provider, account)
+
+  return lpool.getLoans(address)
 }
 
 
-export async function addDSPool(
+
+export async function getBorrowers(
   account: string,
   provider: Web3Provider,
-  // amm: AmmExchange,
-  // cash: Cash,
-  // cashAmount: string
+) : Promise<string[]> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.getCurrentBorrowers()
+}
+
+export async function getNumberLoans(
+  account: string,
+  provider: Web3Provider,
+  address: string
+) : Promise<BigNumber> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.num_loans(address)
+}
+
+export async function getNumberProposals(
+  account: string,
+  provider: Web3Provider,
+  address: string
+) : Promise<BigNumber> {
+  const lpool = getLendingPoolContract(provider, account)
+  
+  return lpool.num_proposals(address)
+}
+
+// retrieves max proposal and max loan limit.
+export async function getLoanLimits(account: string, provider: Web3Provider) : Promise<{ proposal_limit : number , loan_limit : number }> {
+  const lpool = getLendingPoolContract(provider, account);
+  const proposal_limit = await lpool.MAX_PROPOSALS();
+  const loan_limit = await lpool.MAX_LOANS();
+  return new Promise(() => {return {proposal_limit, loan_limit}})
+}
+
+
+// SUBMITPROPOSAL ==> ADDPROPOSAL : zeke
+export async function submitProposal(
+  provider: Web3Provider,
+  account: string,
+  principal: string, // w/ decimal point
+  totalDebt: string, // w/ decimal point
+  duration: string, //in seconds, no fractions of seconds.
+  underlying_token: string,
+  id: string = "1", 
+  description: string = "example", 
 ): Promise<TransactionResponse> {
 
-  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+  const token = await ERC20__factory.connect(usdc, getProviderOrSigner(provider, account));
+  const decimals = await token.decimals();
+  principal = new BN(principal).shiftedBy(decimals).toFixed();
+  totalDebt = new BN(totalDebt).shiftedBy(decimals).integerValue().toFixed();
+  const lendingPool = getLendingPoolContract(provider, account);
+  
+ // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
+  // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
+  //Choose and add validator 
+  const validator_address = settlementAddress; //TODO choose randomly from stakers
+ // await lendingPool.addValidator(validator_address, controller_address);  
 
-  const tx = await  ds_contract.addpool(lendingPooladdress).catch((e) => {
+  const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
+  const {_token1, _token2, name} = getInitialMarketNames(); 
+  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+  console.log('ammFactory', ammFactoryAddress
+    )
+  let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
     throw e;
   });
+  return tx;
+}
 
-  return tx; 
-
+export async function checkBorrowStatus (
+  provider: Web3Provider,
+  account: string
+) : Promise<boolean>  {
+  const lendingPool = getLendingPoolContract(provider, account)
+  const result = await lendingPool.isBorrower(account);
+  return result;
 }
 
 export async function mintDS(
@@ -200,6 +450,80 @@ export async function redeemDS(
   });
 }
 
+export async function verifyAddress(
+  account: string,
+  provider: Web3Provider
+): Promise<TransactionResponse> {
+  const wasmFilePath = "../static/semaphore.wasm";
+  const zkeyFilePath = "../static/semaphore_final.zkey";
+  
+  const signer = provider.getSigner(account)
+  
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
+  
+  const group = {
+    provider: "twitter",
+    name: "unrated"
+  }
+
+  const externalNullifier = 1
+
+  const snarkArtifacts = {
+    wasmFilePath,
+    zkeyFilePath
+  }
+
+  const signal_string = "twitter-unrated"
+
+  const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
+
+  return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
+}
+
+export async function getVerificationStatus(
+  account: string,
+  provider: Web3Provider
+) : Promise<boolean> {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  return controller.verified(account)
+}
+
+export async function contractApprovals(
+  account: string, 
+  provider: Web3Provider) {
+
+  const rewardContractAddress = getRewardsContractAddress(TrustedMarketFactoryV3Address);
+  console.log('rewardcontractaddress', rewardContractAddress)
+  const rewardContract = getRewardContract(provider, rewardContractAddress, account); 
+  await rewardContract.trustAMMFactory(ammFactoryAddress)
+
+}
+
+
+export async function addDSPool(
+  account: string,
+  provider: Web3Provider,
+  // amm: AmmExchange,
+  // cash: Cash,
+  // cashAmount: string
+): Promise<TransactionResponse> {
+
+  const ds_contract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+
+  const tx = await  ds_contract.addpool(lendingPooladdress).catch((e) => {
+    console.error(e);
+    throw e;
+  });
+
+  return tx; 
+
+}
+
+
+
 //obtains borrower loan submission data and calculates initial weight(initial price), and name
 export async function getBorrowerMarketInfo(
     provider: Web3Provider, 
@@ -242,25 +566,7 @@ export async function validator_initiate_market(
     console.error(e);
     throw e;
   });
-}
-
-// const getControllerContract = (library: Web3Provider, address: string, account?: string): Controller => {
-//   return Controller__factory.connect(address, getProviderOrSigner(library, account));
-// }
-
-// export async function verify_address(
-//   account: string,
-//   provider: Web3Provider,
-//   public_signals: SemaphorePublicSignals,
-//   proof: SemaphoreSolidityProof
-// ) {
-//   const controller = getControllerContract(provider, manager_address, account);
-//   // finish
-// }
-
-
-  
-
+  }
 // }
 //borrower proposes-> their submission will automatically call the controller.initiateMarket 
 //function-> the market page will show borrower info + credit criterion 
@@ -291,40 +597,6 @@ export async function validator_approve_loan(
   await manager_contract.approveLoan(borrower_address, borrower_id)
 
 
-}
-
-
-
-export async function checkLoanRegistration (
-  provider: Web3Provider,
-  account: string
-) : Promise<boolean> {
-  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
-  const result = await lendingPool.isRegistered(account);
-  return result;
-}
-
-export async function checkBorrowStatus (
-  provider: Web3Provider,
-  account: string
-) : Promise<boolean>  {
-  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account)
-  const result = await lendingPool.isBorrower(account);
-  return result;
-}
-
-export async function registerBorrower(
-  provider: Web3Provider,
-  account: string
-): Promise<TransactionResponse> {
-  const usdc_contract =  Cash__factory.connect(usdc, getProviderOrSigner(provider, account));
-  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
-  const proposal_fee = await lendingPool.proposal_fee();
-  // let tx = await usdc_contract.increaseAllowance(lendingPooladdress, proposal_fee);
-  //  await tx.wait();
-
-  const tx = await lendingPool.registerBorrower();
-  return tx 
 }
 
 
@@ -408,6 +680,7 @@ export async function doBulkTrade(
 
 // }
 
+
 export async function getNFTPositionInfo(
   provider: Web3Provider, 
   account: string
@@ -421,61 +694,6 @@ export async function getNFTPositionInfo(
 
 }
 
-export async function isBorrowerApproved(
-  provider: Web3Provider, 
-  account: string,
-//marketid, needs a marketid->borrowerid/idx mapping 
-  ): Promise<boolean>{
-
-  //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
-  //const isapproved = await lendingpool.isApproved(borrower, idx)
-
-  return false;  
-}
-export async function submitProposal(
-  provider: Web3Provider,
-  account: string,
-  principal: string, // w/ decimal point
-  totalDebt: string, // w/ decimal point
-  duration: string, //in seconds, no fractions of seconds.
-  underlying_token: string,
-  id: string = "1", 
-  description: string = "example", 
-
-): Promise<TransactionResponse> {
-
-  const token = await ERC20__factory.connect(usdc, getProviderOrSigner(provider, account));
-  const decimals = await token.decimals();
-  principal = new BN(principal).shiftedBy(decimals ).toFixed();
-  totalDebt = new BN(totalDebt).shiftedBy(decimals ).integerValue().toFixed();
-  const lendingPool = getLendingPoolContract(provider, lendingPooladdress, account);
- // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
-  // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
-  //Choose and add validator 
-  const validator_address = settlementAddress; //TODO choose randomly from stakers
- // await lendingPool.addValidator(validator_address, manager_address);  
-
-  const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
-  const {_token1, _token2, name} = getInitialMarketNames(); 
-  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
-  console.log('ammFactory', ammFactoryAddress
-    )
-  let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
-  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
-  return tx;
-}
-
-
-
-
-
-const getLendingPoolContract = (library: Web3Provider, address: string, account?: string): LendingPool => {
-  return LendingPool__factory.connect(address, getProviderOrSigner(library, account));
-}
 
 
 export async function newFunction(
@@ -1317,7 +1535,7 @@ export const cashOutAllShares = (
     return null;
   }
   const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
-  const shareAmount = BigNumber.min(...balancesRaw);
+  const shareAmount = BN.min(...balancesRaw);
   const normalizedAmount = shareAmount
     .div(new BN(shareFactor))
     .decimalPlaces(0, 1)
@@ -1335,7 +1553,7 @@ export const cashOutAllShares = (
 export const getCompleteSetsAmount = (outcomeShares: string[], ammOutcomes): string => {
   if (!outcomeShares) return "0";
   const shares = (ammOutcomes || []).map((s, i) => new BN(outcomeShares[i] || "0"));
-  const amount = BigNumber.min(...shares);
+  const amount = BN.min(...shares);
   if (isNaN(Number(amount.toFixed()))) return "0";
   const isDust = amount.lte(DUST_POSITION_AMOUNT);
   return isDust ? "0" : amount.toFixed();
@@ -2078,7 +2296,7 @@ const accumSharesPrice = (
   outcome: string,
   account: string,
   cutOffTimestamp: number
-): { shares: BigNumber; cashAmount: BigNumber; avgPrice: BigNumber } => {
+): { shares: BN; cashAmount: BN; avgPrice: BN } => {
   if (!transactions || transactions.length === 0) return { shares: ZERO, cashAmount: ZERO, avgPrice: ZERO };
   const result = transactions
     .filter(
@@ -2108,8 +2326,8 @@ const accumLpSharesPrice = (
   account: string,
   cutOffTimestamp: number,
   shareFactor: string,
-  outcomeDefaultAvgPrice: BigNumber
-): { shares: BigNumber; cashAmount: BigNumber; avgPrice: BigNumber } => {
+  outcomeDefaultAvgPrice: BN
+): { shares: BN; cashAmount: BN; avgPrice: BN } => {
   if (!transactions || transactions.length === 0) return { shares: ZERO, cashAmount: ZERO, avgPrice: ZERO };
   const result = transactions
     .filter((t) => isSameAddress(t?.sender?.id, account) && Number(t.timestamp) > cutOffTimestamp)
