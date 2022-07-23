@@ -38,8 +38,8 @@ const Routes = p => {
       <Route path={makePath(REDEEM)} component={RedeemView} />
       <Route path={makePath(PROPOSAL)} component={ProposalView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
-      {/* <Route path={makePath(BORROW)} component={BorrowView} /> */}
-      {/* <Route path={makePath("loan")} component={LoanView} /> */}
+      <Route path={makePath(BORROW)} component={BorrowView} />
+      <Route path={makePath("loan")} component={LoanView} />
       <Redirect to={makePath(MARKETS)} />
     </Switch>
   );

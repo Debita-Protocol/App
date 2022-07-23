@@ -11,6 +11,7 @@ import { Loan } from "@augurproject/comps/build/types";
 import { utils } from "ethers";
 import Styles from "../market/market-view.styles.less";
 import BN from "bignumber.js"
+import { SecondaryThemeButton } from "@augurproject/comps/build/components/common/buttons";
 
 const { PathUtils: { parseQuery } } = Utils;
 const { ValueLabel } = LabelComps;
@@ -52,6 +53,7 @@ const LoanView = () => {
         if (account && loginAccount.library) {
             setLoading(true);
             try {
+                console.log("Loan ID: ", loanId)
                 let _loan = await getLoan(account, loginAccount.library, account, loanId);
                 
                 const principal = new BN(_loan.principal.toNumber()).div(10**PRICE_PRECISION).toString();
@@ -127,12 +129,52 @@ const LoanView = () => {
                 <>
                 <ValueLabel large={true} label={"Principal"} value={loan.principal}/>
                 <ValueLabel large={true} label={"Total Interest"} value={loan.totalInterest}/>
-                { loan.approved ? (
+                { (loan.approved && loan.repaymentDate < new Date().getSeconds()) ? (
                     <>
                         <ValueLabel label={"Repayment Date"} value={loan.repaymentDate}/>
                         <ValueLabel label={"Amount Borrowed"} value={loan.amoutnBorrowed}/>
                         <ValueLabel label={"Interest Repaid"} value={loan.interestRepaid}/>
                         <ValueLabel label={"Allowance"} value={loan.allowance}/>
+                        <div>
+                            <label>Borrow Amount: </label> <br />
+                            <input 
+                                type="text"
+                                placeholder="0.0"
+                                value={ borrowAmount }
+                                onChange={(e) => {
+                                if (/^\d*\.?\d*$/.test(e.target.value)) {
+                                    setBorrowAmount(e.target.value)
+                                }
+                                }}
+                            />
+                            <SecondaryThemeButton action={_borrow} text={"borrow"}/>s
+                        </div>
+                        <br />
+                        <div className="principal">
+                            <label>Repay Principal: </label> <br />
+                            <input 
+                                type="text"
+                                placeholder="0.0"
+                                value={ repayPrincipal }
+                                onChange={(e) => {
+                                if (/^\d*\.?\d*$/.test(e.target.value)) {
+                                    repayPrincipal(e.target.value)
+                                }
+                                }}
+                            />
+                            <label>Repay Interest: </label> <br />
+                            <input 
+                                type="text"
+                                placeholder="0.0"
+                                value={ repayInterest }
+                                onChange={(e) => {
+                                if (/^\d*\.?\d*$/.test(e.target.value)) {
+                                    setRepayInterest(e.target.value)
+                                }
+                                }}
+                            />
+                        </div>
+                        <SecondaryThemeButton action={_repay} text={"repay"}/>
                     </>
                 ) : (
                     <>
