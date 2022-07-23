@@ -148,17 +148,17 @@ const setupContracts = async (account: string, provider: Web3Provider) => {
 
 //  LENDING POOL FUNCTIONS
 
-export async function isBorrowerApproved(
-  provider: Web3Provider, 
-  account: string,
-//marketid, needs a marketid->borrowerid/idx mapping 
-  ): Promise<boolean>{
+// export async function isBorrowerApproved(
+//   provider: Web3Provider, 
+//   account: string,
+// //marketid, needs a marketid->borrowerid/idx mapping 
+//   ): Promise<boolean>{
 
-  //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
-  //const isapproved = await lendingpool.isApproved(borrower, idx)
+//   //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
+//   //const isapproved = await lendingpool.isApproved(borrower, idx)
 
-  return false;  
-}
+//   return false;  
+// }
 const getLendingPoolContract = (library: Web3Provider, account: string): LendingPool => {
   return LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(library, account));
 }

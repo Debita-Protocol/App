@@ -39,13 +39,13 @@ const LoanView = () => {
         })()
     },[account, loginAccount]);
 
-    const borrow = useCallback(async () => {
+    // const borrow = useCallback(async () => {
 
-    });
+    // });
 
-    const repay = useCallback(async () => {
+    // const repay = useCallback(async () => {
         
-    })
+    // })
 }
 
 export default LoanView;
