@@ -19,7 +19,7 @@ contract LendingPool is ILendingPool, Owned {
     address private collateral_address;
     address private creator_address;
     address private timelock_address;
-    IController private controller;
+    IController private controller; 
     DS private DScontract;
     DSS private DSScontract;
 
@@ -35,8 +35,8 @@ contract LendingPool is ILendingPool, Owned {
     uint256 private constant PRICE_PRECISION = 1e6;
     uint256 public total_borrowed_amount;
     uint256 public accrued_interest;
-    uint256 immutable public MAX_LOANS = 1;
-    uint256 immutable public MAX_PROPOSALS = 1;
+    uint256 immutable public MAX_LOANS = 20;
+    uint256 immutable public MAX_PROPOSALS = 20;
 
     // mint/redeem
     mapping(address => uint256) public redeemDSSBalances;
@@ -53,6 +53,7 @@ contract LendingPool is ILendingPool, Owned {
     mapping(address => uint256) public override num_loans;
     mapping(address => uint256) public override num_proposals;
     address[] public borrowers_array;
+    mapping(bytes32 => bool) id_taken;
 
     modifier onlyByOwnGov() {
         require(msg.sender == timelock_address || msg.sender == owner, "Not owner or timelock");
@@ -70,7 +71,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     modifier onlyVerified() {
-        require(controller.verified(msg.sender), "address not verified");
+        //require(controller.verified(msg.sender), "address not verified");
         _;
     }
 
@@ -225,7 +226,7 @@ contract LendingPool is ILendingPool, Owned {
 
     // loan functions
     function addDiscretionaryLoanProposal(
-        string calldata _id,
+        bytes32 _id,
         uint256 _principal,
         uint256 _duration,
         uint256 _totalInterest,
@@ -236,19 +237,15 @@ contract LendingPool is ILendingPool, Owned {
         require(_duration > 0, "duration must be greater than 0");
         require(_totalInterest > 0, "total interst must be greater than 0");
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
-        require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format");
-
-        bytes32 hashed_id = keccak256(abi.encodePacked(_id));
-
-        for (uint256 i = 0; i < num_proposals[msg.sender]; i++) {
-            require(current_loan_data[msg.sender][i].id != hashed_id, "Loan ID must be unique");
-        }
+        require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format"); // should be collateral address, not DS. Can't be less than 1.0 X?
+        require(!id_taken[_id], "loan id must be unique");
 
         num_proposals[msg.sender]++;
+        id_taken[_id] = true;
 
         current_loan_data[msg.sender].push(
             LoanMetadata({
-                id: hashed_id,
+                id: _id,
                 principal: _principal,
                 totalInterest: _totalInterest,
                 duration: _duration,
@@ -268,7 +265,7 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     function addContractLoanProposal(
-        string calldata _id,
+        bytes32 _id,
         address _recipient,
         uint256 _principal,
         uint256 _duration,
@@ -282,16 +279,14 @@ contract LendingPool is ILendingPool, Owned {
         require(num_proposals[msg.sender] < MAX_PROPOSALS, "proposal limit reached");
         require(_principal >= 10**DScontract.decimals(), "Needs to be in decimal format");
         require(address(_recipient).isContract(), "Recipient must be contract");
+        require(!id_taken[_id], "loan id must be unique");
 
-        bytes32 hashed_id = keccak256(abi.encodePacked(_id));
-        for (uint256 i = 0; i < num_proposals[msg.sender]; i++) {
-            require(current_loan_data[msg.sender][i].id != hashed_id, "Loan ID must be unique");
-        }
         num_proposals[msg.sender]++;
+        id_taken[_id] = true;
 
         current_loan_data[msg.sender].push(
             LoanMetadata({
-                id: hashed_id,
+                id: _id,
                 principal: _principal,
                 totalInterest: _totalInterest,
                 duration: _duration,
@@ -310,24 +305,24 @@ contract LendingPool is ILendingPool, Owned {
         emit LoanProposal(msg.sender, _id);
     }
 
-    function removeProposal(string calldata id) external override onlyVerified returns (bool) {
+    function removeProposal(bytes32 id) external override onlyVerified returns (bool) {
         return _removeProposal(msg.sender, id);
     }
 
-    function removeProposalGov(address recipient, string calldata id) external override onlyByOwnGov returns (bool) {
+    function removeProposalGov(address recipient, bytes32 id) external override onlyByOwnGov returns (bool) {
         return _removeProposal(recipient, id);
     }
 
-    function _removeProposal(address recipient, string calldata id) internal returns (bool) {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+    function _removeProposal(address recipient, bytes32 id) internal returns (bool) {
 
         for (uint256 i = 0; i < num_proposals[recipient]; i++) {
-            if (hashed_id == current_loan_data[recipient][i].id) {
+            if (id == current_loan_data[recipient][i].id) {
                 emit LoanProposalRemoval(recipient, current_loan_data[recipient][i]);
 
                 _removeLoan(recipient, i);
 
                 num_proposals[recipient]--;
+                id_taken[id] = false;
                 return true;
             }
         }
@@ -337,14 +332,13 @@ contract LendingPool is ILendingPool, Owned {
     // called by controller
     function approveLoan(
         address recipient, // owner of loan
-        string calldata id,
+        bytes32 id,
         address marketFactoryAddress
     ) public override onlyValidator {
         require(num_loans[recipient] < MAX_LOANS, "max number of loans reached");
 
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
         for (uint256 i = 0; i < current_loan_data[recipient].length; i++) {
-            if (hashed_id == current_loan_data[recipient][i].id) {
+            if (id == current_loan_data[recipient][i].id) {
                 require(!current_loan_data[recipient][i].approved, "loan already approved");
 
                 require(controller.canBeApproved(recipient, id, marketFactoryAddress), "not market approved");
@@ -382,11 +376,10 @@ contract LendingPool is ILendingPool, Owned {
         }
     }
 
-    function borrow(string calldata id, uint256 amount) external override onlyBorrower onlyVerified {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+    function borrow(bytes32 id, uint256 amount) external override onlyBorrower onlyVerified {
 
         for (uint256 i = 0; i < current_loan_data[msg.sender].length; i++) {
-            if (current_loan_data[msg.sender][i].id == hashed_id) {
+            if (current_loan_data[msg.sender][i].id == id) {
                 LoanMetadata storage loan = current_loan_data[msg.sender][i];
 
                 require(loan.approved, "loan not approved");
@@ -417,13 +410,12 @@ contract LendingPool is ILendingPool, Owned {
 
     function contractBorrow(
         address owner,
-        string calldata id,
+        bytes32 id,
         uint256 amount
     ) external override onlyContract {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
 
         for (uint256 i = 0; i < current_loan_data[owner].length; i++) {
-            if (hashed_id == current_loan_data[owner][i].id) {
+            if (id == current_loan_data[owner][i].id) {
                 LoanMetadata storage loan = current_loan_data[owner][i];
 
                 require(loan.recipient == msg.sender, "loan recipient doesn't match caller");
@@ -450,16 +442,14 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     function repay(
-        string calldata id,
+        bytes32 id,
         uint256 repay_principal,
         uint256 repay_interest
     ) external override onlyBorrower {
         uint256 total_repayment = repay_principal + repay_interest;
 
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
-
         for (uint256 i = 0; i < current_loan_data[msg.sender].length; i++) {
-            if (hashed_id == current_loan_data[msg.sender][i].id) {
+            if (id == current_loan_data[msg.sender][i].id) {
                 LoanMetadata storage loan = current_loan_data[msg.sender][i];
 
                 require(loan.approved, "loan not approved");
@@ -489,16 +479,14 @@ contract LendingPool is ILendingPool, Owned {
 
     function contractRepay(
         address owner,
-        string calldata id,
+        bytes32 id,
         uint256 repay_principal,
         uint256 repay_interest
     ) external override onlyContract {
         uint256 total_repayment = repay_principal + repay_interest;
 
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
-
         for (uint256 i = 0; i < current_loan_data[owner].length; i++) {
-            if (hashed_id == current_loan_data[owner][i].id) {
+            if (id == current_loan_data[owner][i].id) {
                 LoanMetadata storage loan = current_loan_data[owner][i];
 
                 require(loan.recipient == msg.sender, "loan recipient doesn't match caller");
@@ -528,10 +516,9 @@ contract LendingPool is ILendingPool, Owned {
     }
 
     // called by debtor if they want to resolve loan early.
-    function resolveLoan(string calldata id) public override onlyBorrower onlyVerified {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+    function resolveLoan(bytes32 id) public override onlyBorrower onlyVerified {
         for (uint256 i = 0; i < current_loan_data[msg.sender].length; i++) {
-            if (hashed_id == current_loan_data[msg.sender][i].id) {
+            if (id == current_loan_data[msg.sender][i].id) {
                 LoanMetadata storage loan = current_loan_data[msg.sender][i];
 
                 require(loan.approved, "must be an active loan");
@@ -541,13 +528,12 @@ contract LendingPool is ILendingPool, Owned {
                 _checkLoanStatus(msg.sender, i);
             }
         }
+        revert("loan not found");
     }
 
-    function contractResolveLoan(address owner, string calldata id) public override onlyContract {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
-
+    function contractResolveLoan(address owner, bytes32 id) public override onlyContract {
         for (uint256 i = 0; i < current_loan_data[owner].length; i++) {
-            if (hashed_id == current_loan_data[msg.sender][i].id) {
+            if (id == current_loan_data[msg.sender][i].id) {
                 LoanMetadata storage loan = current_loan_data[owner][i];
 
                 require(loan.recipient == msg.sender, "loan recipient doesn't match caller");
@@ -558,6 +544,7 @@ contract LendingPool is ILendingPool, Owned {
                 _checkLoanStatus(owner, i);
             }
         }
+        revert("loan not found");
     }
 
     // restrictions on acccess?
@@ -578,6 +565,7 @@ contract LendingPool is ILendingPool, Owned {
                 emit Default(borrower, loan);
 
                 num_loans[borrower]--;
+                id_taken[loan.id] = false;
 
                 _removeLoan(borrower, i);
             }
@@ -586,6 +574,7 @@ contract LendingPool is ILendingPool, Owned {
             emit FullRepayment(borrower, loan);
             // resolve market
             num_loans[borrower]--;
+            id_taken[loan.id] = false;
             _removeLoan(borrower, i);
         }
     }
@@ -599,11 +588,10 @@ contract LendingPool is ILendingPool, Owned {
         }
     }
 
-    function checkLoanStatus (address owner, string calldata id) public override {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+    function checkLoanStatus (address owner, bytes32 id) public override {
 
         for (uint256 i = 0; i < current_loan_data[owner].length; i++) {
-            if (hashed_id == current_loan_data[owner][i].id) {
+            if (id == current_loan_data[owner][i].id) {
                 require(current_loan_data[owner][i].approved, "loan not approved");
 
                 _checkLoanStatus(owner, i);
@@ -622,10 +610,9 @@ contract LendingPool is ILendingPool, Owned {
 
     // GETTERS
     
-    function getLoan(address borrower, string calldata id) public view override returns (LoanMetadata memory) {
-        bytes32 hashed_id = keccak256(abi.encodePacked(id));
+    function getLoan(address borrower, bytes32 id) public view override returns (LoanMetadata memory) {
         for (uint256 i = 0; i < current_loan_data[borrower].length; i++) {
-            if (hashed_id == current_loan_data[borrower][i].id) {
+            if (id == current_loan_data[borrower][i].id) {
                 return current_loan_data[borrower][i];
             }
         }
@@ -655,7 +642,7 @@ contract LendingPool is ILendingPool, Owned {
         return loan.approved;
     }
 
-    event LoanProposal(address indexed recipient, string loan_id);
+    event LoanProposal(address indexed recipient, bytes32 loan_id);
     event LoanApproval(address indexed recipient, LoanMetadata loan);
     event FullRepayment(address indexed recipient, LoanMetadata loan);
     event Default(address indexed defaultor, LoanMetadata loan);

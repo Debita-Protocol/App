@@ -4,14 +4,14 @@ import { ContractCalls } from "@augurproject/comps";
 import React, { useContext, useState } from "react";
 const BorrowContext = React.createContext();
 
-const { checkLoanRegistration } = ContractCalls;
+// const { checkLoanRegistration } = ContractCalls;
 
-const LendingPoolCalls = { checkLoanRegistration, "hello":3 }
+// const LendingPoolCalls = { checkLoanRegistration, "hello":3 }
 
 export const BorrowProvider = ({ children }) => {
     
     return (
-        <BorrowContext.Provider value={LendingPoolCalls}>
+        <BorrowContext.Provider value={"LendingPoolCalls"}> 
             {children}
         </BorrowContext.Provider>
     );

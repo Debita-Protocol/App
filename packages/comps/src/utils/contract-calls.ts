@@ -27,7 +27,6 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
-  Web3,
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -115,16 +114,37 @@ import {
   ammFactoryAddress,
   indexCDSAddress, 
   PRICE_PRECISION,
-  collateral_address
+  collateral_address,
+  deployer_pk,
+  zeke_test_account
 } from "../data/constants";
 
 
-import {BigNumber} from "ethers"
+import {BigNumber, utils} from "ethers"
 import { Loan } from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 
+const { parseBytes32String, formatBytes32String } = utils;
+
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+
+// ONLY FOR TESTING.
+const setupContracts = async (account: string, provider: Web3Provider) => {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
+  const deployer = new ethers.Wallet(deployer_pk)
+  const lpool = getLendingPoolContract(provider, account)
+  try {
+    let tx = await lpool.connect(deployer).setController(controller.address)
+  } catch (err) {
+    console.log("error setting controller", err.reason)
+  }
+  try {
+    let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
+  } catch (err) {
+    console.log("error adding validator", err.reason)
+  }
+}
 
 //  LENDING POOL FUNCTIONS
 
@@ -175,9 +195,14 @@ export async function addDiscretionaryLoanProposal(
     odds: [weight1, weight2]
   }
 
-  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
+  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(formatBytes32String(loan_id), principal, duration, totalInterest, description, marketInfo) // also calls initiate market
 
   return transaction;
+}
+
+export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
+  const lpool = getLendingPoolContract(provider, account);
+  return lpool.isApproved(account, 0)
 }
 
 export async function addContractLoanProposal(
@@ -212,7 +237,7 @@ export async function addContractLoanProposal(
     odds: [weight1, weight2]
   }
 
-  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(loan_id, recipient, principal, duration, totalInterest, description, marketInfo)
+  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(formatBytes32String(loan_id), recipient, principal, duration, totalInterest, description, marketInfo)
 
   return transaction;
 }
@@ -231,7 +256,7 @@ export async function borrow(
 
   amount = new BN(amount).shiftedBy(decimals).toFixed()
 
-  return lpool.connect(getSigner(provider, account)).borrow(loan_id, amount)
+  return lpool.connect(getSigner(provider, account)).borrow(formatBytes32String(loan_id), amount)
 }
 
 export async function repay(
@@ -250,7 +275,7 @@ export async function repay(
   repay_principal = new BN(repay_principal).shiftedBy(decimals).toFixed()
   repay_interest = new BN(repay_interest).shiftedBy(decimals).toFixed()
 
-  return lpool.connect(getSigner(provider, account)).repay(id, repay_principal, repay_interest)
+  return lpool.connect(getSigner(provider, account)).repay(formatBytes32String(id), repay_principal, repay_interest)
 }
 
 export async function checkAllLoans(
@@ -279,7 +304,7 @@ export async function personalResolveLoan(
 ) : Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(id)
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(formatBytes32String(id))
 }
 
 export async function contractResolveLoan(
@@ -290,7 +315,7 @@ export async function contractResolveLoan(
 ) : Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.connect(provider.getSigner(account).connectUnchecked()).contractResolveLoan(owner, id)
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).contractResolveLoan(owner, formatBytes32String(id))
 }
 
 export async function getLoan(
@@ -301,7 +326,7 @@ export async function getLoan(
 ): Promise<Loan> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.getLoan(address, loan_id);
+  return lpool.getLoan(address, formatBytes32String(loan_id));
 }
 
 export async function getLoans(
@@ -594,7 +619,7 @@ export async function validator_approve_loan(
 
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
 
-  await manager_contract.approveLoan(borrower_address, borrower_id)
+  await manager_contract.approveLoan(borrower_address, formatBytes32String(borrower_id))
 
 
 }

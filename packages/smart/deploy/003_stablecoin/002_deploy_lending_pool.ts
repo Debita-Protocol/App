@@ -5,7 +5,7 @@ import { DeployFunction } from "hardhat-deploy/types";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
-  const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
+  const { deployer, timelock } = await getNamedAccounts();
 
 
 
@@ -26,11 +26,10 @@ console.log('collateral address', collateral.address)
 
   const args= [
       ds.address, 
-      dss.address, 
-      //collateral.address, 
+      dss.address,
       "0x5799bFe361BEea69f808328FF4884DF92f1f66f0",//collateral.address, 
       deployer, 
-      owner, //TODO
+      timelock, //TODO
   ];
 
   await deployments.deploy("LendingPool", {

@@ -162,10 +162,12 @@ export const MarketCardView = ({
     } = useUserStore();
 
   useEffect(async() => {
-    let approved 
+    if (account && loginAccount.library) {
+      let approved 
     approved = await isBorrowerApproved(loginAccount.library, account)
     setIsApproved(approved); 
-  })
+    }
+  }, [account, loginAccount])
 
 
   const { categories, marketId, reportingState, hasWinner } = market;

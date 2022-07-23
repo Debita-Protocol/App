@@ -1,0 +1,604 @@
+@import (reference) "~assets/styles/shared";
+
+.SearchInput {
+  .ThemeBorder;
+  .SecondaryBorderRadius;
+
+  background: var(--primary-bg);
+  color: var(--primary-text);
+  display: flex;
+  align-items: center;
+  height: @size-48;
+
+  &:focus-within {
+    border: @size-1 solid var(--secondary-text);
+  }
+
+  > svg {
+    height: @size-16;
+    width: @size-16;
+    min-height: @size-16;
+    min-width: @size-16;
+    margin-left: @size-12;
+    // input has padding, no need to space svg, instead space from left side.
+
+    > path {
+      fill: var(--primary-text);
+    }
+  }
+
+  > div {
+    min-width: @size-16;
+    min-height: @size-16;
+    width: @size-16;
+    height: @size-16;
+    display: flex;
+    margin: 0 @size-24 0 @size-12;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    > svg {
+      min-width: @size-16;
+      min-height: @size-16;
+      width: @size-16;
+      height: @size-16;
+
+      > path {
+        fill: var(--primary-text);
+      }
+    }
+
+    &.faded {
+      min-width: @size-24;
+      min-height: @size-24;
+      width: @size-24;
+      height: @size-24;
+
+      > svg {
+        min-width: @size-24;
+        min-height: @size-24;
+        width: @size-24;
+        height: @size-24;
+      }
+    }
+  }
+
+  > input {
+    .TertiaryBorderRadius;
+    .text-16-bold;
+
+    background: var(--primary-bg);
+    color: var(--primary-text);
+    border: 0;
+    // padding-left: @size-24;
+
+    &:focus,
+    &:active {
+      outline: 0;
+      border: 0;
+    }
+  }
+}
+:root[theme="SPORTS_DARK"],
+:root[theme="SPORTS"] {
+  .SearchInput {
+    > svg {
+      display: block;
+    }
+
+    > input {
+      .text-14;
+    }
+  }
+
+  .faded {
+    > svg {
+      display: none;
+    }
+    min-width: @size-14;
+    min-height: @size-14;
+    margin-right: @size-12;
+  }
+}
+
+.faded {
+  opacity: 0.5;
+}
+
+.AmountInput {
+  .ThemeBorder;
+
+  display: flex;
+  padding: @size-24 @size-24 @size-40;
+  background: var(--secondary-bg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  > span:first-of-type {
+    .text-16-bold;
+
+    text-transform: capitalize;
+    color: var(--secondary-text);
+    align-items: center;
+    display: flex;
+  }
+
+  > span:nth-of-type(2) {
+    .text-14-semi-bold;
+
+    display: flex;
+    justify-content: flex-end;
+    text-transform: capitalize;
+    color: var(--primary-text);
+    cursor: pointer;
+    text-align: right;
+
+    > span {
+      .text-14;
+
+      color: var(--secondary-text);
+      margin-right: @size-4;
+    }
+  }
+
+  > span.RateLabel {
+    display: none;
+  }
+
+  &.Rate {
+    padding-bottom: @size-12;
+
+    > span.RateLabel {
+      display: block;
+    }
+  }
+}
+
+.AmountInputField {
+  .text-20-bold;
+
+  grid-column: 1 / span 2;
+  margin-top: @size-14;
+  background-color: var(--primary-bg);
+  border-radius: @size-8;
+  display: flex;
+  flex-flow: row nowrap;
+  height: @size-56;
+  min-height: @size-56;
+  border: @size-1 solid transparent;
+  outline: 0;
+  color: var(--secondary-text);
+  align-items: center;
+
+  > button {
+    margin-right: @size-8;
+  }
+
+  &:focus-within {
+    border: @size-1 solid var(--theme-border);
+    outline: 0;
+  }
+
+  > span {
+    flex: 0 auto;
+  }
+
+  > input {
+    .text-20-bold;
+
+    width: @size-64;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    border-radius: @size-8;
+    border: 0;
+    outline: 0;
+    flex: 1 100%;
+    padding: @size-14 0;
+    margin-right: @size-8;
+    text-overflow: ellipsis;
+
+    &:focus {
+      border: 0;
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--primary-bg);
+    }
+  }
+
+  > span:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin-right: @size-2;
+    margin-left: @size-16;
+  }
+
+  &.Edited {
+    color: var(--primary-text);
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+  }
+}
+
+.CurrencyLabel,
+.SharesLabel {
+  .text-16-semi-bold;
+
+  align-items: center;
+  color: var(--primary-text);
+  flex: 0 0 auto;
+  display: flex;
+  flex-flow: row nowrap;
+  white-space: nowrap;
+  justify-content: center;
+  margin-right: @size-16;
+
+  > svg {
+    height: @size-24;
+    width: @size-24;
+    margin-right: @size-4;
+  }
+}
+
+.RateLabel {
+  .text-14-semi-bold;
+
+  color: var(--primary-text);
+  margin-top: @size-12;
+  margin-left: auto;
+  grid-column: 1 / span 2;
+  height: @size-16;
+
+  > span:not(:last-of-type) {
+    margin-right: @size-4;
+
+    &:first-of-type {
+      .text-14;
+
+      color: var(--secondary-text);
+    }
+  }
+}
+
+.SharesLabel {
+  > button {
+    margin-left: @size-12;
+  }
+}
+
+.TextInput {
+  .ThemeBorder;
+  .text-16-bold;
+
+  display: flex;
+  padding: @size-12 @size-16;
+  background: transparent;
+  width: unset;
+  color: var(--primary-text);
+
+  &:focus {
+    .ThemeBorder;
+    outline: 0;
+  }
+}
+
+.Outcomes {
+  display: flex;
+  flex-direction: column;
+
+  &.Grouped {
+    overflow-y: auto;
+    max-height: @size-340;
+    min-height: @size-200;
+    margin: 0;
+    margin-left: -@size-24;
+    margin-right: -@size-24;
+    padding: 0 @size-24 @size-8;
+    border-bottom: @size-1 solid var(--theme-border);
+
+    @media @breakpoint-mobile {
+      max-height: @size-192;
+      padding: 0 @size-16 @size-8;
+      margin: 0 -@size-16;
+
+      &.noClick {
+        max-height: @size-206;
+        padding: 0;
+        margin: 0 0 @size-16 0;
+      }
+    }
+  }
+
+  > div {
+    &:not(:first-of-type) {
+      margin-top: @size-8;
+    }
+  }
+
+  &.showAsButtons {
+    > div:first-of-type {
+      margin-right: @size-8;
+    }
+  }
+
+  &.noClick {
+    border: @size-1 solid var(--theme-border);
+    border-radius: @size-8;
+
+    > div {
+      &:not(:first-of-type) {
+        margin-top: 0;
+      }
+    }
+  }
+}
+
+.SelectedBorders {
+  border: @size-1 solid var(--sell);
+
+  &.ShowAllHighlighted {
+    border-left-width: 0;
+
+    &.showAsButton {
+      border-left-width: @size-1;
+    }
+  }
+}
+
+.Outcome {
+  .ThemeBorder;
+
+  display: flex;
+  color: var(--primary-text);
+  cursor: pointer;
+  padding: @size-10 @size-16;
+  flex: 1;
+  text-transform: capitalize;
+  justify-content: space-between;
+
+  @media @breakpoint-mobile-tablet {
+    min-height: @size-48;
+    max-height: @size-48;
+
+    &.Grouped {
+      min-height: auto;
+      max-height: none;
+    }
+
+    > span {
+      margin: auto 0;
+    }
+  }
+
+  .generate-trading-indexed-color-outcome-classes({
+    &.color-@{newIndex} {
+      &:hover {
+        border: @size-1 solid @value;
+
+        &.Grouped {
+          border: @size-1 solid var(--primary-text);
+        }
+      };
+
+      &.Selected {    
+        border: @size-1 solid @value;
+        background: transparent;
+        position: relative;
+
+        &.Grouped {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          border: @size-1 solid var(--primary-text);
+          padding: 0;
+
+          > span:nth-of-type(2) {
+            display: none;
+          }
+
+          > span:first-of-type {
+            grid-column: span 2;
+            justify-content: center;
+            height: @size-40;
+            min-height: @size-40;
+            max-height: @size-40;
+          }
+
+          > div {
+            .PrimaryBottomBorderRadius;
+
+            display: flex;
+            flex-flow: row nowrap;
+            height: @size-34;
+            min-height: @size-34;
+            max-height: @size-34;
+
+            > button {
+              .text-12-semi-bold;
+
+              background: transparent;
+              flex: 1 0 100%;
+              border: @size-1 solid var(--theme-border);
+              color: var(--secondary-text);
+              cursor: pointer;
+              
+              &:first-of-type {
+                .PrimaryBottomBorderRadius;
+
+                border-bottom-right-radius: 0;
+
+                &.Selected {
+                  color: var(--primary-text);
+                  border-color: var(--buy);
+                  background-color: rgba(var(--buy-rgb), 0.15);
+                }
+
+                &:not(.Selected):hover {
+                  border-color: var(--buy);
+                  background-color: rgba(var(--buy-rgb), 0.15);
+                }
+              }
+
+              &:last-of-type {
+                .PrimaryBottomBorderRadius;
+
+                border-bottom-left-radius: 0;
+
+                &.Selected {
+                  color: var(--primary-text);
+                  border-color: var(--sell);
+                  background-color: rgba(var(--sell-rgb), 0.15);
+                }
+
+                &:not(.Selected):hover {
+                  border-color: var(--sell);
+                  background-color: rgba(var(--sell-rgb), 0.15);
+                }
+              }
+            }
+          }
+        }
+
+        &:not(.Grouped) {
+          &:before {
+            content: "";
+            border-radius: inherit;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: @value;
+            opacity: 0.15;
+          }
+        }
+      }
+    }
+  });
+
+  > span {
+    display: flex;
+    align-items: center;
+
+    &:first-of-type {
+      .text-14-semi-bold;
+    }
+    &:last-of-type {
+      .text-16-semi-bold;
+
+      justify-content: flex-end;
+      display: flex;
+    }
+  }
+
+  &.showAsButton {
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+    border-radius: @size-8;
+
+    &:nth-of-type(2),
+    &:nth-of-type(1) {
+      border-radius: @size-8;
+    }
+  }
+
+  &.disabled {
+    pointer-events: none;
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+
+    &:hover,
+    &:not(.Selected):hover {
+      border: @size-1 solid var(--failed);
+    }
+  }
+
+  &.noClick {
+    pointer-events: none;
+    background-color: var(--primary-bg);
+    border: 0;
+
+    &:not(:last-of-type) {
+      border-bottom: @size-1 solid var(--theme-border);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  &.nonSelectable {
+    pointer-events: none;
+    cursor: default;
+
+    &:hover {
+      border: @size-1 solid var(--theme-border);
+    }
+
+    &.Editable {
+      pointer-events: all;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 0;
+
+      > span {
+        justify-content: flex-start;
+        padding: @size-10 @size-16;
+      }
+
+      > div {
+        .text-16-semi-bold;
+
+        color: var(--secondary-text);
+        display: flex;
+        justify-content: center;
+        padding: @size-10 @size-12;
+        align-items: center;
+
+        > span {
+          margin-left: @size-8;
+        }
+
+        > button {
+          width: @size-25;
+          height: @size-25;
+        }
+
+        > input {
+          .text-16-semi-bold;
+
+          background-color: var(--primary-bg);
+          padding: 0;
+          border: 0;
+          outline: 0;
+          caret-color: var(--primary-text);
+          width: @size-20;
+          margin-right: @size-8;
+
+          &:hover,
+          &:active {
+            border: 0;
+            outline: 0;
+          }
+        }
+      }
+    }
+
+    &.Edited {
+      > div {
+        color: var(--primary-text);
+
+        > input {
+          color: var(--primary-text);
+        }
+      }
+    }
+  }
+}

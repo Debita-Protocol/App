@@ -4,7 +4,7 @@ import { GroupedMarketFactoryV3__factory } from "../../typechain";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
-  const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
+  const { deployer } = await getNamedAccounts();
 
  
     await deployments.deploy("IndexCDS", {
