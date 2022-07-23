@@ -18,7 +18,7 @@ import {
 
 } from "@augurproject/comps";
 
-import Styles from "../markets/markets-view.styles.less"
+// import Styles from "../markets/markets-view.styles.less"
 
 import type { Loan } from "@augurproject/comps/build/types";
 
@@ -98,12 +98,12 @@ const BorrowView = () => {
         </section>
       ) : (
         <section>
-        {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
+        {/*{sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
           <LoanCard
             {... loan}
             key={`loan-${parseBytes32String(loan.id)}-${index}`}
           />         
-        ))}
+        ))} */}
         </section>
       ) }
       {loans.length > 0 && (

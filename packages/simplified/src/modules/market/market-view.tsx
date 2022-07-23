@@ -197,7 +197,9 @@ const MarketView = ({ defaultMarket = null }) => {
   if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
 
   if (!market) return <EmptyMarketView />;
-  const details = getResolutionRules(market);
+ // const details = detailFromResolutionRules? getResolutionRules(market) : "No details";
+  const details = getResolutionRules(market)
+
   const { reportingState, title, description, startTimestamp, categories, winner } = market;
   const winningOutcome = market.amm?.ammOutcomes?.find((o) => o.id === winner);
   const marketTransactions = getCombinedMarketTransactionsFormatted(transactions, market, cashes);
@@ -222,6 +224,24 @@ const MarketView = ({ defaultMarket = null }) => {
         {!!description && <h2>{description}</h2>}
         {!!startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />}
+
+        <div
+          className={classNames(Styles.Details, {
+            [Styles.isClosed]: !showMoreDetails,
+          })}
+        >
+          <h4>Debt Asset Details</h4>
+          {details.map((detail, i) => (
+            <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
+          ))}
+          {details.length > 1 && (
+            <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
+              {showMoreDetails ? "Read Less" : "Read More"}
+            </button>
+          )}
+          {details.length === 0 && <p>There are no additional details for this Loan/Structured Product.</p>}
+        </div>
+
         <ul className={Styles.StatsRow}>
 <li>
             <span>Net Short CDS buyers </span>
@@ -240,7 +260,36 @@ const MarketView = ({ defaultMarket = null }) => {
             <span>Supplied Liquidity</span>
             <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
           </li>
+
         </ul>
+        <ul className={Styles.StatsRow}>
+          <li>
+            <span>Principal </span>
+            <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
+          </li>
+          <li>
+            <span>APR </span>
+            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span>
+          </li>
+          <li>
+            <span>Time Until Maturity </span>
+            <span>{"10"}</span>
+          </li>
+
+          <li>
+            <span>Supplied Liquidity</span>
+            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+          </li>
+
+        </ul>
+      <div
+          className={classNames(Styles.Details, {
+            [Styles.isClosed]: !showMoreDetails,
+          })}
+        >
+          <h4>CDS Price History</h4>
+        </div>
+
         <OutcomesGrid
           outcomes={amm?.ammOutcomes}
           selectedOutcome={amm?.ammOutcomes[2]}
@@ -255,12 +304,13 @@ const MarketView = ({ defaultMarket = null }) => {
         />
         <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
         <PositionsLiquidityViewSwitcher ammExchange={amm} />
+
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Market Details</h4>
+          <h4>Market Resolution Details</h4>
           {details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))}

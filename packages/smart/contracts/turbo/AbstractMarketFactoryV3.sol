@@ -40,6 +40,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
     uint256 public accumulatedProtocolFee = 0;
     // settlement address => amount of collateral
     mapping(address => uint256) public accumulatedSettlementFees;
+    mapping(uint256 => bool ) inAssessment; 
 
     // How many shares equals one collateral.
     // Necessary to account for math errors from small numbers in balancer.
@@ -89,6 +90,20 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
         
     mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
 
+
+
+   // function quantityAvailable(uint256 marketId)
+
+    //Called by lendingpool when market is created i.e , and when loan is approved 
+    function handleAssessment(uint256 _marketId, bool startAssessing) external {
+        bool market_inAssessment = startAssessing? true : false; 
+        inAssessment[_marketId] = market_inAssessment; 
+    }
+
+    function isInAssessment(uint256 _marketId) external view returns(bool){
+        return inAssessment[_marketId]; 
+    }
+
     function logTrade(uint256 _marketId, uint256 _outcome, uint256 _collateralIn) external {
         TradeDetails[_marketId][_outcome] = TradeDetails[_marketId][_outcome] + _collateralIn; 
 
@@ -97,6 +112,9 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
     function getTradeDetails(uint256 _marketId, uint256 _outcome) external view returns(uint256){
         return TradeDetails[_marketId][_outcome]; 
     }
+
+
+
     // Returns an empty struct if the market doesn't exist.
     // Can check market existence before calling this by comparing _id against markets.length.
     // Can check market existence of the return struct by checking that shareTokens[0] isn't the null address
