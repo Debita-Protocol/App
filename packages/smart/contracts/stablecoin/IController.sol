@@ -24,7 +24,7 @@ interface IController  {
         address marketFactoryAddress, 
         uint256 liquidityAmountUSD, 
         string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
-        string calldata loanID, 
+        bytes32 loanID, 
         string[] memory names, 
         uint256[] memory odds
     ) external;
@@ -34,14 +34,14 @@ interface IController  {
     function validators(address _addr) external returns (bool);
     function canBeApproved (
         address borrower, 
-        string calldata loanID, 
+        bytes32 loanID, 
         address marketFactoryAddress 
     ) external returns(bool);
     
     function _initiateMarket(
         MarketInfo memory data,
         address borrower,
-        string calldata loanID
+        bytes32 loanID
     ) external;
     
     function verifyAddress(

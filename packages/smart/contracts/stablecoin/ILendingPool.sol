@@ -50,7 +50,7 @@ interface ILendingPool {
     function addValidator(address validator) external;
 
     function addDiscretionaryLoanProposal(
-        string calldata _id,
+        bytes32 _id,
         uint256 _principal,
         uint256 _duration,
         uint256 _totalInterest,
@@ -59,7 +59,7 @@ interface ILendingPool {
     ) external;
 
     function addContractLoanProposal(
-        string calldata _id,
+        bytes32 _id,
         address _recipient,
         uint256 _principal,
         uint256 _duration,
@@ -68,50 +68,50 @@ interface ILendingPool {
         IController.MarketInfo memory market_info
     ) external;
 
-    function removeProposal(string calldata id) external returns (bool); // called by recipient
+    function removeProposal(bytes32 id) external returns (bool); // called by recipient
 
-    function removeProposalGov(address recipient, string calldata id) external returns (bool);
+    function removeProposalGov(address recipient, bytes32 id) external returns (bool);
 
     function approveLoan(
         address recipient,
-        string calldata id,
+        bytes32 id,
         address marketFactoryAddress
     ) external;
 
-    function borrow(string calldata loan_id, uint256 amount) external;
+    function borrow(bytes32 loan_id, uint256 amount) external;
 
     function contractBorrow(
         address owner,
-        string calldata id,
+        bytes32 id,
         uint256 amount
     ) external;
 
     function repay(
-        string calldata loan_id,
+        bytes32 loan_id,
         uint256 repay_principal,
         uint256 repay_interest
     ) external;
 
     function contractRepay(
         address owner,
-        string calldata loan_id,
+        bytes32 loan_id,
         uint256 repay_principal,
         uint256 repay_interest
     ) external;
 
-    function resolveLoan(string calldata id) external;
+    function resolveLoan(bytes32 id) external;
 
-    function contractResolveLoan(address owner, string calldata id) external;
+    function contractResolveLoan(address owner, bytes32 id) external;
 
     function checkAddressLoans(address recipient) external;
 
     function fullLoanCheck() external;
 
-    function checkLoanStatus (address owner, string calldata id) external;
+    function checkLoanStatus (address owner, bytes32 id) external;
 
     function is_borrower(address addr) external returns (bool);
 
-    function getLoan(address borrower, string calldata id) external returns (LoanMetadata memory);
+    function getLoan(address borrower, bytes32 id) external returns (LoanMetadata memory);
 
     function getLoans(address borrower) external returns (LoanMetadata[] memory);
 

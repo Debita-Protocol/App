@@ -8,9 +8,6 @@ import "./IController.sol";
 
 
 contract ReputationNFT is ERC721, ReentrancyGuard{
-
-
-
     modifier onlyController(){
         require(address(controller) == msg.sender, "is not controller"); 
         _;
