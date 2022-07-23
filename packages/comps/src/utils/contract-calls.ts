@@ -251,9 +251,9 @@ export async function borrow(
 export async function repay(
   account: string,
   provider: Web3Provider,
+  id: string,
   repay_principal: string, // decimal format
-  repay_interest: string, // decimal format
-  id: string
+  repay_interest: string // decimal format
 ): Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
   

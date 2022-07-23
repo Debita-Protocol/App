@@ -23,6 +23,7 @@ import Styles from "../markets/markets-view.styles.less"
 import type { Loan } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+import { utils } from "ethers";
 
 
 const {
@@ -56,11 +57,13 @@ const {
   SPORTS,
 } = Constants;
 
+
 const PAGE_LIMIT = 5;
 const MIN_LIQUIDITY_AMOUNT = 1;
 
 const { getLoans } = ContractCalls;
 
+const { parseBytes32String, formatBytes32String } = utils;
 
 const BorrowView = () => {
   const [loans, setLoans] = useState<Loan[]>();
@@ -98,7 +101,7 @@ const BorrowView = () => {
         {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
           <LoanCard
             {... loan}
-            key={`loan-${loan.id}-${index}`}
+            key={`loan-${parseBytes32String(loan.id)}-${index}`}
           />         
         ))}
         </section>

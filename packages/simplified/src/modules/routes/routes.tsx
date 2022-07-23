@@ -23,6 +23,7 @@ import MintView from "../mint/mint";
 import RedeemView from "../redeem/redeem"
 import ProposalView from '../proposal/proposal-view';
 import BorrowView from "../borrow/borrow-view";
+import LoanView from "../loan/loan-view";
 //import MintDSView from '../mint-ds/mint-ds-view';
 const { PathUtils: { makePath } } = Utils;
 
@@ -38,6 +39,7 @@ const Routes = p => {
       <Route path={makePath(PROPOSAL)} component={ProposalView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
       {/* <Route path={makePath(BORROW)} component={BorrowView} /> */}
+      {/* <Route path={makePath("loan")} component={LoanView} /> */}
       <Redirect to={makePath(MARKETS)} />
     </Switch>
   );

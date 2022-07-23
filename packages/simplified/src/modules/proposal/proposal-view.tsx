@@ -21,6 +21,8 @@ import { DropdownProps } from "@augurproject/comps/build/components/common/selec
 
 // ALL CURRENCY ADDRESSES ARE JUST USDC
 import { CURRENCY_ADDRESSES } from "../constants";
+import { utils } from "ethers";
+const { formatBytes32String } = utils;
 
 const {
     SelectionComps: { SquareDropdown },
@@ -140,6 +142,7 @@ const LoanRequestForm = () => {
     if (!inputError) {
       const total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
       const interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate)).toString()
+      const _id = formatBytes32String(ID);
       if (loanType === "discretionary") {
         try {
           const tx = await addDiscretionaryLoanProposal(
@@ -161,7 +164,7 @@ const LoanRequestForm = () => {
             account,
             loginAccount.library,
             recipient,
-            ID,
+            _id,
             principal,
             total_duration,
             interest,
@@ -281,7 +284,7 @@ const LoanRequestForm = () => {
               placeholder="0"
               value={ ID }
               onChange={(e) => {
-                  if (/^\w*$/.test(e.target.value)) {
+                  if (/^\S{0,32}$/.test(e.target.value)) {
                       setID(e.target.value);
                   }
                 }

@@ -7,11 +7,13 @@ import Styles from "../market-card/market-card.styles.less";
 import {ValueLabel} from "../common/labels";
 import BN from "bignumber.js"
 import { PRICE_PRECISION } from "../../data/constants";
-import {Loan} from "../../types"
+import {Loan} from "../../types";
+import { utils } from "ethers" 
 
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+const { parseBytes32String } = utils;
 
 const BorrowerLoanLink = ({ id, dontGoToMarket, children }) => {
     return (
@@ -52,7 +54,7 @@ export const LoanCard = ({
   approved,
   recipient
 }: Loan) => {
-
+  const ID = parseBytes32String(id);
   const date = new Date(Number(repaymentDate) * 1000).toDateString()
   const _duration = new BN(duration.toNumber()).div(60*60*24).toFixed()
   const _principal = new BN(principal.toNumber()).div(10**PRICE_PRECISION).toFixed().toString()
@@ -63,13 +65,13 @@ export const LoanCard = ({
     })}
     > 
       <Link
-            data-testid={`link-${id}`}
+            data-testid={`link-${ID}`}
             to={{
               pathname: makePath("loan"),
-              search: makeQuery({id}),
+              search: makeQuery({ID}),
             }}
       >
-        <ValueLabel label={"Loan ID:"} value={id} large={true} sublabel={recipient === ZERO_ADDRESS ? "Discretionary" : "Smart Contract"}/>
+        <ValueLabel label={"Loan ID:"} value={ID} large={true} sublabel={recipient === ZERO_ADDRESS ? "Discretionary" : "Smart Contract"}/>
         <ValueLabel label={"Approved:"} value={approved ? "Yes!" : "Nope."} />
         <ValueLabel label={"Principal:"} value={_principal}/>
         { approved ? (
