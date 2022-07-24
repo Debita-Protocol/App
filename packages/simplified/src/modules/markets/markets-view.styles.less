@@ -117,6 +117,118 @@
   }
 }
 
+.MintView {
+  display: flex;
+  flex-flow: column nowrap;
+
+  @media screen and (max-width: 1300px) {
+    padding-right: 26rem;
+    padding-left: 26rem;
+    padding-top: 2rem;
+  }
+
+  @media screen and (min-width: 1300px) {
+    padding-right: 32rem;
+    padding-left: 32rem;
+    padding-top: 2rem;
+  }
+
+  > ul {
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-flow: row nowrap;
+    width: 100%;
+    margin: @size-40 0 @size-16;
+
+    > div {
+      margin-right: @size-20;
+
+      &:last-of-type {
+        margin-right: 0;
+      }
+    }
+
+    > button {
+      margin-left: auto;
+    }
+  }
+
+  > button {
+    margin: @size-12 0;
+  }
+
+  > section {
+    display: grid;
+    grid-gap: @size-24;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 0fr);
+    flex: 1;
+    margin-bottom: @size-40;
+    margin-top: @size-24;
+  }
+
+  > span {
+    margin-top: @size-24;
+  }
+
+  > div:last-of-type:not(:first-of-type):not(.SubCategoriesFilter) {
+    justify-content: center;
+  }
+
+  > div[class*='SearchInput'] {
+    overflow: hidden;
+    height: 0px;
+    transition: height 100ms ease-in-out, opacity 100ms ease-in-out;
+    opacity: 0;
+  }
+
+  &.SearchOpen {
+    > div[class*='SearchInput'] {
+      height: @size-48;
+      opacity: 1;
+      margin-bottom: @size-16;
+    }
+  }
+}
+
+@media @breakpoint-mobile-tiny {
+  .MarketsView {
+    padding-bottom: @size-48;
+
+    > section {
+      grid-template-columns: 1fr 1fr;
+      grid-gap: @size-16;
+      margin-top: 0;
+    }
+
+    > span {
+      margin-top: @size-16;
+    }
+
+    > div:nth-of-type(2) {
+      display: flex;
+      margin: @size-4 0;
+
+      > button:first-of-type {
+        flex: 1;
+        margin-right: @size-8;
+      }
+    }
+
+    &.SearchOpen {
+      > div[class*='SearchInput'] {
+        margin-bottom: @size-16;
+      }
+    }
+  }
+}
+
+.MintHeader {
+  text-align: center;
+  font-weight: 500;
+}
+
 @media @breakpoint-mobile-tablet {
   .MarketsView {
     padding: @size-16;

@@ -110,7 +110,7 @@ const MintView= () => {
 
   return (
     <div
-      className={classNames(Styles.MarketsView, {
+      className={classNames(Styles.MintView, {
       })}
     >
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
@@ -123,10 +123,11 @@ const MintView= () => {
  
 
      <div className = {styleMint.wrapper}>  
-        <div className = {formStyles.TradingForm}>
-          <div className={styleMint.formHeader}>
+        <div className = {formStyles.MintForm}>
+          <div style={{'font-weight':'750', 'display':'flex', 'justify-content':'center', 'font-size':'20px'}}>
             Mint DS for USDC
           </div>
+          <div style={{ 'padding-left': '1.5rem', 'padding-right': '1.5rem' }}>
           <div className={inputStyles.AmountInput}>
             <div className={inputStyles.AmountInputField}>
               <span>$</span>
@@ -136,6 +137,7 @@ const MintView= () => {
                     pattern='^[0-9]*[.,]?[0-9]*$'
                     onChange={e => handleChange(e, 'amount')}
               />
+
               <button className={buttonStyles.BaseNormalButtonTiny}><span>Max</span></button>
           
                 <svg width="29" height="28" viewBox="0 0 29 28" fill="none">
@@ -144,11 +146,14 @@ const MintView= () => {
               <span style={{color: 'black', "padding-left": "0.25rem", "padding-right": "0.5rem"}}>USDC</span>
             </div>
           </div>
+        </div>
 
-        <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
-        &nbsp; &nbsp;  &nbsp; <span>Confirm</span> &nbsp; &nbsp; &nbsp; 
-        </button>
-
+        <div style={{  'padding-left': '1.5rem', 'padding-right': '1.5rem' }} >
+          <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
+          &nbsp; &nbsp;  &nbsp; <span>Confirm</span> &nbsp; &nbsp; &nbsp; 
+          </button>
+        </div>
+        
         </div>
     </div>
 
