@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import Styles from "./markets-view.styles.less";
+
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -96,9 +96,10 @@ const BorrowView = () => {
       ) : (
         <section>
         {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
-          <LoanCard
-            {... loan}
-          />         
+          <></>
+          //<LoanCard
+          //  {... loan}
+          // />         
         ))}
         </section>
       ) }

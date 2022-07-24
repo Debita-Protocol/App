@@ -22,6 +22,7 @@ import { MintContext } from './mintcontext';
 
 import buttonStyles from "../common/buttons.styles.less";
 import inputStyles from "../common/inputs.styles.less";
+import formStyles from "../market/trading-form.styles.less";
 import { FailedX } from "@augurproject/comps/build/components/common/icons";
 // import { RiSettings3Fill } from 'react-icons/ri'
 
@@ -121,10 +122,10 @@ const MintView= () => {
  
  
 
-     <div className = {styleMint.wrapper}>  
-        <div className = {styleMint.content}>
+     <div className = {{}}>  
+        <div className = {formStyles.TradingForm}>
           <div className={styleMint.formHeader}>
-            <div>Mint DS for USDC</div>
+            Mint DS for USDC
           </div>
           <div className={inputStyles.AmountInput}>
             <div className={inputStyles.AmountInputField}>
@@ -149,7 +150,7 @@ const MintView= () => {
         </button>
 
         </div>
-      </div>
+    </div>
 
 
 
