@@ -59,9 +59,9 @@ const {
 const PAGE_LIMIT = 21;
 const MIN_LIQUIDITY_AMOUNT = 1;
 const styleMint = {
-    wrapper: `w-screen flex items-center justify-center mt-14`,
+    wrapper: `w-screen flex items-center justify-center px-24`,
     content: `bg-[#191B1F] w-[40rem] rounded-2xl p-4`,
-    formHeader: `px-2 flex items-center justify-between font-semibold text-xl`,
+    formHeader: `px-2 flex items-center justify-between font-semibold text-xl pb-10`,
     transferPropContainer: `bg-[#20242A] my-3 rounded-2xl p-6 text-3xl  border border-[#20242A] hover:border-[#41444F]  flex justify-between`,
     transferPropInput: `bg-transparent placeholder:text-[#B2B9D2] outline-none mb-6 w-full text-2xl`,
     currencySelector: `flex w-1/4`,
@@ -122,7 +122,7 @@ const MintView= () => {
  
  
 
-     <div className = {{}}>  
+     <div className = {styleMint.wrapper}>  
         <div className = {formStyles.TradingForm}>
           <div className={styleMint.formHeader}>
             Mint DS for USDC
