@@ -201,8 +201,9 @@ export async function addDiscretionaryLoanProposal(
 }
 
 export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
-  const lpool = getLendingPoolContract(provider, account);
-  return lpool.isApproved(account, 0)
+  //const lpool = getLendingPoolContract(provider, account);
+  return true; 
+ // return lpool.isApproved(account, 0)
 }
 
 export async function addContractLoanProposal(
