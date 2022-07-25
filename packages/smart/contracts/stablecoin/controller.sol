@@ -22,8 +22,7 @@ contract Controller is IController {
 
     mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
 
-    address[] validators_array; 
-    address[] pools_array;
+    address[] validators_array;
 
     address creator_address;
     address timelock_address;
@@ -44,12 +43,12 @@ contract Controller is IController {
     }
 
     modifier onlyPools() {
-        require(pools[msg.sender] == true, "Only Pools can call this function");
+        require(msg.sender == address(lendingpool), "Only Pools can call this function");
         _;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == creator_address, "Only Pools can call this function");
+        require(msg.sender == creator_address, "Only Owner can call this function");
         _;
     }
 
@@ -83,14 +82,14 @@ contract Controller is IController {
     }
 
     //Pool added when contract is deployed 
-    function addPool(address pool_address) external override onlyOwner {
-        require(pool_address != address(0), "Zero address detected");
-        require(pools[pool_address] == false, "Address already exists");
+    // function addPool(address pool_address) external override onlyOwner {
+    //     require(pool_address != address(0), "Zero address detected");
+    //     require(pools[pool_address] == false, "Address already exists");
 
-        pools[pool_address] = true; 
-        pools_array.push(pool_address);
+    //     pools[pool_address] = true; 
+    //     pools_array.push(pool_address);
 
-    }
+    // }
 
     //Validator should be added for each borrower
     function addValidator(address validator_address) external override onlyPools {
@@ -113,7 +112,7 @@ contract Controller is IController {
         address marketFactoryAddress, 
         uint256 liquidityAmountUSD, 
         string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
-        string calldata loanID, 
+        bytes32 loanID, 
         string[] memory names, 
         uint256[] memory odds
         )external override onlyValidator{
@@ -130,7 +129,7 @@ contract Controller is IController {
     function _initiateMarket(
         MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
         address recipient,
-        string calldata loanID
+        bytes32 loanID
     ) public override {
         
 
@@ -152,7 +151,7 @@ contract Controller is IController {
         marketData.marketID = marketID;
 
         // Store marketID <=> loan
-        borrower_market_data[recipient][keccak256(abi.encodePacked(loanID))] = marketData; // remember to delete to save storage
+        borrower_market_data[recipient][loanID] = marketData; // remember to delete to save storage
 
         //Minting DS
         lendingpool.controllerMintDS(liquidityAmountUSD); 
@@ -175,7 +174,7 @@ contract Controller is IController {
 
     function resolveMarket(
         address recipient,
-        bytes32 loanID, // hashed id
+        bytes32 loanID,
         bool isDefault
     ) external override {
         uint256 _collateralOut;
@@ -218,17 +217,17 @@ contract Controller is IController {
 
     }
 
-    function approveLoan(address recipient, string calldata id, address marketFactory) external onlyValidator{
+    function approveLoan(address recipient, bytes32 id, address marketFactory) external onlyValidator{
         lendingpool.approveLoan(recipient, id, marketFactory); 
     }
 
 
     //If true, it means net short CDS buys > required collateral and validator can approve the loan 
     function canBeApproved(address borrower, 
-        string calldata loanID, 
+        bytes32 loanID, 
         address marketFactoryAddress ) external override returns(bool){
 
-        MarketInfo memory marketInfo  = borrower_market_data[borrower][keccak256(abi.encodePacked(loanID))];
+        MarketInfo memory marketInfo  = borrower_market_data[borrower][loanID];
         uint256 marketId = marketInfo.marketID; 
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
 

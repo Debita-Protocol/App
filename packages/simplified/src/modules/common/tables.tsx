@@ -1000,7 +1000,7 @@ export const NFTPositionTable = ({
           */ /*}
         <PositionFooter showTradeButton={!singleMarket} market={market} claimableWinnings={claimableWinnings} />
       </div>
-      {!seenMarketPositionWarningAdd &&
+    {/*  {!seenMarketPositionWarningAdd &&
         singleMarket &&
         positions.filter((position) => positions.positionFromAddLiquidity).length > 0 && (
           <WarningBanner
@@ -1021,7 +1021,7 @@ export const NFTPositionTable = ({
             subtitle={`To give liquidity providers the most options available to manage their positions. Shares can be sold for ${market?.amm?.cash?.name}.`}
             onClose={() => updateSeenPositionWarning(marketAmmId, true, REMOVE)}
           />
-        )}
+        )} */}
     </>
   );
 };
@@ -1121,7 +1121,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
       {tableView !== null && (
         <div>
           {!marketId && (positions.length > 0 || liquidities.length > 0) && (
-            <>{tableView === POSITIONS && <></> /*<AllNFTPositionTable page={page} claimableFirst={claimableFirst} isCDSPosition={false} /> */}</>
+            <>{tableView === POSITIONS && <AllNFTPositionTable page={page} claimableFirst={claimableFirst}  />}</>
           )} 
           {!marketId &&
             ((positions.length > 0 && tableView === POSITIONS) ||
@@ -1144,7 +1144,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
                   singleMarket
                   market={market}
                   ammExchange={ammExchange}
-                  positions={f}
+                  positions={userPositions}
                   claimableWinnings={winnings}
                 />
                 */

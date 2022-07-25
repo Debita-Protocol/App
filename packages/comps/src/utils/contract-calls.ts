@@ -27,7 +27,6 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
-  Web3,
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -115,19 +114,76 @@ import {
   ammFactoryAddress,
   indexCDSAddress, 
   PRICE_PRECISION,
-  collateral_address
+  collateral_address,
+  deployer_pk,
+  zeke_test_account
 } from "../data/constants";
 
 
-import {BigNumber} from "ethers"
+import {BigNumber, utils} from "ethers"
 import { Loan } from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 
+const { parseBytes32String, formatBytes32String } = utils;
+
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
+
+// ONLY FOR TESTING.
+export async function setupContracts (account: string, provider: Web3Provider) {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
+  const deployer = new ethers.Wallet(deployer_pk, provider)
+  const lpool = getLendingPoolContract(provider, account)
+  // try {
+  //   console.log("before set Controller")
+  //   let tx = await lpool.connect(deployer).setController(controller.address)
+  //   await tx.wait()
+  //   console.log("after set Controller", tx)
+  // } catch (err) {
+  //   console.log("error setting controller", err.reason)
+  // }
+  // try {
+  //   console.log("before add validator")
+  //   let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
+  //   await tx.wait()
+  //   console.log("after add validator", tx)
+  // } catch (err) {
+  //   console.log("error adding validator", err.reason)
+  // }
+  // try {
+  //   const ds = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+
+  //   let tx = await ds.connect(deployer).addPool(lendingPooladdress)
+  //   tx.wait()
+  // } catch (err) {
+  //   console.log("error adding pool", err)
+  // }
+  // try {
+  //   const chef = MasterChef__factory.connect("0x42a0549a4063378cb96cac64ffb434da1e2817bd", getProviderOrSigner(provider, account))
+  //   let tx = await chef.connect(deployer).trustAMMFactory(ammFactoryAddress)
+  //   tx.wait()
+
+  // } catch (err) {
+  //   console.log("error setting amm factory" , err)
+  // }
+  try {
+    
+  }
+}
 
 //  LENDING POOL FUNCTIONS
 
+// export async function isBorrowerApproved(
+//   provider: Web3Provider, 
+//   account: string,
+// //marketid, needs a marketid->borrowerid/idx mapping 
+//   ): Promise<boolean>{
+
+//   //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
+//   //const isapproved = await lendingpool.isApproved(borrower, idx)
+
+//   return false;  
+// }
 const getLendingPoolContract = (library: Web3Provider, account: string): LendingPool => {
   return LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(library, account));
 }
@@ -163,10 +219,21 @@ export async function addDiscretionaryLoanProposal(
     names: [_token1, _token2],
     odds: [weight1, weight2]
   }
-
-  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(loan_id, principal, duration, totalInterest, description, marketInfo) // also calls initiate market
+  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(
+    formatBytes32String(loan_id), 
+    BigNumber.from(principal), 
+    BigNumber.from(duration), 
+    BigNumber.from(totalInterest), 
+    description, 
+    marketInfo
+    )
 
   return transaction;
+}
+
+export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
+  const lpool = getLendingPoolContract(provider, account);
+  return lpool.isApproved(account, 0)
 }
 
 export async function addContractLoanProposal(
@@ -201,7 +268,7 @@ export async function addContractLoanProposal(
     odds: [weight1, weight2]
   }
 
-  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(loan_id, recipient, principal, duration, totalInterest, description, marketInfo)
+  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(formatBytes32String(loan_id), recipient, principal, duration, totalInterest, description, marketInfo)
 
   return transaction;
 }
@@ -220,15 +287,15 @@ export async function borrow(
 
   amount = new BN(amount).shiftedBy(decimals).toFixed()
 
-  return lpool.connect(getSigner(provider, account)).borrow(loan_id, amount)
+  return lpool.connect(getSigner(provider, account)).borrow(formatBytes32String(loan_id), amount)
 }
 
 export async function repay(
   account: string,
   provider: Web3Provider,
+  id: string,
   repay_principal: string, // decimal format
-  repay_interest: string, // decimal format
-  id: string
+  repay_interest: string // decimal format
 ): Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
   
@@ -239,7 +306,7 @@ export async function repay(
   repay_principal = new BN(repay_principal).shiftedBy(decimals).toFixed()
   repay_interest = new BN(repay_interest).shiftedBy(decimals).toFixed()
 
-  return lpool.connect(getSigner(provider, account)).repay(id, repay_principal, repay_interest)
+  return lpool.connect(getSigner(provider, account)).repay(formatBytes32String(id), repay_principal, repay_interest)
 }
 
 export async function checkAllLoans(
@@ -268,7 +335,7 @@ export async function personalResolveLoan(
 ) : Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(id)
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).resolveLoan(formatBytes32String(id))
 }
 
 export async function contractResolveLoan(
@@ -279,7 +346,7 @@ export async function contractResolveLoan(
 ) : Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.connect(provider.getSigner(account).connectUnchecked()).contractResolveLoan(owner, id)
+  return lpool.connect(provider.getSigner(account).connectUnchecked()).contractResolveLoan(owner, formatBytes32String(id))
 }
 
 export async function getLoan(
@@ -290,7 +357,7 @@ export async function getLoan(
 ): Promise<Loan> {
   const lpool = getLendingPoolContract(provider, account)
 
-  return lpool.getLoan(address, loan_id);
+  return lpool.getLoan(address, formatBytes32String(loan_id));
 }
 
 export async function getLoans(
@@ -370,9 +437,8 @@ export async function submitProposal(
   const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
   const {_token1, _token2, name} = getInitialMarketNames(); 
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
-  console.log('ammFactory', ammFactoryAddress
-    )
+  // console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+  // console.log('ammFactory', ammFactoryAddress
   let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
@@ -548,7 +614,7 @@ export async function validator_initiate_market(
 
 
   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-  console.log('weights, liquidity', weight1, weight2, liquidity)
+  //console.log('weights, liquidity', weight1, weight2, liquidity)
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
@@ -583,7 +649,7 @@ export async function validator_approve_loan(
 
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
 
-  await manager_contract.approveLoan(borrower_address, borrower_id)
+  await manager_contract.approveLoan(borrower_address, formatBytes32String(borrower_id))
 
 
 }

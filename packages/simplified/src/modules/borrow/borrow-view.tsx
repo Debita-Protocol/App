@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext } from "react";
-
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -19,51 +18,27 @@ import {
 
 } from "@augurproject/comps";
 
+import type { Loan } from "@augurproject/comps/build/types";
+import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+import { utils } from "ethers";
+import { LoadingMarketCard } from "@augurproject/comps/build/components/market-card/market-card";
+import { LoanCard } from "../loan-card/loan-card-view";
 import Styles from "../markets/markets-view.styles.less"
 
-import type { Loan } from "@augurproject/comps/build/types";
-
-import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
-
-
 const {
-  SelectionComps: { SquareDropdown },
-  ButtonComps: { SecondaryThemeButton },
-  Icons: { FilterIcon, SearchIcon },
-  MarketCardComps: { LoadingMarketCard, MarketCard },
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
-  InputComps: { SearchInput },
-  LabelComps: { NetworkMismatchBanner },
-  MarketCardContext, 
 } = Components;
-const {
-  SIDEBAR_TYPES,
-  ALL_CURRENCIES,
-  ALL_MARKETS,
-  // currencyItems,
-  marketStatusItems,
-  OPEN,
-  OTHER,
-  POPULAR_CATEGORIES_ICONS,
-  sortByItems,
-  TOTAL_VOLUME,
-  STARTS_SOON,
-  RESOLVED,
-  IN_SETTLEMENT,
-  LIQUIDITY,
-  MARKET_STATUS,
-  TWENTY_FOUR_HOUR_VOLUME,
-  SPORTS,
-} = Constants;
+
 
 const PAGE_LIMIT = 5;
 const MIN_LIQUIDITY_AMOUNT = 1;
 
 const { getLoans } = ContractCalls;
 
+const { parseBytes32String, formatBytes32String } = utils;
 
 const BorrowView = () => {
-  const [loans, setLoans] = useState<Loan[]>();
+  const [loans, setLoans] = useState<Loan[]>([]);
   const { account, loginAccount } = useUserStore();
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useQueryPagination({
@@ -77,8 +52,9 @@ const BorrowView = () => {
     if (account && loginAccount.library) {
       ;(async () => {
         setLoading(true)
-
-        setLoans(await getLoans(account, loginAccount.library, account))
+        let result = await getLoans(account, loginAccount.library, account)
+        console.log("LOANS RETRIEVED: ", result)
+        setLoans(result)
 
         setLoading(false)
       })()
@@ -87,10 +63,21 @@ const BorrowView = () => {
 
   return (
     <>
-      {loading ? (
-        <section>
-          {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
-            <LoadingMarketCard key={index} />
+      <div className={Styles.MarketsView}>
+        {loading ? (
+          <section>
+            {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
+              <LoadingMarketCard key={index} />
+            ))}
+          </section>
+        ) : (
+
+          <section>
+          {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
+            <LoanCard
+              {... loan}
+              key={`loan-${parseBytes32String(loan.id)}-${index}`}
+            />         
           ))}
         </section>
       ) : (
@@ -116,6 +103,26 @@ const BorrowView = () => {
           usePageLocation
         />
       )}
+          </section>
+        ) }
+        {loans.length > 0 ? (
+          <Pagination
+            page={page}
+            useFull
+            itemCount={loans.length}
+            itemsPerPage={PAGE_LIMIT}
+            action={(page) => {
+              setPage(page);
+            }}
+            updateLimit={null}
+            usePageLocation
+          />
+        ) : (
+          <div>
+            No loans to show
+          </div>
+        )}
+      </div>
     </>
   )
 };

@@ -75,9 +75,12 @@ export const config: HardhatUserConfig = {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
     },
-    owner: {
-      default: 0,
+    timelock: {
+      default: 1,
       maticMainnet: NO_OWNER,
+    },
+    interep: {
+      default: 1 // testing only.
     },
     protocol: {
       default: 0,

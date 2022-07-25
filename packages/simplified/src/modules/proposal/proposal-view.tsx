@@ -21,6 +21,13 @@ import { DropdownProps } from "@augurproject/comps/build/components/common/selec
 
 // ALL CURRENCY ADDRESSES ARE JUST USDC
 import { CURRENCY_ADDRESSES } from "../constants";
+import { utils } from "ethers";
+import { LendingPool__factory} from "@augurproject/smart"
+
+
+
+const { formatBytes32String } = utils;
+
 
 const {
     SelectionComps: { SquareDropdown },
@@ -86,18 +93,18 @@ const LoanRequestForm = () => {
     minutes: "0",
   });
   const [ recipient, setRecipient ] = useState("");
-  const [ inputError, setInputError ] = useState(false);
+  const [ inputError, setInputError ] = useState("");
   const [ showError, setShowError ] = useState(false);
   const [ numProposals, setNumProposals ] = useState(false);
-  const [ underlyingToken, setUnderlyingToken ] = useState("");
+  const [ underlyingToken, setUnderlyingToken ] = useState(CURRENCY_ADDRESSES.USDC);
   const [ interestRate, setInterestRate ] = useState("0.0");
   const [ ID, setID ] = useState(""); 
   const [ description, setDescription] = useState("");
-  const [ loanType, setLoanType ] = useState("");
+  const [ loanType, setLoanType ] = useState("discretionary");
 
   let proposal_limit = 3;
   let loan_limit = 3;
-
+  
   useEffect(() => {
     (async () => {
       let result = await getLoanLimits(account, loginAccount.library);
@@ -107,41 +114,89 @@ const LoanRequestForm = () => {
   }
   ,[]);
 
-  useEffect(() =>{
-    if (Number(duration.years) + Number(duration.months) + Number(duration.weeks) + Number(duration.days) + Number(duration.minutes) == 0) {
-      setInputError(true);
-    } else if (
-      interestRate === "" ||
-      principal === "" ||
-      (loanType === "contract" && recipient === "") ||
-      interestRate === "" ||
-      /^0x[a-fA-F0-9]{40}$/.test(recipient)
-    ) {
-      setInputError(true);
-    } else if (
-      Number(principal) === 0 ||
-      Number(interestRate) === 0
-    ) {
-      setInputError(true);
+  const checkInput = (
+    years: string,
+    months: string,
+    weeks: string,
+    days: string,
+    minutes:string,
+    interest: string,
+    principal: string,
+    loanType: string,
+    ID: string,
+    description: string,
+    recipient: string
+  ) : boolean => {
+    const duration = Number(years) + Number(months) + Number(weeks) + Number(days) + Number(minutes)
+    if (duration === 0) {
+      setInputError("Duration must be greater than 0")
+      return true
+    } else if (Number(interest) === 0) {
+      setInputError("Interest must be greater than 0")
+      return true
+    } else if (Number(principal) === 0) {
+      setInputError("Principal must be greater than 0")
+      return true
+    } else if (loanType === "contract" && !/^0x[a-fA-F0-9]{40}/.test(recipient)) {
+      setInputError("Must have valid recipient address")
+      return true
+    } else if (!/^\S{1,32}$/.test(ID)) {
+      setInputError("Must have valid ID")
+      return true
+    } else if (description === "") {
+      setInputError("Must have a description")
+      return true
     }
-    else {
-      setInputError(false);
-      setShowError(false);
-    }
-  },[duration, underlyingToken, principal, ID, description, loanType]);
+    return false
+  }
 
   const retrieveProposalNumber = useCallback(async () => {
-    setNumProposals(await getNumberProposals(account, loginAccount.library, account));
+    let n = await getNumberProposals(account, loginAccount.library, account);
+    console.log("num proposals: ", n)
+    setNumProposals(n);
   })
 
   useEffect(retrieveProposalNumber, [account, loginAccount])
 
-  const submitPropsal = useCallback(async ()=> {
-    if (!inputError) {
-      const total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
-      const interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate)).toString()
+  const reset = () => {
+    setPrincipal("");
+    setDuration({
+      years: "0",
+      weeks: "0",
+      days: "0",
+      minutes: "0",
+    });
+    setInterestRate("")
+    setID("")
+    setDescription("")
+  }
+
+  const submitPropsal = useCallback(async (e)=> {
+    e.preventDefault()
+
+    const total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
+    
+    const interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
+    
+    console.log("submit proposal frontend:", interest, total_duration, loanType, principal)
+    
+    if (!checkInput(
+      duration.years,
+      duration.months,
+      duration.weeks,
+      duration.days,
+      duration.minutes,
+      interestRate,
+      principal,
+      loanType,
+      ID,
+      description,
+      recipient
+    )) {
+      setInputError("")
       if (loanType === "discretionary") {
         try {
+          console.log('trying to submit loan')
           const tx = await addDiscretionaryLoanProposal(
             account,
             loginAccount.library,
@@ -152,8 +207,11 @@ const LoanRequestForm = () => {
             description
           )
           await tx.wait()
+          reset()
         } catch (err) {
-          console.log(err.reason);
+          console.log("Failed to submit discretionary loan")
+          console.log(err);
+          console.log(err.reason)
         }
       } else if (loanType === "contract") {
         try {
@@ -172,8 +230,6 @@ const LoanRequestForm = () => {
           console.log(err.reason);
         }
       }
-    } else {
-      setShowError(true);
     }
     retrieveProposalNumber();
   })
@@ -239,7 +295,7 @@ const LoanRequestForm = () => {
           />
         </div>
         <div className="interest">
-          <label>Interest Rate (Annual): </label> <br />
+          <label>Interest Rate (Annual) %: </label> <br />
           <input 
             type="text"
             placeholder="0.0"
@@ -281,7 +337,7 @@ const LoanRequestForm = () => {
               placeholder="0"
               value={ ID }
               onChange={(e) => {
-                  if (/^\w*$/.test(e.target.value)) {
+                  if (/^\S{0,32}$/.test(e.target.value)) {
                       setID(e.target.value);
                   }
                 }
@@ -320,11 +376,9 @@ const LoanRequestForm = () => {
               }
             />
         </div>
-        { showError && 
-          <div>
-          Incorrect Input
-          </div>
-        }
+        <div>
+        { inputError }
+        </div>
         { numProposals < proposal_limit &&
         <div className={Styles.SubmitButton}>
           <TinyThemeButton {... buttonProps} />

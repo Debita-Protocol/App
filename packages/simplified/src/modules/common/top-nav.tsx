@@ -21,6 +21,7 @@ import {
   PROPOSAL
 } from '../constants';
 import { VerifiedAccount } from "./verified-account";
+import { SUPER_BUTTON } from "./super-button";
 
 const { parsePath, makePath } = PathUtils;
 const { MARKET, MARKETS, PORTFOLIO, LIQUIDITY, SIDEBAR_TYPES, TWELVE_HOUR_TIME, TWENTY_FOUR_HOUR_TIME } = Constants;
@@ -211,7 +212,12 @@ export const TopNav = () => {
               <Link to={makePath(PROPOSAL)} placeholder="Pools">
                 Loan Proposal
               </Link>
-            </li>         
+            </li>   
+            <li className={classNames({ [Styles.Active]: path === BORROW })}>
+              <Link to={makePath(BORROW)} disabled={!isLogged} placeholder="Pools">
+                Borrow
+              </Link>
+            </li>           
           </ol>
         )}
       </section>
@@ -244,6 +250,7 @@ export const TopNav = () => {
       </section>
       <section>
         <VerifiedAccount />
+        <SUPER_BUTTON />
       </section>
     </section>
   );
