@@ -376,7 +376,8 @@ export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition =
         positions={position.positions}
         claimableWinnings={position.claimableWinnings}
       />  
-    ) : (
+    ) : ( <></>
+      /*
       <NFTPositionTable
         key={`${position.ammExchange.marketId}-PositionsTable`}
         market={position.ammExchange.market}
@@ -384,6 +385,7 @@ export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition =
         positions={position.positions}
         claimableWinnings={position.claimableWinnings}
       />  
+      */
     )
 
     ;
@@ -825,10 +827,10 @@ export const AllNFTPositionTable = ({ page, claimableFirst = false}) => {
   //avg price paid, init value, curvalue-> from offchain
   console.log('positions format', positions)
   let nft_info:NFTinfo = {
-    token_amounts: ["10","10"],
-    marketIds: ["5","2"], 
-    outcomes: ["1","0"],
-    lockId: "0"
+    token_amounts: ['10','10'],
+    marketIds: ['5', '2'], 
+    outcomes: ['1','0'],
+    lockId: '0'
   }
   const nft_infos:NFTinfo[] = [nft_info]
 
@@ -850,7 +852,7 @@ export const AllNFTPositionTable = ({ page, claimableFirst = false}) => {
   }, [positions.length, Object.values(marketShares || {}).length]);
 
   const positionVis = sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT).map((position) => {
-    return (
+    return ( <></> /*
       <NFTPositionTable
         key={`${position.ammExchange.marketId}-PositionsTable`}
         market={position.ammExchange.market}
@@ -858,6 +860,7 @@ export const AllNFTPositionTable = ({ page, claimableFirst = false}) => {
         positions={position.positions}
         claimableWinnings={position.claimableWinnings}
       />  
+      */
     )
 
     ;
@@ -944,7 +947,7 @@ const NFTPositionHeader = () => {
   );
 };
 
-
+/* 
 export const NFTPositionTable = ({
   market,
   ammExchange,
@@ -994,7 +997,7 @@ export const NFTPositionTable = ({
           nftPositions
             .filter((p) => p.visible)
             .map((position, id) => <NFTPositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)}
-          */}
+          */ /*}
         <PositionFooter showTradeButton={!singleMarket} market={market} claimableWinnings={claimableWinnings} />
       </div>
     {/*  {!seenMarketPositionWarningAdd &&
@@ -1022,6 +1025,8 @@ export const NFTPositionTable = ({
     </>
   );
 };
+*/
+
 
 //Get sharetoken address for each markets 
 //Get lock ID of user 
@@ -1134,7 +1139,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
             )}
           {marketId && (
             <>
-              {tableView === POSITIONS && (
+              {tableView === POSITIONS && ( <></> /*
                 <NFTPositionTable
                   singleMarket
                   market={market}
@@ -1142,6 +1147,7 @@ export const NFTPositionsLiquidityViewSwitcher = ({
                   positions={userPositions}
                   claimableWinnings={winnings}
                 />
+                */
               )}
             </>
           )}
