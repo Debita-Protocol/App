@@ -146,6 +146,7 @@ contract Controller is IController {
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
 
         //TODO change create market modifier to including validators 
+        //TODO change settlement address to contract 
         uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
 
         marketData.marketID = marketID;

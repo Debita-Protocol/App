@@ -74,4 +74,9 @@ contract TrustedMarketFactoryV2 is AbstractMarketFactoryV2, CalculateLinesToBPoo
     function getMarketDetails(uint256 _id) public view returns (MarketDetails memory) {
         return marketDetails[_id];
     }
+
+
+
+
+
 }
