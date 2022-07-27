@@ -1,0 +1,41 @@
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { DeployFunction } from "hardhat-deploy/types";
+
+const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
+  const { deployments, getNamedAccounts } = hre;
+  const { deployer } = await getNamedAccounts();
+
+  if (!(await deployments.getOrNull("Collateral"))) {
+    await deployments.deploy("Collateral", {
+      contract: "Cash",
+      from: deployer,
+      args: ["USDC", "USDC", 6],
+      log: true,
+    });
+  }
+
+
+  if (!(await deployments.getOrNull("AnalyticMath"))) {
+    await deployments.deploy("AnalyticMath", {
+      contract: "AnalyticMath",
+      from: deployer,
+      args: [],
+      log: true,
+    });
+  }
+
+  const collateral = (await deployments.get("Collateral")).address;
+  const math = (await deployments.get("AnalyticMath")).address;
+
+if (!(await deployments.getOrNull("BondingCurve"))){
+  await deployments.deploy("BondingCurve", {
+    from: deployer,
+    args: [collateral, math],
+    log: true,
+  });}
+};
+
+func.tags = ["BondingCurve"];
+func.dependencies = [""];
+
+export default func;

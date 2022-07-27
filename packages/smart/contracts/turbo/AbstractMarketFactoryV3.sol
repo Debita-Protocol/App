@@ -7,7 +7,7 @@ import "./TurboShareTokenFactory.sol";
 import "./FeePot.sol";
 import "../libraries/Rewardable.sol";
 
-abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Rewardable {
+abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory, Ownable, Rewardable {
     using SafeMath for uint256;
 
     event MarketCreated(uint256 id, string[] names, uint256[] initialOdds);
@@ -61,7 +61,23 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
         uint256[] initialOdds;
         bool active; // false if not ready to use or if resolved
     }
+
+    // struct ZCBMarket {
+    //     address settlementAddress;
+    //     OwnedERC20 zcb;
+    //     OwnedERC20 winner;
+    //     uint256 winnerIndex;
+    //     uint256 settlementFee;
+    //     uint256 protocolFee;
+    //     uint256 stakerFee;
+    //     uint256 creationTimestamp;
+    //     uint256 resolutionTimestamp; // when winner is declared
+    //     uint256[] initialOdds;
+    //     bool active; // false if not ready to use or if resolved
+    // }
+
     Market[] internal markets;
+    // ZCBMarket[] internal zcbmarkets; 
 
     uint256 private constant MAX_UINT = 2**256 - 1;
 
@@ -86,6 +102,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
 
         // First market is always empty so that marketid zero means "no market"
         markets.push(makeEmptyMarket());
+        // zcbmarkets.push(makeEmptyZCBMarket());
     }
         
     mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
@@ -115,6 +132,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
 
 
 
+
     // Returns an empty struct if the market doesn't exist.
     // Can check market existence before calling this by comparing _id against markets.length.
     // Can check market existence of the return struct by checking that shareTokens[0] isn't the null address
@@ -127,7 +145,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
     }
 
     function marketCount() public view returns (uint256) {
-        return markets.length;
+        return markets.length; //+ zcbmarkets.length;
     }
 
     // Returns factory-specific details about a market.
@@ -255,6 +273,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
         protocol = _newProtocol;
     }
 
+
     function startMarket(
         address _settlementAddress,
         string[] memory _names,
@@ -282,7 +301,8 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
             emit MarketActivated(_marketId);
         }
     }
-
+       
+    
     function activateMarket(uint256 _marketId) internal {
         markets[_marketId].active = true;
         emit MarketActivated(_marketId);
@@ -293,6 +313,7 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
         uint256[] memory _initialOdds = new uint256[](0);
         return Market(address(0), _tokens, OwnedERC20(address(0)), 0, 0, 0, 0, 0, 0, _initialOdds, false);
     }
+
 
     function endMarket(uint256 _marketId, uint256 _winningOutcome) internal {
         Market storage _market = markets[_marketId];
@@ -324,4 +345,58 @@ abstract contract AbstractMarketFactoryV3 is TurboShareTokenFactory, Ownable, Re
     }
 
     function onTransferOwnership(address, address) internal override {}
+
+
+
+
+
+
+
+
+
+    // //ZCB bonding curve markets
+    // function makeEmptyZCBMarket() private pure returns (Market memory) {
+    //     uint256[] memory _initialOdds = new uint256[](0);
+    //     return Market(address(0), OwnedERC20(address(0)), OwnedERC20(address(0)), 0, 0, 0, 0, 0, 0, _initialOdds, false);
+    // }
+
+    function startZCBMarket(
+        address _settlementAddress,
+        string memory _name,
+        uint256[] memory _initialOdds,
+        bool _active,
+        address bondingcurveAddress
+    ) internal returns (uint256 _marketId){
+
+        _marketId = markets.length;
+        markets.push(
+            Market(
+                _settlementAddress,
+                createZCB(_name, bondingcurveAddress),
+                OwnedERC20(address(0)),
+                0,
+                settlementFee,
+                protocolFee,
+                stakerFee,
+                block.timestamp,
+                0,
+                _initialOdds,
+                _active
+
+                )
+            );
+
+        if (_active) {
+            emit MarketActivated(_marketId);
+        }
+
+    }
+
+    function getZCBMarket(uint256 _id) public view returns (Market memory) {
+        if (_id >= markets.length) {
+            return makeEmptyMarket();
+        } else {
+            return markets[_id];
+        }
+    }
 }

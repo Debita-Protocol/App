@@ -5,6 +5,7 @@ import "../balancer/BFactory.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./AbstractMarketFactoryV3.sol";
 import "../balancer/BNum.sol";
+import "../bonds/Ibondingcurve.sol"; 
 
 contract AMMFactory is BNum {
     using SafeMath for uint256;
@@ -249,6 +250,26 @@ contract AMMFactory is BNum {
             -int256(_lpTokensIn),
             _balances
         );
+    }
+
+
+    function buyZCB(
+        AbstractMarketFactoryV3 _marketFactory, 
+        address bondingcurve, 
+        uint256 _marketId, 
+        uint256 _collateralIn
+        ) external returns(uint256){
+
+
+        IERC20Full _collateral = _marketFactory.collateral();
+        _collateral.transferFrom(msg.sender, address(this), _collateralIn);
+        _collateral.approve(bondingcurve, _collateralIn); 
+
+        IBondingCurve(bondingcurve).buy(address(_marketFactory), msg.sender, _collateralIn, _marketId);
+
+        
+
+
     }
 
     function buy(

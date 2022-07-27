@@ -53,12 +53,17 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
         return 0;
     }
     
-   // function logTrade(uint256 _marketId, uint256 _outcome, uint256 _collateralIn) external {
-   //      TradeDetails[_marketId][_outcome] = TradeDetails[_marketId][_outcome] + _collateralIn; 
 
-   //  }
 
-   //  function getTradeDetails(uint256 _marketId, uint256 _outcome) external view returns(uint256){
-   //      return TradeDetails[_marketId][_outcome]; 
-   //  }
+    //ZCB markets
+      function createZCBMarket(
+        address _creator,
+        string calldata _description,
+        string calldata _name,
+        uint256[] calldata _odds, 
+        address bondingcurveAddress
+    ) public  returns (uint256) {
+        marketDetails.push(MarketDetails(_description));
+        return startZCBMarket(_creator, _name, _odds, true, bondingcurveAddress);
+    }
 }
