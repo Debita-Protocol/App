@@ -80,31 +80,7 @@ const BorrowView = () => {
             />         
           ))}
         </section>
-      ) : (
-        <section>
-        {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
-          <></>
-          //<LoanCard
-          //  {... loan}
-          // />         
-        ))}
-        </section>
-      ) }
-      {loans.length > 0 && (
-        <Pagination
-          page={page}
-          useFull
-          itemCount={loans.length}
-          itemsPerPage={PAGE_LIMIT}
-          action={(page) => {
-            setPage(page);
-          }}
-          updateLimit={null}
-          usePageLocation
-        />
-      )}
-          </section>
-        ) }
+        )}
         {loans.length > 0 ? (
           <Pagination
             page={page}
