@@ -164,8 +164,8 @@ export const MarketCardView = ({
   useEffect(async() => {
     if (account && loginAccount.library) {
       let approved 
-    approved = await isBorrowerApproved(loginAccount.library, account)
-    setIsApproved(approved); 
+      approved = await isBorrowerApproved(account, loginAccount.library)
+      setIsApproved(approved); 
     }
   }, [account, loginAccount])
 

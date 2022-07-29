@@ -22,6 +22,7 @@ import { MintContext } from './mintcontext';
 
 import buttonStyles from "../common/buttons.styles.less";
 import inputStyles from "../common/inputs.styles.less";
+import formStyles from "../market/trading-form.styles.less";
 import { FailedX } from "@augurproject/comps/build/components/common/icons";
 // import { RiSettings3Fill } from 'react-icons/ri'
 
@@ -58,9 +59,9 @@ const {
 const PAGE_LIMIT = 21;
 const MIN_LIQUIDITY_AMOUNT = 1;
 const styleMint = {
-    wrapper: `w-screen flex items-center justify-center mt-14`,
+    wrapper: `w-screen flex items-center justify-center px-24`,
     content: `bg-[#191B1F] w-[40rem] rounded-2xl p-4`,
-    formHeader: `px-2 flex items-center justify-between font-semibold text-xl`,
+    formHeader: `px-2 flex items-center justify-between font-semibold text-xl pb-10`,
     transferPropContainer: `bg-[#20242A] my-3 rounded-2xl p-6 text-3xl  border border-[#20242A] hover:border-[#41444F]  flex justify-between`,
     transferPropInput: `bg-transparent placeholder:text-[#B2B9D2] outline-none mb-6 w-full text-2xl`,
     currencySelector: `flex w-1/4`,
@@ -109,7 +110,7 @@ const MintView= () => {
 
   return (
     <div
-      className={classNames(Styles.MarketsView, {
+      className={classNames(Styles.MintView, {
       })}
     >
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
@@ -122,10 +123,11 @@ const MintView= () => {
  
 
      <div className = {styleMint.wrapper}>  
-        <div className = {styleMint.content}>
-          <div className={styleMint.formHeader}>
-            <div>Mint DS for USDC</div>
+        <div className = {formStyles.MintForm}>
+          <div style={{'font-weight':'750', 'display':'flex', 'justify-content':'center', 'font-size':'20px'}}>
+            Mint DS for USDC
           </div>
+          <div style={{ 'padding-left': '1.5rem', 'padding-right': '1.5rem' }}>
           <div className={inputStyles.AmountInput}>
             <div className={inputStyles.AmountInputField}>
               <span>$</span>
@@ -135,6 +137,7 @@ const MintView= () => {
                     pattern='^[0-9]*[.,]?[0-9]*$'
                     onChange={e => handleChange(e, 'amount')}
               />
+
               <button className={buttonStyles.BaseNormalButtonTiny}><span>Max</span></button>
           
                 <svg width="29" height="28" viewBox="0 0 29 28" fill="none">
@@ -143,13 +146,16 @@ const MintView= () => {
               <span style={{color: 'black', "padding-left": "0.25rem", "padding-right": "0.5rem"}}>USDC</span>
             </div>
           </div>
-
-        <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
-        &nbsp; &nbsp;  &nbsp; <span>Confirm</span> &nbsp; &nbsp; &nbsp; 
-        </button>
-
         </div>
-      </div>
+
+        <div style={{  'padding-left': '1.5rem', 'padding-right': '1.5rem' }} >
+          <button onClick={e => handleSubmit(e)} className={buttonStyles.SimplifiedActionButton}>
+          &nbsp; &nbsp;  &nbsp; <span>Confirm</span> &nbsp; &nbsp; &nbsp; 
+          </button>
+        </div>
+        
+        </div>
+    </div>
 
 
 

@@ -265,12 +265,29 @@ contract AMMFactory is BNum {
         _collateral.transferFrom(msg.sender, address(this), _collateralIn);
         _collateral.approve(bondingcurve, _collateralIn); 
 
-        IBondingCurve(bondingcurve).buy(address(_marketFactory), msg.sender, _collateralIn, _marketId);
-
-        
-
+        return IBondingCurve(bondingcurve).buy(address(_marketFactory), msg.sender, _collateralIn, _marketId);
 
     }
+
+    function sellZCB(
+        AbstractMarketFactoryV3 _marketFactory, 
+        address bondingcurve, 
+        uint256 _marketId, 
+        uint256 _zcb_amountIn
+        ) external returns(uint256){
+
+        uint256 fee_deducted_collateral_out = IBondingCurve(bondingcurve).sell(
+            address(_marketFactory),
+            msg.sender, 
+            _zcb_amountIn, 
+             _marketId); 
+
+        IERC20Full _collateral = _marketFactory.collateral();
+        _collateral.transfer(msg.sender, fee_deducted_collateral_out); 
+
+        return fee_deducted_collateral_out; 
+    }
+
 
     function buy(
         AbstractMarketFactoryV3 _marketFactory,

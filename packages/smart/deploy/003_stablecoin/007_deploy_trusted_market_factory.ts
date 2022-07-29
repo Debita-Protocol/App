@@ -15,7 +15,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const args = [
     deployer,
-    ds.address, 
+    collateralAddress, //ds.address, 
     shareFactor,
     feePotAddress,
     fees,

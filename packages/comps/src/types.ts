@@ -1,11 +1,11 @@
 import { MouseEvent } from "react";
 import type { BigNumber as BN } from "./utils/create-big-number";
 import type { TradingDirection } from "./utils/constants";
-import { ethers, BigNumber } from "ethers";
+import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 
 export interface Loan {
-  id: string;
+  id: BytesLike;
   principal: BigNumber;
   totalInterest: BigNumber;
   duration: BigNumber;

@@ -1,43 +1,18 @@
-import makePath from "../../utils/links/make-path";
-import makeQuery from "../../utils/links/make-query";
-import React, { useState} from "react";
-import Link from "react-router-dom";
+import makePath from "./make-path";
+import makeQuery from "./make-query";
+import React, { useState } from "react";
+import {Link} from "react-router-dom";
 import classNames from "classnames";
-import Styles from "../market-card/market-card.styles.less";
 import {ValueLabel} from "../common/labels";
 import BN from "bignumber.js"
 import { PRICE_PRECISION } from "../../data/constants";
-import {Loan} from "../../types"
+import {Loan} from "../../types";
+import { utils } from "ethers" 
 
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-
-const BorrowerLoanLink = ({ id, dontGoToMarket, children }) => {
-    return (
-      <>
-        {!dontGoToMarket ? (
-          <Link
-            data-testid={`link-${id}`}
-            to={
-              !dontGoToMarket
-                ? {
-                    pathname: makePath("loan"),
-                    search: makeQuery({
-                      id
-                    }),
-                  }
-                : null
-            }
-          >
-            {children}
-          </Link>
-        ) : (
-          <section>{children}</section>
-        )}
-      </>
-    );
-  };
+const { parseBytes32String } = utils;
 
 export const LoanCard = ({
   id,
@@ -52,24 +27,21 @@ export const LoanCard = ({
   approved,
   recipient
 }: Loan) => {
-
+  console.log("rendering loan-card")
+  const ID = parseBytes32String(id);
   const date = new Date(Number(repaymentDate) * 1000).toDateString()
   const _duration = new BN(duration.toNumber()).div(60*60*24).toFixed()
   const _principal = new BN(principal.toNumber()).div(10**PRICE_PRECISION).toFixed().toString()
+
   return (
-    <article
-    className={classNames(Styles.MarketCard, {
-      [Styles.Popular]: true,
-    })}
-    > 
       <Link
-            data-testid={`link-${id}`}
+            data-testid={`link-${ID}`}
             to={{
               pathname: makePath("loan"),
-              search: makeQuery({id}),
+              search: makeQuery({ID}),
             }}
       >
-        <ValueLabel label={"Loan ID:"} value={id} large={true} sublabel={recipient === ZERO_ADDRESS ? "Discretionary" : "Smart Contract"}/>
+        <ValueLabel label={"Loan ID:"} value={ID} large={true} sublabel={recipient === ZERO_ADDRESS ? "Discretionary" : "Smart Contract"}/>
         <ValueLabel label={"Approved:"} value={approved ? "Yes!" : "Nope."} />
         <ValueLabel label={"Principal:"} value={_principal}/>
         { approved ? (
@@ -83,6 +55,5 @@ export const LoanCard = ({
           { description }  
         </div>
       </Link>
-    </article>
   )
 }

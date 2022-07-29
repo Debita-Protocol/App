@@ -130,20 +130,45 @@ const { parseBytes32String, formatBytes32String } = utils;
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 // ONLY FOR TESTING.
-const setupContracts = async (account: string, provider: Web3Provider) => {
+export async function setupContracts (account: string, provider: Web3Provider) {
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
-  const deployer = new ethers.Wallet(deployer_pk)
+  const deployer = new ethers.Wallet(deployer_pk, provider)
   const lpool = getLendingPoolContract(provider, account)
-  try {
-    let tx = await lpool.connect(deployer).setController(controller.address)
-  } catch (err) {
-    console.log("error setting controller", err.reason)
-  }
-  try {
-    let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
-  } catch (err) {
-    console.log("error adding validator", err.reason)
-  }
+  // try {
+  //   console.log("before set Controller")
+  //   let tx = await lpool.connect(deployer).setController(controller.address)
+  //   await tx.wait()
+  //   console.log("after set Controller", tx)
+  // } catch (err) {
+  //   console.log("error setting controller", err.reason)
+  // }
+  // try {
+  //   console.log("before add validator")
+  //   let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
+  //   await tx.wait()
+  //   console.log("after add validator", tx)
+  // } catch (err) {
+  //   console.log("error adding validator", err.reason)
+  // }
+  // try {
+  //   const ds = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
+
+  //   let tx = await ds.connect(deployer).addPool(lendingPooladdress)
+  //   tx.wait()
+  // } catch (err) {
+  //   console.log("error adding pool", err)
+  // }
+  // try {
+  //   const chef = MasterChef__factory.connect("0x42a0549a4063378cb96cac64ffb434da1e2817bd", getProviderOrSigner(provider, account))
+  //   let tx = await chef.connect(deployer).trustAMMFactory(ammFactoryAddress)
+  //   tx.wait()
+
+  // } catch (err) {
+  //   console.log("error setting amm factory" , err)
+  // }
+  // try {
+    
+  // }
 }
 
 //  LENDING POOL FUNCTIONS
@@ -194,8 +219,14 @@ export async function addDiscretionaryLoanProposal(
     names: [_token1, _token2],
     odds: [weight1, weight2]
   }
-
-  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(formatBytes32String(loan_id), principal, duration, totalInterest, description, marketInfo) // also calls initiate market
+  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(
+    formatBytes32String(loan_id), 
+    BigNumber.from(principal), 
+    BigNumber.from(duration), 
+    BigNumber.from(totalInterest), 
+    description, 
+    marketInfo
+    )
 
   return transaction;
 }
@@ -263,9 +294,9 @@ export async function borrow(
 export async function repay(
   account: string,
   provider: Web3Provider,
+  id: string,
   repay_principal: string, // decimal format
-  repay_interest: string, // decimal format
-  id: string
+  repay_interest: string // decimal format
 ): Promise<TransactionResponse> {
   const lpool = getLendingPoolContract(provider, account)
   
@@ -407,9 +438,8 @@ export async function submitProposal(
   const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
   const {_token1, _token2, name} = getInitialMarketNames(); 
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
-  console.log('ammFactory', ammFactoryAddress
-    )
+  // console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+  // console.log('ammFactory', ammFactoryAddress
   let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
     console.error(e);
@@ -585,7 +615,7 @@ export async function validator_initiate_market(
 
 
   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-  console.log('weights, liquidity', weight1, weight2, liquidity)
+  //console.log('weights, liquidity', weight1, weight2, liquidity)
   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {

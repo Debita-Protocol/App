@@ -27,12 +27,12 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const collateral = (await deployments.get("Collateral")).address;
   const math = (await deployments.get("AnalyticMath")).address;
 
-if (!(await deployments.getOrNull("BondingCurve"))){
+
   await deployments.deploy("BondingCurve", {
     from: deployer,
     args: [collateral, math],
     log: true,
-  });}
+  });
 };
 
 func.tags = ["BondingCurve"];

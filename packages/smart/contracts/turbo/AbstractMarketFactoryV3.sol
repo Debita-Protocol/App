@@ -112,15 +112,27 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
    // function quantityAvailable(uint256 marketId)
 
     //Called by lendingpool when market is created i.e , and when loan is approved 
-    function handleAssessment(uint256 _marketId, bool startAssessing) external {
+    function handleAssessment(uint256 _marketId, bool startAssessing) 
+    external
+    //onlyController
+     {
         bool market_inAssessment = startAssessing? true : false; 
         inAssessment[_marketId] = market_inAssessment; 
+    }
+    function handleOnlyReputable(uint256 _marketId)
+    external 
+    //onlyController
+    {
+        
     }
 
     function isInAssessment(uint256 _marketId) external view returns(bool){
         return inAssessment[_marketId]; 
     }
 
+    function onlyReputable(uint256 _marketId) external view returns(bool){
+        return false;
+    }
     function logTrade(uint256 _marketId, uint256 _outcome, uint256 _collateralIn) external {
         TradeDetails[_marketId][_outcome] = TradeDetails[_marketId][_outcome] + _collateralIn; 
 
