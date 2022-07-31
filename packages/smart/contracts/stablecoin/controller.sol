@@ -3,6 +3,7 @@ import "../rewards/MasterChef.sol";
 import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
+import "./IMarketManager.sol";
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
 // Controller contract responsible for providing initial liquidity to the
@@ -38,12 +39,12 @@ contract Controller is IController {
 
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
-        require(validators[msg.sender] == true, "Only Validators can call this function");
+        require(validators[msg.sender] == true || msg.sender == creator_address, "Only Validators can call this function");
         _;
     }
 
     modifier onlyPools() {
-        require(msg.sender == address(lendingpool), "Only Pools can call this function");
+        require(msg.sender == address(lendingpool)|| msg.sender == creator_address, "Only Pools can call this function");
         _;
     }
 
@@ -106,70 +107,91 @@ contract Controller is IController {
     //liquidityAmountUSD determines how much IL loss Debita is willing to take,
     //which depends on interest rate proposed + principal value of borrowers 
     //It will be computed offchain for now
-    function initiateMarket(   
-        address borrower,
-        address ammFactoryAddress, 
-        address marketFactoryAddress, 
-        uint256 liquidityAmountUSD, 
-        string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
-        bytes32 loanID, 
-        string[] memory names, 
-        uint256[] memory odds
-        )external override onlyValidator{
 
-        //Market id is initially set 10000, will be modified later
-        MarketInfo memory marketInfo = MarketInfo(
-            ammFactoryAddress, marketFactoryAddress, liquidityAmountUSD, 10000, description, 
-            names, odds
-            ); 
-       
-        _initiateMarket(marketInfo, borrower, loanID ); 
-    }
+ // function initiateMarket_(
+ //        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
+ //        address recipient,
+ //        bytes32 loanID, 
+ //        address bonding_curve_address, 
+ //        address market_manager_address
+ //    ) public  {
 
-    function _initiateMarket(
-        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
+ //        // STACK TOO DEEP
+ //        address ammFactoryAddress = marketData.ammFactoryAddress;
+ //        address marketFactoryAddress = marketData.marketFactoryAddress;
+ //        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
+ //        string memory description = marketData.description;
+ //        string[] memory names = marketData.names;
+ //        uint256[] memory odds = marketData.odds;
+
+ //        AMMFactory amm = AMMFactory(ammFactoryAddress);
+ //        IMarketManager market_manager = IMarketManager(market_manager_address);
+ //        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
+ //        uint256 marketId = marketFactory.createZCBMarket(msg.sender, description, names[0], odds, bonding_curve_address);
+
+ //        marketData.marketID = marketId; 
+ //        borrower_market_data[recipient][loanID] = marketData; 
+
+ //        market_manager.initiate_bonding_curve(marketId); 
+ //        market_manager.setMarketRestrictionData(
+ //            true,true, marketId, 0);     
+
+    
+ //    }    
+
+
+    /*
+    @Param atLoss: when actual returns lower than expected 
+    @Param principal_loss: if total returned less than principal, principal-total returned
+    */
+    function resolveMarket_(
         address recipient,
-        bytes32 loanID
-    ) public override {
-        
+        bytes32 loanID,
+        bool atLoss,
+        uint256 extra_gain, 
+        uint256 principal_loss, 
+        address market_manager_address
+    ) external  {
 
-        // STACK TOO DEEP
-        address ammFactoryAddress = marketData.ammFactoryAddress;
-        address marketFactoryAddress = marketData.marketFactoryAddress;
-        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
-        string memory description = marketData.description;
-        string[] memory names = marketData.names;
-        uint256[] memory odds = marketData.odds;
+        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
 
+        uint256 marketID = marketInfo.marketID;
 
-        AMMFactory amm = AMMFactory(ammFactoryAddress);
-        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
+        AMMFactory amm = AMMFactory(marketInfo.ammFactoryAddress);
+        IMarketManager market_manager = IMarketManager(market_manager_address);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
 
-        //TODO change create market modifier to including validators 
-        //TODO change settlement address to contract 
-        uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
+        market_manager.update_redemption_price(marketID, atLoss,extra_gain, principal_loss); 
+        market_manager.handle_maturity(marketID, atLoss, principal_loss); 
 
-        marketData.marketID = marketID;
+        uint256 winning_outcome = 0; //TODO  
+        marketFactory.trustedResolveMarket( marketID, winning_outcome); 
 
-        // Store marketID <=> loan
-        borrower_market_data[recipient][loanID] = marketData; // remember to delete to save storage
+        delete borrower_market_data[recipient][loanID];
 
-        //Minting DS
-        lendingpool.controllerMintDS(liquidityAmountUSD); 
-        marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
+    }
+    
+    /*
+    Market is denied by validator or automatically if conditions are not met 
+    */
+    function denyMarket(
+        address recipient,
+        bytes32 loanID,
+        uint256 marketId, 
+        address market_manager_address
+        ) 
+        external 
+        onlyValidator
+    {
+        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
 
-        //Creating pool and adding minted DS as liquidity to the created market
+        IMarketManager(market_manager_address).denyMarket(marketId);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
 
-        masterchef.createPool(amm, marketFactory, marketID, liquidityAmountUSD, address(this));
-        
-        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID, address(this));
-       
-        LiquidityInfo memory info = LiquidityInfo({
-            lptokenamount: pooltokenamount, 
-            suppliedDS: liquidityAmountUSD
-            }); 
+        uint256 winning_outcome = 0; //TODO  
+        marketFactory.trustedResolveMarket( marketId, winning_outcome); 
+        delete borrower_market_data[recipient][loanID];
 
-        lpinfo[marketFactoryAddress][marketID] = info; 
     }
 
 
@@ -245,4 +267,73 @@ contract Controller is IController {
     }
 
 
+
+
+
+   
+    function initiateMarket(   
+        address borrower,
+        address ammFactoryAddress, 
+        address marketFactoryAddress, 
+        uint256 liquidityAmountUSD, 
+        string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
+        bytes32 loanID, 
+        string[] memory names, 
+        uint256[] memory odds
+        )external override onlyValidator{
+
+        //Market id is initially set 10000, will be modified later
+        MarketInfo memory marketInfo = MarketInfo(
+            ammFactoryAddress, marketFactoryAddress, liquidityAmountUSD, 10000, description, 
+            names, odds
+            ); 
+       
+        _initiateMarket(marketInfo, borrower, loanID ); 
+    }
+
+    function _initiateMarket(
+        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
+        address recipient,
+        bytes32 loanID
+    ) public override {
+        
+
+        // STACK TOO DEEP
+        address ammFactoryAddress = marketData.ammFactoryAddress;
+        address marketFactoryAddress = marketData.marketFactoryAddress;
+        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
+        string memory description = marketData.description;
+        string[] memory names = marketData.names;
+        uint256[] memory odds = marketData.odds;
+
+
+        AMMFactory amm = AMMFactory(ammFactoryAddress);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
+
+        //TODO change create market modifier to including validators 
+        //TODO change settlement address to contract 
+        uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
+
+        marketData.marketID = marketID;
+
+        // Store marketID <=> loan
+        borrower_market_data[recipient][loanID] = marketData; // remember to delete to save storage
+
+        //Minting DS
+        lendingpool.controllerMintDS(liquidityAmountUSD); 
+        marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
+
+        //Creating pool and adding minted DS as liquidity to the created market
+
+        masterchef.createPool(amm, marketFactory, marketID, liquidityAmountUSD, address(this));
+        
+        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID, address(this));
+       
+        LiquidityInfo memory info = LiquidityInfo({
+            lptokenamount: pooltokenamount, 
+            suppliedDS: liquidityAmountUSD
+            }); 
+
+        lpinfo[marketFactoryAddress][marketID] = info; 
+    }
 }

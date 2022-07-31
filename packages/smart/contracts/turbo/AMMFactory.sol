@@ -255,6 +255,7 @@ contract AMMFactory is BNum {
 
     function buyZCB(
         AbstractMarketFactoryV3 _marketFactory, 
+        address from, 
         address bondingcurve, 
         uint256 _marketId, 
         uint256 _collateralIn
@@ -262,15 +263,15 @@ contract AMMFactory is BNum {
 
 
         IERC20Full _collateral = _marketFactory.collateral();
-        _collateral.transferFrom(msg.sender, address(this), _collateralIn);
+        _collateral.transferFrom(from, address(this), _collateralIn);
         _collateral.approve(bondingcurve, _collateralIn); 
 
-        return IBondingCurve(bondingcurve).buy(address(_marketFactory), msg.sender, _collateralIn, _marketId);
-
+        return IBondingCurve(bondingcurve).buy(address(_marketFactory), from, _collateralIn, _marketId);
     }
 
     function sellZCB(
         AbstractMarketFactoryV3 _marketFactory, 
+        address from, 
         address bondingcurve, 
         uint256 _marketId, 
         uint256 _zcb_amountIn
@@ -278,12 +279,12 @@ contract AMMFactory is BNum {
 
         uint256 fee_deducted_collateral_out = IBondingCurve(bondingcurve).sell(
             address(_marketFactory),
-            msg.sender, 
+            from, 
             _zcb_amountIn, 
              _marketId); 
 
         IERC20Full _collateral = _marketFactory.collateral();
-        _collateral.transfer(msg.sender, fee_deducted_collateral_out); 
+        _collateral.transfer(from, fee_deducted_collateral_out); 
 
         return fee_deducted_collateral_out; 
     }

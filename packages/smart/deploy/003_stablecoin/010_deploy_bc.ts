@@ -30,7 +30,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deployments.deploy("BondingCurve", {
     from: deployer,
-    args: [collateral, math],
+    args: [collateral, math, deployer],
     log: true,
   });
 };

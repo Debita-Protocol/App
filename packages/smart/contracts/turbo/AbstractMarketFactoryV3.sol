@@ -40,7 +40,6 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
     uint256 public accumulatedProtocolFee = 0;
     // settlement address => amount of collateral
     mapping(address => uint256) public accumulatedSettlementFees;
-    mapping(uint256 => bool ) inAssessment; 
 
     // How many shares equals one collateral.
     // Necessary to account for math errors from small numbers in balancer.
@@ -81,6 +80,11 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
 
     uint256 private constant MAX_UINT = 2**256 - 1;
 
+    mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
+    mapping(uint256 => bool ) inAssessment; 
+    mapping(uint256=> uint256) buy_thresholds;
+
+
     constructor(
         address _owner,
         IERC20Full _collateral,
@@ -102,12 +106,13 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
 
         // First market is always empty so that marketid zero means "no market"
         markets.push(makeEmptyMarket());
-        // zcbmarkets.push(makeEmptyZCBMarket());
+
+        //FOR TESTING ONLY
+        buy_thresholds[0] = MAX_UINT;
+        buy_thresholds[1] = MAX_UINT; 
+        buy_thresholds[2] = MAX_UINT; 
     }
         
-    mapping(uint256=> mapping(uint256=>uint256)) TradeDetails; //marketid -> (outcome->amount)
-
-
 
    // function quantityAvailable(uint256 marketId)
 
@@ -123,9 +128,19 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
     external 
     //onlyController
     {
-        
+
+    }
+    //Called by controller after assessment phase 
+    function set_buy_threshold(uint256 _marketId, uint256 threshold)
+    external 
+    //onlyController
+    {
+        buy_thresholds[_marketId] = threshold;
     }
 
+    function get_buy_threshold(uint256 _marketId) external view returns(uint256){
+        return buy_thresholds[_marketId]; 
+    }
     function isInAssessment(uint256 _marketId) external view returns(bool){
         return inAssessment[_marketId]; 
     }

@@ -18,7 +18,8 @@ contract ReputationNFT is ERC721, ReentrancyGuard{
   	mapping(uint256=>address) idToOwner; 
   	mapping(address=>uint256) OwnerToId;
   	mapping(uint256=>uint256) private reputation; 
- 	uint256 public totalNumMints;
+ 	  uint256 public totalNumMints;
+    uint256 total_score; 
 
   	constructor(address controller_address) ERC721("ReputationNFT", "REPU"){
   		controller = IController(controller_address); 
@@ -30,21 +31,31 @@ contract ReputationNFT is ERC721, ReentrancyGuard{
   	}
 	
  
-  	function mint(address recipient) external onlyController returns(uint256){
+  	function mint(address recipient) 
+    external 
+    //onlyController 
+    returns(uint256){
   		uint256 id = ++totalNumMints; 
   		_safeMint(recipient, id); 
   	}
 
   	//Called by controller when market resolves 
-	function add_reputation(address recipient) external onlyController {
-		uint256 id = OwnerToId[recipient];
-		reputation[id]++; 
-
-	}
+    function add_reputation(address recipient, uint256 score) 
+    external 
+    //onlyController 
+    {
+    	uint256 id = OwnerToId[recipient];
+      reputation[id] = reputation[id] + score; 
+      total_score = total_score + score; 
+	 }
 
 	function get_reputation(address recipient) public view returns(uint256){
 		return reputation[OwnerToId[recipient]];
 	}
+
+  function get_total_score() public view returns(uint256){
+    return total_score; 
+  }
 
 
 }

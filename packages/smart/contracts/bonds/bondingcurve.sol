@@ -4,19 +4,30 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Ibondingcurve.sol";
 import "../turbo/AbstractMarketFactoryV3.sol";
 import "../utils/AnalyticMath.sol";
+import "../stablecoin/owned.sol";
 import "hardhat/console.sol";
 
 //TEST: buys, market creation, fetching
-contract BondingCurve is IBondingCurve{
+contract BondingCurve is Owned, IBondingCurve{
+    /* ========== MODIFIERS ========== */
+    modifier onlyManager() {
+        require(msg.sender == manager_address || msg.sender == owner,
+        		 "Only Manager can call this function");
+        _;
+    }
+
+
 
     AnalyticMath mathlib; 
 
     address collateral_address; 
+    address manager_address; 
 
     OwnedERC20 testZCB; 
 
     mapping(uint256=>uint256) totalPurchased; 
     mapping(uint256=>uint256) fundPerBonds; 
+    mapping(uint256=>uint256) maxQuantity; //x where p(x) = 1 
 
     event Bought(
     	address buyer,
@@ -30,11 +41,11 @@ contract BondingCurve is IBondingCurve{
 
     constructor(
     	address _collateral_address, 
-    	address _mathlib_address
-    	) {
+    	address _mathlib_address, 
+    	address _creator_address
+    	) Owned(_creator_address){
 
     	collateral_address = _collateral_address; 
-
     	mathlib = AnalyticMath(_mathlib_address); 
     	mathlib.init(); 
 
@@ -42,6 +53,16 @@ contract BondingCurve is IBondingCurve{
     	testZCB = new OwnedERC20("test", "test", address(this));
 
     }
+
+    function curve_init(uint256 marketId) external override onlyManager{
+    	maxQuantity[marketId] = calcMaxQuantityConstant();
+
+    }
+
+    function addManager(address _manager_address) external override onlyOwner{
+    	manager_address = _manager_address; 
+    }
+
 
     function getCollateral() public view returns(address){
     	return collateral_address; 
@@ -51,11 +72,23 @@ contract BondingCurve is IBondingCurve{
 		return 1;
 	}
 
-	function getBondFunds(uint256 marketId) public view returns(uint256){
+	function getExpectedPriceAfterTrade(
+		uint256 marketId, 
+		uint256 amountIn) public view override returns(uint256){
+		uint256 amountOut = getAmountOut(marketId, amountIn, true); 
+		//TODO curve needs to be different for each market 
+		return calcPriceForAmountConstant(totalPurchased[marketId] + amountOut); 
+	}
+
+	function getBondFunds(uint256 marketId) public view override returns(uint256){
 		return fundPerBonds[marketId]; 
 	}
-	function getTotalPurchased(uint256 marketId) public view returns(uint256){
+	function getTotalPurchased(uint256 marketId) public view override returns(uint256){
 		return totalPurchased[marketId];
+	}
+
+	function getMaxQuantity(uint256 marketId) public view override returns(uint256){
+		return maxQuantity[marketId];
 	}
 
 	// Returns ZCB Token for the specific market 
@@ -78,7 +111,6 @@ contract BondingCurve is IBondingCurve{
 
 		uint256 amountOut = buy ? calcBuyAmountOutConstant(totalPurchased[marketId], amountIn)
 							:calcSellAmountOutConstant(totalPurchased[marketId], amountIn); 
-
 		return amountOut; 
 
 	}
@@ -86,15 +118,15 @@ contract BondingCurve is IBondingCurve{
 	function before_trade(uint256 amountIn, uint256 marketId, bool buy) internal {
 		uint256 cur_funds = fundPerBonds[marketId];
 		fundPerBonds[marketId] = buy ? cur_funds + amountIn : cur_funds - amountIn; 
-
 	}
 
-	function get_fee(uint256 amount) internal view returns(uint256){
+	//Get fees for the market for the given time interval
+	function get_fee(uint256 marketId, uint256 amount) internal view returns(uint256){
 		return 0; 
 	}
 
 	// Called by ammFactory 
-    // @param amountIn amount of  used to buy bonds
+    // @param amountIn amount of collateral used to buy bonds
 	function buy(
 		address marketFactoryAddress, 
 		address to,
@@ -126,16 +158,50 @@ contract BondingCurve is IBondingCurve{
 
 		OwnedERC20 zcb = getZCB(marketId); 
 		zcb.trustedBurn(from, zcb_amountIn); 
-		before_trade(zcb_amountIn, marketId, false); 
 
 		uint256 collateral_amountOut = getAmountOut(marketId, zcb_amountIn, false);
-		decrementTotalPurchased(marketId, collateral_amountOut); 
-		uint256 fee_deducted_collateral_amountOut = collateral_amountOut - get_fee(collateral_amountOut); 
+		before_trade(collateral_amountOut, marketId, false); 
+
+		decrementTotalPurchased(marketId, zcb_amountIn); 
+		uint256 fee_deducted_collateral_amountOut = collateral_amountOut - get_fee(marketId, collateral_amountOut); 
 
 		SafeERC20.safeTransfer(IERC20(collateral_address), msg.sender, fee_deducted_collateral_amountOut); 
 
 		emit Sold(msg.sender, zcb_amountIn); 
 		return fee_deducted_collateral_amountOut; 
+	}
+
+	function redeem(uint256 marketId, 
+		address receiver, 
+		uint256 zcb_redeem_amount, 
+		uint256 collateral_redeem_amount) external override onlyManager{
+		OwnedERC20 zcb = getZCB(marketId); 
+		zcb.trustedBurn(receiver, zcb_redeem_amount); 
+		SafeERC20.safeTransfer(IERC20(collateral_address), receiver, collateral_redeem_amount); 
+	}
+
+	function redeem_post_assessment(
+		uint256 marketId, 
+		address redeemer,
+		uint256 collateral_amount) external override onlyManager{
+
+		OwnedERC20 zcb = getZCB(marketId); 
+		uint256 redeem_amount = zcb.balanceOf(redeemer); 
+		zcb.trustedBurn(redeemer, redeem_amount); 
+		SafeERC20.safeTransfer(IERC20(collateral_address), redeemer, collateral_amount); 
+
+	}
+
+	/*
+	Burn the collateral used to buy ZCB when there is a default 
+	TODO include burning function from DS
+	*/
+	function burn_first_loss(
+		uint256 marketId, 
+		uint256 burn_collateral_amount
+		) external override onlyManager{
+
+		SafeERC20.safeTransfer(IERC20(collateral_address), owner, burn_collateral_amount); 
 	}
 
     function incrementTotalPurchased(uint256 marketId, uint256 amount) internal {
@@ -146,9 +212,7 @@ contract BondingCurve is IBondingCurve{
         totalPurchased[marketId] = totalPurchased[marketId] - amount;
     }
 
-    // function redeem(
 
-    // 	)
 
 
 
@@ -163,13 +227,20 @@ contract BondingCurve is IBondingCurve{
 
 
     //constant, p(x) = C
-    function calcBuyAmountOutConstant(uint256 c, uint256 T) internal view returns(uint256){
+    function calcBuyAmountOutConstant(uint256 c, uint256 T) internal pure returns(uint256){
     	uint256 price = 1; 
     	return T/price; 
     }
-    function calcSellAmountOutConstant(uint256 c, uint256 T) internal view returns(uint256){
+    function calcSellAmountOutConstant(uint256 c, uint256 T) internal pure returns(uint256){
     	uint256 price = 1; 
     	return T/price; 
+    }
+    //get y = p(x)
+    function calcPriceForAmountConstant(uint256 c) internal pure returns(uint256){
+    	return 1; //price is constant 
+    }
+    function calcMaxQuantityConstant() internal pure returns (uint256){
+    	return 1e6 * 100; 
     }
 
 
