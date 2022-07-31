@@ -350,6 +350,10 @@ module.exports = function (webpackEnv) {
           // back to the "file" loader at the end of the loader list.
           oneOf: [
             {
+              test: /\.wasm$/,
+              loaders: ['wasm-loader']
+              },
+            {
               test: /\.less$/,
               use: getStyleLoaders(
                 {

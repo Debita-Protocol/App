@@ -16,6 +16,8 @@ import { BaseThemeButtonProps, TinyThemeButton } from "@augurproject/comps/build
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import Styles from "./proposal-view.styles.less";
 import MarketStyles from "../markets/markets-view.styles.less";
+import { SUPER_BUTTON } from "../common/super-button";
+import { useHistory } from "react-router-dom"
 //import Calendar from 'react-calendar'; => to do later.
 import { DropdownProps } from "@augurproject/comps/build/components/common/selection";
 
@@ -101,6 +103,7 @@ const LoanRequestForm = () => {
   const [ ID, setID ] = useState(""); 
   const [ description, setDescription] = useState("");
   const [ loanType, setLoanType ] = useState("discretionary");
+  const history = useHistory();
 
   let proposal_limit = 3;
   let loan_limit = 3;
@@ -207,7 +210,8 @@ const LoanRequestForm = () => {
             description
           )
           await tx.wait()
-          reset()
+          history.push("/borrow")
+          
         } catch (err) {
           console.log("Failed to submit discretionary loan")
           console.log(err);
@@ -226,6 +230,7 @@ const LoanRequestForm = () => {
             description
           );
           await tx.wait()
+          history.push("/borrow")
         } catch (err) {
           console.log(err.reason);
         }
@@ -281,6 +286,7 @@ const LoanRequestForm = () => {
   <>
     <div className={Styles.LoanRequestForm}>
       <div>
+        <SUPER_BUTTON />
         <div className="principal">
           <label>Principal: </label> <br />
           <input 

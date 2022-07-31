@@ -17,6 +17,9 @@ export const MINT_DS = "mint-ds";
 export const REDEEM = "redeem";
 export const BORROW = "borrow";
 export const PROPOSAL = "proposal";
+export const LOAN = "loan";
+export const USER_PROFILE = "user-profile";
+export const PROFILE = "profile";
 
 // Directions
 export const BUY = "buy";

@@ -1,6 +1,7 @@
 import type { AppStatusState, GraphDataState, UserState, ParaDeploys } from "../types";
 import { addresses } from "@augurproject/smart";
 
+
 export const DEFAULT_NETWORK_ID = (process.env.DEFAULT_NETWORK_ID || "80001").toString();
 export const PARA_CONFIG: ParaDeploys = {
   networkId: DEFAULT_NETWORK_ID,
@@ -78,7 +79,13 @@ export const DEFAULT_USER_STATE: UserState = {
   loginAccount: null,
   seenPositionWarnings: {},
   transactions: [],
-  verificationStatus: false
+  verificationStatus: false,
+  passport: {
+    issuanceDate: null,
+    expiryDate: null,
+    stamps: []
+  },
+  activePassport: false
 };
 
 export const USER_KEYS = {
@@ -102,7 +109,9 @@ export const USER_ACTIONS = {
   UPDATE_VERIFICATION_STATUS: "UPDATE_VERIFICATION_STATUS",
   UPDATE_NUMBER_OF_LOANS: "UPDATE_NUMBER_OF_LOANS",
   UPDATE_NUMBER_OF_PROPOSALS: "UPDATE_NUMBER_OF_PROPOSALS",
-  UPDATE_BORROWER_LOANS: "UPDATE_BORROWER_LOANS"
+  UPDATE_BORROWER_LOANS: "UPDATE_BORROWER_LOANS",
+  UPDATE_PASSPORT: "UPDATE_PASSPORT",
+  UPDATE_PASSPORT_STATUS: "UPDATE_PASSPORT_STATUS"
 };
 
 export const STUBBED_APP_STATUS_ACTIONS = {

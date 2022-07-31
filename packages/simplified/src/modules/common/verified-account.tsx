@@ -46,10 +46,11 @@ export const VerifiedAccount = () => {
     } else if (account) {
         return (
             <>
+                
                 { !verificationStatus &&
                     <SecondaryThemeButton action={ verifyAccount } text={ "Verify Address"} />
                 }
-                <ValueLabel light={true} label={verificationStatus ? "Verified" : "Unverified" } value={verificationStatus}/>
+                <ValueLabel small={true} light={true} label={verificationStatus ? "Verified" : "Unverified" } value={verificationStatus}/>
             </>
         );
     }

@@ -3,6 +3,7 @@ import type { BigNumber as BN } from "./utils/create-big-number";
 import type { TradingDirection } from "./utils/constants";
 import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
+import {Passport} from "@gitcoinco/passport-sdk-types"
 
 export interface Loan {
   id: BytesLike;
@@ -722,6 +723,12 @@ export interface GraphDataState {
 
 export interface DataState extends GraphDataState {}
 
+interface Group {
+  provider: "github" | "twitter" | "reddit",
+  name: string,
+  isMember: boolean
+}
+
 export interface UserState {
   account: string;
   balances: UserBalances;
@@ -731,6 +738,8 @@ export interface UserState {
   };
   transactions: TransactionDetails[];
   verificationStatus: boolean;
+  passport: Passport;
+  activePassport: boolean
 }
 
 export interface TransactionDetails {

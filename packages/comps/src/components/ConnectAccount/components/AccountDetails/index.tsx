@@ -16,6 +16,9 @@ import { LinkIcon, CloseIcon } from "../../../common/icons";
 import { ChainId } from "@uniswap/sdk";
 import { useUserStore } from '../../../../stores/user';
 import { faucetUSDC } from "../../../../utils/contract-calls";
+import { Link } from "react-router-dom";
+import makePath from "../../../../utils/links/make-path";
+
 
 export interface AccountCardProps {
   account: string;

@@ -4,6 +4,7 @@ import { windowRef } from "../utils/window-ref";
 import { USER_ACTIONS, USER_KEYS, DEFAULT_USER_STATE } from "./constants";
 import { UserBalances, TransactionDetails } from "../types";
 import { TX_STATUS } from "../utils/constants";
+import { Passport } from "@gitcoinco/passport-sdk-types";
 
 const {
   ADD_TRANSACTION,
@@ -15,7 +16,9 @@ const {
   UPDATE_USER_BALANCES,
   UPDATE_TRANSACTION,
   LOGOUT,
-  UPDATE_VERIFICATION_STATUS
+  UPDATE_VERIFICATION_STATUS,
+  UPDATE_PASSPORT,
+  UPDATE_PASSPORT_STATUS
 } = USER_ACTIONS;
 const { ACCOUNT, BALANCES, LOGIN_ACCOUNT, SEEN_POSITION_WARNINGS, TRANSACTIONS } = USER_KEYS;
 
@@ -47,6 +50,14 @@ export function UserReducer(state, action) {
   const now = new Date().getTime();
 
   switch (action.type) {
+    case UPDATE_PASSPORT_STATUS: {
+      updatedState.activePassport = action.hasPassport;
+      break;
+    }
+    case UPDATE_PASSPORT: {
+      updatedState.passport = action.passport;
+      break;
+    }
     case UPDATE_VERIFICATION_STATUS: {
       updatedState["verificationStatus"] = action.isVerified;
       break;
@@ -158,7 +169,9 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
       addSeenPositionWarnings: (seenPositionWarnings) =>
         dispatch({ type: ADD_SEEN_POSITION_WARNINGS, seenPositionWarnings }),
       logout: () => dispatch({ type: LOGOUT }),
-      updateVerificationStatus: (isVerified: boolean) => dispatch({type: UPDATE_VERIFICATION_STATUS, isVerified})
+      updateVerificationStatus: (isVerified: boolean) => dispatch({type: UPDATE_VERIFICATION_STATUS, isVerified}),
+      updatePassport: (passport: Passport) => dispatch({type: UPDATE_PASSPORT, passport}),
+      updatePassportStatus: (hasPassport: boolean) => dispatch({type: UPDATE_PASSPORT_STATUS , hasPassport})
     },
   };
 };

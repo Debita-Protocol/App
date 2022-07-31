@@ -17,6 +17,7 @@ import {
   ApprovalHooks,
 
 } from "@augurproject/comps";
+import { Link } from "react-router-dom"
 
 import type { Loan } from "@augurproject/comps/build/types";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
@@ -24,6 +25,7 @@ import { utils } from "ethers";
 import { LoadingMarketCard } from "@augurproject/comps/build/components/market-card/market-card";
 import { LoanCard } from "../loan-card/loan-card-view";
 import Styles from "../markets/markets-view.styles.less"
+import makePath from "@augurproject/comps/build/utils/links/make-path";
 
 const {
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
@@ -64,6 +66,14 @@ const BorrowView = () => {
   return (
     <>
       <div className={Styles.MarketsView}>
+        <section>
+          <li>
+            <Link to={makePath("proposal")}>
+              Loan Proposal
+            </Link>
+          </li>
+          
+        </section>
         {loading ? (
           <section>
             {new Array(PAGE_LIMIT).fill(null).map((m, index) => (

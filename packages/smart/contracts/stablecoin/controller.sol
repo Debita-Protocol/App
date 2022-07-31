@@ -19,7 +19,7 @@ contract Controller is IController {
     mapping(address => bool) pools;
     mapping(address => bool) public override verified;
     mapping(address => mapping(bytes32 => MarketInfo)) public borrower_market_data; // maps address + loan id => market information, called by lendingpool
-
+    mapping(address => mapping(uint256 => bytes32)) public marketID_to_loan_data; // maps address + market id => loan id.
     mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
 
     address[] validators_array;
@@ -77,7 +77,7 @@ contract Controller is IController {
         uint256[8] calldata proof
     ) external override {
         require(!verified[msg.sender], "address already verified");
-        interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
+        //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
     }
 

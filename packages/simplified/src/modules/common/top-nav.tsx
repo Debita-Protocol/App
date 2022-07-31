@@ -18,10 +18,11 @@ import {
   BORROW,
   MINT,
   REDEEM,
-  PROPOSAL
+  PROPOSAL,
+  USER_PROFILE
 } from '../constants';
 import { VerifiedAccount } from "./verified-account";
-import { SUPER_BUTTON } from "./super-button";
+
 
 const { parsePath, makePath } = PathUtils;
 const { MARKET, MARKETS, PORTFOLIO, LIQUIDITY, SIDEBAR_TYPES, TWELVE_HOUR_TIME, TWENTY_FOUR_HOUR_TIME } = Constants;
@@ -207,17 +208,17 @@ export const TopNav = () => {
               <Link to={makePath(REDEEM)} placeholder="Pools">
                 Redeem
               </Link>
-            </li>
-            <li className={classNames({ [Styles.Active]: path === PROPOSAL })}>
-              <Link to={makePath(PROPOSAL)} placeholder="Pools">
-                Loan Proposal
-              </Link>
-            </li>   
+            </li> 
             <li className={classNames({ [Styles.Active]: path === BORROW })}>
               <Link to={makePath(BORROW)} disabled={!isLogged} placeholder="Pools">
                 Borrow
               </Link>
-            </li>           
+            </li>
+            <li className={classNames({ [Styles.Active]: path === BORROW })}>
+              <Link to={makePath(USER_PROFILE)} disabled={!isLogged} placeholder="Pools">
+                Profile
+              </Link>
+            </li>              
           </ol>
         )}
       </section>
@@ -248,10 +249,7 @@ export const TopNav = () => {
         )}
         <Toasts />
       </section>
-      <section>
-        <VerifiedAccount />
-        <SUPER_BUTTON />
-      </section>
+      <VerifiedAccount />
     </section>
   );
 };

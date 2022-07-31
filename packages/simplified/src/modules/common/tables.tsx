@@ -1021,7 +1021,7 @@ export const NFTPositionTable = ({
             subtitle={`To give liquidity providers the most options available to manage their positions. Shares can be sold for ${market?.amm?.cash?.name}.`}
             onClose={() => updateSeenPositionWarning(marketAmmId, true, REMOVE)}
           />
-        )} */}
+        )} }
     </>
   );
 };
