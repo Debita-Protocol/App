@@ -18,7 +18,8 @@ interface IMarketManager {
 		 uint256 min_rep_score)
 		external; 
 
- 	
+ 	function deactivateMarket(uint256 marketId) external; 
+
 	function setAssessmentPhase(
 		uint256 marketId, 
 		bool _duringMarketAssessment,
@@ -66,6 +67,20 @@ interface IMarketManager {
 	function denyMarket(
 		uint256 marketId)
 		external; 
+
+	function borrow_with_collateral(
+		uint256 _marketId, 
+		uint256 requested_zcb, 
+		address trader
+		) external; 
+
+	function repay_for_collateral(
+		uint256 _marketId, 
+		uint256 repaying_zcb, 
+		address trader
+		) external; 
+
+
 
 }
 

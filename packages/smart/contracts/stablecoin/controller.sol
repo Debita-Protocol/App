@@ -4,6 +4,8 @@ import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import "./IMarketManager.sol";
+import "./IReputationNFT.sol";
+
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
 // Controller contract responsible for providing initial liquidity to the
@@ -80,6 +82,15 @@ contract Controller is IController {
         require(!verified[msg.sender], "address already verified");
         //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
+
+    }
+
+    function mintRepNFT(
+        address NFT_address,
+        address trader
+        ) external {
+        IReputationNFT(NFT_address).mint(msg.sender);
+
     }
 
     //Pool added when contract is deployed 
@@ -102,42 +113,36 @@ contract Controller is IController {
 
     }
 
-    //provide initial liquidity when market is created
-    //allow lendingpool to mint DS to controller address, 
-    //liquidityAmountUSD determines how much IL loss Debita is willing to take,
-    //which depends on interest rate proposed + principal value of borrowers 
-    //It will be computed offchain for now
+   
 
- // function initiateMarket_(
- //        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
- //        address recipient,
- //        bytes32 loanID, 
- //        address bonding_curve_address, 
- //        address market_manager_address
- //    ) public  {
+ function initiateMarket_(
+        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
+        address recipient,
+        bytes32 loanID, 
+        address bonding_curve_address, 
+        address market_manager_address
+    ) public  {
+  
 
- //        // STACK TOO DEEP
- //        address ammFactoryAddress = marketData.ammFactoryAddress;
- //        address marketFactoryAddress = marketData.marketFactoryAddress;
- //        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
- //        string memory description = marketData.description;
- //        string[] memory names = marketData.names;
- //        uint256[] memory odds = marketData.odds;
+        AMMFactory amm = AMMFactory(marketData.ammFactoryAddress);
+        IMarketManager market_manager = IMarketManager(market_manager_address);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketData.marketFactoryAddress);
+        uint256 marketId = marketFactory.createZCBMarket(
+                    msg.sender,
+                    marketData.description, 
+                    marketData.names[0], 
+                    marketData.odds,
+                    bonding_curve_address);
 
- //        AMMFactory amm = AMMFactory(ammFactoryAddress);
- //        IMarketManager market_manager = IMarketManager(market_manager_address);
- //        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
- //        uint256 marketId = marketFactory.createZCBMarket(msg.sender, description, names[0], odds, bonding_curve_address);
+        marketData.marketID = marketId; 
+        borrower_market_data[recipient][loanID] = marketData; 
 
- //        marketData.marketID = marketId; 
- //        borrower_market_data[recipient][loanID] = marketData; 
-
- //        market_manager.initiate_bonding_curve(marketId); 
- //        market_manager.setMarketRestrictionData(
- //            true,true, marketId, 0);     
-
+        market_manager.initiate_bonding_curve(marketId); 
+        market_manager.setMarketRestrictionData(
+            true,true, marketId, 0);
+            
     
- //    }    
+    }    
 
 
     /*
@@ -163,6 +168,7 @@ contract Controller is IController {
 
         market_manager.update_redemption_price(marketID, atLoss,extra_gain, principal_loss); 
         market_manager.handle_maturity(marketID, atLoss, principal_loss); 
+        market_manager.deactivateMarket(marketID); 
 
         uint256 winning_outcome = 0; //TODO  
         marketFactory.trustedResolveMarket( marketID, winning_outcome); 
@@ -190,52 +196,6 @@ contract Controller is IController {
 
         uint256 winning_outcome = 0; //TODO  
         marketFactory.trustedResolveMarket( marketId, winning_outcome); 
-        delete borrower_market_data[recipient][loanID];
-
-    }
-
-
-    function resolveMarket(
-        address recipient,
-        bytes32 loanID,
-        bool isDefault
-    ) external override {
-        uint256 _collateralOut;
-        uint256[] memory _balances; 
-
-        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
-
-        address ammFactoryAddress = marketInfo.ammFactoryAddress;
-        address marketFactoryAddress = marketInfo.marketFactoryAddress;
-        uint256 marketID = marketInfo.marketID;
-
-    	AMMFactory amm = AMMFactory(ammFactoryAddress);
-    	TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
-    	uint256 lptokensIn = lpinfo[marketFactoryAddress][marketID].lptokenamount; 
-
-        uint256 winning_outcome = isDefault? 0: 1; 
-        marketFactory.trustedResolveMarket( marketID, winning_outcome); 
-        //require(marketFactory.isMarketResolved(marketID), "Market is not resolved"); 
-
-    	(_collateralOut, _balances) = masterchef.removeLiquidity(amm, 
-    								marketFactory,
-    								marketID, lptokensIn, 0, address(this)
-    								 );
-
-        uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].suppliedDS; 
-
-        if (isDefault){
-            require(_collateralOut > initialSuppliedDS, "Payout not sufficient"); 
-        }
-
-        //Whether initial supplied DS is greater or less than payout, they need to be all burned
-        //if greater, IL loss is transferred to shortCDS buyers, 
-        //if less, then short cds buyer's collateral is used as payout
-        lendingpool.controllerBurnDS(_collateralOut); 
-
-
-        console.log(initialSuppliedDS, _collateralOut); 
-
         delete borrower_market_data[recipient][loanID];
 
     }
@@ -270,6 +230,15 @@ contract Controller is IController {
 
 
 
+
+
+
+
+
+
+
+
+//deprecated 
    
     function initiateMarket(   
         address borrower,
@@ -336,4 +305,51 @@ contract Controller is IController {
 
         lpinfo[marketFactoryAddress][marketID] = info; 
     }
+
+function resolveMarket(
+        address recipient,
+        bytes32 loanID,
+        bool isDefault
+    ) external override {
+        uint256 _collateralOut;
+        uint256[] memory _balances; 
+
+        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
+
+        address ammFactoryAddress = marketInfo.ammFactoryAddress;
+        address marketFactoryAddress = marketInfo.marketFactoryAddress;
+        uint256 marketID = marketInfo.marketID;
+
+        AMMFactory amm = AMMFactory(ammFactoryAddress);
+        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
+        uint256 lptokensIn = lpinfo[marketFactoryAddress][marketID].lptokenamount; 
+
+        uint256 winning_outcome = isDefault? 0: 1; 
+        marketFactory.trustedResolveMarket( marketID, winning_outcome); 
+        //require(marketFactory.isMarketResolved(marketID), "Market is not resolved"); 
+
+        (_collateralOut, _balances) = masterchef.removeLiquidity(amm, 
+                                    marketFactory,
+                                    marketID, lptokensIn, 0, address(this)
+                                     );
+
+        uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].suppliedDS; 
+
+        if (isDefault){
+            require(_collateralOut > initialSuppliedDS, "Payout not sufficient"); 
+        }
+
+        //Whether initial supplied DS is greater or less than payout, they need to be all burned
+        //if greater, IL loss is transferred to shortCDS buyers, 
+        //if less, then short cds buyer's collateral is used as payout
+        lendingpool.controllerBurnDS(_collateralOut); 
+
+
+        console.log(initialSuppliedDS, _collateralOut); 
+
+        delete borrower_market_data[recipient][loanID];
+
+    }
 }
+
+

@@ -20,6 +20,10 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: args,
     log: true,
   });
+
+  // const marketManager = await etj.get("MarketManager")
+  // await bondingcurve.addManager(marketManager.address)
+
 };
 
 func.tags = ["BondingCurve"];

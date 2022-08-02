@@ -22,7 +22,7 @@ interface IBondingCurve{
 		address receiver, 
 		uint256 zcb_redeem_amount, 
 		uint256 collateral_redeem_amount) external; 
-
+    function getCollateral() external view returns(address); 
     function curve_init(uint256 marketId) external; 
     function addManager(address _manager_address) external ; 
 
@@ -38,4 +38,18 @@ interface IBondingCurve{
 		uint256 marketId, 
 		address redeemer,
 		uint256 collateral_amount) external; 
+
+
+	function mint(
+		uint256 marketId, 
+		uint256 mintAmount,
+		address to
+		) external; 
+
+	function burn(
+		uint256 marketId, 
+		uint256 burnAmount, 
+		address to) external; 
+
+
 }

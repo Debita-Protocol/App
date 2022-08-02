@@ -8,6 +8,7 @@ import "./IMarketManager.sol";
 import "hardhat/console.sol";
 
 
+
 contract MarketManager is IMarketManager, Owned {
 	/*Wrapper contract for bondingcurve markets, trades are restricted/funneled through here
 		Types of restrictions are 
@@ -38,6 +39,16 @@ contract MarketManager is IMarketManager, Owned {
     mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
     mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
 	mapping(uint256=> MarketRestrictionData) restriction_data; 
+	mapping(uint256=> uint256) collateral_pot; 
+	mapping(uint256=> CDP) private debt_pools; 
+
+	struct CDP{
+		mapping(address=>address) collateral_address; 
+		mapping(address=>uint256) collateral_amount; 
+		mapping(address=>uint256) borrowed_amount; 
+		uint256 total_debt; 
+		uint256 total_collateral;//only usdc 
+	}
 
 	struct MarketRestrictionData{
 		bool duringMarketAssessment;
@@ -60,6 +71,50 @@ contract MarketManager is IMarketManager, Owned {
 
 	}
 
+
+	/*----Phase Functions----*/
+
+	/* 
+	called by controller when market starts
+	*/
+	function initiate_bonding_curve(uint256 marketId) 
+	external 
+	override 
+	onlyController
+	{
+		IBondingCurve(bondingCurveAddress).curve_init(marketId);
+		CDP storage cdp = debt_pools[marketId];
+		cdp.total_debt = 0; 
+		cdp.total_collateral = 0; 
+
+	}
+
+	/*
+	1.When Market is intialized, set both params as true
+	2.When a certain time pass after initilization, change _onlyReputable to false 
+	3.When validator approves, set _duringMarketAssessment to false  
+	*/
+	function setAssessmentPhase(
+		uint256 marketId, 
+		bool _duringMarketAssessment,
+		bool _onlyReputable) 
+		external
+		override 
+		onlyController 
+	{
+		MarketRestrictionData storage data = restriction_data[marketId]; 
+		data.onlyReputable = _onlyReputable; 
+		data.duringMarketAssessment = _duringMarketAssessment; 
+
+	}
+	/* 
+	Called when market should end, a) when denied b) when maturity 
+	*/
+	function deactivateMarket(uint256 marketId) external override onlyController{
+		restriction_data[marketId].marketDenied = true; 
+	}
+
+
 	/*
 	Sets reputation score requirements and for the market, called by the controller when
 	market is initiated. Buy threshold is set after the assessment is completed 
@@ -80,10 +135,18 @@ contract MarketManager is IMarketManager, Owned {
 			_onlyReputable,
 			false,
 			min_rep_score, 
-			0
+			MAX_UINT
 			); 
 	}
 
+
+
+
+	/*---View Functions---*/
+
+	/* 
+	Returns Minimal reputation score to participate in the onlyReputation phase
+	*/
 	function get_min_rep_score(uint256 marketId) internal view returns(uint256){
 		return 0;
 	}
@@ -121,37 +184,15 @@ contract MarketManager is IMarketManager, Owned {
 	function exposureSet(address trader, address ammFactoryAddress, address marketId) internal view returns(bool){
 		return true; 
 	}
+
+	function marketActive(uint256 marketId) public view returns(bool){
+		return !restriction_data[marketId].marketDenied; 
+	}
+
+
+
        
 
-	/*
-	1.When Market is intialized, set both params as true
-	2.When a certain time pass after initilization, change _onlyReputable to false 
-	3.When validator approves, set _duringMarketAssessment to false  
-	*/
-	function setAssessmentPhase(
-		uint256 marketId, 
-		bool _duringMarketAssessment,
-		bool _onlyReputable) 
-		external
-		override 
-		onlyController 
-	{
-		MarketRestrictionData storage data = restriction_data[marketId]; 
-		data.onlyReputable = _onlyReputable; 
-		data.duringMarketAssessment = _duringMarketAssessment; 
-
-	}
-
-	/* 
-	called by controller when market starts
-	*/
-	function initiate_bonding_curve(uint256 marketId) 
-	external 
-	override 
-	onlyController
-	{
-		IBondingCurve(bondingCurveAddress).curve_init(marketId);
-	}
 
 	//Called offchain before doTrade contract calls 
 	function canBuy(
@@ -160,7 +201,7 @@ contract MarketManager is IMarketManager, Owned {
 		address marketFactoryAddress, 
 		uint256 amount,//this is in DS with decimals 
 		uint256 marketId) public view override returns(bool) {
-
+		require(marketActive(marketId), "Market Not Active"); 
 		bool _duringMarketAssessment = duringMarketAssessment( marketId);
 		bool _onlyReputable =  onlyReputable(marketId);
 
@@ -177,7 +218,7 @@ contract MarketManager is IMarketManager, Owned {
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
 		if (!_duringMarketAssessment){
 			//Buy threshold price needs to be set after assessment phase
-			uint256 _buy_threshold = AbstractMarketFactoryV3(marketFactoryAddress).get_buy_threshold(marketId);
+			uint256 _buy_threshold = restriction_data[marketId].buy_threshold;
 			uint256 price_after_trade = IBondingCurve(bondingCurveAddress).getExpectedPriceAfterTrade(
 				marketId, 
 				amount); 
@@ -199,6 +240,7 @@ contract MarketManager is IMarketManager, Owned {
 		uint256 amount, 
 		uint256 marketId
 		) internal view returns(bool){
+		require(marketActive(marketId), "Market Not Active"); 
 		bool _duringMarketAssessment = duringMarketAssessment( marketId);
 		if (_duringMarketAssessment){
 			require(isVerified(trader), "User Not Verified");
@@ -240,7 +282,7 @@ contract MarketManager is IMarketManager, Owned {
 	function denyMarket(
 		uint256 marketId)
 		external 
-		override 
+		override      
 		onlyController
 	{
 		MarketRestrictionData storage data = restriction_data[marketId]; 
@@ -248,7 +290,6 @@ contract MarketManager is IMarketManager, Owned {
 		data.duringMarketAssessment = false; 
 
 	}
-
 
 
 
@@ -272,7 +313,7 @@ contract MarketManager is IMarketManager, Owned {
 			_collateralIn);
 
 		if (duringMarketAssessment(_marketId)){
-			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn );
+			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn);
 		}
 		
 		return amountOut; 
@@ -303,8 +344,60 @@ contract MarketManager is IMarketManager, Owned {
 	}
 
 
-	/*Maturity Functions */
 
+	/* 
+	For now only allow collateral to be ds
+	*/
+	function borrow_with_collateral(
+		uint256 _marketId, 
+		uint256 requested_zcb, 
+		address trader
+		) external override{
+		//1.Use 100 ds as collateral to borrow 100zcb 1:1, only this for now 
+		//2.use 0.1eth(170) as collateral to borrow 100zcb =>100/170 collateral ratio
+		address collateral_address = IBondingCurve(bondingCurveAddress).getCollateral();  
+		SafeERC20.safeTransferFrom(IERC20(collateral_address), trader, address(this), requested_zcb); 
+		uint256 _collateralIn = requested_zcb; 
+
+		CDP storage cdp = debt_pools[_marketId]; 
+		cdp.collateral_amount[trader] += _collateralIn; 
+		cdp.borrowed_amount[trader] += requested_zcb;  
+		cdp.total_debt += requested_zcb; 
+		cdp.total_collateral += _collateralIn; //only ds 
+		collateral_pot[_marketId] += _collateralIn; //Total ds collateral 
+
+		IBondingCurve(bondingCurveAddress).mint(_marketId, requested_zcb, trader); 
+
+
+	}
+
+	/*
+	Trader provides zcb and receives back collateral 
+	 */
+	function repay_for_collateral(
+		uint256 _marketId, 
+		uint256 repaying_zcb, 
+		address trader
+		) external override{
+		
+		address collateral_address = IBondingCurve(bondingCurveAddress).getCollateral(); 
+		IBondingCurve(bondingCurveAddress).burn(_marketId, repaying_zcb, trader); 
+		uint256 _collateralOut = repaying_zcb; 
+
+		CDP storage cdp = debt_pools[_marketId]; 
+		cdp.collateral_amount[trader] -= _collateralOut; 
+		cdp.borrowed_amount[trader] -= repaying_zcb;
+		cdp.total_debt -= repaying_zcb; 
+		cdp.total_collateral -= _collateralOut; 
+		collateral_pot[_marketId] -= _collateralOut; 
+
+		SafeERC20.safeTransfer(IERC20(collateral_address), trader, _collateralOut); 
+
+	}
+
+
+
+	/*Maturity Functions */
 
 	function get_redemption_price(uint256 marketId) public view returns(uint256){
 		return redemption_prices[marketId]; 
@@ -331,7 +424,7 @@ contract MarketManager is IMarketManager, Owned {
 		IBondingCurve bondingcuve = IBondingCurve(bondingCurveAddress); 
 
 		if (atLoss){
-			require(principal_loss >0 && extra_gain==0, "loss err");
+			//require(principal_loss >0 && extra_gain==0, "loss err");
 			uint256 total_bought_collateral = bondingcuve.getBondFunds(marketId);
 			uint256 total_bought_bonds = bondingcuve.getTotalPurchased(marketId);
 			console.log('totals', total_bought_collateral,total_bought_bonds ); 

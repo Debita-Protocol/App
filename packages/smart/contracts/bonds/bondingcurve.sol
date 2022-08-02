@@ -17,10 +17,9 @@ contract BondingCurve is Owned, IBondingCurve{
     }
 
 
-
     AnalyticMath mathlib; 
 
-    address collateral_address; 
+    address public collateral_address; 
     address manager_address; 
 
     OwnedERC20 testZCB; 
@@ -64,7 +63,7 @@ contract BondingCurve is Owned, IBondingCurve{
     }
 
 
-    function getCollateral() public view returns(address){
+    function getCollateral() public view override returns(address){
     	return collateral_address; 
     }
 
@@ -171,6 +170,8 @@ contract BondingCurve is Owned, IBondingCurve{
 		return fee_deducted_collateral_amountOut; 
 	}
 
+
+
 	function redeem(uint256 marketId, 
 		address receiver, 
 		uint256 zcb_redeem_amount, 
@@ -204,6 +205,24 @@ contract BondingCurve is Owned, IBondingCurve{
 		SafeERC20.safeTransfer(IERC20(collateral_address), owner, burn_collateral_amount); 
 	}
 
+
+	function mint(
+		uint256 marketId, 
+		uint256 mintAmount,
+		address to
+		) external override onlyManager{ 	
+		getZCB(marketId).trustedMint(to,mintAmount); 
+	}
+
+
+	function burn(
+		uint256 marketId, 
+		uint256 burnAmount, 
+		address to) external override onlyManager{
+		getZCB(marketId).trustedBurn(to,burnAmount); 
+	}
+
+
     function incrementTotalPurchased(uint256 marketId, uint256 amount) internal {
         totalPurchased[marketId] = totalPurchased[marketId] + amount;
     }
@@ -211,6 +230,7 @@ contract BondingCurve is Owned, IBondingCurve{
     function decrementTotalPurchased(uint256 marketId, uint256 amount) internal {
         totalPurchased[marketId] = totalPurchased[marketId] - amount;
     }
+
 
 
 
