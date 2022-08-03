@@ -36,25 +36,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 exports.__esModule = true;
-var passport_sdk_verifier_1 = require("@gitcoinco/passport-sdk-verifier");
 var passport_sdk_reader_1 = require("@gitcoinco/passport-sdk-reader");
 var args = process.argv.slice(2);
-var reader = new passport_sdk_reader_1["default"].PassportReader('https://ceramic.staging.dpopp.gitcoin.co/', '1');
-var verifier = new passport_sdk_verifier_1["default"].PassportVerifier();
-function verify(add) {
-    return __awaiter(this, void 0, void 0, function () {
-        var passport, verified;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0: return [4 /*yield*/, reader.getPassport(add)];
-                case 1:
-                    passport = _a.sent();
-                    return [4 /*yield*/, verifier.verifyPassport(add, passport)];
-                case 2:
-                    verified = _a.sent();
-                    return [2 /*return*/, (verified)];
-            }
-        });
+var init = function () { return __awaiter(void 0, void 0, void 0, function () {
+    var addr, reader, _a, _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
+            case 0:
+                addr = args[0];
+                reader = new passport_sdk_reader_1.PassportReader('https://ceramic.staging.dpopp.gitcoin.co/', '1');
+                _b = (_a = console).log;
+                return [4 /*yield*/, reader.getGenesis(addr)];
+            case 1:
+                _b.apply(_a, [_c.sent()]);
+                return [2 /*return*/];
+        }
     });
-}
-verify(args[0]).then(function (pass) { console.log(pass); })["catch"](function (err) { console.log(err); });
+}); };
+init();

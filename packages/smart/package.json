@@ -63,6 +63,7 @@
     "circomlibjs": "0.0.8",
     "ethers": "^5.0.0",
     "prettier-plugin-solidity": "^1.0.0-beta.6",
+    "solmate": "^6.5.0",
     "typechain": "^4.0.3"
   }
 }

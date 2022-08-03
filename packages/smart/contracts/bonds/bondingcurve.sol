@@ -24,8 +24,8 @@ contract BondingCurve is Owned, IBondingCurve{
 
     OwnedERC20 testZCB; 
 
-    mapping(uint256=>uint256) totalPurchased; 
-    mapping(uint256=>uint256) fundPerBonds; 
+    mapping(uint256=>uint256) totalPurchased; // marketID => total number of bond tokens purchased 
+    mapping(uint256=>uint256) fundPerBonds; // marketID => total amount of collateral recieved per bond curve.
     mapping(uint256=>uint256) maxQuantity; //x where p(x) = 1 
 
     event Bought(
@@ -71,6 +71,8 @@ contract BondingCurve is Owned, IBondingCurve{
 		return 1;
 	}
 
+	/// @dev returns expected price of bond token after buying bond tokens
+	/// @param amountIn amount of ds
 	function getExpectedPriceAfterTrade(
 		uint256 marketId, 
 		uint256 amountIn) public view override returns(uint256){
@@ -90,7 +92,7 @@ contract BondingCurve is Owned, IBondingCurve{
 		return maxQuantity[marketId];
 	}
 
-	// Returns ZCB Token for the specific market 
+	/// @dev Returns ZCB Token for the specific market 
 	function getZCB(uint256 marketId) internal view returns(OwnedERC20){
 
 		// AbstractMarketFactoryV3.Market memory _market = AbstractMarketFactoryV3(marketFactoryAddress).getZCBMarket(marketId);
@@ -103,8 +105,8 @@ contract BondingCurve is Owned, IBondingCurve{
 		return zcb.balanceOf(from); 
 	}
 	// Returns amount of bond out after a bonding curve purchase
-	// @params amountIn the amount of DS used to purchase bonds
-	// @returns amountOut the amount of bonds received 
+	/// @param amountIn the amount of DS used to purchase bonds
+	/// @return amountOut the amount of bonds received 
 	function getAmountOut(uint256 marketId, uint256 amountIn, bool buy) internal view returns(uint256){
 		uint256 curve_idx; //TODO get from market
 
@@ -113,34 +115,36 @@ contract BondingCurve is Owned, IBondingCurve{
 		return amountOut; 
 
 	}
-
+	/// @dev before trade hook
+	/// @param buy indicates whether trade is buy or sell.
+	/// @param amountIn is amount is or out depending on "buy"
 	function before_trade(uint256 amountIn, uint256 marketId, bool buy) internal {
 		uint256 cur_funds = fundPerBonds[marketId];
 		fundPerBonds[marketId] = buy ? cur_funds + amountIn : cur_funds - amountIn; 
 	}
 
-	//Get fees for the market for the given time interval
+	/// @dev Get fees for the market for the given time interval
 	function get_fee(uint256 marketId, uint256 amount) internal view returns(uint256){
 		return 0; 
 	}
 
-	// Called by ammFactory 
-    // @param amountIn amount of collateral used to buy bonds
+	/// @dev Called by ammFactory 
+    /// @param amountIn amount of collateral used to buy bonds
+	//TODO CHECKS, EFFECTS, INTERACTIONS => calculate expected values first then transfer funds. can do unchecked arithmetic after checks.
 	function buy(
 		address marketFactoryAddress, 
 		address to,
 		uint256 amountIn, 
-		uint256 marketId) external override returns(uint256){
-
-		SafeERC20.safeTransferFrom(IERC20(collateral_address), msg.sender, address(this), amountIn); 
+		uint256 marketId) external override returns(uint256) {
 		before_trade(amountIn, marketId, true); 
 
 		//Compute amountOut given totalPurchased and amountIn
 		uint256 amountOut = getAmountOut(marketId, amountIn, true); 
 		incrementTotalPurchased(marketId, amountOut);
 
-		OwnedERC20 zcb_token = getZCB(marketId); 
+		OwnedERC20 zcb_token = getZCB(marketId);
 		zcb_token.trustedMint(to, amountOut);
+		SafeERC20.safeTransferFrom(IERC20(collateral_address), msg.sender, address(this), amountIn);
 
 		emit Bought(to, amountOut);
 		return amountOut; 
@@ -219,7 +223,7 @@ contract BondingCurve is Owned, IBondingCurve{
 		uint256 marketId, 
 		uint256 burnAmount, 
 		address to) external override onlyManager{
-		getZCB(marketId).trustedBurn(to,burnAmount); 
+		getZCB(marketId).trustedBurn(to, burnAmount); 
 	}
 
 
@@ -230,20 +234,6 @@ contract BondingCurve is Owned, IBondingCurve{
     function decrementTotalPurchased(uint256 marketId, uint256 amount) internal {
         totalPurchased[marketId] = totalPurchased[marketId] - amount;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     //constant, p(x) = C
@@ -302,9 +292,6 @@ contract BondingCurve is Owned, IBondingCurve{
     	(uint256 f, uint256 g) = mathlib.exp(a,1);
     	console.log('numms', d,e);
     	console.log('numms', f,g); 
-    	return d; 
-
+    	return d;
     }
-
-
 }

@@ -16,6 +16,10 @@ interface IController  {
     
     // function addPool(address pool_address) external;
 
+    
+    /**
+    @dev add validator address
+     */
     function addValidator(address validator_address) external;
 
     function initiateMarket(
@@ -29,9 +33,24 @@ interface IController  {
         uint256[] memory odds
     ) external;
 
+    /**
+    @dev resolves market on loan maturity
+    @param recipient: loan recipient
+    @param loanID: unique loanID
+    @param isDefault: whether the borrower defaulted or not
+     */
     function resolveMarket(address recipient, bytes32 loanID, bool isDefault) external;
+
+    /**
+    @dev returns true if _addr is verified
+     */
     function verified(address _addr) external returns (bool);
+
+    /**
+    @dev returns true if _addr is validator
+     */
     function validators(address _addr) external returns (bool);
+    
     function canBeApproved (
         address borrower, 
         bytes32 loanID, 

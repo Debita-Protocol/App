@@ -38,9 +38,9 @@ contract MarketManager is IMarketManager, Owned {
 
     mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
     mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
-	mapping(uint256=> MarketRestrictionData) restriction_data; 
-	mapping(uint256=> uint256) collateral_pot; 
-	mapping(uint256=> CDP) private debt_pools; 
+	mapping(uint256=> MarketRestrictionData) restriction_data; // market ID => restriction data
+	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
+	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
 
 	struct CDP{
 		mapping(address=>address) collateral_address; 
@@ -115,10 +115,10 @@ contract MarketManager is IMarketManager, Owned {
 	}
 
 
-	/*
-	Sets reputation score requirements and for the market, called by the controller when
+	/**
+	@dev Sets reputation score requirements and for the market, called by the controller when
 	market is initiated. Buy threshold is set after the assessment is completed 
-	*/
+	 */
 	function setMarketRestrictionData(
 		bool _duringMarketAssessment,
 		bool _onlyReputable, 
@@ -189,20 +189,15 @@ contract MarketManager is IMarketManager, Owned {
 		return !restriction_data[marketId].marketDenied; 
 	}
 
-
-
-       
-
-
-	//Called offchain before doTrade contract calls 
+	/// @dev Called offchain before doTrade contract calls 
 	function canBuy(
 		address trader,
 		address ammFactoryAddress, 
 		address marketFactoryAddress, 
-		uint256 amount,//this is in DS with decimals 
+		uint256 amount,//this is in DS with decimals
 		uint256 marketId) public view override returns(bool) {
 		require(marketActive(marketId), "Market Not Active"); 
-		bool _duringMarketAssessment = duringMarketAssessment( marketId);
+		bool _duringMarketAssessment = duringMarketAssessment(marketId);
 		bool _onlyReputable =  onlyReputable(marketId);
 
 		if (_duringMarketAssessment){
@@ -212,7 +207,7 @@ contract MarketManager is IMarketManager, Owned {
   		//During the early risk assessment phase only reputable can buy 
 		if (_onlyReputable){
 			require(_duringMarketAssessment, "Market needs to be in assessment phase"); 
-			require(isReputable(trader, marketId));
+			require(isReputable(trader, marketId)); //TODO should also include verification here.
 		}
 
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
@@ -274,7 +269,7 @@ contract MarketManager is IMarketManager, Owned {
 	{
 		require(restriction_data[marketId].marketDenied, "Market Still During Assessment");
 		uint256 collateral_amount = assessment_collaterals[marketId][trader]; 
-		IBondingCurve(bondingCurveAddress).redeem_post_assessment(marketId, trader,collateral_amount);
+		IBondingCurve(bondingCurveAddress).redeem_post_assessment(marketId, trader, collateral_amount);
 
 	}
 
@@ -359,7 +354,7 @@ contract MarketManager is IMarketManager, Owned {
 		SafeERC20.safeTransferFrom(IERC20(collateral_address), trader, address(this), requested_zcb); 
 		uint256 _collateralIn = requested_zcb; 
 
-		CDP storage cdp = debt_pools[_marketId]; 
+		CDP storage cdp = debt_pools[_marketId];
 		cdp.collateral_amount[trader] += _collateralIn; 
 		cdp.borrowed_amount[trader] += requested_zcb;  
 		cdp.total_debt += requested_zcb; 
@@ -403,14 +398,14 @@ contract MarketManager is IMarketManager, Owned {
 		return redemption_prices[marketId]; 
 	}
 
-	/* 
-	Redemption price, as calculated at maturity,
+	/**
+	@dev Redemption price, as calculated at maturity,
 	depends on total_repayed/(principal + predetermined yield)
 	If total_repayed = 0, redemption price is 0
-	Param atLoss: defines circumstances where expected returns are higher than actual 
-	Param Principal_loss : principal - returned amount 
-	Param extra_gain: any extra yield not factored during assessment. Is 0 yield is as expected
-	*/
+	@param atLoss: defines circumstances where expected returns are higher than actual
+	@param principal_loss: principal - returned amount => non-negative always?
+	@param extra_gain: any extra yield not factored during assessment. Is 0 yield is as expected
+	 */
 	function update_redemption_price(
 		uint256 marketId,
 		bool atLoss, 
@@ -462,7 +457,7 @@ contract MarketManager is IMarketManager, Owned {
 	{
 		IBondingCurve bondingcurve = IBondingCurve(bondingCurveAddress); 
 		uint256 redemption_price = get_redemption_price(marketId); 
-		require(redemption_price > 0, "Need to set redemption price"); 
+		require(redemption_price > 0, "Need to set redemption price"); // what if redemption price is set to zero?
 		uint256 total_bought_bonds = bondingcurve.getTotalPurchased(marketId);
 		uint256 total_bought_collateral = bondingcurve.getBondFunds(marketId);
 

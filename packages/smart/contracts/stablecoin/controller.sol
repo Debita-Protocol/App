@@ -23,7 +23,7 @@ contract Controller is IController {
     mapping(address => bool) public override verified;
     mapping(address => mapping(bytes32 => MarketInfo)) public borrower_market_data; // maps address + loan id => market information, called by lendingpool
     mapping(address => mapping(uint256 => bytes32)) public marketID_to_loan_data; // maps address + market id => loan id.
-    mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo; 
+    mapping(address => mapping(uint256=> LiquidityInfo)) lpinfo;
 
     address[] validators_array;
 
@@ -90,7 +90,6 @@ contract Controller is IController {
         address trader
         ) external {
         IReputationNFT(NFT_address).mint(msg.sender);
-
     }
 
     //Pool added when contract is deployed 
@@ -225,131 +224,5 @@ contract Controller is IController {
 
         return (required_net_shorts <= netShorts); 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-//deprecated 
-   
-    function initiateMarket(   
-        address borrower,
-        address ammFactoryAddress, 
-        address marketFactoryAddress, 
-        uint256 liquidityAmountUSD, 
-        string calldata description,  //Needs to be in format name + ":" + borrower description since it is called offchain
-        bytes32 loanID, 
-        string[] memory names, 
-        uint256[] memory odds
-        )external override onlyValidator{
-
-        //Market id is initially set 10000, will be modified later
-        MarketInfo memory marketInfo = MarketInfo(
-            ammFactoryAddress, marketFactoryAddress, liquidityAmountUSD, 10000, description, 
-            names, odds
-            ); 
-       
-        _initiateMarket(marketInfo, borrower, loanID ); 
-    }
-
-    function _initiateMarket(
-        MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
-        address recipient,
-        bytes32 loanID
-    ) public override {
-        
-
-        // STACK TOO DEEP
-        address ammFactoryAddress = marketData.ammFactoryAddress;
-        address marketFactoryAddress = marketData.marketFactoryAddress;
-        uint256 liquidityAmountUSD = marketData.liquidityAmountUSD;
-        string memory description = marketData.description;
-        string[] memory names = marketData.names;
-        uint256[] memory odds = marketData.odds;
-
-
-        AMMFactory amm = AMMFactory(ammFactoryAddress);
-        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
-
-        //TODO change create market modifier to including validators 
-        //TODO change settlement address to contract 
-        uint256 marketID = marketFactory.createMarket(msg.sender, description, names, odds);
-
-        marketData.marketID = marketID;
-
-        // Store marketID <=> loan
-        borrower_market_data[recipient][loanID] = marketData; // remember to delete to save storage
-
-        //Minting DS
-        lendingpool.controllerMintDS(liquidityAmountUSD); 
-        marketFactory.collateral().approve(address(masterchef), liquidityAmountUSD);
-
-        //Creating pool and adding minted DS as liquidity to the created market
-
-        masterchef.createPool(amm, marketFactory, marketID, liquidityAmountUSD, address(this));
-        
-        uint256 pooltokenamount = masterchef.getPoolTokenBalance(amm, marketFactory, marketID, address(this));
-       
-        LiquidityInfo memory info = LiquidityInfo({
-            lptokenamount: pooltokenamount, 
-            suppliedDS: liquidityAmountUSD
-            }); 
-
-        lpinfo[marketFactoryAddress][marketID] = info; 
-    }
-
-function resolveMarket(
-        address recipient,
-        bytes32 loanID,
-        bool isDefault
-    ) external override {
-        uint256 _collateralOut;
-        uint256[] memory _balances; 
-
-        MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
-
-        address ammFactoryAddress = marketInfo.ammFactoryAddress;
-        address marketFactoryAddress = marketInfo.marketFactoryAddress;
-        uint256 marketID = marketInfo.marketID;
-
-        AMMFactory amm = AMMFactory(ammFactoryAddress);
-        TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
-        uint256 lptokensIn = lpinfo[marketFactoryAddress][marketID].lptokenamount; 
-
-        uint256 winning_outcome = isDefault? 0: 1; 
-        marketFactory.trustedResolveMarket( marketID, winning_outcome); 
-        //require(marketFactory.isMarketResolved(marketID), "Market is not resolved"); 
-
-        (_collateralOut, _balances) = masterchef.removeLiquidity(amm, 
-                                    marketFactory,
-                                    marketID, lptokensIn, 0, address(this)
-                                     );
-
-        uint256 initialSuppliedDS = lpinfo[marketFactoryAddress][marketID].suppliedDS; 
-
-        if (isDefault){
-            require(_collateralOut > initialSuppliedDS, "Payout not sufficient"); 
-        }
-
-        //Whether initial supplied DS is greater or less than payout, they need to be all burned
-        //if greater, IL loss is transferred to shortCDS buyers, 
-        //if less, then short cds buyer's collateral is used as payout
-        lendingpool.controllerBurnDS(_collateralOut); 
-
-
-        console.log(initialSuppliedDS, _collateralOut); 
-
-        delete borrower_market_data[recipient][loanID];
-
-    }
 }
-
 

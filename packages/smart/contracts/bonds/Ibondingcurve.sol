@@ -3,13 +3,8 @@ pragma solidity ^0.8.4;
 
 interface IBondingCurve{
 
-	function buy(
-		address marketFactoryAddress, 
-		address to,
-		uint256 amountIn, 
-		uint256 marketId) external returns(uint256);
- 	function sell(
-		address marketFactoryAddress, 
+	function buy(address marketFactoryAddress, address to, uint256 amountIn, uint256 marketId) external returns(uint256);
+ 	function sell(address marketFactoryAddress, 
 		address from, 
 		uint256 zcb_amountIn, 
 		uint256 marketId) external returns(uint256);
@@ -25,8 +20,6 @@ interface IBondingCurve{
     function getCollateral() external view returns(address); 
     function curve_init(uint256 marketId) external; 
     function addManager(address _manager_address) external ; 
-
-
 	function getBondFunds(uint256 marketId) external view returns(uint256);
 	function getTotalPurchased(uint256 marketId) external view returns(uint256);
 
