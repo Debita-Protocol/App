@@ -4,7 +4,7 @@ import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import "./IMarketManager.sol";
-import "./IReputationNFT.sol";
+import {ReputationNFT} from "./reputationtoken.sol";
 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
@@ -88,8 +88,8 @@ contract Controller is IController {
     function mintRepNFT(
         address NFT_address,
         address trader
-        ) external {
-        IReputationNFT(NFT_address).mint(msg.sender);
+        ) external override {
+        ReputationNFT(NFT_address).mint(msg.sender);
     }
 
     //Pool added when contract is deployed 
@@ -120,7 +120,7 @@ contract Controller is IController {
         bytes32 loanID, 
         address bonding_curve_address, 
         address market_manager_address
-    ) public  {
+    ) public override {
   
 
         AMMFactory amm = AMMFactory(marketData.ammFactoryAddress);
@@ -155,7 +155,7 @@ contract Controller is IController {
         uint256 extra_gain, 
         uint256 principal_loss, 
         address market_manager_address
-    ) external  {
+    ) external override {
 
         MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
 
@@ -167,7 +167,7 @@ contract Controller is IController {
 
         market_manager.update_redemption_price(marketID, atLoss,extra_gain, principal_loss); 
         market_manager.handle_maturity(marketID, atLoss, principal_loss); 
-        market_manager.deactivateMarket(marketID); 
+        market_manager.deactivateMarket(marketID);
 
         uint256 winning_outcome = 0; //TODO  
         marketFactory.trustedResolveMarket( marketID, winning_outcome); 
@@ -186,6 +186,7 @@ contract Controller is IController {
         address market_manager_address
         ) 
         external 
+        override
         onlyValidator
     {
         MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
@@ -199,7 +200,7 @@ contract Controller is IController {
 
     }
 
-    function approveLoan(address recipient, bytes32 id, address marketFactory) external onlyValidator{
+    function approveLoan(address recipient, bytes32 id, address marketFactory) external override onlyValidator{
         lendingpool.approveLoan(recipient, id, marketFactory); 
     }
 

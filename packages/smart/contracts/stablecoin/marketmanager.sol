@@ -6,6 +6,7 @@ import "./reputationtoken.sol";
 import "../bonds/Ibondingcurve.sol"; 
 import "./IMarketManager.sol";
 import "hardhat/console.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 
 
@@ -26,21 +27,20 @@ contract MarketManager is IMarketManager, Owned {
         _;
     }
 
-	
 	ReputationNFT rep;
 
-    uint256 private constant MAX_UINT = 2**256 - 1;
     uint256 private constant PRICE_PRECISION = 1e6; 
 
     address bondingCurveAddress; 
-    address controller_address; 
-
+    address controller_address;
 
     mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
     mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
 	mapping(uint256=> MarketRestrictionData) restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
+	mapping(uint256 => address[]) private marketTraders; // marketId => ppl who currently are holding ZCB
+	mapping(uint256 => mapping(address => uint256)) private bondsPerTrader; // marketId => trader => total bonds bought.
 
 	struct CDP{
 		mapping(address=>address) collateral_address; 
@@ -54,9 +54,9 @@ contract MarketManager is IMarketManager, Owned {
 		bool duringMarketAssessment;
 		bool onlyReputable; 
 		bool marketDenied; 
-
 		uint256 min_rep_score; 
 		uint256 buy_threshold; //buy threshold is determined after the risk assessment phase when validator approves
+		uint256 threshold_quantity;
 	}
 
 
@@ -68,7 +68,6 @@ contract MarketManager is IMarketManager, Owned {
 		rep = ReputationNFT(reputationNFTaddress);
 		bondingCurveAddress = _bondingCurveAddress; 
 		controller_address = _controllerAddress;
-
 	}
 
 
@@ -82,7 +81,7 @@ contract MarketManager is IMarketManager, Owned {
 	override 
 	onlyController
 	{
-		IBondingCurve(bondingCurveAddress).curve_init(marketId);
+		IBondingCurve(bondingCurveAddress).curveInit(marketId);
 		CDP storage cdp = debt_pools[marketId];
 		cdp.total_debt = 0; 
 		cdp.total_collateral = 0; 
@@ -135,7 +134,8 @@ contract MarketManager is IMarketManager, Owned {
 			_onlyReputable,
 			false,
 			min_rep_score, 
-			MAX_UINT
+			type(uint256).max,
+			type(uint256).max
 			); 
 	}
 
@@ -159,7 +159,7 @@ contract MarketManager is IMarketManager, Owned {
 
 
 	function isReputable(address trader, uint256 marketId) internal view returns(bool){
-		return (restriction_data[marketId].min_rep_score<=rep.get_reputation(trader) || trader == owner); 
+		return (restriction_data[marketId].min_rep_score<=rep.getReputationScore(trader) || trader == owner); 
 	}
 
 	/*
@@ -207,14 +207,14 @@ contract MarketManager is IMarketManager, Owned {
   		//During the early risk assessment phase only reputable can buy 
 		if (_onlyReputable){
 			require(_duringMarketAssessment, "Market needs to be in assessment phase"); 
-			require(isReputable(trader, marketId)); //TODO should also include verification here.
+			require(isReputable(trader, marketId));
 		}
 
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
 		if (!_duringMarketAssessment){
 			//Buy threshold price needs to be set after assessment phase
 			uint256 _buy_threshold = restriction_data[marketId].buy_threshold;
-			uint256 price_after_trade = IBondingCurve(bondingCurveAddress).getExpectedPriceAfterTrade(
+			uint256 price_after_trade = IBondingCurve(bondingCurveAddress).getExpectedPrice(
 				marketId, 
 				amount); 
 
@@ -310,7 +310,7 @@ contract MarketManager is IMarketManager, Owned {
 		if (duringMarketAssessment(_marketId)){
 			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn);
 		}
-		
+
 		return amountOut; 
 	}
 
@@ -362,8 +362,6 @@ contract MarketManager is IMarketManager, Owned {
 		collateral_pot[_marketId] += _collateralIn; //Total ds collateral 
 
 		IBondingCurve(bondingCurveAddress).mint(_marketId, requested_zcb, trader); 
-
-
 	}
 
 	/*
@@ -386,13 +384,16 @@ contract MarketManager is IMarketManager, Owned {
 		cdp.total_collateral -= _collateralOut; 
 		collateral_pot[_marketId] -= _collateralOut; 
 
-		SafeERC20.safeTransfer(IERC20(collateral_address), trader, _collateralOut); 
-
+		SafeERC20.safeTransfer(IERC20(collateral_address), trader, _collateralOut);
 	}
 
 
 
 	/*Maturity Functions */
+
+	function update_reputation_scores() external onlyController {
+		
+	}
 
 	function get_redemption_price(uint256 marketId) public view returns(uint256){
 		return redemption_prices[marketId]; 
@@ -420,8 +421,8 @@ contract MarketManager is IMarketManager, Owned {
 
 		if (atLoss){
 			//require(principal_loss >0 && extra_gain==0, "loss err");
-			uint256 total_bought_collateral = bondingcuve.getBondFunds(marketId);
-			uint256 total_bought_bonds = bondingcuve.getTotalPurchased(marketId);
+			uint256 total_bought_collateral = bondingcuve.getTotalDS(marketId);
+			uint256 total_bought_bonds = bondingcuve.getTotalZCB(marketId);
 			console.log('totals', total_bought_collateral,total_bought_bonds ); 
 			if (total_bought_collateral - principal_loss > 0){
 				redemption_prices[marketId] = (total_bought_collateral-principal_loss)*PRICE_PRECISION/total_bought_bonds; 
@@ -458,20 +459,20 @@ contract MarketManager is IMarketManager, Owned {
 		IBondingCurve bondingcurve = IBondingCurve(bondingCurveAddress); 
 		uint256 redemption_price = get_redemption_price(marketId); 
 		require(redemption_price > 0, "Need to set redemption price"); // what if redemption price is set to zero?
-		uint256 total_bought_bonds = bondingcurve.getTotalPurchased(marketId);
-		uint256 total_bought_collateral = bondingcurve.getBondFunds(marketId);
+		uint256 total_bought_bonds = bondingcurve.getTotalZCB(marketId);
+		uint256 total_bought_collateral = bondingcurve.getTotalDS(marketId);
 
-	if (atLoss){
+		if (atLoss){
 
-		uint256 burnamount = total_bought_collateral - ((redemption_price * total_bought_bonds)/PRICE_PRECISION);
-		console.log('burnamounts', burnamount);
+			uint256 burnamount = total_bought_collateral - ((redemption_price * total_bought_bonds)/PRICE_PRECISION);
+			console.log('burnamounts', burnamount);
 
-		if(principal_loss >0){
-			require(burnamount>0,"burn amount err"); 
-			bondingcurve.burn_first_loss( marketId, burnamount); 
+			if(principal_loss >0){
+				require(burnamount>0,"burn amount err"); 
+				bondingcurve.burn_first_loss( marketId, burnamount); 
+			}
+		
 		}
-	
-	}
 
 	}
 
@@ -482,7 +483,8 @@ contract MarketManager is IMarketManager, Owned {
 		uint256 marketId,
 	 	address marketFactory,
 	 	address receiver, 
-	 	uint256 zcb_redeem_amount) public returns(uint256){
+	 	uint256 zcb_redeem_amount
+	) public returns(uint256){
 		//require(AbstractMarketFactoryV3(marketFactory).isMarketResolved(marketId), "Market not resolved"); 
 
 		uint256 redemption_price = get_redemption_price(marketId); 
