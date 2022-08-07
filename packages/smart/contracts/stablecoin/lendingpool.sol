@@ -259,7 +259,7 @@ contract LendingPool is ILendingPool, Owned {
             })
         );
 
-        controller._initiateMarket(market_info, msg.sender, _id);
+        //controller.initiateMarket_(market_info, msg.sender, _id);
 
         emit LoanProposal(msg.sender, _id);
     }
@@ -300,7 +300,7 @@ contract LendingPool is ILendingPool, Owned {
             })
         );
 
-        controller._initiateMarket(market_info, msg.sender, _id);
+        //controller._initiateMarket(market_info, msg.sender, _id);
 
         emit LoanProposal(msg.sender, _id);
     }
@@ -341,7 +341,7 @@ contract LendingPool is ILendingPool, Owned {
             if (id == current_loan_data[recipient][i].id) {
                 require(!current_loan_data[recipient][i].approved, "loan already approved");
 
-                require(controller.canBeApproved(recipient, id, marketFactoryAddress), "not market approved");
+                //require(controller.canBeApproved(recipient, id, marketFactoryAddress), "not market approved");
 
                 LoanMetadata storage loan = current_loan_data[recipient][i];
 
@@ -560,7 +560,7 @@ contract LendingPool is ILendingPool, Owned {
         LoanMetadata storage loan = current_loan_data[borrower][i];
         if (loan.amountBorrowed > 0 || loan.interestPaid < loan.totalInterest) {
             if (block.timestamp > loan.repaymentDate) {
-                controller.resolveMarket(borrower, loan.id, true);
+                //controller.resolveMarket(borrower, loan.id, true);
 
                 emit Default(borrower, loan);
 
@@ -570,7 +570,7 @@ contract LendingPool is ILendingPool, Owned {
                 _removeLoan(borrower, i);
             }
         } else {
-            controller.resolveMarket(borrower, loan.id, false);
+            // controller.resolveMarket(borrower, loan.id, false);
             emit FullRepayment(borrower, loan);
             // resolve market
             num_loans[borrower]--;

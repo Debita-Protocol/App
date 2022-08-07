@@ -1,64 +1,63 @@
 pragma solidity ^0.8.4; 
 //https://github.com/poap-xyz/poap-contracts/tree/master/contracts
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import "./IController.sol";
-import "./IReputationNFT.sol";
+import {ERC721} from "solmate/src/tokens/ERC721.sol";
+import {Controller} from "./controller.sol";
+import {IReputationNFT} from "./IReputationNFT.sol";
 
 
-contract ReputationNFT is IReputationNFT, ERC721, ReentrancyGuard{
-    modifier onlyController(){
-        require(address(controller) == msg.sender, "is not controller"); 
-        _;
-    }
-
-
-    IController controller; 
-  	mapping(uint256=>address) idToOwner; 
-  	mapping(address=>uint256) OwnerToId;
-  	mapping(uint256=>uint256) private reputation; 
- 	  uint256 public totalNumMints;
-    uint256 total_score; 
-
-  constructor(address controller_address) ERC721("ReputationNFT", "REPU"){
-  		controller = IController(controller_address); 
-  	}	
-
-
-  function _transfer(address from, address to, uint256 tokenId) internal virtual override{
-  		revert("Can't Transfer");
-  	}
-	
- 
-  function mint(address recipient) 
-    external 
-    override 
-    onlyController 
-    {
-  		uint256 id = ++totalNumMints; 
-  		_safeMint(recipient, id); 
-  	}
-
-  	//Called by controller when market resolves 
-  function add_reputation(address recipient, uint256 score) 
-    external 
-    override 
-    onlyController 
-    {
-    	uint256 id = OwnerToId[recipient];
-      reputation[id] = reputation[id] + score; 
-      total_score = total_score + score; 
-	 }
-
-	function get_reputation(address recipient) public view override returns(uint256){
-		return reputation[OwnerToId[recipient]];
-	}
-
-  function get_total_score() public view override returns(uint256){
-    return total_score; 
+contract ReputationNFT is IReputationNFT, ERC721 {
+  mapping(uint256 => ReputationData) internal _reputation;
+  mapping(address => uint256) internal _ownerToId;
+  uint256 private nonce = 1;
+  Controller controller;
+  struct ReputationData {
+    uint256 n; // number of markets participated in.
+    uint256 score; // averaged reputation score
   }
 
+  modifier onlyController() {
+    require(msg.sender == address(controller));
+    _;
+  }
 
+  constructor (
+    Controller _controller
+  ) ERC721("Debita Reputation Token", "DRT") {
+    controller = _controller;
+  }
+
+  function _baseURI() internal pure returns (string memory baseURI) {
+    baseURI = "";
+  }
+
+  function tokenURI(uint256 id) public view override returns (string memory) {
+    require(_ownerOf[id] != address(0), "Invalid Identifier");
+
+    string memory baseURI = _baseURI();
+    return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, id)) : "";
+  }
+
+  function mint(address to) external {
+    super._mint(to, nonce);
+    _ownerToId[to] = nonce;
+    nonce++;
+  }
+
+  function getReputationScore(address owner) view external returns (ReputationData memory){
+    require(_ownerToId[owner] != uint256(0), "No Id found");
+    return _reputation[_ownerToId[owner]];
+  }
+
+  function addScore(address to, uint256 score) external {
+    require(_ownerToId[to] != uint256(0), "No Id found");
+
+    ReputationData storage data = _reputation[_ownerToId[to]];
+    
+    if (data.n == 0) {
+      data.score = score;
+    } else {
+      data.score = ((data.score / data.n) + score) / (data.n + 1);
+    }
+    data.n++;
+  }
 }

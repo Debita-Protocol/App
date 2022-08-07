@@ -7,15 +7,18 @@ import "../bonds/Ibondingcurve.sol";
 
 
 interface IMarketManager {
-
+	/**
+	@dev initializes bonding curve for given market.
+	 */
 	function initiate_bonding_curve(uint256 marketId) 
 		external;
+
 
 	function setMarketRestrictionData(	
 		bool _duringMarketAssessment,
 		bool _onlyReputable,  
 		uint256 marketId,
-		 uint256 min_rep_score)
+		uint256 min_rep_score)
 		external; 
 
  	function deactivateMarket(uint256 marketId) external; 
@@ -78,9 +81,6 @@ interface IMarketManager {
 		uint256 _marketId, 
 		uint256 repaying_zcb, 
 		address trader
-		) external; 
-
-
-
+		) external;
 }
 
