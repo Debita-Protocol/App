@@ -21,11 +21,11 @@ contract OwnedERC20 is ERC20, Ownable {
         _transfer(_from, _to, _amount);
     }
 
-    function trustedMint(address _target, uint256 _amount) external onlyOwner {
+    function trustedMint(address _target, uint256 _amount) external virtual onlyOwner {
         _mint(_target, _amount);
     }
 
-    function trustedBurn(address _target, uint256 _amount) external onlyOwner {
+    function trustedBurn(address _target, uint256 _amount) external virtual onlyOwner {
         _burn(_target, _amount);
     }
 

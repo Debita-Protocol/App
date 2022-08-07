@@ -21,7 +21,7 @@ contract BondingCurve is Owned, IBondingCurve{
         _;
     }
 
-    address public collateral_address; 
+    address public collateral_address;
     address market_manager;
 
     OwnedERC20 testZCB;
@@ -43,9 +43,7 @@ contract BondingCurve is Owned, IBondingCurve{
     	uint256 amountIn
     	); 
 
-	/*///////////////////////////////////////////////////////////////
-                        CONSTRUCTOR + SETUP
-    //////////////////////////////////////////////////////////////*/
+	/*----Constructor + Setup Functions----*/
     constructor(
     	address _collateral_address, 
     	address _mathlib_address, 
@@ -65,9 +63,7 @@ contract BondingCurve is Owned, IBondingCurve{
     	market_manager = _market_manager; 
     }
 
-	/*///////////////////////////////////////////////////////////////
-							GETTERS
-    //////////////////////////////////////////////////////////////*/
+	/*----Getters----*/
 
 	/// @dev Returns ZCB Token for the specific market 
 	function getZCB(uint256 marketId) internal view returns(OwnedERC20){
@@ -101,9 +97,7 @@ contract BondingCurve is Owned, IBondingCurve{
 	}
 
 
-	/*///////////////////////////////////////////////////////////////
-                            CURVE LOGIC
-    //////////////////////////////////////////////////////////////*/
+	/*----Curve Logic----*/
 
 	/**
 	 @notice initializes curve data
@@ -189,12 +183,11 @@ contract BondingCurve is Owned, IBondingCurve{
 		SafeERC20.safeTransfer(IERC20(collateral_address), receiver, collateral_redeem_amount); 
 	}
 
-	function redeem_post_assessment(
+	function redeemPostAssessment(
 		uint256 marketId, 
 		address redeemer,
 		uint256 collateral_amount
 	) external override onlyManager{
-
 		OwnedERC20 zcb = getZCB(marketId); 
 		uint256 redeem_amount = zcb.balanceOf(redeemer); 
 		zcb.trustedBurn(redeemer, redeem_amount); 
@@ -205,7 +198,7 @@ contract BondingCurve is Owned, IBondingCurve{
 	Burn the collateral used to buy ZCB when there is a default 
 	TODO include burning function from DS
 	*/
-	function burn_first_loss(
+	function burnFirstLoss(
 		uint256 marketId, 
 		uint256 burn_collateral_amount
 		) external override onlyManager{

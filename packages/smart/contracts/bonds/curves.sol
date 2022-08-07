@@ -2,114 +2,124 @@ pragma solidity ^0.8.4;
 import "./curvetypes.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
-library LinearCurve {
+library ConstantCurve {
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
-
-    uint256 constant MAX_QUANTITY =  uint256(100)*(10**18);
 
     /**
      @notice returns amount ZCB out.
      @param ds: amount DS in => 60.18-decimal.
      @dev doesn't check whether self.a is 0.
      */
-    function calculateZCBOut(CurveTypes.Linear storage self, uint256 ds) public returns (uint256 result) {
+    function caluclatePurchaseReturn(CurveTypes.Constant storage self, uint256 ds) public returns (uint256 result) {
         result = ds.div(self.a);
-        self.x_i += result;
-        self.y_i += ds;
+        self.reserve += ds;
+        self.supply += result;
     }
 
     /**
      @notice returns amount DS out.
      @param zcb: amount ZCB selling => 60.18-decimal.
      */
-    function calculateDSOut(CurveTypes.Linear storage self, uint256 zcb) public returns (uint256 result) {
-        result = uint256(self.a).mul(zcb);
-        self.x_i -= zcb;
-        self.y_i -= result; 
+    function calculateSaleReturn(CurveTypes.Constant storage self, uint256 zcb) public returns (uint256 result) {
+        result = zcb.mul(self.a);
+        self.reserve -= result;
+        self.supply -= zcb;
+    }
+
+    function priceToMint(CurveTypes.Constant storage self, uint256 zcb) view public returns (uint256 result) {
+        result = zcb.mul(self.a);
     }
 
     /**
-     @notice calculates price with zcb bond tokens bought.
+     @notice gets current price in DS
      */
-    function calcPrice(CurveTypes.Linear storage self) view public returns (uint256 result) {
+    function getPrice(CurveTypes.Constant storage self) view public returns (uint256 result) {
         result = self.a;
     }
 
-    function calcProjectedPrice(CurveTypes.Linear storage self) view public returns (uint256 result) {
+
+    function getProjectedPrice(CurveTypes.Constant storage self, uint256 ds) view public returns (uint256 result) {
         result = self.a;
     }
 
     /**
      @notice returns max quantity
      */
-    function calculateMaxQuantity(CurveTypes.Linear storage self) pure public returns (uint256) {
-        return MAX_QUANTITY;
-    }
-
-    //TODO need to implement
-    function sellingFee(CurveTypes.Linear storage self) pure public returns (uint256) {
+    function calculateMaxQuantity(CurveTypes.Constant storage self) pure public returns (uint256) {
         return 0;
     }
 
-    function getZCB(CurveTypes.Linear storage self) view public returns (uint256) {
-        return self.x_i;
+    //TODO need to implement
+    function sellingFee(CurveTypes.Constant storage self) pure public returns (uint256) {
+        return 0;
     }
 
-    function getDS(CurveTypes.Linear storage self) view public returns (uint256) {
-        return self.y_i;
+    function getSupply(CurveTypes.Constant storage self) view public returns (uint256) {
+        return self.supply;
+    }
+
+    function getReserves(CurveTypes.Constant storage self) view public returns (uint256) {
+        return self.reserve;
     }
 }
 
-library QuadraticCurve {
-
-    // ASSUMES 18 TRAILING DECIMALS IN UINT256
-    using PRBMathUD60x18 for uint256;
-
-    /**
+library LinearCurve {
+     /**
      @notice returns amount ZCB out.
-     @param ds: amount DS in
-     */
-    function calculateZCBOut(CurveTypes.Quadratic storage self, uint256 ds) public returns (uint256 result) {
-        result = (( self.y_i + ds - self.b ).div(self.a)).sqrt() - self.x_i;
-        self.y_i += ds;
-        self.x_i += result;
-    }
-
-    /**
-     @notice returns amount DS out.
-     @param zcb: amount ZCB selling
-     */
-    function calculateDSOut(CurveTypes.Quadratic storage self, uint256 zcb) public returns (uint256 result) {
-        result = self.y_i - ( uint256(self.x_i - zcb).sqrt().mul(self.a) + self.b );
-        self.y_i -= result;
-        self.x_i -= zcb;
-    }
-}
-
-library SigmoidCurve {
-    // ASSUMES 18 TRAILING DECIMALS IN UINT256
-    using PRBMathUD60x18 for uint256;
-
-    /**
-     @notice returns amount ZCB out
      @param ds: amount DS in => 60.18-decimal.
-     @dev zcb out = a * ln(((yi + ds) * b)/(1-(yi + ds))) - xi
+     @dev doesn't check whether self.a is 0.
      */
-    function calculateZCBOut(CurveTypes.Sigmoid storage self, uint256 ds) public returns (uint256 result) {
-        result = ((self.y_i + ds).mul(self.b).div(1 - (self.y_i + ds))).ln().mul(self.a) - self.x_i;
-        self.y_i += ds;
-        self.x_i += result;
+    function caluclatePurchaseReturn(CurveTypes.Constant storage self, uint256 ds) public returns (uint256 result) {
+        result = 
+        self.reserve += ds;
+        self.supply += result;
     }
 
     /**
      @notice returns amount DS out.
-     @param zcb: amount ZCB selling
-     @dev ds out = yi - exp((xi - zcb)/a)/(b+exp((xi - zcb)/a))
+     @param zcb: amount ZCB selling => 60.18-decimal.
      */
-    function calculateDSOut(CurveTypes.Sigmoid storage self, uint256 zcb) public returns (uint256 result) {
-        result = self.y_i - (self.x_i - zcb).div(self.a).exp().div(self.b + (self.x_i - zcb).div(self.a).exp());
-        self.y_i -= result;
-        self.x_i -= zcb;
+    function calculateSaleReturn(CurveTypes.Constant storage self, uint256 zcb) public returns (uint256 result) {
+        result = zcb.mul(self.a);
+        self.reserve -= result;
+        self.supply -= zcb;
     }
+
+    function priceToMint(CurveTypes.Constant storage self, uint256 zcb) view public returns (uint256 result) {
+        result = zcb.mul(self.a);
+    }
+
+    /**
+     @notice gets current price in DS
+     */
+    function getPrice(CurveTypes.Constant storage self) view public returns (uint256 result) {
+        result = self.a;
+    }
+
+
+    function getProjectedPrice(CurveTypes.Constant storage self, uint256 ds) view public returns (uint256 result) {
+        result = self.a;
+    }
+
+    /**
+     @notice returns max quantity
+     */
+    function calculateMaxQuantity(CurveTypes.Constant storage self) pure public returns (uint256) {
+        return 0;
+    }
+
+    //TODO need to implement
+    function sellingFee(CurveTypes.Constant storage self) pure public returns (uint256) {
+        return 0;
+    }
+
+    function getSupply(CurveTypes.Constant storage self) view public returns (uint256) {
+        return self.supply;
+    }
+
+    function getReserves(CurveTypes.Constant storage self) view public returns (uint256) {
+        return self.reserve;
+    }
+
 }

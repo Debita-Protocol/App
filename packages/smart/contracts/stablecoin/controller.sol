@@ -139,8 +139,6 @@ contract Controller is IController {
         market_manager.initiate_bonding_curve(marketId); 
         market_manager.setMarketRestrictionData(
             true,true, marketId, 0);
-            
-    
     }    
 
 
@@ -165,7 +163,7 @@ contract Controller is IController {
         IMarketManager market_manager = IMarketManager(market_manager_address);
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
 
-        market_manager.update_redemption_price(marketID, atLoss,extra_gain, principal_loss); 
+        market_manager.update_redemption_price(marketID, atLoss, extra_gain, principal_loss); 
         market_manager.handle_maturity(marketID, atLoss, principal_loss); 
         market_manager.deactivateMarket(marketID);
 

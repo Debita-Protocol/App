@@ -7,7 +7,7 @@ interface IBondingCurve{
 	function getTotalDS(uint256 marketId) external returns (uint256 result);
 	function getMaxQuantity(uint256 marketId) external view returns (uint256 result);
 	function curveInit(uint256 marketId) external;
-	function getExpectedPrice(uint256 marketId, uint256 amountIn) external returns (uint256 result);
+	function getExpectedPrice(uint256 marketId, uint256 amountIn) external view returns (uint256 result);
 	function getCollateral() external returns (address);
 	function buy(
 		address marketFactoryAddress, 
@@ -27,12 +27,12 @@ interface IBondingCurve{
 		uint256 zcb_redeem_amount, 
 		uint256 collateral_redeem_amount
 	) external;
-	function redeem_post_assessment(
+	function redeemPostAssessment(
 		uint256 marketId, 
 		address redeemer,
 		uint256 collateral_amount
 	) external;
-	function burn_first_loss(
+	function burnFirstLoss(
 		uint256 marketId, 
 		uint256 burn_collateral_amount
 	) external;
