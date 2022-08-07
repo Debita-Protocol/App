@@ -62,8 +62,8 @@ contract Controller is IController {
         address _LendingPool_address, 
         address _DS_address,
         address _interep_address
-    )   
-    {   // _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    ) {   
+        // _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         // DEFAULT_ADMIN_ADDRESS = _msgSender();
         // _grantRole(DEFAULT_ADMIN_ROLE, _creator_address);
         creator_address = _creator_address;
@@ -114,31 +114,27 @@ contract Controller is IController {
 
    
 
- function initiateMarket_(
+    function initiateMarket(
         MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
         address recipient,
-        bytes32 loanID, 
-        address bonding_curve_address, 
+        bytes32 loanID,
         address market_manager_address
     ) public override {
-  
-
-        AMMFactory amm = AMMFactory(marketData.ammFactoryAddress);
+        // AMMFactory amm = AMMFactory(marketData.ammFactoryAddress); // do we need this?
         IMarketManager market_manager = IMarketManager(market_manager_address);
         TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketData.marketFactoryAddress);
         uint256 marketId = marketFactory.createZCBMarket(
-                    msg.sender,
-                    marketData.description, 
-                    marketData.names[0], 
-                    marketData.odds,
-                    bonding_curve_address);
+            msg.sender,
+            marketData.description, 
+            marketData.names[0],
+            marketData.odds
+        );
 
         marketData.marketID = marketId; 
         borrower_market_data[recipient][loanID] = marketData; 
 
         market_manager.initiate_bonding_curve(marketId); 
-        market_manager.setMarketRestrictionData(
-            true,true, marketId, 0);
+        market_manager.setMarketRestrictionData(true,true, marketId, 0);
     }    
 
 
@@ -146,7 +142,7 @@ contract Controller is IController {
     @Param atLoss: when actual returns lower than expected 
     @Param principal_loss: if total returned less than principal, principal-total returned
     */
-    function resolveMarket_(
+    function resolveMarket(
         address recipient,
         bytes32 loanID,
         bool atLoss,
@@ -182,10 +178,7 @@ contract Controller is IController {
         bytes32 loanID,
         uint256 marketId, 
         address market_manager_address
-        ) 
-        external 
-        override
-        onlyValidator
+    ) external override onlyValidator
     {
         MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
 

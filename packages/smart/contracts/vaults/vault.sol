@@ -146,9 +146,6 @@ contract Vault is ERC4626, Auth{
         return UNDERLYING.balanceOf(address(this));
     }
 
-
-
-
     /// @notice add instrument proposal created by the Utilizer 
     /// @param marketId global index for Utilizer
     /// @dev Instrument instance should be created before this is called 

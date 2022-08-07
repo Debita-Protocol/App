@@ -1,11 +1,11 @@
 pragma solidity ^0.8.4;
 
-import {BondingCurve2} from "./BondingCurve2.sol";
+import {BondingCurve} from "./BondingCurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice y = exp(x/a) / ( b + exp(x/a) )
 /// @dev NEED TO REDO FOR GAS EFFICIENT
-contract SigmoidBonding is BondingCurve2 {
+contract SigmoidBonding is BondingCurve {
 
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
@@ -20,8 +20,8 @@ contract SigmoidBonding is BondingCurve2 {
         address collateral,
         uint256 _a,
         uint256 _n
-    ) BondingCurve2(name, symbol, owner, collateral) {
-        
+    ) BondingCurve(name, symbol, owner, collateral) {
+
     }
 
     /**

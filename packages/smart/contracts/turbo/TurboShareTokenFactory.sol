@@ -4,6 +4,7 @@ pragma solidity ^0.8.4;
 import "./OwnedShareToken.sol";
 
 
+
 abstract contract ZCBFactory {
     function createZCB(string memory _name, address _owner) internal returns(OwnedERC20[] memory){
         uint256 _numOutcomes = 1; 
@@ -14,7 +15,6 @@ abstract contract ZCBFactory {
         }
         return _tokens; 
     }
-
 }
 
 

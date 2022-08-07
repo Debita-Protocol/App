@@ -24,7 +24,7 @@ import type { MarketInfo } from "@augurproject/comps/build/types";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
-const { newFunction, createMarket,endMarket, estimateAddLiquidityPool,mintCompleteSets_,
+const { newFunction, createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
 createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals,
 doBulkTrade} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;

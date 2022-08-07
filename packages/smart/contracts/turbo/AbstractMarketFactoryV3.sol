@@ -6,6 +6,7 @@ import "../balancer/BPool.sol";
 import "./TurboShareTokenFactory.sol";
 import "./FeePot.sol";
 import "../libraries/Rewardable.sol";
+import { LinearBondingCurve } from "../bonds/LinearBondingCurve.sol";
 
 abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory, Ownable, Rewardable {
     using SafeMath for uint256;
@@ -60,20 +61,6 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
         uint256[] initialOdds;
         bool active; // false if not ready to use or if resolved
     }
-
-    // struct ZCBMarket {
-    //     address settlementAddress;
-    //     OwnedERC20 zcb;
-    //     OwnedERC20 winner;
-    //     uint256 winnerIndex;
-    //     uint256 settlementFee;
-    //     uint256 protocolFee;
-    //     uint256 stakerFee;
-    //     uint256 creationTimestamp;
-    //     uint256 resolutionTimestamp; // when winner is declared
-    //     uint256[] initialOdds;
-    //     bool active; // false if not ready to use or if resolved
-    // }
 
     Market[] internal markets;
     // ZCBMarket[] internal zcbmarkets; 
@@ -373,33 +360,23 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
 
     function onTransferOwnership(address, address) internal override {}
 
-
-
-
-
-
-
-
-
-    // //ZCB bonding curve markets
-    // function makeEmptyZCBMarket() private pure returns (Market memory) {
-    //     uint256[] memory _initialOdds = new uint256[](0);
-    //     return Market(address(0), OwnedERC20(address(0)), OwnedERC20(address(0)), 0, 0, 0, 0, 0, 0, _initialOdds, false);
-    // }
-
+    /**
+     @notice 
+     */
     function startZCBMarket(
         address _settlementAddress,
         string memory _name,
         uint256[] memory _initialOdds,
-        bool _active,
-        address bondingcurveAddress
+        bool _active
     ) internal returns (uint256 _marketId){
 
         _marketId = markets.length;
+        LinearBondingCurve[] memory zcb;
+        zcb[0] = new LinearBondingCurve()
         markets.push(
             Market(
                 _settlementAddress,
-                createZCB(_name, bondingcurveAddress),
+                zcb,
                 OwnedERC20(address(0)),
                 0,
                 settlementFee,

@@ -96,7 +96,7 @@ contract MarketManager is IMarketManager, Owned {
 		bool _duringMarketAssessment,
 		bool _onlyReputable
 	) external override onlyController {
-		MarketRestrictionData storage data = restriction_data[marketId]; 
+		MarketPhaseData storage data = restriction_data[marketId]; 
 		data.onlyReputable = _onlyReputable; 
 		data.duringMarketAssessment = _duringMarketAssessment; 
 	}
@@ -228,7 +228,7 @@ contract MarketManager is IMarketManager, Owned {
 		address marketFactoryAddress, 
 		uint256 amount, 
 		uint256 marketId
-		) internal view returns(bool){
+	) internal view returns(bool) {
 		require(marketActive(marketId), "Market Not Active"); 
 		bool _duringMarketAssessment = duringMarketAssessment( marketId);
 		if (_duringMarketAssessment){

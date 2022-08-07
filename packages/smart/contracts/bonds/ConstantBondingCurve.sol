@@ -1,11 +1,11 @@
 pragma solidity ^0.8.4;
 
-import { BondingCurve2 } from "./BondingCurve2.sol";
+import { BondingCurve } from "./BondingCurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice implements y = a. basic bonding curve 
 // EVERYTHING IS ASSUMED TO BE IN 60.18 FORMAT
-contract ConstantBondingCurve is BondingCurve2 {
+contract ConstantBondingCurve is BondingCurve {
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
 
@@ -19,7 +19,7 @@ contract ConstantBondingCurve is BondingCurve2 {
         address owner,
         address collateral,
         uint256 _a
-    ) BondingCurve2(name, symbol, owner, collateral) {
+    ) BondingCurve(name, symbol, owner, collateral) {
         a = _a;
     }
 

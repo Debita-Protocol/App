@@ -1,12 +1,12 @@
 pragma solidity ^0.8.4;
 
-import {BondingCurve2} from "./BondingCurve2.sol";
+import {BondingCurve} from "./BondingCurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice y = a * x^n => formulas from Bancor 
 /// https://drive.google.com/file/d/0B3HPNP-GDn7aRkVaV3dkVl9NS2M/view?resourcekey=0-mbIgrdd0B9H8dPNRaeB_TA
 /// @dev NEED TO REDO FOR GAS EFFICIENT
-contract PolynomialBonding is BondingCurve2 {
+contract PolynomialBonding is BondingCurve {
 
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
@@ -21,7 +21,7 @@ contract PolynomialBonding is BondingCurve2 {
         address collateral,
         uint256 _a,
         uint256 _n
-    ) BondingCurve2(name, symbol, owner, collateral) {
+    ) BondingCurve(name, symbol, owner, collateral) {
         a = _a;
         n = _n;
         uint256 one = uint256(1).fromUint();

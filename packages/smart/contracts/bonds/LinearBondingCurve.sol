@@ -1,11 +1,11 @@
 pragma solidity ^0.8.4;
 
-import {BondingCurve2} from "./BondingCurve2.sol";
+import {BondingCurve} from "./BondingCurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice y = a * x + b
 /// @dev NEED TO REDO FOR GAS EFFICIENT
-contract LinearBondingCurve is BondingCurve2 {
+contract LinearBondingCurve is BondingCurve {
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
     uint256 a;
@@ -18,13 +18,13 @@ contract LinearBondingCurve is BondingCurve2 {
         address collateral,
         uint256 _a,
         uint256 _b
-    ) BondingCurve2(name, symbol, owner, collateral) {
+    ) BondingCurve(name, symbol, owner, collateral) {
         a = _a;
         b = _b;
     }
 
     /**
-     @dev tokens returned = [((a*s + b)^2 + 2*a*p)^(1/2) - (a*s +b)] / a
+     @dev tokens returned = [((a*s + b)^2 + 2*a*p)^(1/2) - (a*s + b)] / a
      @param amount: amount collateral in => 60.18
      */
     function _calculatePurchaseReturn(uint256 amount) view internal override virtual returns(uint256 result) {
@@ -40,7 +40,7 @@ contract LinearBondingCurve is BondingCurve2 {
     function _calculateSaleReturn(uint256 amount) view internal override virtual returns (uint256 result) {
         uint256 s = totalSupply();
         uint256 two = uint256(2).fromUint();
-        result = reserves - ((a.div(two)).mul((s - amount).pow(two)) - b.mul(s - amount));
+        result = reserves - ((a.div(two)).mul((s - amount).pow(two)) + b.mul(s - amount));
     }
 
     /**
