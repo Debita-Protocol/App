@@ -3,16 +3,26 @@ pragma solidity ^0.8.4;
 import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
 import {IReputationNFT} from "./IReputationNFT.sol";
+import {BondingCurve} from "../bonds/BondingCurve.sol";
 
 
 contract ReputationNFT is IReputationNFT, ERC721 {
-  mapping(uint256 => ReputationData) internal _reputation;
+  mapping(uint256 => ReputationData) internal _reputation; // id to reputation
   mapping(address => uint256) internal _ownerToId;
+  mapping(uint256 => TraderData[]) internal _marketData; // **MarketId to Market's data needed for calculating brier score.
+
   uint256 private nonce = 1;
   Controller controller;
+
+
   struct ReputationData {
     uint256 n; // number of markets participated in.
     uint256 score; // averaged reputation score
+  }
+
+  struct TraderData { // for each market
+    address trader;
+    uint256 tokensBought;
   }
 
   modifier onlyController() {
@@ -21,9 +31,11 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   }
 
   constructor (
-    Controller _controller
+    address _controller,
+    address _bondingCurve
   ) ERC721("Debita Reputation Token", "DRT") {
-    controller = _controller;
+    controller = Controller(_controller);
+    bondingCurve = BondingCurve(_bondingCurve);
   }
 
   function _baseURI() internal pure returns (string memory baseURI) {
@@ -48,7 +60,22 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     return _reputation[_ownerToId[owner]];
   }
 
-  function addScore(address to, uint256 score) external {
+  /**
+   @dev doesn't check whether marketId is active or not
+   */
+  function addMarketScore(address trader, uint256 marketId) view external onlyController {
+    
+  }
+
+  /**
+   @notice called when market dies, resets all scores calculated from it
+   */
+
+  /**
+   @notice calculates average of scores added.
+   @dev score is calculated from 
+   */
+  function addScore(address to, uint256 score) internal {
     require(_ownerToId[to] != uint256(0), "No Id found");
 
     ReputationData storage data = _reputation[_ownerToId[to]];

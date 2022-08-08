@@ -50,4 +50,11 @@ contract LinearBondingCurve is BondingCurve {
         uint256 s = totalSupply();
         result = (s + amount).mul(a) + b;
     }
+
+    /**
+     @notice probability = a * x + b, 60.18
+     */
+    function _calculateProbability(uint256 amount) view internal override virtual returns (uint256 score) {
+        score = amount.mul(a) + b;
+    }
 }

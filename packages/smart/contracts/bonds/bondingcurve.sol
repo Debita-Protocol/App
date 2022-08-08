@@ -98,6 +98,13 @@ abstract contract BondingCurve is OwnedERC20 {
         reserves -= amount;
     }
 
+    /**
+     @notice used for calculating reputation score on resolved market.
+     */
+    function calculateProbability(uint256 amount) view public returns (uint256 score) {
+        return _calculateProbability(amount);
+    } 
+
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -118,4 +125,6 @@ abstract contract BondingCurve is OwnedERC20 {
     function _calculateSaleReturn(uint256 amount) view internal virtual returns (uint256 result);
 
     function _calculateExpectedPrice(uint256 amount) view internal virtual returns (uint256 result);
+
+    function _calculateProbability(uint256 amount) view internal virtual returns (uint256 score);
 }
