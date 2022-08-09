@@ -4,9 +4,12 @@ import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
 import {IReputationNFT} from "./IReputationNFT.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
+import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 
 contract ReputationNFT is IReputationNFT, ERC721 {
+  using PRBMathUD60x18 for uint256;
+
   mapping(uint256 => ReputationData) internal _reputation; // id to reputation
   mapping(address => uint256) internal _ownerToId;
   mapping(uint256 => TraderData[]) internal _marketData; // **MarketId to Market's data needed for calculating brier score.
@@ -16,8 +19,8 @@ contract ReputationNFT is IReputationNFT, ERC721 {
 
 
   struct ReputationData {
-    uint256 n; // number of markets participated in.
-    uint256 score; // averaged reputation score
+    uint256 n; // number of markets participated in. 60.18
+    uint256 score; // averaged reputation score 60.18
   }
 
   struct TraderData { // for each market
@@ -73,8 +76,9 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   /**
    @notice calculates average of scores added.
    @dev score is calculated from 
+   @param score should be 60.18 format
    */
-  function addScore(address to, uint256 score) internal {
+  function addScore(address to, uint256 score) external {
     require(_ownerToId[to] != uint256(0), "No Id found");
 
     ReputationData storage data = _reputation[_ownerToId[to]];
@@ -82,7 +86,8 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     if (data.n == 0) {
       data.score = score;
     } else {
-      data.score = ((data.score / data.n) + score) / (data.n + 1);
+      data.score = ( (data.score).div(data.n) + score ).div(data.n + uint256(1).fromUint());
+      //data.score = ((data.score / data.n) + score) / (data.n + 1);
     }
     data.n++;
   }

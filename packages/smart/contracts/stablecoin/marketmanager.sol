@@ -8,6 +8,7 @@ import {Controller} from "./controller.sol";
 import "./IMarketManager.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 
 
@@ -22,6 +23,7 @@ contract MarketManager is Owned {
 	Misc. 
 		a) To avoid securitization, enforce selling Fee  
 	*/
+	using PRBMathUD60x18 for uint256;
 
     uint256 private constant PRICE_PRECISION = 1e6; 
 
@@ -177,10 +179,6 @@ contract MarketManager is Owned {
 		return (total_bought >= (principal * INSURANCE_CONSTANT)/PRICE_PRECISION); 
 	}
 
-
-
-
-
 	/// @dev Called offchain before doTrade contract calls 
 	function canBuy(
 		address trader,
@@ -204,8 +202,7 @@ contract MarketManager is Owned {
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
 		if (!_duringMarketAssessment){
 		
-			// SOMEHOW GET ZCB
-			BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+			BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 			uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
 			uint256 price_after_trade = zcb.calculateExpectedPrice(tokens_bought);
 			uint256 price_upper_bound = zcb.getUpperBound();
@@ -218,6 +215,20 @@ contract MarketManager is Owned {
 		// require(_duringMarketAssessment, "Sells not allowed during assessments");
 		// require(exposureset(trader, ammFactoryAddress, marketId), "Not enough liquidity");
 
+	}
+
+	/**
+	 @param outcome: 1 if no loss, 0 if loss => perhaps not ideal.
+	 */
+	function updateReputation(uint256 marketId, uint256 outcome) publilc {
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+		
+		address[] memory buyers = zcb.getBuyers();
+		uint256 length = buyers.length;
+		for (uint256 i = 0; i < length; i++) {
+			uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
+			rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
+		}
 	}
 
 	function canSell(
