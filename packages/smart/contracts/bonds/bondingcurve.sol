@@ -70,10 +70,6 @@ abstract contract BondingCurve is OwnedERC20 {
         collateral.safeTransferFrom(msg.sender, address(this), amount);
     }
 
-    function mintFor(address trader, amount) public {
-        
-    }
-
     /**
      @notice sell bond tokens with necessary checks and transfers of collateral
      @param amount: amount of tokens selling.
@@ -103,7 +99,33 @@ abstract contract BondingCurve is OwnedERC20 {
      */
     function calculateProbability(uint256 amount) view public returns (uint256 score) {
         return _calculateProbability(amount);
-    } 
+    }
+
+    function redeem(
+		address receiver, 
+		uint256 zcb_redeem_amount, 
+		uint256 collateral_redeem_amount
+	) external override onlyManager{
+        trustedBurn(receiver, zcb_redeem_amount);
+		collateral.safeTransfer(receiver, collateral_redeem_amount); 
+	}
+
+    function redeemPostAssessment(
+		uint256 marketId, 
+		address redeemer,
+		uint256 collateral_amount
+	) external override onlyManager{
+        uint256 redeem_amount = balanceOf(redeemer);
+		trustedBurn(redeemer, redeem_amount); 
+		collateral.safeTransfer(redeemer, collateral_amount); 
+	}
+
+    function burnFirstLoss(
+		uint256 burn_collateral_amount
+	) external override onlyManager{
+		collateral.safeTransfer(owner, burn_collateral_amount); 
+	}
+
 
     function _beforeTokenTransfer(
         address from,

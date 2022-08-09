@@ -156,7 +156,8 @@ contract Vault is ERC4626, Auth{
     	uint256 duration, 
     	uint256 faceValue, 
     	string calldata description, 
-    	Instrument instrument) external {
+    	Instrument instrument
+    ) external {
         require(principal > 0, "principal must be greater than 0");
         require(duration > 0, "duration must be greater than 0");
         require(faceValue > 0, "faceValue must be greater than 0");

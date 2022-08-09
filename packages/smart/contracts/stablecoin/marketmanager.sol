@@ -76,7 +76,7 @@ contract MarketManager is IMarketManager, Owned {
 
 	/*----Phase Functions----*/
 
-	/* 
+	/* DEPRECATED
 	called by controller when market starts
 	*/
 	function initiate_bonding_curve(uint256 marketId) external override onlyController{
