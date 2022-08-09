@@ -173,8 +173,8 @@ contract BondingCurveOriginal is Owned, IBondingCurve{
 	}
 
 	function redeem(
-		uint256 marketId, 
-		address receiver, 
+		uint256 marketId,
+		address receiver,
 		uint256 zcb_redeem_amount, 
 		uint256 collateral_redeem_amount
 	) external override onlyManager{
@@ -184,7 +184,6 @@ contract BondingCurveOriginal is Owned, IBondingCurve{
 	}
 
 	function redeemPostAssessment(
-		uint256 marketId, 
 		address redeemer,
 		uint256 collateral_amount
 	) external override onlyManager{
@@ -199,7 +198,6 @@ contract BondingCurveOriginal is Owned, IBondingCurve{
 	TODO include burning function from DS
 	*/
 	function burnFirstLoss(
-		uint256 marketId, 
 		uint256 burn_collateral_amount
 		) external override onlyManager{
 

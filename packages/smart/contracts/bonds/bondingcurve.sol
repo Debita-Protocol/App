@@ -111,7 +111,6 @@ abstract contract BondingCurve is OwnedERC20 {
 	}
 
     function redeemPostAssessment(
-		uint256 marketId, 
 		address redeemer,
 		uint256 collateral_amount
 	) external override onlyManager{
