@@ -12,6 +12,7 @@ abstract contract Auth {
     address public owner;
 
     Authority public authority;
+    mapping(address=>bool) Authorized; 
 
     constructor(address _owner) {
         owner = _owner;
@@ -30,8 +31,14 @@ abstract contract Auth {
 
         // Checking if the caller is the owner only after calling the authority saves gas in most cases, but be
         // aware that this makes protected functions uncallable even to the owner if the authority is out of order.
-        return(user == owner);
+        return(user == owner || Authorized[user]);
         //return (address(auth) != address(0) && auth.canCall(user, address(this), functionSig)) || user == owner;
+    }
+
+    function setNewAuthority(address newAuthority) public {
+        require(msg.sender == owner );
+        Authorized[newAuthority] = true; 
+
     }
 
     function setAuthority(Authority newAuthority) public virtual {

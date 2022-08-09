@@ -51,6 +51,7 @@ contract MarketManager is Owned {
 	}
 
 	uint256 private INSURANCE_CONSTANT = 5 * 10**5; // 0.5 for DS decimal format.
+	uint256 private REPUTATION_CONSTANT = 3 * 10**5; 
 
 	
     modifier onlyController(){
@@ -150,9 +151,14 @@ contract MarketManager is Owned {
 	*/
 	function onlyReputable(
 		uint256 marketId
-		) internal view returns(bool){
+		) public view returns(bool){
 		return restriction_data[marketId].onlyReputable; 
 
+	}
+
+	function isMarketApproved(uint256 marketId) public view returns(bool){
+		return(!restriction_data[marketId].duringMarketAssessment && !restriction_data[marketId].marketDenied); 
+		
 	}
 
 	//TODO Need to find out if the given market has enough (liquidity-required liq)
@@ -163,6 +169,17 @@ contract MarketManager is Owned {
 	function marketActive(uint256 marketId) public view returns(bool){
 		return !restriction_data[marketId].marketDenied; 
 	}
+
+	/// @notice returns true if amount bought is greater than the insurance threshold
+	function marketCondition(uint256 marketId) public view returns(bool){
+		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal;
+		uint256 total_bought = BondingCurve(address(controller.getZCB(marketId))).getTotalCollateral();
+		return (total_bought >= (principal * INSURANCE_CONSTANT)/PRICE_PRECISION); 
+	}
+
+
+
+
 
 	/// @dev Called offchain before doTrade contract calls 
 	function canBuy(
@@ -186,13 +203,7 @@ contract MarketManager is Owned {
 
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
 		if (!_duringMarketAssessment){
-			//Buy threshold price needs to be set after assessment phase
-			// uint256 buy_threshold = restriction_data[marketId].buy_threshold;
-			// uint256 price_after_trade = bondingCurve.getExpectedPrice(
-			// 	marketId,
-			// 	amount
-			// );
-
+		
 			// SOMEHOW GET ZCB
 			BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
 			uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
@@ -222,11 +233,12 @@ contract MarketManager is Owned {
 		return true; 
 	}
 
-	/*
-	During assessment phase, need to log the trader's 
-	total collateral when he bought zcb. Trader can only redeem collateral in 
-	when market is not approved 
-	 */
+	
+
+	/// @notice During assessment phase, need to log the trader's 
+	/// total collateral when he bought zcb. Trader can only redeem collateral in 
+	/// when market is not approved 
+
 	function log_assessment_trade(
 		uint256 marketId, 
 		address trader, 
@@ -235,7 +247,7 @@ contract MarketManager is Owned {
 		internal 
 	{
 		assessment_collaterals[marketId][trader] = collateralIn;
-
+		
 	}
 
 	/* 
@@ -251,14 +263,13 @@ contract MarketManager is Owned {
 		zcb.redeemPostAssessment(trader, collateral_amount); // SOMEHOW GET ZCB
 	}
 
-
+	/// @notice denies market from validator 
 	function denyMarket(
 		uint256 marketId
 	) external  onlyController {
 		MarketPhaseData storage data = restriction_data[marketId]; 
 		data.marketDenied = true; 
 		data.duringMarketAssessment = false; 
-
 	}
 
 
@@ -273,17 +284,24 @@ contract MarketManager is Owned {
 		);
 
 
-		// uint256 amountOut = ammFactory.buyZCB(marketFactory,
-		// 	msg.sender,  
-		// 	bondingCurveAddress, 
-		// 	_marketId, 
-		// 	_collateralIn);
-
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
 		uint256 amountOut = zcb.trustedBuy(msg.sender, _collateralIn);
  
 		if (duringMarketAssessment(_marketId)){
 			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn);
+			//  keeps track of amount bought during reputation phase
+			// and make transitions from onlyReputation true->false
+			uint256 principal = controller.vault().fetchInstrumentData(_marketId).principal;
+			uint256 total_bought = zcb.getTotalCollateral();
+
+			if (onlyReputable(_marketId)){
+
+				if (total_bought > (REPUTATION_CONSTANT * principal)/PRICE_PRECISION){
+					this.setAssessmentPhase(_marketId, true, false); 
+				}
+
+			}
+
 		}
 
 		return amountOut; 
@@ -299,13 +317,6 @@ contract MarketManager is Owned {
 		 	_zcb_amount_in, 
 		 	_marketId),"Trade Restricted");
 
-		// uint256 amountOut = ammFactory.sellZCB(
-		// 	marketFactory, 
-		// 	msg.sender, 
-		// 	bondingCurveAddress, 
-		// 	_marketId, 
-		// 	_zcb_amount_in
-		// 	);
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
 		uint256 amountOut = zcb.trustedSell(msg.sender, _zcb_amount_in);
 
@@ -488,16 +499,7 @@ contract MarketManager is Owned {
 	    return a >= b ? a : b;
 	}
 
-	// DEPRECATED
-	/* 
-	called by controller when market starts
-	*/
-	// function initiate_bonding_curve(uint256 marketId) external override onlyController{
-	// 	bondingCurve.curveInit(marketId);
-	// 	// CDP storage cdp = debt_pools[marketId];  => is pointless bc initialized to 0 anyway.
-	// 	// cdp.total_debt = 0;
-	// 	// cdp.total_collateral = 0;
-	// }
+
 
 
 }

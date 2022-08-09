@@ -146,30 +146,36 @@ contract Vault is ERC4626, Auth{
         return UNDERLYING.balanceOf(address(this));
     }
 
+    function fetchInstrumentData(uint256 marketId) public view returns(InstrumentData memory){
+        return getInstrumentData[Instruments[marketId]];
+    }
+
     /// @notice add instrument proposal created by the Utilizer 
-    /// @param marketId global index for Utilizer
     /// @dev Instrument instance should be created before this is called 
     function addProposal(
-    	uint256 marketId, 
-    	uint256 principal, 
-    	uint256 expectedYield, 
-    	uint256 duration, 
-    	uint256 faceValue, 
-    	string calldata description, 
-    	Instrument instrument
+        InstrumentData memory data  
     ) external {
-        require(principal > 0, "principal must be greater than 0");
-        require(duration > 0, "duration must be greater than 0");
-        require(faceValue > 0, "faceValue must be greater than 0");
-        require(principal >= BASE_UNIT, "Needs to be in decimal format"); // should be collateral address, not DS. Can't be less than 1.0 X?
+        require(data.principal > 0, "principal must be greater than 0");
+        require(data.duration > 0, "duration must be greater than 0");
+        require(data.faceValue > 0, "faceValue must be greater than 0");
+        require(data.principal >= BASE_UNIT, "Needs to be in decimal format"); // should be collateral address, not DS. Can't be less than 1.0 X?
+   
 
         num_proposals[msg.sender] ++; 
-        getInstrumentData[instrument] = (
+        getInstrumentData[Instrument(data.Instrument_address)] = (
         	InstrumentData(
-        		false, 0, faceValue, marketId, principal, expectedYield, duration, description, address(instrument))
+        		false, 
+                0, 
+                data.faceValue, 
+                data.marketId, 
+                data.principal, 
+                data.expectedYield, 
+                data.duration, 
+                data.description, 
+                data.Instrument_address)
         	); 
 
-        Instruments[marketId] = instrument;
+        Instruments[data.marketId] = Instrument(data.Instrument_address);
     }
 
 
@@ -179,7 +185,6 @@ contract Vault is ERC4626, Auth{
 
 
 
-    //harvest, proposal, 
 
 
 

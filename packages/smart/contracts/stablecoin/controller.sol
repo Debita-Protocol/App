@@ -34,7 +34,8 @@ contract Controller {
     IInterep interep;
     TrustedMarketFactoryV3 marketFactory;
     MarketManager marketManager;
-    Vault vault;
+    Vault public vault;
+    ReputationNFT repNFT; 
 
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
@@ -46,11 +47,7 @@ contract Controller {
         _;
     }
 
-    // modifier onlyPools() {
-    //     require(msg.sender == address(lendingpool)|| msg.sender == creator_address, "Only Pools can call this function");
-    //     _;
-    // }
-
+ 
     modifier onlyOwner() {
         require(msg.sender == creator_address, "Only Owner can call this function");
         _;
@@ -66,69 +63,28 @@ contract Controller {
 
     /*----Setup Functions----*/
 
-    function setMarketManager(address _marketManager) public {
+    function setMarketManager(address _marketManager) public onlyOwner {
         require(_marketManager != address(0));
         require(address(marketManager) == address(0));
         marketManager = MarketManager(_marketManager);
     }
 
-    function setVault(address _vault) public {
+    function setVault(address _vault) public onlyOwner {
         require(_vault != address(0));
         require(address(vault) == address(0));
         vault = Vault(_vault);
     }
 
-    function setMarketFactory(address _marketFactory) public {
+    function setMarketFactory(address _marketFactory) public onlyOwner {
         require(_marketFactory != address(0));
         require(address(marketFactory) == address(0));
         marketFactory = TrustedMarketFactoryV3(_marketFactory);
     }
+    function setReputationNFT(address NFT_address) public onlyOwner{
+        repNFT = ReputationNFT(NFT_address); 
+    }
 
     // add instrument to vault, initiate createZCBMarket()
-    /**
-     @dev initiates market, called by frontend loan proposal or instrument form submit button.
-     */
-    function initiateMarket_(
-        address recipient,
-        string calldata description,
-        uint256[] calldata odds,
-        Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
-    ) external {
-        uint256 a;
-        uint256 b;
-        (a, b) = getCurveParams();
-
-        OwnedERC20 zcb = new LinearBondingCurve(
-            "name",
-            "symbol",
-            address(marketManager), // owner
-            address(0), // Vault coin => UNDERLYING***
-            a,
-            b
-        );
-
-        uint256 marketId = marketFactory.createZCBMarket(
-            address(this), // controller is the settlement address
-            description,
-            odds,
-            zcb
-        );
-
-        instrumentData.marketId = marketId;
-
-
-        vault.addProposal(
-            instrumentData.marketId,
-            instrumentData.principal,
-            instrumentData.expectedYield,
-            instrumentData.duration,
-            instrumentData.faceValue,
-            instrumentData.description,
-            Instrument(instrumentData.Instrument_address)
-        );
-
-        market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-    }
 
     function getCurveParams() public returns (uint256 a, uint256 b){
         a = 1;
@@ -157,15 +113,7 @@ contract Controller {
         ReputationNFT(NFT_address).mint(msg.sender);
     }
 
-    //Pool added when contract is deployed 
-    // function addPool(address pool_address) external  onlyOwner {
-    //     require(pool_address != address(0), "Zero address detected");
-    //     require(pools[pool_address] == false, "Address already exists");
 
-    //     pools[pool_address] = true; 
-    //     pools_array.push(pool_address);
-
-    // }
 
     //Validator should be added for each borrower
     function addValidator(address validator_address) external  {
@@ -176,28 +124,57 @@ contract Controller {
         validators_array.push(validator_address);
     }
 
-    // function initiateMarket(
-    //     MarketInfo memory marketData, // marketID shouldn't be set. Everything else should be though
-    //     address recipient,
-    //     address market_manager_address
-    // ) public  {
-    //     // AMMFactory amm = AMMFactory(marketData.ammFactoryAddress); // do we need this?
-    //     IMarketManager market_manager = IMarketManager(market_manager_address);
-    //     TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketData.marketFactoryAddress);
-    //     uint256 marketId = marketFactory.createZCBMarket(
-    //         msg.sender,
-    //         marketData.description,
-    //         marketData.names[0],
-    //         marketData.odds
-    //     );
 
-    //     marketData.marketID = marketId; 
-    //     borrower_market_data[loanID] = marketData; 
 
-    //     market_manager.initiate_bonding_curve(marketId); 
-    //     market_manager.setMarketRestrictionData(true,true, marketId, 0);
-    // }    
+    /**
+     @dev initiates market, called by frontend loan proposal or instrument form submit button.
+     */
+    function initiateMarket(
+        address recipient,
+        string calldata description,
+        uint256[] calldata odds,
+        Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
+    ) external  {
+        uint256 a;
+        uint256 b;
+        (a, b) = getCurveParams();
 
+        OwnedERC20 zcb = new LinearBondingCurve(
+            "name",
+            "symbol",
+            address(marketManager), // owner
+            address(0), // Vault coin => UNDERLYING***
+            a,
+            b
+        );
+
+        uint256 marketId = marketFactory.createZCBMarket(
+            address(this), // controller is the settlement address
+            description,
+            odds,
+            zcb
+        );
+
+        instrumentData.marketId = marketId;
+
+
+        vault.addProposal(
+            instrumentData
+        );
+
+        market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
+        marketManager.setAssessmentPhase(marketId, true, true);
+       
+    }
+
+   
+   
+    /*
+    @notice main function called at maturity OR premature resolve of instrument(from early default)
+
+    @Param atLoss: when actual returns lower than expected 
+    @Param principal_loss: if total returned less than principal, principal-total returned
+    */
     function resolveMarket(
         uint256 marketId,
         bool atLoss,
@@ -208,45 +185,30 @@ contract Controller {
         marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
         marketManager.handle_maturity(marketId, atLoss, principal_loss); 
         marketManager.deactivateMarket(marketId);
-
+        //update repNFT score 
         //delete market_data[marketId]?
 
         uint256 winning_outcome = 0; //TODO  
         marketFactory.trustedResolveMarket(marketId, winning_outcome); 
     }
 
-    /*
-    @Param atLoss: when actual returns lower than expected 
-    @Param principal_loss: if total returned less than principal, principal-total returned
-    */
-    // function resolveMarket(
-    //     address recipient,
-    //     bytes32 loanID,
-    //     bool atLoss,
-    //     uint256 extra_gain, 
-    //     uint256 principal_loss, 
-    //     address market_manager_address
-    // ) external  {
 
-    //     MarketInfo storage marketInfo  = borrower_market_data[recipient][loanID];
-
-    //     uint256 marketID = marketInfo.marketID;
-
-    //     AMMFactory amm = AMMFactory(marketInfo.ammFactoryAddress);
-    //     IMarketManager market_manager = IMarketManager(market_manager_address);
-    //     TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
-
-    //     market_manager.update_redemption_price(marketID, atLoss, extra_gain, principal_loss); 
-    //     market_manager.handle_maturity(marketID, atLoss, principal_loss); 
-    //     market_manager.deactivateMarket(marketID);
-
-    //     uint256 winning_outcome = 0; //TODO  
-    //     marketFactory.trustedResolveMarket( marketID, winning_outcome); 
-
-    //     delete borrower_market_data[recipient][loanID];
-
-    // }
     
+    /// @notice called by the validator when market conditions are met
+    function approveMarket( 
+        uint256 marketId
+        ) external onlyValidator{
+        require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
+        require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
+        marketManager.setAssessmentPhase(marketId, false, false); 
+        trustInstrument(marketId); 
+
+        // Deposit to the instrument contract
+        uint256 principal = vault.fetchInstrumentData(marketId).principal; 
+        //maybe this should be separated to prevent attacks 
+        vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal ); 
+    }
+
     /*
     Market is denied by validator or automatically if conditions are not met 
     */
@@ -259,14 +221,13 @@ contract Controller {
         marketFactory.trustedResolveMarket( marketId, winning_outcome);
     }
 
-    function trustInstrument(uint256 marketId) external onlyValidator {
+
+    function trustInstrument(uint256 marketId) private  {
         vault.trustInstrument(Instrument(market_data[marketId].instrument_address));
     }
-    // function approveLoan(address recipient, bytes32 id, address marketFactory) external  onlyValidator{
-    //     lendingpool.approveLoan(recipient, id, marketFactory); 
-    // }
+  
 
-    function getZCB(uint256 marketId) public returns (OwnedERC20){
+    function getZCB(uint256 marketId) public view returns (OwnedERC20){
         AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
         return OwnedERC20(market.shareTokens[0]);
     }
@@ -276,25 +237,6 @@ contract Controller {
         return true;
     }
 
-    //If true, it means net short CDS buys > required collateral and validator can approve the loan 
-    // function canBeApproved(address borrower, 
-    //     bytes32 loanID, 
-    //     address marketFactoryAddress ) external  returns(bool){
 
-    //     MarketInfo memory marketInfo  = borrower_market_data[borrower][loanID];
-    //     uint256 marketId = marketInfo.marketID; 
-    //     TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketFactoryAddress);
-
-    //     //TODO include case for multiple outcomes, for now outcome0 is long outcome1 is short 
-    //     uint256 longs = marketFactory.getTradeDetails(marketId, 0);
-    //     uint256 shorts = marketFactory.getTradeDetails(marketId, 1);
-    //     uint256 netShorts = (shorts-longs); //DS amount with decimals 
-
-    //     ILendingPool.LoanMetadata memory loanmetadata = lendingpool.getBorrowerLoanData(borrower); 
-    //     uint256 principal = loanmetadata.principal; //this is in decimals format
-    //     uint256 required_net_shorts = (principal * insurance_constant/1e6);   //Hardcoded for now
-
-    //     return (required_net_shorts <= netShorts); 
-    // }
 }
 
