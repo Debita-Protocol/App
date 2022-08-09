@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 //borrower cds market, collect winnings when default, and burn the corresponding DS
 interface IController  {
     struct MarketInfo {
+        address borrower;
         address ammFactoryAddress; 
         address marketFactoryAddress;
         uint256 liquidityAmountUSD;

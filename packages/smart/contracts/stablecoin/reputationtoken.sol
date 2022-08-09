@@ -3,7 +3,7 @@ pragma solidity ^0.8.4;
 import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
 import {IReputationNFT} from "./IReputationNFT.sol";
-import {BondingCurve} from "../bonds/BondingCurve.sol";
+import {BondingCurve} from "../bonds/bondingcurve.sol";
 
 
 contract ReputationNFT is IReputationNFT, ERC721 {
@@ -35,7 +35,6 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     address _bondingCurve
   ) ERC721("Debita Reputation Token", "DRT") {
     controller = Controller(_controller);
-    bondingCurve = BondingCurve(_bondingCurve);
   }
 
   function _baseURI() internal pure returns (string memory baseURI) {

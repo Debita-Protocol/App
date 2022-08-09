@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.4;
 
-import "./vault.sol"; 
+import "./vault.sol";
+import {ERC20} from "./tokens/ERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /// @notice Minimal interface for Vault compatible strategies.
 abstract contract Instrument {
-
 
     modifier onlyUtilizer() {
         require(msg.sender == Utilizer, "!Utilizer");

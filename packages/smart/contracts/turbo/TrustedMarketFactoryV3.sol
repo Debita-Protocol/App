@@ -59,11 +59,10 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
       function createZCBMarket(
         address _creator,
         string calldata _description,
-        string calldata _name,
         uint256[] calldata _odds, 
-        address bondingcurveAddress
+        OwnedERC20 zcb
     ) public  returns (uint256) {
         marketDetails.push(MarketDetails(_description));
-        return startZCBMarket(_creator, _name, _odds, true, bondingcurveAddress);
+        return startZCBMarket(_creator, _odds, true, zcb);
     }
 }

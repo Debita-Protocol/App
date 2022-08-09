@@ -1,6 +1,6 @@
 pragma solidity ^0.8.4;
 
-import {BondingCurve} from "./BondingCurve.sol";
+import {BondingCurve} from "./bondingcurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice y = a * x + b

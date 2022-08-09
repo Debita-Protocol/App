@@ -45,8 +45,8 @@ contract Vault is ERC4626, Auth{
         // used to determine profit and loss during harvests of the Instrument.  
         // represents the amount of debt the Instrument has incurred from this vault   
         uint248 balance;
-
-        uint256 marketId; 
+        uint256 faceValue;
+        uint256 marketId;
     	uint256 principal; //this is total available allowance
         uint256 expectedYield; // total interest paid over duration
         uint256 duration;
@@ -166,11 +166,10 @@ contract Vault is ERC4626, Auth{
         num_proposals[msg.sender] ++; 
         getInstrumentData[instrument] = (
         	InstrumentData(
-        		false, 0, marketId, principal, expectedYield, duration, description, address(instrument))
+        		false, 0, faceValue, marketId, principal, expectedYield, duration, description, address(instrument))
         	); 
 
-        Instruments[marketId] = instrument; 
-
+        Instruments[marketId] = instrument;
     }
 
 

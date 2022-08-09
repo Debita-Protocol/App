@@ -365,14 +365,14 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
      */
     function startZCBMarket(
         address _settlementAddress,
-        string memory _name,
         uint256[] memory _initialOdds,
-        bool _active
+        bool _active,
+        OwnedERC20 _zcb
     ) internal returns (uint256 _marketId){
 
         _marketId = markets.length;
-        LinearBondingCurve[] memory zcb;
-        zcb[0] = new LinearBondingCurve()
+        OwnedERC20[] memory zcb;
+        zcb[0] = _zcb;
         markets.push(
             Market(
                 _settlementAddress,
@@ -386,7 +386,6 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
                 0,
                 _initialOdds,
                 _active
-
                 )
             );
 

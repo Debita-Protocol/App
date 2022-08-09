@@ -14,14 +14,14 @@ abstract contract BondingCurve is OwnedERC20 {
     uint256 internal price_upper_bound;
     uint256 internal price_lower_bound;
     uint256 internal reserves;
+    uint256 internal max_quantity;
     ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
 
     constructor (
         string memory name,
         string memory symbol,
         address owner, // market manager.
-        address _collateral,
-        address _controller
+        address _collateral
     ) OwnedERC20(name, symbol, owner) {
         collateral = ERC20(_collateral);
     }
@@ -32,6 +32,35 @@ abstract contract BondingCurve is OwnedERC20 {
 
     function setLowerBound(uint256 lower_bound) public onlyOwner {
         price_lower_bound = lower_bound;
+    }
+
+    function setMaxQuantity(uint256 _max_quantity) public onlyOwner {
+        max_quantity = _max_quantity;
+    }
+
+    /**
+     @notice called by market manager, like trustedMint but returns amount out
+     @param amount: amount of collateral in.
+     */
+    function trustedBuy(address trader, uint256 amount) public onlyOwner returns (uint256) {
+        uint256 tokens = _calculatePurchaseReturn(amount);
+        collateral.safeTransferFrom(trader, address(this), amount);
+        _mint(trader, tokens);
+        return tokens;
+    }
+
+    /**
+     @param amount: amount of zcb tokens burned
+     */
+    function trustedSell(address trader, uint256 amount) public onlyOwner returns (uint256) {
+        uint256 collateral_out = _calculateSaleReturn(amount);
+        _burn(trader, amount);
+        collateral.safeTransfer(trader, collateral_out);
+        return collateral_out;
+    }
+
+    function trustedApproveCollateralTransfer(address trader, uint256 amount) public onlyOwner {
+        collateral.approve(trader, amount);
     }
 
     /**
@@ -57,6 +86,30 @@ abstract contract BondingCurve is OwnedERC20 {
      */
     function calculateExpectedPrice(uint256 amount) public view onlyOwner returns (uint256 result) {
         result = _calculateExpectedPrice(amount);
+    }
+    
+    function getTotalCollateral() public view returns (uint256 result) {
+        result = collateral.balanceOf(address(this));
+    }
+
+    function getCollateral() public view returns (address) {
+        return address(collateral);
+    } 
+
+    function getTotalZCB() public view returns (uint256 result) {
+        result = totalSupply();
+    }
+
+    function getMaxQuantity() public view returns (uint256 result) {
+        result = max_quantity;
+    }
+
+    function getUpperBound() public view returns (uint256 result) {
+        result = price_upper_bound;
+    }
+
+    function getLowerBound() public view returns (uint256 result) {
+        result = price_lower_bound;
     }
 
     /**
@@ -105,23 +158,23 @@ abstract contract BondingCurve is OwnedERC20 {
 		address receiver, 
 		uint256 zcb_redeem_amount, 
 		uint256 collateral_redeem_amount
-	) external override onlyManager{
-        trustedBurn(receiver, zcb_redeem_amount);
+	) external  onlyOwner {
+        _burn(receiver, zcb_redeem_amount);
 		collateral.safeTransfer(receiver, collateral_redeem_amount); 
 	}
 
     function redeemPostAssessment(
 		address redeemer,
 		uint256 collateral_amount
-	) external override onlyManager{
+	) external  onlyOwner{
         uint256 redeem_amount = balanceOf(redeemer);
-		trustedBurn(redeemer, redeem_amount); 
+		_burn(redeemer, redeem_amount); 
 		collateral.safeTransfer(redeemer, collateral_amount); 
 	}
 
     function burnFirstLoss(
 		uint256 burn_collateral_amount
-	) external override onlyManager{
+	) external onlyOwner{
 		collateral.safeTransfer(owner, burn_collateral_amount); 
 	}
 

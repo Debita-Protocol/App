@@ -1,11 +1,11 @@
 pragma solidity ^0.8.4;
 
-import {BondingCurve} from "./BondingCurve.sol";
+import {BondingCurve} from "./bondingcurve.sol";
 import "@prb/math/contracts/PRBMathUD60x18.sol";
 
 /// @notice y = exp(x/a) / ( b + exp(x/a) )
 /// @dev NEED TO REDO FOR GAS EFFICIENT
-contract SigmoidBonding is BondingCurve {
+abstract contract SigmoidBonding is BondingCurve {
 
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using PRBMathUD60x18 for uint256;
