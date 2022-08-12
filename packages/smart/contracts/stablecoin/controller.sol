@@ -166,8 +166,7 @@ contract Controller {
         );
 
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-        marketManager.setAssessmentPhase(marketId, true, true);
-       
+        marketManager.setAssessmentPhase(marketId, true, true);  
     }
 
    
@@ -189,10 +188,12 @@ contract Controller {
         marketManager.handle_maturity(marketId, atLoss, principal_loss); 
         marketManager.deactivateMarket(marketId, atLoss);
         //update repNFT score 
+        uint256 outcome = atLoss ? 0 : 1;
+        marketManager.updateReputation(marketId, outcome);
         //delete market_data[marketId]?
 
         uint256 winning_outcome = 0; //TODO  
-        marketFactory.trustedResolveMarket(marketId, winning_outcome); 
+        marketFactory.trustedResolveMarket(marketId, winning_outcome);
     }
 
 

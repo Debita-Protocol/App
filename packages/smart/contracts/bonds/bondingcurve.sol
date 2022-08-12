@@ -17,6 +17,8 @@ abstract contract BondingCurve is OwnedERC20 {
     uint256 internal max_quantity;
     uint256 internal math_precision; 
     ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
+    address[] private buyers; // keeps track for final reputation.
+
 
     constructor (
         string memory name,
@@ -195,6 +197,9 @@ abstract contract BondingCurve is OwnedERC20 {
         // on _mint
         if (from == address(0) && price_upper_bound > 0) {
             require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
+            if (balanceOf(to) == 0 && amount > 0) {
+                buyers.push(to);
+            }
         }
         // on _burn
         else if (to == address(0) && price_lower_bound > 0) {
@@ -202,6 +207,26 @@ abstract contract BondingCurve is OwnedERC20 {
         }
     }
 
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        if (to == address(0) && balanceOf(from) == 0) {
+            uint256 length = buyers.length;
+            for (uint256 i = 0; i <length; i ++) {
+                if (buyers[i] == from) {
+                    buyers[i] = buyers[length - 1];
+                    buyers.pop();
+                }
+            }
+        }
+    }
+
+    function getBuyers() external view returns (address[] memory) {
+        return buyers;
+    }
+    
     function _calculateScore(uint256 priceOut, bool atLoss) view internal virtual returns(uint256 score);
 
     function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);
