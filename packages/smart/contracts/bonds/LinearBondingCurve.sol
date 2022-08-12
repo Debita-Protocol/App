@@ -63,7 +63,6 @@ contract LinearBondingCurve is BondingCurve {
     /// score = (priceOut - a)**2 where a = 1 if no default, 
     function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
         uint256 two = uint256(2).fromUint();
-        uint256 score; 
         if (atLoss) {score =  ((priceOut-math_precision).div(math_precision)).pow(two);}
         else {score = ((priceOut).div(math_precision)).pow(two);}
 

@@ -1,6 +1,4 @@
 pragma solidity ^0.8.4;
-import "../rewards/MasterChef.sol";
-import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import {MarketManager} from "./marketmanager.sol";
@@ -80,6 +78,7 @@ contract Controller {
         require(address(marketFactory) == address(0));
         marketFactory = TrustedMarketFactoryV3(_marketFactory);
     }
+
     function setReputationNFT(address NFT_address) public onlyOwner{
         repNFT = ReputationNFT(NFT_address); 
     }
@@ -131,6 +130,7 @@ contract Controller {
 
     /**
      @dev initiates market, called by frontend loan proposal or instrument form submit button.
+     @dev a and b must be 60.18 format
      */
     function initiateMarket(
         address recipient,
@@ -168,8 +168,6 @@ contract Controller {
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
         marketManager.setAssessmentPhase(marketId, true, true);  
     }
-
-   
    
     /*
     @notice main function called at maturity OR premature resolve of instrument(from early default)
@@ -181,15 +179,13 @@ contract Controller {
         uint256 marketId,
         bool atLoss,
         uint256 extra_gain, 
-        uint256 principal_loss, 
-        address market_manager_address
+        uint256 principal_loss
     ) external  {
         marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
         marketManager.handle_maturity(marketId, atLoss, principal_loss); 
         marketManager.deactivateMarket(marketId, atLoss);
-        //update repNFT score 
-        uint256 outcome = atLoss ? 0 : 1;
-        marketManager.updateReputation(marketId, outcome);
+        //update repNFT score
+        marketManager.updateReputation(marketId);
         //delete market_data[marketId]?
 
         uint256 winning_outcome = 0; //TODO  
@@ -222,7 +218,7 @@ contract Controller {
         marketManager.denyMarket(marketId);
         //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
         uint256 winning_outcome = 0; //TODO  
-        marketFactory.trustedResolveMarket( marketId, winning_outcome);
+        marketFactory.trustedResolveMarket(marketId, winning_outcome);
     }
 
 

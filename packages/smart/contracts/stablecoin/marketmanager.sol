@@ -223,19 +223,16 @@ contract MarketManager is Owned {
 
 	}
 
-	/**
-	 @param outcome: 1 if no loss, 0 if loss => perhaps not ideal.
-	 */
-	function updateReputation(uint256 marketId, uint256 outcome) publilc {
-		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+	// function updateReputation(uint256 marketId, uint256 outcome) publilc {
+	// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 		
-		address[] memory buyers = zcb.getBuyers();
-		uint256 length = buyers.length;
-		for (uint256 i = 0; i < length; i++) {
-			uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
-			rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
-		}
-	}
+	// 	address[] memory buyers = zcb.getBuyers();
+	// 	uint256 length = buyers.length;
+	// 	for (uint256 i = 0; i < length; i++) {
+	// 		uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
+	// 		rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
+	// 	}
+	// }
 
 	function canSell(
 		address trader,

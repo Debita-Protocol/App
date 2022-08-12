@@ -82,7 +82,7 @@ export const config: HardhatUserConfig = {
       maticMainnet: NO_OWNER,
     },
     interep: {
-      default: 1 // testing only.
+      default: 1 // testing only. => deploy from separate account.
     },
     protocol: {
       default: 0,
