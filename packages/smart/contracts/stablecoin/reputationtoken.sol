@@ -74,7 +74,7 @@ contract ReputationNFT is IReputationNFT, ERC721 {
    @notice calculates average of scores added.
    @dev score is calculated from 
    */
-  function addScore(address to, uint256 score) internal {
+  function addScore(address to, uint256 score) external  {
     require(_ownerToId[to] != uint256(0), "No Id found");
 
     ReputationData storage data = _reputation[_ownerToId[to]];

@@ -30,6 +30,8 @@ contract MarketManager is Owned {
 
     mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
     mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
+    mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
+    mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
 	mapping(uint256=> MarketPhaseData) restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
@@ -47,6 +49,7 @@ contract MarketManager is Owned {
 		bool onlyReputable;
 		bool marketDenied;
 		uint256 min_rep_score;
+		bool atLoss; 
 		// buy threshold should be the max quantity of bond tokesn bought
 	}
 
@@ -89,8 +92,10 @@ contract MarketManager is Owned {
 	/* 
 	Called when market should end, a) when denied b) when maturity 
 	*/
-	function deactivateMarket(uint256 marketId) external  onlyController{
+	function deactivateMarket(uint256 marketId, bool atLoss) external  onlyController{
 		restriction_data[marketId].marketDenied = true; 
+		restriction_data[marketId].atLoss = atLoss; 
+
 	}
 
 
@@ -109,7 +114,8 @@ contract MarketManager is Owned {
 			_duringMarketAssessment, 
 			_onlyReputable,
 			false,
-			min_rep_score
+			min_rep_score, 
+			false
 		);
 	}
 
@@ -238,16 +244,19 @@ contract MarketManager is Owned {
 	/// @notice During assessment phase, need to log the trader's 
 	/// total collateral when he bought zcb. Trader can only redeem collateral in 
 	/// when market is not approved 
-
+	/// @param priceOut is the price of the zcb after the trader made his trade
 	function log_assessment_trade(
 		uint256 marketId, 
 		address trader, 
 		uint256 amountOut, 
-		uint256 collateralIn)
+		uint256 collateralIn,
+		uint256 priceOut)
 		internal 
-	{
+	{	
+		assessment_trader[marketId][trader] = true; 
 		assessment_collaterals[marketId][trader] = collateralIn;
-		
+		assessment_prices[marketId][trader] = priceOut; 
+
 	}
 
 	/* 
@@ -287,8 +296,12 @@ contract MarketManager is Owned {
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
 		uint256 amountOut = zcb.trustedBuy(msg.sender, _collateralIn);
  
+ 		//Need to log assessment trades for updating reputation scores or returning collateral
+ 		//when market denied 
 		if (duringMarketAssessment(_marketId)){
-			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn);
+			uint256 priceOut = zcb.calculateExpectedPrice(0); 
+			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn, priceOut);
+
 			//  keeps track of amount bought during reputation phase
 			// and make transitions from onlyReputation true->false
 			uint256 principal = controller.vault().fetchInstrumentData(_marketId).principal;
@@ -493,6 +506,19 @@ contract MarketManager is Owned {
 	}
 
 
+	/// @notice when market is resolved(maturity/early default), calculates score
+	/// and update each assessment phase trader's reputation, called by individual traders
+	function updateReputation(uint256 marketId) external  {
+		require(restriction_data[marketId].marketDenied, "Market not resolved"); 	
+		require(assessment_trader[marketId][msg.sender], "Not manager"); 
+
+		bool atLoss = restriction_data[marketId].atLoss; 
+		uint256 priceOut = assessment_prices[marketId][msg.sender]; 
+		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
+		uint256 score = BondingCurve(address(controller.getZCB(marketId))).calculateScore(priceOut, atLoss);
+		//TODO 
+		rep.addScore(msg.sender, score); 
+	}
 
 
 	function max(uint256 a, uint256 b) internal pure returns (uint256) {

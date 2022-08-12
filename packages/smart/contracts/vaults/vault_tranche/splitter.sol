@@ -1,0 +1,146 @@
+// pragma solidity ^0.8.4;
+
+
+// import {Auth} from "../auth/Auth.sol";
+// import {ERC4626} from "../mixins/ERC4626.sol";
+
+// import {SafeCastLib} from "../utils/SafeCastLib.sol";
+// import {SafeTransferLib} from "../utils/SafeTransferLib.sol";
+// import {FixedPointMathLib} from "../utils/FixedPointMathLib.sol";
+
+// import {ERC20} from "../tokens/ERC20.sol";
+// import {Instrument} from "../instrument.sol";
+// import {tVault} from "./tValult.sol"; 
+// import "@openzeppelin/contracts/utils/math/Math.sol";
+
+
+
+
+// /// @notice tokens for junior/senior tranches 
+// contract tToken is ERC20{
+
+// 	modifier onlySplitter() {
+//         require(msg.sender == splitter, "!Splitter");
+//         _;
+//     }
+
+//     address splitter; 
+
+
+//     constructor(
+//         ERC20 _asset,
+//         string memory _name,
+//         string memory _symbol, 
+//         address splitter_address
+//     ) ERC20(_name, _symbol, _asset.decimals()) {
+//         asset = _asset;
+//     }
+
+//     function mint(address to, uint256 amount) external onlySplitter{
+//     	_mint(to, amount); 
+//     }
+
+//     function burn(address from, uint256 amount) external onlySplitter{
+//     	_burn(from, amount);
+//     }
+
+
+// }
+
+// /// @notice Accepts ERC20 and splits them into senior/junior tokens
+// /// Will hold the ERC20 token in this contract
+// /// Before maturity, redemption only allowed for a pair, 
+// /// After maturity, redemption allowed for individual tranche tokens, with the determined conversion rate
+// /// @dev new instance is generated for each vault
+// contract Splitter{
+// 	using SafeCastLib for uint256; 
+//     using SafeTransferLib for ERC20;
+//     using FixedPointMathLib for uint256;
+
+//     tVault underlying; 
+//     tToken senior;
+//     tToken junior;  
+//     tValult vault; 
+
+//     //weight is in PRICE_PRECISION 6, i.e 5e5 = 0.5
+//     uint256 junior_weight; 
+//     uint256 PRICE_PRECISION; 
+
+//     constructor(
+//     	tVault _underlying //underlying vault token to split 
+//     	){
+//     	underlying = _underlying; 
+//     	senior = new tToken(_underlying, "senior", string(abi.encodePacked("se_", _underlying.symbol())), address(this));
+//     	junior = new tToken(_underlying, "junior", string(abi.encodePacked("ju_", _underlying.symbol())), address(this));
+
+//     	junior_weight = underlying.getJuniorWeight(); 
+//     	promised_return = underlying.getPromisedReturn(); 
+//     	PRICE_PRECISION = 1e6; 
+//     }
+
+// 	/// @notice accepts token_to_split and mints s,j tokens
+// 	/// ex. 1 vault token-> 0.3 junior and 0.7 senior for weight of 0.3, 0.7
+// 	function split(ERC20 token_to_split, uint256 amount) external returns(uint, uint) {
+// 		require(token_to_split == underlying, "Wrong Splitter");
+
+// 		token_to_split.safeTransferFrom(msg.sender, address(this), amount); 
+
+// 		junior_token_mint_amount = (amount * junior_weight)/PRICE_PRECISION;  
+// 		senior_token_mint_amount = amount - junior_token_mint_amount; 
+
+// 		junior.mint(msg.sender, junior_token_mint_amount); 
+// 		senior.mint(msg.sender, senior_token_mint_amount);
+
+// 		return (junior_token_mint_amount, senior_token_mint_amount); 
+
+// 	}
+
+// 	/// @notice aceepts junior and senior token and gives back token_to_merge
+// 	/// Function to call when redeeming before maturity
+// 	/// @param token_to_merge is the valut token
+// 	/// @param junior_amount is amount of junior tokens user want to redeem
+// 	/// @dev senior amount is automiatically computed when given junior amount 
+// 	function merge(ERC20 token_to_merge, uint256 junior_amount) external{
+// 		require(token_to_merge == underlying, "Wrong Splitter");
+// 		uint senior_multiplier = (PRICE_PRECISION *(PRICE_PRECISION - junior_weight))/junior_weight; //ex 2.3e6
+// 		uint senior_amount = (senior_multiplier * junior_amount)/PRICE_PRECISION; 
+// 		require(senior.balanceOf(msg.sender) >= senior_amount, "Not enough senior tokens"); 
+
+// 		junior.burn(msg.sender, junior_amount);
+// 		senior.burn(msg.sender, senior_amount);
+// 		token_to_merge.safeTransfer(msg.sender, junior_amount+senior_amount); 
+// 	}
+
+
+// 	/// @notice only can called after set maturity by tranche token holders
+// 	function redeem_after_maturity(ERC20 _tToken, uint256 amount) external {
+// 		require(vault.isMatured(), "Vault not matured");
+// 		require(address(_tToken) == address(senior) || address(_tToken) == address(junior), "Wrong Tranche Token");
+// 		bool isSenior = (address(_tToken) == address(senior)) ? true : false; 
+// 		uint256 redemptionPrice = getRedemptionPrice()
+// 		vault.conversion_ratio
+// 	}
+
+
+// 	/// @notice calculate and store redemption Price
+// 	function getRedemptionPrice() internal{
+// 		promised_return = underlying.getPromisedReturn(); //in 1e6 decimals i.e 5000 is 0.05
+// 		real_return = underlying.getRealReturn(); 
+// 		senior_redemption_price = PRICE_PRECISION*(PRICE_PRECISION + promised_return)/max(PRICE_PRECISION+)
+// 	}
+
+// 	/// @dev need to return in list format to index it easily 
+// 	/// 0 is always senior 
+// 	function getTrancheTokens() public view returns(address[] memory){
+//  		address[] memory addresses = new address[](2);
+//  		addresses[0] =  address(senior); 
+//  		addresses[1] =  address(junior); 
+// 		return addresses; 
+// 	}
+
+
+// 	function max(uint256 a, uint256 b) internal pure returns (uint256) {
+//     	return a >= b ? a : b;
+// }
+
+// }

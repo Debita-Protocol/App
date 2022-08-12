@@ -40,7 +40,7 @@ contract Controller {
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
     uint256 insurance_constant = 5e5; //1 is 1e6, also needs to be able to be changed 
-
+    uint256 PRICE_PRECISION = 1e18; 
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
         require(validators[msg.sender] == true || msg.sender == creator_address, "Only Validators can call this function");
@@ -86,9 +86,12 @@ contract Controller {
 
     // add instrument to vault, initiate createZCBMarket()
 
-    function getCurveParams() public returns (uint256 a, uint256 b){
-        a = 1;
-        b = 0;
+    /// @dev both principal/interest should be in price precision
+    /// @param interest is amount of interest in dollars, not percentage,
+    /// returns a,b is both in 18 price_precision
+    function getCurveParams(uint256 principal, uint256 interest) public returns (uint256 a, uint256 b){
+        b = (((2*principal))/(principal + interest)) * PRICE_PRECISION; 
+        a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION; 
     }
 
     function verifyAddress(
@@ -137,7 +140,7 @@ contract Controller {
     ) external  {
         uint256 a;
         uint256 b;
-        (a, b) = getCurveParams();
+        (a, b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
 
         OwnedERC20 zcb = new LinearBondingCurve(
             "name",
@@ -184,7 +187,7 @@ contract Controller {
     ) external  {
         marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
         marketManager.handle_maturity(marketId, atLoss, principal_loss); 
-        marketManager.deactivateMarket(marketId);
+        marketManager.deactivateMarket(marketId, atLoss);
         //update repNFT score 
         //delete market_data[marketId]?
 

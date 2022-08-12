@@ -15,6 +15,7 @@ abstract contract BondingCurve is OwnedERC20 {
     uint256 internal price_lower_bound;
     uint256 internal reserves;
     uint256 internal max_quantity;
+    uint256 internal math_precision; 
     ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
 
     constructor (
@@ -24,6 +25,7 @@ abstract contract BondingCurve is OwnedERC20 {
         address _collateral
     ) OwnedERC20(name, symbol, owner) {
         collateral = ERC20(_collateral);
+        math_precision = 1e18; 
     }
 
     function setUpperBound(uint256 upper_bound) public onlyOwner {
@@ -79,6 +81,12 @@ abstract contract BondingCurve is OwnedERC20 {
     function calculateSaleReturn(uint256 amount) public view onlyOwner returns (uint256 result) {
         result = _calculateSaleReturn(amount);
     }
+
+    /// @notice calculates score necessary to update reputation score
+    function calculateScore(uint256 priceOut, bool atLoss) public view returns(uint){
+    	return _calculateScore(priceOut, atLoss);
+    }
+
 
     /**
      @notice calculates expected price given user buys X tokens
@@ -193,6 +201,8 @@ abstract contract BondingCurve is OwnedERC20 {
             require(_calculateExpectedPrice(amount) >= price_lower_bound, "below price lower bound");
         }
     }
+
+    function _calculateScore(uint256 priceOut, bool atLoss) view internal virtual returns(uint256 score);
 
     function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);
 

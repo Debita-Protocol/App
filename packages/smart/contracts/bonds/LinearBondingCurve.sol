@@ -57,4 +57,16 @@ contract LinearBondingCurve is BondingCurve {
     function _calculateProbability(uint256 amount) view internal override virtual returns (uint256 score) {
         score = amount.mul(a) + b;
     }
+
+    /// @notice calculates prob score (prob- 1)**2
+    /// @param priceOut is in decimal 18
+    /// score = (priceOut - a)**2 where a = 1 if no default, 
+    function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
+        uint256 two = uint256(2).fromUint();
+        uint256 score; 
+        if (atLoss) {score =  ((priceOut-math_precision).div(math_precision)).pow(two);}
+        else {score = ((priceOut).div(math_precision)).pow(two);}
+
+
+    }
 }
