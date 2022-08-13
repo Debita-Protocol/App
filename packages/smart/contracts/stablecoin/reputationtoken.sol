@@ -31,8 +31,7 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   }
 
   constructor (
-    address _controller,
-    address _bondingCurve
+    address _controller
   ) ERC721("Debita Reputation Token", "DRT") {
     controller = Controller(_controller);
   }

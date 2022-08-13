@@ -226,7 +226,7 @@ contract MarketManager is Owned {
 	/**
 	 @param outcome: 1 if no loss, 0 if loss => perhaps not ideal.
 	 */
-	function updateReputation(uint256 marketId, uint256 outcome) publilc {
+	function updateReputation(uint256 marketId, uint256 outcome) public {
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 		
 		address[] memory buyers = zcb.getBuyers();

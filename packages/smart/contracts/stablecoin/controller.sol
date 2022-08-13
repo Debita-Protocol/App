@@ -23,9 +23,12 @@ contract Controller {
         address recipient;
     }
 
+    event MarketInitiated(uint256 marketId, address recipient);
+
     mapping(address => bool) public  validators; 
     mapping(address => bool) public  verified;
     mapping(uint256 => MarketData) public market_data; // id => recipient
+    mapping(address=> uint256) public ad_to_id; //utilizer address to marketId 
 
     address[] validators_array;
 
@@ -40,7 +43,7 @@ contract Controller {
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
     uint256 insurance_constant = 5e5; //1 is 1e6, also needs to be able to be changed 
-    uint256 PRICE_PRECISION = 1e18; 
+    uint256 constant PRICE_PRECISION = 1e18; 
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
         require(validators[msg.sender] == true || msg.sender == creator_address, "Only Validators can call this function");
@@ -65,31 +68,31 @@ contract Controller {
 
     function setMarketManager(address _marketManager) public onlyOwner {
         require(_marketManager != address(0));
-        require(address(marketManager) == address(0));
+       // require(address(marketManager) == address(0));
         marketManager = MarketManager(_marketManager);
     }
 
     function setVault(address _vault) public onlyOwner {
         require(_vault != address(0));
-        require(address(vault) == address(0));
+       // require(address(vault) == address(0));
         vault = Vault(_vault);
     }
 
     function setMarketFactory(address _marketFactory) public onlyOwner {
         require(_marketFactory != address(0));
-        require(address(marketFactory) == address(0));
+       // require(address(marketFactory) == address(0));
         marketFactory = TrustedMarketFactoryV3(_marketFactory);
     }
     function setReputationNFT(address NFT_address) public onlyOwner{
         repNFT = ReputationNFT(NFT_address); 
     }
 
-    // add instrument to vault, initiate createZCBMarket()
 
+    /// @notice curveparams for linear bonds 
     /// @dev both principal/interest should be in price precision
     /// @param interest is amount of interest in dollars, not percentage,
     /// returns a,b is both in 18 price_precision
-    function getCurveParams(uint256 principal, uint256 interest) public returns (uint256 a, uint256 b){
+    function getCurveParams(uint256 principal, uint256 interest) internal pure returns (uint256 a, uint256 b){
         b = (((2*principal))/(principal + interest)) * PRICE_PRECISION; 
         a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION; 
     }
@@ -105,9 +108,6 @@ contract Controller {
 
     }
 
-    function isVerified(address addr) view public returns (bool) {
-        return verified[addr];
-    }
 
     function mintRepNFT(
         address NFT_address,
@@ -128,14 +128,12 @@ contract Controller {
     }
 
 
-
     /**
      @dev initiates market, called by frontend loan proposal or instrument form submit button.
+     @param recipient is the 
      */
     function initiateMarket(
         address recipient,
-        string calldata description,
-        uint256[] calldata odds,
         Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
     ) external  {
         uint256 a;
@@ -151,13 +149,20 @@ contract Controller {
             b
         );
 
+
+        uint256[] memory odds = new uint256[](2); //TODO get rid of this 
+        odds[0] = 0;
+        odds[1] = 0; 
+
         uint256 marketId = marketFactory.createZCBMarket(
             address(this), // controller is the settlement address
-            description,
+            instrumentData.description,
             odds,
             zcb
         );
 
+
+        ad_to_id[recipient] = marketId; 
         instrumentData.marketId = marketId;
 
 
@@ -167,8 +172,9 @@ contract Controller {
 
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
         marketManager.setAssessmentPhase(marketId, true, true);  
-    }
 
+        emit MarketInitiated(marketId, recipient);
+    }
    
    
     /*
@@ -196,8 +202,6 @@ contract Controller {
         marketFactory.trustedResolveMarket(marketId, winning_outcome);
     }
 
-
-    
     /// @notice called by the validator when market conditions are met
     function approveMarket( 
         uint256 marketId
@@ -231,16 +235,33 @@ contract Controller {
     }
   
 
+
+
+
+
+
+
+
+                        /* --------VIEW FUNCTIONS---------  */
+    function getMarketId(address recipient) public view returns(uint256){
+        return ad_to_id[recipient];
+    }
+
     function getZCB(uint256 marketId) public view returns (OwnedERC20){
         AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
         return OwnedERC20(market.shareTokens[0]);
     }
-
-    function canBeApproved(uint256 marketId) external returns (bool) {
+    function getZCB_ad(uint256 marketId) public view returns (address){
+        AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+        return address(OwnedERC20(market.shareTokens[0]));
+    }
+    function canBeApproved(uint256 marketId) public view returns (bool) {
         //TODO
         return true;
     }
 
-
+    function isVerified(address addr) view public returns (bool) {
+        return verified[addr];
+    }
 }
 

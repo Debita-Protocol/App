@@ -6,7 +6,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
   const controller = await deployments.get("Controller"); 
 
-
   await deployments.deploy("ReputationNFT", {
       contract: "ReputationNFT",
       from: deployer,

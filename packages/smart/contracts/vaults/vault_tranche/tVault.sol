@@ -28,9 +28,16 @@
 //     uint256 init_time; 
 //     uint256 junior_weight; 
 //     uint256 promisedReturn; 
-//     ERC4626 underlying; 
+//     ERC20 want; 
 
-//     /// @notice when intialized, will take in a few ERC4626 instruments as base instruments
+//     mapping(address=>uint256) addressToIndex; 
+
+//     uint256[] initial_exchange_rates; 
+
+//     uint256 constant PRICE_PRECISION = 1e18; 
+
+//     /// @notice when intialized, will take in a few ERC4626 instruments (address) as base instruments
+//     /// @param _want is the base assets for all the instruments e.g usdc
 //     /// @param _instruments are ERC4626 addresses that will comprise this super vault
 //     /// @param _ratios are the ratio of value invested for each instruments
 //     /// @param _junior_weight is the allocation between junior/senior tranche (senior is 1-junior)
@@ -38,13 +45,15 @@
 //     /// and tranche tokens can be redeemed separately 
 //     /// @param _promisedReturn is the promised senior return gauranteed by junior holders 
 //     function init(
-//     	ERC4626 _underlying, 
+//     	ERC20 _want, 
 //     	address[] memory _instruments, 
 //     	uint256[] memory _ratios, 
 //     	uint256 _junior_weight, 
 //     	uint256 _promisedReturn, 
-//     	uint256 _time_to_maturity){
-//     	underlying = _underlying; 
+//     	uint256 _time_to_maturity)
+//     internal 
+//     {	
+//     	want = _want; 
 //     	instruments = _instruments; 
 //     	num_instrument = _instruments.length; 
 //     	ratios = _ratios; 
@@ -53,6 +62,17 @@
 //     	time_to_maturity = _time_to_maturity; 
 //     	init_time = block.timestamp; 
 
+//     	//need to get initial exchange rate between the instruments and want 
+//     	for (uint i=0; i< num_instrument; i++){
+//     		addressToIndex[instruments[i]] = i; 
+//     		initial_exchange_rates[i] = get_exchange_rate(instruments[i]); 
+//     	}
+//     }
+
+//     /// @notice get the amount of shares for the instrument one would obtain
+//     /// by depositing one want token 
+//     function get_exchange_rate(address instrument) internal view returns(uint256){
+//     	return ERC4626(instrument).previewDeposit(PRICE_PRECISION); 
 //     }
 
 //     /// @notice will automatically invest into the ERC4626 instruments and give out 
@@ -121,9 +141,18 @@
 //     	return promisedReturn; 
 //     }
 
-//     /// @notice get real returns collected by the vault in this supervault  
-//     function getRealReturn() public view returns(uint256){
-//     	getRealReturn
+//     /// @notice get average real returns collected by the vault in this supervault until now  
+//     /// real return is computed by (final_value_of_vault/initial_value_of_vault) - 1
+//     function getCurrentRealReturn() public view returns(uint256){
+//     	uint256[] memory real_returns = new uint256[](num_instrument); 
+//     	uint256 sum_return; 
+//     	for (uint i=0; i< num_instrument; i++){
+//     		real_returns[i] = (get_exchange_rate(instruments[i])/initial_exchange_rates[i])*PRICE_PRECISION;
+//     		sum_return += real_returns[i] - PRICE_PRECISION; 
+// 		}
+
+// 		return (sum_return/num_instrument); 
+		
 //     }
 
 

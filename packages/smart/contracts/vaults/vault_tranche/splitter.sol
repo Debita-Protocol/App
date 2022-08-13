@@ -26,14 +26,15 @@
 
 //     address splitter; 
 
-
+//     /// @notice asset is the tVault  
 //     constructor(
-//         ERC20 _asset,
+//         ERC20 _asset, 
 //         string memory _name,
 //         string memory _symbol, 
-//         address splitter_address
+//         address _splitter
 //     ) ERC20(_name, _symbol, _asset.decimals()) {
 //         asset = _asset;
+//         splitter = _splitter; 
 //     }
 
 //     function mint(address to, uint256 amount) external onlySplitter{
@@ -60,11 +61,14 @@
 //     tVault underlying; 
 //     tToken senior;
 //     tToken junior;  
-//     tValult vault; 
 
 //     //weight is in PRICE_PRECISION 6, i.e 5e5 = 0.5
 //     uint256 junior_weight; 
 //     uint256 PRICE_PRECISION; 
+
+//     //Redemption Prices 
+//     uint256 s_r; 
+//     uint256 j_r; 
 
 //     constructor(
 //     	tVault _underlying //underlying vault token to split 
@@ -75,7 +79,7 @@
 
 //     	junior_weight = underlying.getJuniorWeight(); 
 //     	promised_return = underlying.getPromisedReturn(); 
-//     	PRICE_PRECISION = 1e6; 
+//     	PRICE_PRECISION = 1e18; 
 //     }
 
 // 	/// @notice accepts token_to_split and mints s,j tokens
@@ -95,7 +99,7 @@
 
 // 	}
 
-// 	/// @notice aceepts junior and senior token and gives back token_to_merge
+// 	/// @notice aceepts junior and senior token and gives back token_to_merge(tVault tokens)
 // 	/// Function to call when redeeming before maturity
 // 	/// @param token_to_merge is the valut token
 // 	/// @param junior_amount is amount of junior tokens user want to redeem
@@ -108,7 +112,7 @@
 
 // 		junior.burn(msg.sender, junior_amount);
 // 		senior.burn(msg.sender, senior_amount);
-// 		token_to_merge.safeTransfer(msg.sender, junior_amount+senior_amount); 
+// 		underlying.safeTransfer(msg.sender, junior_amount+senior_amount); 
 // 	}
 
 
@@ -117,16 +121,27 @@
 // 		require(vault.isMatured(), "Vault not matured");
 // 		require(address(_tToken) == address(senior) || address(_tToken) == address(junior), "Wrong Tranche Token");
 // 		bool isSenior = (address(_tToken) == address(senior)) ? true : false; 
-// 		uint256 redemptionPrice = getRedemptionPrice()
-// 		vault.conversion_ratio
+// 		uint redemption_price = isSenior? s_r: j_r; 
+// 		uint token_redeem_amount = (redemption_price * amount)/PRICE_PRECISION; 
+
+// 		_tToken.burn(msg.sender, amount); 
+// 		underlying.safeTransfer(msg.sender, token_redeem_amount); 
+		
 // 	}
 
 
-// 	/// @notice calculate and store redemption Price
-// 	function getRedemptionPrice() internal{
+// 	/// @notice calculate and store redemption Price for post maturity 
+// 	/// @dev should be only called once right after tToken matures, as totalSupply changes when redeeming 
+// 	function calcRedemptionPrice() private {
 // 		promised_return = underlying.getPromisedReturn(); //in 1e6 decimals i.e 5000 is 0.05
 // 		real_return = underlying.getRealReturn(); 
-// 		senior_redemption_price = PRICE_PRECISION*(PRICE_PRECISION + promised_return)/max(PRICE_PRECISION+)
+// 		uint _s_r = ((PRICE_PRECISION + promised_return)/(PRICE_PRECISION+real_return)) * PRICE_PRECISION; 
+// 		uint max_s_r = (PRICE_PRECISION/(PRICE_PRECISION - junior_weight)) *PRICE_PRECISION; 
+		
+// 		s_r = min(_s_r, max_s_r);
+// 		//total supply right after tVault matures 
+// 		j_r = (underlying.totalSupply() - (senior.totalSupply() * s_r/PRICE_PRECISION))/(junior.totalSupply()); 
+
 // 	}
 
 // 	/// @dev need to return in list format to index it easily 
@@ -141,6 +156,9 @@
 
 // 	function max(uint256 a, uint256 b) internal pure returns (uint256) {
 //     	return a >= b ? a : b;
-// }
+// 	}
 
+// 	function min(uint256 a, uint256 b) internal pure returns (uint256) {
+//     	return a <= b ? a : b;
+// 	}
 // }

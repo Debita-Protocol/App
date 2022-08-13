@@ -10,7 +10,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { collateralAddress, shareFactor } = await getCollateral(deployments);
   const ds = await deployments.get("DS");
   const masterchef = await deployments.get('MasterChef')
-  const lendingpool = await deployments.get('LendingPool')
+  // const lendingpool = await deployments.get('LendingPool')
 
   const { address: feePotAddress } = await deployments.get("FeePot");
   const fees = getFees();
@@ -32,10 +32,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const args = [
     deployer,
-    timelock, 
-    masterchef.address, 
-    lendingpool.address, 
-    ds.address,
     interep
   ];
 
