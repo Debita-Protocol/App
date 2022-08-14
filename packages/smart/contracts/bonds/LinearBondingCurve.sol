@@ -33,6 +33,14 @@ contract LinearBondingCurve is BondingCurve {
         result = (((a.mul(s) + b).pow(two) + two.mul(a).mul(amount)).sqrt() - (a.mul(s) + b)).div(a);
     }
 
+    /// @notice calculates area under the curve from current supply to s+amount
+    function _calcAreaUnderCurve(uint256 amount) internal view override virtual returns(uint256 result){
+        uint256 s = totalSupply(); 
+        uint256 s_prime = s+amount;
+        uint256 two = uint256(2).fromUint();
+        result = a.mul(s_prime.pow(two) - s.pow(two)).div(2) + b.mul(s_prime-s); 
+    }
+
     /**
      @dev collateral tokens returned
      @param amount: tokens burning => 60.18
@@ -63,7 +71,6 @@ contract LinearBondingCurve is BondingCurve {
     /// score = (priceOut - a)**2 where a = 1 if no default, 
     function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
         uint256 two = uint256(2).fromUint();
-        uint256 score; 
         if (atLoss) {score =  ((priceOut-math_precision).div(math_precision)).pow(two);}
         else {score = ((priceOut).div(math_precision)).pow(two);}
 

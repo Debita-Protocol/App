@@ -4,19 +4,16 @@ import { DeployFunction } from "hardhat-deploy/types";
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deployer } = await getNamedAccounts();
-  const controller = await deployments.get("Controller"); 
+  const cash_addr = (await deployments.get("Collateral")).address;
+  const args = [cash_addr];
 
-  await deployments.deploy("ReputationNFT", {
-      contract: "ReputationNFT",
-      from: deployer,
-      args: [controller.address],
-      log: true,
+  await deployments.deploy("Vault", {
+    from: deployer,
+    args,
+    log: true,
   });
-  
-
 };
-
-func.tags = ["Rep"];
-func.dependencies = [""];
-
+  
+func.tags = ["Vault"];
+  
 export default func;

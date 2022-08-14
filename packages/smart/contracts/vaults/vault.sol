@@ -177,23 +177,4 @@ contract Vault is ERC4626, Auth{
 
         Instruments[data.marketId] = Instrument(data.Instrument_address);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

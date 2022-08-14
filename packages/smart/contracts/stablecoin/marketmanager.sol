@@ -78,7 +78,7 @@ contract MarketManager is Owned {
 
 	/*
 	1.When Market is intialized, set both params as true
-	2.When a certain time pass after initilization, change _onlyReputable to false 
+	2.When reputation constant bought, change _onlyReputable to false 
 	3.When validator approves, set _duringMarketAssessment to false
 	*/
 	function setAssessmentPhase(
@@ -137,7 +137,7 @@ contract MarketManager is Owned {
 	 @dev verification of trader initializes reputation score at 0, to gain reputation need to participate in markets.
 	 */
 	function isVerified(address trader) internal view returns(bool){
-		return controller.isVerified(trader);
+		return (controller.isVerified(trader) || trader == owner);
 		//return (rep.balanceOf(trader) >= 1 || trader == owner); 
 	}
 
@@ -185,6 +185,14 @@ contract MarketManager is Owned {
 		return (total_bought >= (principal * INSURANCE_CONSTANT)/PRICE_PRECISION); 
 	}
 
+
+	function getDebtPosition(address trader, uint256 marketId) public view returns(uint256, uint256){
+		CDP storage cdp = debt_pools[marketId];
+		return (cdp.collateral_amount[trader], cdp.borrowed_amount[trader]);
+	}
+
+
+
 	/// @dev Called offchain before doTrade contract calls 
 	function canBuy(
 		address trader,
@@ -223,19 +231,20 @@ contract MarketManager is Owned {
 
 	}
 
-	/**
-	 @param outcome: 1 if no loss, 0 if loss => perhaps not ideal.
-	 */
-	function updateReputation(uint256 marketId, uint256 outcome) public {
-		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+	
+	// function updateReputation(uint256 marketId, uint256 outcome) public {
+	// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+
+	// function updateReputation(uint256 marketId, uint256 outcome) publilc {
+	// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 		
-		address[] memory buyers = zcb.getBuyers();
-		uint256 length = buyers.length;
-		for (uint256 i = 0; i < length; i++) {
-			uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
-			rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
-		}
-	}
+	// 	address[] memory buyers = zcb.getBuyers();
+	// 	uint256 length = buyers.length;
+	// 	for (uint256 i = 0; i < length; i++) {
+	// 		uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
+	// 		rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
+	// 	}
+	// }
 
 	function canSell(
 		address trader,
@@ -287,6 +296,8 @@ contract MarketManager is Owned {
 	function denyMarket(
 		uint256 marketId
 	) external  onlyController {
+		require(marketActive(marketId), "Market Not Active"); 
+		require(restriction_data[marketId].duringMarketAssessment, "Not in assessment"); 
 		MarketPhaseData storage data = restriction_data[marketId]; 
 		data.marketDenied = true; 
 		data.duringMarketAssessment = false; 
@@ -345,6 +356,7 @@ contract MarketManager is Owned {
 		uint256 amountOut = zcb.trustedSell(msg.sender, _zcb_amount_in);
 
 	}
+
 
 	/* 
 	For now only allow collateral to be ds

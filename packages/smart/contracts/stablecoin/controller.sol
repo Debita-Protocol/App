@@ -1,6 +1,4 @@
 pragma solidity ^0.8.4;
-import "../rewards/MasterChef.sol";
-import "./ILendingPool.sol";
 import "./IController.sol";
 import "../turbo/TrustedMarketFactoryV3.sol";
 import {MarketManager} from "./marketmanager.sol";
@@ -28,7 +26,7 @@ contract Controller {
     mapping(address => bool) public  validators; 
     mapping(address => bool) public  verified;
     mapping(uint256 => MarketData) public market_data; // id => recipient
-    mapping(address=> uint256) public ad_to_id; //utilizer address to marketId 
+    mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment? 
 
     address[] validators_array;
 
@@ -83,6 +81,7 @@ contract Controller {
        // require(address(marketFactory) == address(0));
         marketFactory = TrustedMarketFactoryV3(_marketFactory);
     }
+
     function setReputationNFT(address NFT_address) public onlyOwner{
         repNFT = ReputationNFT(NFT_address); 
     }
@@ -102,7 +101,7 @@ contract Controller {
         uint256 external_nullifier,
         uint256[8] calldata proof
     ) external  {
-        require(!verified[msg.sender], "address already verified");
+        //require(!verified[msg.sender], "address already verified");
         //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
 
@@ -131,6 +130,7 @@ contract Controller {
     /**
      @dev initiates market, called by frontend loan proposal or instrument form submit button.
      @param recipient is the 
+     @dev a and b must be 60.18 format
      */
     function initiateMarket(
         address recipient,
@@ -144,7 +144,7 @@ contract Controller {
             "name",
             "symbol",
             address(marketManager), // owner
-            address(0), // Vault coin => UNDERLYING***
+            address(vault), 
             a,
             b
         );
@@ -176,6 +176,7 @@ contract Controller {
         emit MarketInitiated(marketId, recipient);
     }
    
+    
    
     /*
     @notice main function called at maturity OR premature resolve of instrument(from early default)
@@ -187,15 +188,13 @@ contract Controller {
         uint256 marketId,
         bool atLoss,
         uint256 extra_gain, 
-        uint256 principal_loss, 
-        address market_manager_address
+        uint256 principal_loss
     ) external  {
         marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
         marketManager.handle_maturity(marketId, atLoss, principal_loss); 
         marketManager.deactivateMarket(marketId, atLoss);
-        //update repNFT score 
-        uint256 outcome = atLoss ? 0 : 1;
-        marketManager.updateReputation(marketId, outcome);
+        //update repNFT score
+        marketManager.updateReputation(marketId);
         //delete market_data[marketId]?
 
         uint256 winning_outcome = 0; //TODO  
@@ -206,7 +205,7 @@ contract Controller {
     function approveMarket( 
         uint256 marketId
         ) external onlyValidator{
-        require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
+        if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
         require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
         marketManager.setAssessmentPhase(marketId, false, false); 
         trustInstrument(marketId); 
@@ -226,7 +225,7 @@ contract Controller {
         marketManager.denyMarket(marketId);
         //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
         uint256 winning_outcome = 0; //TODO  
-        marketFactory.trustedResolveMarket( marketId, winning_outcome);
+        marketFactory.trustedResolveMarket(marketId, winning_outcome);
     }
 
 

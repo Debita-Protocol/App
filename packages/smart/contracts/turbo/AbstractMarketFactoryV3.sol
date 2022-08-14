@@ -371,7 +371,7 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
     ) internal returns (uint256 _marketId){
 
         _marketId = markets.length;
-        OwnedERC20[] memory zcb;
+        OwnedERC20[] memory zcb = new OwnedERC20[](2);
         zcb[0] = _zcb;
         markets.push(
             Market(
@@ -397,7 +397,7 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
 
     function getZCBMarket(uint256 _id) public view returns (Market memory) {
         if (_id >= markets.length) {
-            return makeEmptyMarket();
+           revert("Market Not Activated");
         } else {
             return markets[_id];
         }

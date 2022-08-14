@@ -181,12 +181,8 @@ contract CreditLine is Instrument {
     }
 
     function resolveLoan() external onlyUtilizer{
-
+        
     }
-
-
-
-
 }
 
 

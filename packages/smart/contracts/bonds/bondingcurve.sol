@@ -72,15 +72,22 @@ abstract contract BondingCurve is OwnedERC20 {
      @dev shouldn't be calling this function, should be calculating amount from frontend.
      @param amount: input collateral (ds)
      */
-    function calculatePurchaseReturn(uint256 amount) public view onlyOwner returns (uint256 result) {
+    function calculatePurchaseReturn(uint256 amount) public view  returns (uint256 result) {
         result = _calculatePurchaseReturn(amount);
     }
- 
+
+
+    /// @notice gets required amount of collateral to purchase X amount of tokens
+    /// need to get area under the curve from current supply X_  to X_+X 
+    function calcAreaUnderCurve(uint256 amount) public view  returns(uint){
+    	  return _calcAreaUnderCurve(amount); 
+    }
+
     /**
      @notice calculates collateral returns from selling tokens
      @param amount: amount of tokens selling
      */
-    function calculateSaleReturn(uint256 amount) public view onlyOwner returns (uint256 result) {
+    function calculateSaleReturn(uint256 amount) public view  returns (uint256 result) {
         result = _calculateSaleReturn(amount);
     }
 
@@ -94,7 +101,7 @@ abstract contract BondingCurve is OwnedERC20 {
      @notice calculates expected price given user buys X tokens
      @param amount: hypothetical amount of tokens bought
      */
-    function calculateExpectedPrice(uint256 amount) public view onlyOwner returns (uint256 result) {
+    function calculateExpectedPrice(uint256 amount) public view  returns (uint256 result) {
         result = _calculateExpectedPrice(amount);
     }
     
@@ -120,6 +127,9 @@ abstract contract BondingCurve is OwnedERC20 {
 
     function getLowerBound() public view returns (uint256 result) {
         result = price_lower_bound;
+    }
+    function getReserves() public view returns(uint256){
+    	return reserves; 
     }
 
     /**
@@ -226,7 +236,8 @@ abstract contract BondingCurve is OwnedERC20 {
     function getBuyers() external view returns (address[] memory) {
         return buyers;
     }
-    
+    function _calcAreaUnderCurve(uint256 amount) internal view  virtual returns(uint256 result); 
+
     function _calculateScore(uint256 priceOut, bool atLoss) view internal virtual returns(uint256 score);
 
     function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);

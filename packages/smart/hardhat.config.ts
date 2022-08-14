@@ -5,7 +5,7 @@ import "hardhat-abi-exporter";
 import "hardhat-docgen";
 import "@tenderly/hardhat-tenderly";
 import "hardhat-gas-reporter";
-//import "hardhat-typechain";
+import "hardhat-typechain";
 
 
 import "./tasks";
@@ -82,7 +82,7 @@ export const config: HardhatUserConfig = {
       maticMainnet: NO_OWNER,
     },
     interep: {
-      default: 1 // testing only.
+      default: 1 // testing only. => deploy from separate account.
     },
     protocol: {
       default: 0,
