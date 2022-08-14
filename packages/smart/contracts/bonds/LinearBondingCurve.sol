@@ -34,10 +34,11 @@ contract LinearBondingCurve is BondingCurve {
 
     /// @notice calculates area under the curve from current supply to s+amount
     function _calcAreaUnderCurve(uint256 amount) internal view override virtual returns(uint256 result){
-        uint256 s = totalSupply(); 
-        uint256 s_prime = s+amount;
-        uint256 two = uint256(2).fromUint();
-        result = a.mul(s_prime.pow(two) - s.pow(two)).div(2) + b.mul(s_prime-s); 
+        // uint256 s = totalSupply(); 
+        // uint256 s_prime = s+amount;
+        // uint256 two = uint256(2).fromUint();
+        // result = a.mul(s_prime.pow(two) - s.pow(two)).div(2) + b.mul(s_prime-s); 
+        result = 0; 
     }
 
     /**
@@ -65,18 +66,15 @@ contract LinearBondingCurve is BondingCurve {
         score = amount.mul(a) + b;
     }
 
-    /// @notice calculates prob score (prob- 1)**2
-    /// @param priceOut is in decimal 18
-    /// score = (priceOut - a)**2 where a = 1 if no default, 
-    function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
-        uint256 two = uint256(2).fromUint();
-        if (atLoss) {score =  ((priceOut-math_precision).div(math_precision)).pow(two);}
-        else {score = ((priceOut).div(math_precision)).pow(two);}
 
+
+   function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
+        // uint256 two = uint256(2).fromUint();
+        // if (atLoss) {score =  ((priceOut-math_precision).div(math_precision)).pow(two);}
+        // else {score = ((priceOut).div(math_precision)).pow(two);}
+        score = 0; 
 
     }
-
-
 
 
 
@@ -151,4 +149,4 @@ contract LinearBondingCurve is BondingCurve {
 
 
 //     }
-// }
+ }
