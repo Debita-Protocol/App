@@ -8,6 +8,7 @@ import {LinearBondingCurve} from "../bonds/LinearBondingCurve.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Vault} from "../vaults/vault.sol";
 import {Instrument} from "../vaults/instrument.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
@@ -33,7 +34,11 @@ contract Controller {
     TrustedMarketFactoryV3 marketFactory;
     MarketManager marketManager;
     Vault public vault;
-    ReputationNFT repNFT; 
+    ReputationNFT repNFT;
+
+    string constant baseName = "Bond";
+    string constant baseSymbol = "B";
+    uint256 id = 1;
 
     uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
     bytes32 constant private signal = bytes32("twitter-unrated");
@@ -90,18 +95,24 @@ contract Controller {
     /// returns a,b is both in 18 price_precision
     function getCurveParams(uint256 principal, uint256 interest) public returns (uint256 a, uint256 b){
         b = (((2*principal))/(principal + interest)) * PRICE_PRECISION; 
-        a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION; 
+        a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION;
     }
 
-    function verifyAddress(
-        uint256 nullifier_hash, 
-        uint256 external_nullifier,
-        uint256[8] calldata proof
-    ) external  {
-        require(!verified[msg.sender], "address already verified");
-        //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
-        verified[msg.sender] = true;
+    // function verifyAddress(
+    //     uint256 nullifier_hash, 
+    //     uint256 external_nullifier,
+    //     uint256[8] calldata proof
+    // ) external  {
+    //     require(!verified[msg.sender], "address already verified");
+    //     interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
+    //     verified[msg.sender] = true;
+    // }
 
+    /**
+    TESTING ONLY
+     */
+    function verifyAddress() external {
+        verified[msg.sender] = true;
     }
 
     function isVerified(address addr) view public returns (bool) {
@@ -132,21 +143,27 @@ contract Controller {
      @dev initiates market, called by frontend loan proposal or instrument form submit button.
      @dev a and b must be 60.18 format
      */
+
     function initiateMarket(
         address recipient,
         string calldata description,
         uint256[] calldata odds,
-        Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
+        Vault.InstrumentData memory instrumentData //TODO balance, marketId, trusted, doesn't matter what value.
     ) external  {
         uint256 a;
         uint256 b;
+
         (a, b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
 
+        string memory _id = Strings.toString(id);
+        string memory name = string(abi.encodePacked(baseName, "-", _id));
+        string memory symbol = string(abi.encodePacked(baseSymbol, _id));
+
         OwnedERC20 zcb = new LinearBondingCurve(
-            "name",
-            "symbol",
+            name,
+            symbol,
             address(marketManager), // owner
-            address(0), // Vault coin => UNDERLYING***
+            address(vault.UNDERLYING()), // Vault coin => UNDERLYING***
             a,
             b
         );
@@ -159,14 +176,14 @@ contract Controller {
         );
 
         instrumentData.marketId = marketId;
+        instrumentData.trusted = false;
+        instrumentData.balance = 0;
 
-
-        vault.addProposal(
-            instrumentData
-        );
+        vault.addProposal(instrumentData);
 
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
         marketManager.setAssessmentPhase(marketId, true, true);  
+        id++;
     }
    
     /*
@@ -197,7 +214,7 @@ contract Controller {
     /// @notice called by the validator when market conditions are met
     function approveMarket( 
         uint256 marketId
-        ) external onlyValidator{
+    ) external onlyValidator {
         require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
         require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
         marketManager.setAssessmentPhase(marketId, false, false); 

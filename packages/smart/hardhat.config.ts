@@ -107,7 +107,7 @@ export const config: HardhatUserConfig = {
     },
     hardhat: {
       live: false,
-      saveDeployments: false,
+      saveDeployments: true,
       chainId:137,
 
       tags: ["test", "local"],

@@ -4,17 +4,18 @@ import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
 import {IReputationNFT} from "./IReputationNFT.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "hardhat/console.sol";
+
 
 
 contract ReputationNFT is IReputationNFT, ERC721 {
-  using PRBMathUD60x18 for uint256;
   mapping(uint256 => ReputationData) internal _reputation; // id to reputation
   mapping(address => uint256) internal _ownerToId;
   mapping(uint256 => TraderData[]) internal _marketData; // **MarketId to Market's data needed for calculating brier score.
 
   uint256 private nonce = 1;
   Controller controller;
+  uint256 SCALE = 1e18;
 
 
   struct ReputationData {
@@ -35,6 +36,7 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   constructor (
     address _controller
   ) ERC721("Debita Reputation Token", "DRT") {
+    console.log("here");
     controller = Controller(_controller);
   }
 
@@ -72,10 +74,19 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     if (data.n == 0) {
       data.score = score;
     } else {
-      uint256 _n = uint256(data.n).fromUint();
       //data.score = ((data.score / data.n) + score) / (data.n + 1);
-      data.score = ((data.score).div(_n) + score).div(_n + uint256(1).fromUint());
+      data.score = (data.score / data.n + score) / (data.n + 1);
     }
+
     data.n++;
+  }
+
+  /**
+   @notice reset scores
+   */
+  function resetScore(address to) external {
+    require(_ownerToId[to] != uint256(0), "No Id found");
+    delete _reputation[_ownerToId[to]];
+
   }
 }
