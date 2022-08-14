@@ -22,7 +22,6 @@ contract LinearBondingCurve is BondingCurve {
         a = _a;
         b = _b;
     }
-
     /**
      @dev tokens returned = [((a*s + b)^2 + 2*a*p)^(1/2) - (a*s + b)] / a
      @param amount: amount collateral in => 60.18
@@ -76,4 +75,80 @@ contract LinearBondingCurve is BondingCurve {
 
 
     }
-}
+
+
+
+
+
+//     /**
+//      @dev tokens returned = [((a*s + b)^2 + 2*a*p)^(1/2) - (a*s + b)] / a
+//      @param amount: amount collateral in => 60.18
+//      */
+//     function _calculatePurchaseReturn(uint256 amount) view internal override virtual returns(uint256 result) {
+//         uint256 s = totalSupply();
+
+
+//         uint256 two = uint256(2).fromUint();
+
+//       //  result = (((a.mul(s) + b).pow(two) + two.mul(a).mul(amount)).sqrt() - (a.mul(s) + b)).div(a);
+//         result = 0;
+//         //result = 0;
+//     }
+
+//     /// @notice calculates area under the curve from current supply to s+amount
+//     function _calcAreaUnderCurve(uint256 amount) internal view override virtual returns(uint256 result){
+//         //uint256 s = totalSupply(); 
+//         uint256 s = 1;
+//         uint256 s_prime = s+amount;
+//         uint256 two = uint256(2).fromUint();
+//        // result = a.mul(s_prime.pow(two) - s.pow(two)).div(2) + b.mul(s_prime-s);
+
+//         result = 0; 
+//     }
+
+//     /**
+//      @dev collateral tokens returned
+//      @param amount: tokens burning => 60.18 check
+//      */
+//     function _calculateSaleReturn(uint256 amount) view internal override virtual returns (uint256 result) {
+//         uint256 s = totalSupply();
+//         uint256 two = uint256(2).fromUint();
+//         //result = reserves - ((a.div(two)).mul((s - amount).pow(two)) + b.mul(s - amount));
+//         result = 0; 
+//     }
+
+//     /**
+//      @param amount: amount added in 60.18
+//      */
+//     function _calculateExpectedPrice(uint256 amount) view internal override virtual returns (uint256 result) {
+//        // uint256 s = totalSupply();
+//         uint256 s = 1; 
+//         result = (s + amount).mul(a) + b;
+//         result = 0;
+//     }
+
+//     /**
+//      @notice probability = a * x + b, 60.18
+//      */
+//     function _calculateProbability(uint256 amount) view internal override virtual returns (uint256 score) {
+//         score = amount.mul(a) + b;
+//         score = 0;
+//     }
+
+//     /// @notice calculates prob score (prob- 1)**2
+//     /// @param priceOut is in decimal 18
+//     /// score = (priceOut - a)**2 where a = 1 if no default, 
+//     function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
+//         uint256 two = uint256(2).fromUint();
+//         if (atLoss){ 
+//            // score =  ((priceOut-math_precision).div(math_precision)).pow(two)
+//             score = 0;
+//         }
+//         else {
+//           //  score = ((priceOut).div(math_precision)).pow(two)
+//             score = 0;
+//         }
+
+
+//     }
+// }

@@ -92,8 +92,10 @@ contract Controller {
     /// @param interest is amount of interest in dollars, not percentage,
     /// returns a,b is both in 18 price_precision
     function getCurveParams(uint256 principal, uint256 interest) internal pure returns (uint256 a, uint256 b){
-        b = (((2*principal))/(principal + interest)) * PRICE_PRECISION; 
-        a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION; 
+      //  b = (((2*principal))/(principal + interest)) * PRICE_PRECISION; 
+      //  a = ((PRICE_PRECISION-b)/(principal + interest)) * PRICE_PRECISION; 
+        a = 1;
+        b = 1;
     }
 
     function verifyAddress(
