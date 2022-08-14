@@ -73,7 +73,6 @@ contract MarketManager is Owned {
 		controller = Controller(_controllerAddress);
 	}
 
-
 	/*----Phase Functions----*/
 
 	/*

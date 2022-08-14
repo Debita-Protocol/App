@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 import "./vault.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@prb/math/contracts/PRBMathUD60x18.sol";
+
 
 /// @notice Minimal interface for Vault compatible strategies.
 abstract contract Instrument {
@@ -30,7 +32,7 @@ abstract contract Instrument {
     function _initialize(
         address _vault,
         address _Utilizer
-        ) internal {
+    ) internal {
         vault = Vault(_vault);
         underlying = ERC20(vault.UNDERLYING());
         underlying.approve(_vault,MAX_UINT ); // Give Vault unlimited access 
@@ -59,9 +61,6 @@ abstract contract Instrument {
     function balanceOfUnderlying(address user) external  returns (uint256){
         return underlying.balanceOf(user); 
         }
-
-  
-
 }
 
 
@@ -106,6 +105,7 @@ contract RariLend_Instrument is Instrument{
 /// approved borrowers will interact with this contract to borrow, repay. 
 /// and vault will supply principal and harvest principal/interest 
 contract CreditLine is Instrument {
+    using PRBMathUD60x18 for uint256;
 
     //  variables initiated at creation
     uint256  principal;
@@ -123,7 +123,7 @@ contract CreditLine is Instrument {
         address borrower, 
         uint256 principal,
         uint256 interestAPR, 
-        uint256 duration ,
+        uint256 duration,
         uint256 faceValue
         ) public {
         initialize(vault, borrower, principal, interestAPR, duration,faceValue);
@@ -138,7 +138,8 @@ contract CreditLine is Instrument {
         uint256 _principal,
         uint256 _interestAPR, 
         uint256 _duration, 
-        uint256 _faceValue) internal {
+        uint256 _faceValue
+    ) internal {
         _initialize(_vault, _borrower); 
 
         principal = _principal; 
@@ -150,7 +151,8 @@ contract CreditLine is Instrument {
     }
 
     /// @notice use APR and duration to get total owed interest 
-    function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256){
+    function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256 owed){
+        
         return APR; 
     }
 
@@ -160,8 +162,7 @@ contract CreditLine is Instrument {
         require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
         totalOwed += amount; 
         principalOwed += amount; 
-        underlying.transfer(msg.sender, amount); 
-
+        underlying.transfer(msg.sender, amount);
     }
 
 

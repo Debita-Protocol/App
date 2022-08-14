@@ -17,13 +17,10 @@ import {
   Controller, 
   BondingCurve, 
   MarketManager, 
-  ReputationNFT ,
-
+  ReputationNFT,
   Vault,
   CreditLine, 
   CreditLine__factory
-
-
 } from "../typechain";
 
 import { BigNumber } from "ethers";
@@ -85,7 +82,6 @@ describe("Vault", ()=>{
     await creditline.drawdown(drawdown); 
     expect(await collateral.balanceOf(owner.address)).to.equal(drawdown); 
     expect(await collateral.balanceOf(creditline.address)).to.equal(drawdown);
-
   });
 
   it("can repay to creditline", async()=>{
@@ -99,8 +95,5 @@ describe("Vault", ()=>{
     await vault.withdrawFromInstrument(creditline.address, principal); 
     expect(await collateral.balanceOf(creditline.address)).to.equal(0);
   
-  }); 
-
-
-
+  });
 })

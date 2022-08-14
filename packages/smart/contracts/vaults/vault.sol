@@ -153,7 +153,7 @@ contract Vault is ERC4626, Auth{
     /// @notice add instrument proposal created by the Utilizer 
     /// @dev Instrument instance should be created before this is called 
     function addProposal(
-        InstrumentData memory data  
+        InstrumentData memory data
     ) external {
         require(data.principal > 0, "principal must be greater than 0");
         require(data.duration > 0, "duration must be greater than 0");
