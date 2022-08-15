@@ -142,7 +142,7 @@ contract MarketManager is Owned {
 
 
 	function isReputable(address trader, uint256 marketId) internal view returns(bool){
-		return (restriction_data[marketId].min_rep_score <= rep.getReputationScore(trader).score || trader == owner); 
+		return (restriction_data[marketId].min_rep_score <= rep.getReputationScore(trader) || trader == owner); 
 	}
 
 	/*
@@ -190,8 +190,34 @@ contract MarketManager is Owned {
 		return (cdp.collateral_amount[trader], cdp.borrowed_amount[trader]);
 	}
 
+	/// @notice get trade budget = f(reputation)
+	/// sqrt for now 
+	function getTraderBudget(address trader) public view returns(uint256){
+		uint256 repscore = rep.getReputationScore(trader); 
+		return sqrt(repscore); 
+  	
+	}
+ 	
+ 	/// @notice computes the price for ZCB one needs to short at to completely
+ 	/// hedge for the case of maximal loss, function of principal and interest
+	function getHedgePrice(uint256 marketId) public view returns(uint256){
+		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
+		uint256 yield = controller.vault().fetchInstrumentData(marketId).expectedYield; 
 
+		return PRICE_PRECISION - (yield/(principal * (PRICE_PRECISION - INSURANCE_CONSTANT))/PRICE_PRECISION); 
+	}
 
+	/// @notice computes maximum amount of quantity that trader can short while being hedged
+	/// such that when he loses his loss will be offset by his gains  
+	function getHedgeQuantity(address trader, uint256 marketId) public view returns(uint256){
+		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
+		uint256 holdings =  controller.vault().balanceOf(trader);
+		uint256 marketCap = controller.vault().totalSupply(); 
+		uint num = (principal * (PRICE_PRECISION - INSURANCE_CONSTANT)/PRICE_PRECISION) * holdings; 
+		return num*PRICE_PRECISION/marketCap; 
+	}	
+
+	/// @notice trader can only buy within their budget limit 
 	/// @dev Called offchain before doTrade contract calls 
 	function canBuy(
 		address trader,
@@ -204,6 +230,7 @@ contract MarketManager is Owned {
 
 		if (_duringMarketAssessment){
 			require(isVerified(trader), "User Not Verified");
+			require(getTraderBudget(trader)>= amount, "Amount Exceeds Budget"); 
 		}
 
   		//During the early risk assessment phase only reputable can buy 
@@ -231,19 +258,7 @@ contract MarketManager is Owned {
 	}
 
 	
-	// function updateReputation(uint256 marketId, uint256 outcome) public {
-	// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 
-	// function updateReputation(uint256 marketId, uint256 outcome) publilc {
-	// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-		
-	// 	address[] memory buyers = zcb.getBuyers();
-	// 	uint256 length = buyers.length;
-	// 	for (uint256 i = 0; i < length; i++) {
-	// 		uint256 p = zcb.calculateProbability(zcb.balanceOf(buyers[i]));
-	// 		rep.addScore(buyers[i], (p - uint256(outcome).fromUint()).sqrt());
-	// 	}
-	// }
 
 	function canSell(
 		address trader,
@@ -381,7 +396,6 @@ contract MarketManager is Owned {
 		cdp.total_collateral += _collateralIn; //only ds 
 		collateral_pot[_marketId] += _collateralIn; //Total ds collateral 
 
-		// BondingCurve(bondingCurveAddress).mint(_marketId, requested_zcb, trader); 
 		zcb.trustedMint(trader, requested_zcb);
 	}
 
@@ -438,17 +452,12 @@ contract MarketManager is Owned {
 	) external  onlyController {	
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+		uint256 total_bought_collateral = zcb.getTotalCollateral();
+		uint256 total_bought_bonds = zcb.getTotalZCB();
 
 		if (atLoss){
-			//require(principal_loss >0 && extra_gain==0, "loss err");
-			// uint256 total_bought_collateral = bondingcuve.getTotalDS(marketId);
-			// uint256 total_bought_bonds = bondingcuve.getTotalZCB(marketId);
-			uint256 total_bought_collateral = zcb.getTotalCollateral();
-			uint256 total_bought_bonds = zcb.getTotalZCB();
-
-			console.log('totals', total_bought_collateral,total_bought_bonds ); 
 			if (total_bought_collateral - principal_loss > 0){
-				redemption_prices[marketId] = (total_bought_collateral-principal_loss)*PRICE_PRECISION/total_bought_bonds; 
+				redemption_prices[marketId] = PRICE_PRECISION - (principal_loss*PRICE_PRECISION/total_bought_bonds);
 			}
 			else{
 				redemption_prices[marketId] = 0; 
@@ -456,10 +465,8 @@ contract MarketManager is Owned {
 		}
 		else{
 			require(extra_gain >= 0 && principal_loss ==0,  "loss err"); 
-			// uint256 max_quantity = bondingcuve.getMaxQuantity(marketId); 
-			uint256 max_quantity = zcb.getMaxQuantity();
-			redemption_prices[marketId] = (extra_gain + max_quantity)*PRICE_PRECISION/max_quantity;
-			console.log('Max quantity', max_quantity); 
+			uint256 num_shorts = debt_pools[marketId].total_debt; //For now assume that every zcb borrowed is used to short
+			redemption_prices[marketId] = PRICE_PRECISION + (extra_gain*PRICE_PRECISION/(total_bought_bonds+num_shorts)); 
 		}	
 
 			console.log('redemption_price', redemption_prices[marketId]); 
@@ -537,9 +544,14 @@ contract MarketManager is Owned {
 		bool atLoss = restriction_data[marketId].atLoss; 
 		uint256 priceOut = assessment_prices[marketId][msg.sender]; 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
-		uint256 score = BondingCurve(address(controller.getZCB(marketId))).calculateScore(priceOut, atLoss);
-		//TODO 
-		rep.addScore(msg.sender, score); 
+		uint256 traderBudget = getTraderBudget(msg.sender); 
+		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
+
+		uint256 scoreToAdd; 
+		if (!atLoss) scoreToAdd = ((num_bonds_bought)/traderBudget) * (PRICE_PRECISION - priceOut)*(num_bonds_bought);
+		else scoreToAdd = (num_bonds_bought/traderBudget) * priceOut * num_bonds_bought; 
+
+		rep.addScore(msg.sender, scoreToAdd, !atLoss); 
 	}
 
 
@@ -547,7 +559,18 @@ contract MarketManager is Owned {
 	    return a >= b ? a : b;
 	}
 
-
+	function sqrt(uint y) internal pure returns (uint z) {
+	    if (y > 3) {
+	        z = y;
+	        uint x = y / 2 + 1;
+	        while (x < z) {
+	            z = x;
+	            x = (y / x + x) / 2;
+	        }
+	    } else if (y != 0) {
+	        z = 1;
+	    }
+	}
 
 
 }

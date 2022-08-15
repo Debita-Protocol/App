@@ -57,16 +57,18 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     nonce++;
   }
 
-  function getReputationScore(address owner) view external returns (ReputationData memory){
+  function getReputationScore(address owner) view external returns (uint256){
     require(_ownerToId[owner] != uint256(0), "No Id found");
-    return _reputation[_ownerToId[owner]];
+    return _reputation[_ownerToId[owner]].score;
   }
+
+
 
   /**
    @notice calculates average of scores added.
    @param score: 60.18 format
    */
-  function addScore(address to, uint256 score) external  {
+  function addScore(address to, uint256 score, bool atLoss) external  {
     require(_ownerToId[to] != uint256(0), "No Id found");
 
     ReputationData storage data = _reputation[_ownerToId[to]];
