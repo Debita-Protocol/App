@@ -102,6 +102,8 @@ import {
   Vault__factory, 
   Instrument__factory, 
   Instrument, 
+  MarketManager__factory,
+  MarketManager,
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -139,61 +141,10 @@ const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalP
 
 // ONLY FOR TESTING.
 export async function setupContracts (account: string, provider: Web3Provider) {
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
-  const deployer = new ethers.Wallet(deployer_pk, provider)
-  const lpool = getLendingPoolContract(provider, account)
-  // try {
-  //   console.log("before set Controller")
-  //   let tx = await lpool.connect(deployer).setController(controller.address)
-  //   await tx.wait()
-  //   console.log("after set Controller", tx)
-  // } catch (err) {
-  //   console.log("error setting controller", err.reason)
-  // }
-  // try {
-  //   console.log("before add validator")
-  //   let tx = await lpool.connect(deployer).addValidator(zeke_test_account)
-  //   await tx.wait()
-  //   console.log("after add validator", tx)
-  // } catch (err) {
-  //   console.log("error adding validator", err.reason)
-  // }
-  // try {
-  //   const ds = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
 
-  //   let tx = await ds.connect(deployer).addPool(lendingPooladdress)
-  //   tx.wait()
-  // } catch (err) {
-  //   console.log("error adding pool", err)
-  // }
-  // try {
-  //   const chef = MasterChef__factory.connect("0x42a0549a4063378cb96cac64ffb434da1e2817bd", getProviderOrSigner(provider, account))
-  //   let tx = await chef.connect(deployer).trustAMMFactory(ammFactoryAddress)
-  //   tx.wait()
-
-  // } catch (err) {
-  //   console.log("error setting amm factory" , err)
-  // }
-  // try {
-    
-  // }
 }
 
-//  LENDING POOL FUNCTIONS
-
-// export async function isBorrowerApproved(
-//   provider: Web3Provider, 
-//   account: string,
-// //marketid, needs a marketid->borrowerid/idx mapping 
-//   ): Promise<boolean>{
-
-//   //const lendingpool = getLendingPoolContract(provider, lendingPooladdress, account) 
-//   //const isapproved = await lendingpool.isApproved(borrower, idx)
-
-//   return false;  
-// }
-
-
+// NEW STUFF BELOW
 
 interface InstrumentData_ {
   trusted: boolean; 
@@ -328,7 +279,7 @@ export async function redeemVaultDS(
 
 
 
-
+// NEW STUFF ABOVE 
 
 
 
