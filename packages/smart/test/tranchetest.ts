@@ -16,6 +16,7 @@ import {
   TToken, 
   TrancheFactory, 
   Splitter, 
+  Splitter__factory, 
 
 
   TToken__factory, 
@@ -46,10 +47,11 @@ interface InitParams{
 }
 
 
-
-// async function reset( ): Promise<boolean>   
-// async function buy(): Promise<boolean>
-// async function sell(): Promise<boolean>
+//user needs to be able to mint tVault, 
+//provide liquidity, 
+//see that there is liquidity and buy when there is liquidity 
+//join the pool anytime by adding liquidity, buying 
+//exit by redeeming anytime, but this is equivalent to merging + redeeming vault 
 
 describe("Cycle", ()=>{
   let owner: SignerWithAddress; 
@@ -97,7 +99,7 @@ describe("Cycle", ()=>{
 
   }); 
 
-  it("can create a superVault", async()=>{
+  it("can create a superVault, mint/redeem", async()=>{
     params._want = collateral.address; 
     params._instruments = [testVault1.address, testVault2.address]; 
     params._ratios = [pp_.mul(7).div(10), pp_.mul(3).div(10)]; 
@@ -122,7 +124,52 @@ describe("Cycle", ()=>{
     const realreturns = await tVault.getCurrentRealReturn();
     console.log('getInitialExchangeRates', exchangerate.toString(), realreturns.toString()); 
 
+    await tVault.redeem(principal, owner.address, owner.address); 
+    const b1 = await tVault.balanceOf(owner.address); 
+    const b2 = await collateral.balanceOf(testVault1.address); 
+    console.log('b1,b2', b1.toString(),b2.toString()); 
+
+
   }); 
+
+  it("can split and merge", async()=>{
+
+    const splitter_ad = await trancheFactory.getSplitter(0); 
+    const splitter = Splitter__factory.connect(splitter_ad,owner ); 
+    const tVault_ad = await trancheFactory.getSuperVault(0);
+    const tVault = TVault__factory.connect(tVault_ad, owner); 
+    const tVaultbalanceBeforeSplit = await tVault.balanceOf(owner.address); 
+
+    const assets = await tVault.previewMint(principal); 
+    await collateral.approve(tVault.address, assets); 
+    await tVault.mint(principal, owner.address); 
+
+    await tVault.approve(splitter_ad, principal); 
+    await splitter.split(tVault.address,principal);
+    const tranches = await splitter.getTrancheTokens(); 
+    const senior = await TToken__factory.connect(tranches[0], owner); 
+    const junior = await TToken__factory.connect(tranches[1], owner); 
+    var senior_balances = await senior.balanceOf(tranches[0]); 
+    var junior_balances = await junior.balanceOf(tranches[1]); 
+    const tVaultbalanceAfterSplit = await tVault.balanceOf(owner.address); 
+    console.log('tranche balances', senior_balances.toString(), junior_balances.toString()); 
+
+    await splitter.merge(tVault.address, junior_balances);
+    const tVaultbalanceAfterMerge = await tVault.balanceOf(owner.address); 
+    junior_balances= await junior.balanceOf(owner.address); 
+    senior_balances = await senior.balanceOf(owner.address); 
+
+    console.log('tranche balances again',senior_balances.toString(),  junior_balances.toString()); 
+    // expect(junior.balanceOf(owner.address)).to.equal(0);
+    // await expect(senior.balanceOf(owner.address)).to.equal(0); 
+
+    console.log('tvaultbalances',tVaultbalanceBeforeSplit.toString(), tVaultbalanceAfterSplit.toString(), 
+     tVaultbalanceAfterMerge.toString()); 
+
+
+  }); 
+
+
 
 
 }); 

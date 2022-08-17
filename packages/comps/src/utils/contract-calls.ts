@@ -96,8 +96,12 @@ import {
   LendingPool__factory,
   LendingPool,
   ERC20__factory,
-  // Manager__factory, 
-  IndexCDS__factory
+  IndexCDS__factory, 
+
+
+  Vault__factory, 
+  Instrument__factory, 
+  Instrument, 
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -116,12 +120,16 @@ import {
   PRICE_PRECISION,
   collateral_address,
   deployer_pk,
-  zeke_test_account
+  zeke_test_account,
+
+
+  Vault_address, 
+
 } from "../data/constants";
 
 
 import {BigNumber, utils} from "ethers"
-import { Loan } from "../types"
+import { Loan, InstrumentData} from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 
@@ -184,10 +192,161 @@ export async function setupContracts (account: string, provider: Web3Provider) {
 
 //   return false;  
 // }
+
+
+
+interface InstrumentData_ {
+  trusted: boolean; 
+  balance: BN; 
+  faceValue: string;
+  marketId: BN; 
+  principal: string; 
+  expectedYield: string; 
+  duration: string;
+  description: string; 
+  Instrument_address: string; 
+}; 
+
+export async function addProposal(
+  account: string, 
+  library: Web3Provider, 
+  faceValue: string, 
+  principal: string, 
+  expectedYield: string, // this should be amount of collateral yield to be collected over the duration, not percentage
+  duration: string, 
+  description: string, 
+  Instrument_address: string //need to have been created before 
+
+
+  ): Promise<TransactionResponse>{
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  
+
+  const data = {} as InstrumentData_; 
+
+  data.trusted = false; 
+  data.balance = new BN(0); 
+  data.faceValue = new BN(faceValue).shiftedBy(decimals).toFixed(); 
+  data.marketId = new BN(0); 
+  data.principal =new BN(principal).shiftedBy(decimals).toFixed(); 
+  data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
+  data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
+  data.description = description; 
+  data.Instrument_address = Instrument_address; 
+
+  const tx = await controller.initiateMarket(account, data); 
+  return tx; 
+}
+
+export async function isUtilizerApproved(account: string, library: Web3Provider):Promise<boolean> {
+  const Instrument = await getInstrument(account, library);  
+  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
+
+  const isApproved = await vault.isTrusted(Instrument.address); 
+  return isApproved; 
+}
+
+
+export const getInstrument = async(
+  account: string, 
+  library: Web3Provider
+  ): Promise<Instrument> =>{
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const marketId = await controller.getMarketId(account); 
+  const data = await vault.fetchInstrumentData( marketId); 
+  const Instrument_address = data.Instrument_address; 
+  return Instrument__factory.connect(Instrument_address, getProviderOrSigner(library, account));
+
+}; 
+
+export async function borrow_from_creditline(
+  account: string,
+  library: Web3Provider,
+  marketId: string, // decimal format
+  amount: string //decimal format
+) : Promise<TransactionResponse> {
+  const instrument = await getInstrument(account, library);  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  
+  const drawdownAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
+  const tx =  await instrument.drawdown(drawdownAmount); 
+  return tx; 
+
+}
+
+export async function repay_to_creditline(
+  account: string,
+  library: Web3Provider,
+  marketId: string, // decimal format
+  amount: string,  //decimal format
+  interest: string
+) : Promise<TransactionResponse> {
+  const instrument = await getInstrument(account, library);  
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  
+  const repayAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
+  const repayInterest = new BN(interest).shiftedBy(decimals).toFixed(); 
+  const tx =  await instrument.repay(repayAmount,repayInterest ); 
+  return tx; 
+}
+
+export async function mintVaultDS(
+  account: string,
+  library: Web3Provider,
+  shares_amount: string = "0",  
+  not_faucet: boolean = false
+) {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const amount = not_faucet? new BN(shares_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
+  await vault.mint(amount, account); 
+} 
+
+export async function redeemVaultDS(
+  account: string,
+  library: Web3Provider,
+  redeem_amount: string = "0", //in shares 
+  not_faucet: boolean = true
+
+) {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+
+  const amount = not_faucet? new BN(redeem_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  await vault.redeem(amount, account, account); 
+
+}
+
+
+
+
+
+
+
+
+
+///DEPRECATED
+export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
+  //const lpool = getLendingPoolContract(provider, account);
+  return true; 
+ // return lpool.isApproved(account, 0)
+} 
+
+///DEPRECATED
 const getLendingPoolContract = (library: Web3Provider, account: string): LendingPool => {
   return LendingPool__factory.connect(lendingPooladdress, getProviderOrSigner(library, account));
 }
 
+///DEPRECATED 
 // parameters be BigNumber? or string?
 export async function addDiscretionaryLoanProposal(
   account: string,
@@ -231,12 +390,7 @@ export async function addDiscretionaryLoanProposal(
   return transaction;
 }
 
-export async function isBorrowerApproved(account: string, provider: Web3Provider):Promise<boolean> {
-  //const lpool = getLendingPoolContract(provider, account);
-  return true; 
- // return lpool.isApproved(account, 0)
-}
-
+///DEPRECATED 
 export async function addContractLoanProposal(
   account: string,
   provider: Web3Provider,
@@ -274,6 +428,7 @@ export async function addContractLoanProposal(
   return transaction;
 }
 
+///DEPRECATED 
 export async function borrow(
   account: string,
   provider: Web3Provider,
@@ -290,6 +445,7 @@ export async function borrow(
 
   return lpool.connect(getSigner(provider, account)).borrow(formatBytes32String(loan_id), amount)
 }
+///DEPRECATED 
 
 export async function repay(
   account: string,
@@ -457,6 +613,7 @@ export async function checkBorrowStatus (
   return result;
 }
 
+///DEPRECATED 
 export async function mintDS(
   account: string,
   provider: Web3Provider,
@@ -478,7 +635,7 @@ export async function mintDS(
   });
 
 }
-
+///DEPRECATED
 export async function redeemDS(
   account: string,
   provider: Web3Provider,

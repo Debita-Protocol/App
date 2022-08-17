@@ -82,7 +82,7 @@ contract Splitter{
 
     	junior_weight = underlying.getJuniorWeight(); 
     	promised_return = underlying.getPromisedReturn(); 
-    	PRICE_PRECISION = 1e18; 
+    	PRICE_PRECISION = underlying.PRICE_PRECISION(); 
     }
 
 	/// @notice accepts token_to_split and mints s,j tokens

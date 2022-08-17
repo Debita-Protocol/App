@@ -111,6 +111,9 @@ contract TrancheFactory{
 	function getSuperVault(uint vaultId) external view returns(tVault){
 		return tVault(vaultContracts[vaultId].vault); 
 	}
+	function getSplitter(uint vaultId) external view returns(Splitter){
+		return Splitter(vaultContracts[vaultId].splitter); 
+	}
 	//function getNumVaults
 	// function getVaultId(InitParams memory param) external view returns(uint){
 	// 	return vaultIdMapping[param]; 
