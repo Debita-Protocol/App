@@ -103,7 +103,8 @@ import {
   Instrument__factory, 
   Instrument, 
   MarketManager__factory,
-  MarketManager,
+  ReputationNFT__factory,
+  CreditLine__factory
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -126,7 +127,8 @@ import {
 
 
   Vault_address, 
-
+  MM_address,
+  RepNFT_address
 } from "../data/constants";
 
 
@@ -148,9 +150,9 @@ export async function setupContracts (account: string, provider: Web3Provider) {
 
 interface InstrumentData_ {
   trusted: boolean; 
-  balance: BN; 
+  balance: string; 
   faceValue: string;
-  marketId: BN; 
+  marketId: string; 
   principal: string; 
   expectedYield: string; 
   duration: string;
@@ -158,7 +160,35 @@ interface InstrumentData_ {
   Instrument_address: string; 
 }; 
 
-export async function addProposal(
+export async function createCreditLine(
+  account: string, 
+  library: Web3Provider,
+  principal: string, // decimal format
+  interestAPR: string,
+  duration: string, // in seconds.
+  faceValue: string
+): Promise<string> {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  let creditLineF = new CreditLine__factory(getSigner(library, account));
+
+  const _principal = new BN(principal).shiftedBy(decimals).toFixed()
+  const _interestAPR = new BN(interestAPR).shiftedBy(decimals).toFixed()
+  const _faceValue = new BN(faceValue).shiftedBy(decimals).toFixed()
+
+  let creditLine = await creditLineF.deploy(
+    Vault_address,
+    account,
+    _principal,
+    _interestAPR,
+    duration,
+    _faceValue
+  );
+
+  return creditLine.address;
+}
+
+export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider, 
   faceValue: string, 
@@ -167,8 +197,6 @@ export async function addProposal(
   duration: string, 
   description: string, 
   Instrument_address: string //need to have been created before 
-
-
   ): Promise<TransactionResponse>{
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
@@ -179,9 +207,9 @@ export async function addProposal(
   const data = {} as InstrumentData_; 
 
   data.trusted = false; 
-  data.balance = new BN(0); 
+  data.balance = new BN(0).toFixed(); 
   data.faceValue = new BN(faceValue).shiftedBy(decimals).toFixed(); 
-  data.marketId = new BN(0); 
+  data.marketId = new BN(0).toFixed(); 
   data.principal =new BN(principal).shiftedBy(decimals).toFixed(); 
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
@@ -200,6 +228,13 @@ export async function isUtilizerApproved(account: string, library: Web3Provider)
   return isApproved; 
 }
 
+export async function validator_approve_market(
+  account: string, 
+  library: Web3Provider,
+  marketId: string
+) : Promise<TransactionResponse> {
+  
+}
 
 export const getInstrument = async(
   account: string, 
@@ -247,6 +282,9 @@ export async function repay_to_creditline(
   return tx; 
 }
 
+
+// VAULT FUNCTIONS BELOW
+
 export async function mintVaultDS(
   account: string,
   library: Web3Provider,
@@ -275,6 +313,103 @@ export async function redeemVaultDS(
   const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
   await vault.redeem(amount, account, account); 
 
+}
+
+
+export async function buyZCB(
+  account: string, 
+  library: Web3Provider,
+  marketId: string,
+  collateralIn: string // w/ decimal point.
+): Promise<TransactionResponse> {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const _collateralIn = new BN(collateralIn).shiftedBy(decimals).toFixed()
+  console.log("collateralIn", _collateralIn);
+
+  let tx = MM.buy(marketId, _collateralIn);
+  return tx;
+}
+
+export async function sellZCB(
+  account: string, 
+  library: Web3Provider,
+  marketId: string,
+  sellAmount: string, // ZCB tokens to sell
+) : Promise<TransactionResponse> {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const _sellAmount = new BN(sellAmount).shiftedBy(decimals).toFixed()
+
+  let tx = MM.sell(marketId, _sellAmount);
+  return tx;
+}
+
+export async function redeemPostAssessment(
+  account: string, 
+  library: Web3Provider,
+  marketId: string,
+  trader: string
+) : Promise<TransactionResponse> {
+  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  let tx = MM.redeemPostAssessment(marketId, trader);
+  return tx;
+}
+
+export async function 
+
+export async function verifyAddress(
+  account: string,
+  provider: Web3Provider
+): Promise<TransactionResponse> {
+  const wasmFilePath = "../static/semaphore.wasm";
+  const zkeyFilePath = "../static/semaphore_final.zkey";
+  
+  const signer = provider.getSigner(account)
+  
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
+  
+  const group = {
+    provider: "twitter",
+    name: "unrated"
+  }
+
+  const externalNullifier = 1
+
+  const snarkArtifacts = {
+    wasmFilePath,
+    zkeyFilePath
+  }
+
+  const signal_string = "twitter-unrated"
+
+  const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
+
+  return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
+}
+
+export async function getVerificationStatus(
+  account: string,
+  provider: Web3Provider
+) : Promise<boolean> {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+  
+  return controller.verified(account)
+}
+
+export async function mintRepNFT(
+  account: string,
+  library: Web3Provider
+) : Promise<TransactionResponse> {
+  const repToken = ReputationNFT__factory.connect(RepNFT_address, getProviderOrSigner(library, account))
+  
+  let tx = repToken.mint(account)
+
+  return tx
 }
 
 
@@ -614,46 +749,6 @@ export async function redeemDS(
   });
 }
 
-export async function verifyAddress(
-  account: string,
-  provider: Web3Provider
-): Promise<TransactionResponse> {
-  const wasmFilePath = "../static/semaphore.wasm";
-  const zkeyFilePath = "../static/semaphore_final.zkey";
-  
-  const signer = provider.getSigner(account)
-  
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  
-  const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
-  
-  const group = {
-    provider: "twitter",
-    name: "unrated"
-  }
-
-  const externalNullifier = 1
-
-  const snarkArtifacts = {
-    wasmFilePath,
-    zkeyFilePath
-  }
-
-  const signal_string = "twitter-unrated"
-
-  const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
-
-  return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
-}
-
-export async function getVerificationStatus(
-  account: string,
-  provider: Web3Provider
-) : Promise<boolean> {
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  
-  return controller.verified(account)
-}
 
 export async function contractApprovals(
   account: string, 

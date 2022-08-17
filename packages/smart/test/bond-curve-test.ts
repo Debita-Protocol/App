@@ -79,8 +79,8 @@ describe("Bond Curve Tests", () => {
         expect(await bond.balanceOf(owner.address)).to.equal(bd.mul(1))
 
         expect(await bond.getReserves()).to.equal(col.mul(25).div(10))
-        
+
     })
 
-    it("")
+    it("redeem")
 });
