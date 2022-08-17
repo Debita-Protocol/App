@@ -46,22 +46,27 @@ abstract contract BondingCurve is OwnedERC20 {
 
     /**
      @notice called by market manager, like trustedMint but returns amount out
-     @param amount: amount of collateral in. => w/ collateral decimals
+     @param collateral_amount: amount of collateral in. => w/ collateral decimals
      */
-    function trustedBuy(address trader, uint256 amount) public onlyOwner returns (uint256) {
-        uint256 tokens = _calculatePurchaseReturn(amount);
-        reserves += amount;
-        collateral.safeTransferFrom(trader, address(this), amount);
+    function trustedBuy(address trader, uint256 collateral_amount) public onlyOwner returns (uint256) {
+        uint256 tokens = _calculatePurchaseReturn(collateral_amount);
+        console.log('TOKENS', tokens, collateral_amount); 
+        reserves += collateral_amount;
+
+        require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
+        collateral.safeTransferFrom(trader, address(this), collateral_amount);
         _mint(trader, tokens);
         return tokens;
     }
 
     /**
-     @param amount: amount of zcb tokens burned
+     @param zcb_amount: amount of zcb tokens burned, needs to be in 18 decimals 
      */
-    function trustedSell(address trader, uint256 amount) public onlyOwner returns (uint256) {
-        uint256 collateral_out = _calculateSaleReturn(amount);
-        _burn(trader, amount);
+    function trustedSell(address trader, uint256 zcb_amount) public onlyOwner returns (uint256) {
+        uint256 collateral_out = _calculateSaleReturn(zcb_amount);
+        console.log("colalteralout", collateral_out); 
+        _burn(trader, zcb_amount);
+
         collateral.safeTransfer(trader, collateral_out);
         reserves -= collateral_out;
         return collateral_out;

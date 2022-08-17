@@ -57,7 +57,7 @@ contract MarketManager is Owned {
 
 	uint256 private INSURANCE_CONSTANT = 5 * 10**5; // 0.5 for DS decimal format.
 	uint256 private REPUTATION_CONSTANT = 3 * 10**5; 
-
+	uint256 private base_budget; 
 	
     modifier onlyController(){
         require(address(controller) == msg.sender || msg.sender == owner, "is not controller"); 
@@ -71,6 +71,7 @@ contract MarketManager is Owned {
 	) Owned(_creator_address){
 		rep = ReputationNFT(reputationNFTaddress);
 		controller = Controller(_controllerAddress);
+		base_budget = 100*PRICE_PRECISION; 
 	}
 
 	/*----Phase Functions----*/
@@ -194,7 +195,7 @@ contract MarketManager is Owned {
 	/// sqrt for now 
 	function getTraderBudget(address trader) public view returns(uint256){
 		uint256 repscore = rep.getReputationScore(trader); 
-		return sqrt(repscore); 
+		return sqrt(repscore) + base_budget; 
   	
 	}
  	

@@ -6,7 +6,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer, interep } = await getNamedAccounts();
   const controller_addr = (await deployments.get("Controller")).address;
   const rep_addr = (await deployments.get("ReputationNFT")).address;
-  const args = [deployer, controller_addr, rep_addr];
+  const args = [deployer,rep_addr,  controller_addr];
 
   await deployments.deploy("MarketManager", {
     from: deployer,

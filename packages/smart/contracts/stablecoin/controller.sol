@@ -88,16 +88,19 @@ contract Controller {
 
 
     /// @notice curveparams for linear bonds 
-    /// b is a initial price parameter we choose, a is a function of b 
+    /// b is a initial price parameter we choose i.e 0.9, a is a function of b
+    /// a = (1-b) **2 / 2* interest 
     /// @dev both principal/interest should be in price precision
     /// @param interest is amount of interest in dollars, not percentage,
     /// returns a,b is both in 18 price_precision
     function getCurveParams(uint256 principal, uint256 interest) internal pure returns (uint256 a, uint256 b){
-      
-      // b = 9e17; //do setup
-      // a = (1-b)**2 / 2*interest 
-        a = 1;
-        b = 1;
+
+        uint price_precision = 1e18; 
+        b = 9e17; //do setup
+        a = ((price_precision - b)**2)/price_precision; 
+       // a = price_precision - (2*b) + (b*b)/price_precision; 
+        //a = 1;
+      //  b = 1;
     }
 
     function verifyAddress(
