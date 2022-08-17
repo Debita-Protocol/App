@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 
 import { BondingCurve } from "./bondingcurve.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "../prb/PRBMathUD60x18.sol";
 
 /// @notice implements y = a. basic bonding curve 
 // EVERYTHING IS ASSUMED TO BE IN 60.18 FORMAT

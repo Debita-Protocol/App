@@ -8,7 +8,7 @@ import {Controller} from "./controller.sol";
 import "./IMarketManager.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "../prb/PRBMathUD60x18.sol";
 
 
 
@@ -499,6 +499,7 @@ contract MarketManager is Owned {
 
 			if(principal_loss >0){
 				require(burnamount>0,"burn amount err"); 
+				zcb.burnFirstLoss(burnamount);
 				//bondingcurve.burn_first_loss( marketId, burnamount); 
 				zcb.getCollateral();
 			}

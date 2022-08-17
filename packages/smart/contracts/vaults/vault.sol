@@ -34,7 +34,7 @@ contract Vault is ERC4626, Auth{
 
     mapping(Instrument => InstrumentData) public getInstrumentData;
     mapping(address => uint256) public  num_proposals;
-    mapping(uint256=> Instrument) Instruments; //marketID-> Instrument 
+    mapping(uint256=> Instrument) Instruments; //marketID-> Instrument
 
     /// @param trusted Whether the Instrument is trusted.
     /// @param balance The amount of underlying tokens held in the Instrument.
@@ -117,8 +117,6 @@ contract Vault is ERC4626, Auth{
 
     }
 
-
-
     /// @notice Stores a Instrument as trusted when its approved
     function trustInstrument(Instrument instrument) external requiresAuth{
     	getInstrumentData[instrument].trusted = true;
@@ -172,7 +170,8 @@ contract Vault is ERC4626, Auth{
                 data.expectedYield, 
                 data.duration, 
                 data.description, 
-                data.Instrument_address)
+                data.Instrument_address
+            )
         	); 
 
         Instruments[data.marketId] = Instrument(data.Instrument_address);

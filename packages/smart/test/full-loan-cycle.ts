@@ -14,7 +14,7 @@ import {
     CreditLine__factory
 } from "../typechain";
 
-describe("*Full Cycle Test", () => {
+describe("* Full Cycle Test", () => {
     let ctrlr: Controller;
     let MM: MarketManager;
     let repToken: ReputationNFT;
@@ -28,11 +28,15 @@ describe("*Full Cycle Test", () => {
     let owner: SignerWithAddress; // validator
     let manager: SignerWithAddress;
     let trader: SignerWithAddress;
+    const dec = 18;
 
-    let principal = 10000000;
-    let interestAPR = 100000;
-    let duration = 100; 
-    let faceValue = 12000000; 
+
+    const description = "a description of the instrument";
+    let principal = BigNumber.from(10).pow(dec).mul(10);
+    let interestAPR = 0; // need to finish in vault instrument.
+    let duration = BigNumber.from(30).mul(24).mul(60).mul(60); 
+    let faceValue = BigNumber.from(10).pow(dec).mul(12);
+    let totalInterest = faceValue.sub(principal);
     
     before(async () => {
 
@@ -63,7 +67,7 @@ describe("*Full Cycle Test", () => {
         await ctrlr.connect(manager).verifyAddress();
     });
 
-    describe("#Rep Token Tests", () => {
+    describe("# Rep Token Tests", () => {
         it("Add score tests", async () => {
             await repToken.mint(manager.address);
             expect(await repToken.getReputationScore(manager.address)).to.equal(BigNumber.from(0));
@@ -84,24 +88,52 @@ describe("*Full Cycle Test", () => {
         });
     });
 
-    describe("#initiate instrument from controller", () => {
+    describe("# Initiate instrument from controller", () => {
         it("controller: initiateMarket", async () => {
-            ctrlr.initiateMarket(
+            await ctrlr.initiateMarket(
                 trader.address,
-                "a description of the instrument",
+                description,
                 [BigNumber.from(10).pow(18).mul(1), BigNumber.from(10).pow(18).mul(2)],
                 {
-                    trusted: true,
+                    trusted: true, // shouldn't affect
                     balance: 0,
                     faceValue,
                     marketId: 3,
                     principal,
-                    expectedYield,
+                    expectedYield: totalInterest,
                     duration,
                     description,
-                    Credit 
+                    Instrument_address: creditline.address 
                 }
             )
+            console.log("a")
+            let marketIds = await ctrlr.getIds(trader.address);
+            expect(marketIds[0]).to.equal(BigNumber.from(1))
+            expect(marketIds.length).to.equal(BigNumber.from(1))
+            console.log("correctly set user_ids");
+
+            let instrumentData = await vault.getInstrumentData(creditline.address);
+            expect(instrumentData.trusted).to.equal(false)
+            expect(instrumentData.balance).to.equal(0)
+            expect(instrumentData.faceValue).to.equal(faceValue)
+            expect(instrumentData.marketId).to.equal(BigNumber.from(1))
+            expect(instrumentData.principal).to.equal(principal)
+            expect(instrumentData.duration).to.equal(duration)
+            expect(instrumentData.Instrument_address).to.equal(creditline.address)
+
+            let marketData = await ctrlr.market_data(marketIds[0])
+
+            expect(marketData.recipient).to.equal(trader.address)
+            expect(marketData.instrument_address).to.equal(trader.address)
+
         });
+    })
+
+    describe("# Market Mechanics (market manager + instrument) tests", () => {
+        describe("- assessment phase", () => {
+            it("", async () => {
+
+            })
+        })
     })
 });
