@@ -22,7 +22,9 @@ import {
   TToken__factory, 
   TestVault__factory, 
   TestVault, 
-  TrancheMaster
+  TrancheMaster,
+  StableSwap__factory, 
+  StableSwap, 
 
 
 
@@ -138,28 +140,33 @@ describe("Cycle", ()=>{
     const splitter = Splitter__factory.connect(splitter_ad,owner ); 
     const tVault_ad = await trancheFactory.getSuperVault(0);
     const tVault = TVault__factory.connect(tVault_ad, owner); 
-    const tVaultbalanceBeforeSplit = await tVault.balanceOf(owner.address); 
 
     const assets = await tVault.previewMint(principal); 
     await collateral.approve(tVault.address, assets); 
     await tVault.mint(principal, owner.address); 
+    const tVaultbalanceBeforeSplit = await tVault.balanceOf(owner.address); 
+    console.log('tvalut balance now', tVaultbalanceBeforeSplit.toString()); 
 
     await tVault.approve(splitter_ad, principal); 
     await splitter.split(tVault.address,principal);
     const tranches = await splitter.getTrancheTokens(); 
     const senior = await TToken__factory.connect(tranches[0], owner); 
     const junior = await TToken__factory.connect(tranches[1], owner); 
-    var senior_balances = await senior.balanceOf(tranches[0]); 
-    var junior_balances = await junior.balanceOf(tranches[1]); 
+    const senior_balances = await senior.balanceOf(owner.address); 
+    const junior_balances = await junior.balanceOf(owner.address); 
     const tVaultbalanceAfterSplit = await tVault.balanceOf(owner.address); 
     console.log('tranche balances', senior_balances.toString(), junior_balances.toString()); 
+    console.log('tvault balance after split', tVaultbalanceAfterSplit.toString()); 
 
     await splitter.merge(tVault.address, junior_balances);
     const tVaultbalanceAfterMerge = await tVault.balanceOf(owner.address); 
-    junior_balances= await junior.balanceOf(owner.address); 
-    senior_balances = await senior.balanceOf(owner.address); 
+    const junior_balances2= await junior.balanceOf(owner.address); 
+    const senior_balances2 = await senior.balanceOf(owner.address); 
+    // expect(tVaultbalanceAfterMerge).to.equal(tVaultbalanceBeforeSplit); 
+    // expect(junior_balances2).to.equal(0);
+    // expect(senior_balances2).to.equal(0); 
 
-    console.log('tranche balances again',senior_balances.toString(),  junior_balances.toString()); 
+    console.log('tranche balances again',senior_balances2.toString(),  junior_balances2.toString()); 
     // expect(junior.balanceOf(owner.address)).to.equal(0);
     // await expect(senior.balanceOf(owner.address)).to.equal(0); 
 
@@ -168,7 +175,39 @@ describe("Cycle", ()=>{
 
 
   }); 
+  it("can add liquidity", async()=>{
 
+
+    
+  })
+  it("can swap ", async()=>{
+
+    const amm_ad = await trancheFactory.getAmm(0);
+    const amm = StableSwap__factory.connect(amm_ad, owner);
+    const splitter_ad = await trancheFactory.getSplitter(0); 
+    const splitter = Splitter__factory.connect(splitter_ad,owner ); 
+    const tVault_ad = await trancheFactory.getSuperVault(0);
+    const tVault = TVault__factory.connect(tVault_ad, owner);
+
+    //first mint and split  
+    const assets = await tVault.previewMint(principal); 
+    await collateral.approve(tVault.address, assets); 
+    await tVault.mint(principal, owner.address); 
+    const tVaultbalanceBeforeSplit = await tVault.balanceOf(owner.address); 
+    await tVault.approve(splitter_ad, principal); 
+    await splitter.split(tVault.address,principal);
+
+    //GEt balances
+    const senior_balances = await senior.balanceOf(owner.address); 
+    const junior_balances = await junior.balanceOf(owner.address); 
+
+    //0 is senior, 1 is junior, swap junior to senior 
+    const tokenInAmount = junior_balances; 
+
+    amm.swap(0, 1, tokenInAmount, 0); //this will give this contract tokenOut
+
+
+  }); 
 
 
 

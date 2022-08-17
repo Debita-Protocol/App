@@ -114,6 +114,9 @@ contract TrancheFactory{
 	function getSplitter(uint vaultId) external view returns(Splitter){
 		return Splitter(vaultContracts[vaultId].splitter); 
 	}
+	function getAmm(uint vaultId) external view returns(StableSwap){
+		return StableSwap(vaultContracts[vaultId].amm); 
+	}
 	//function getNumVaults
 	// function getVaultId(InitParams memory param) external view returns(uint){
 	// 	return vaultIdMapping[param]; 
