@@ -31,3 +31,6 @@ export const PRICE_PRECISION = 6;
 // deploying "TrustedMarketFactoryV3" (tx: 0xbd15f2aaaae9a7c170203d6d7444bc0ec99e7d2479188ae4e8a09f722ec9a43b)...: deployed at 0xD6D42E84C4127E71eD55eEecdfcBCF24e1c059E4 with 3608137 gas
 // deploying "Controller" (tx: 0x8b251119f438b015e8377b4385fd739527035c144657040dfa21b3f96b00cd09)...: deployed at 0x7Fa8D8383A79C2aAe701a9F98762820946233c54 with 1890769 gas
 // deploying "IndexCDS" (tx: 0xf2d12f3f2535c2cf07319b518fed47f5eb13bae3ea41c85b29ac80ab9ab941ca)...: deployed at 0x2c0abcBfB23ffa8994bf603a766a037228ca6C27 with 2868904 gas
+
+export const Vault_address = ""; 
+

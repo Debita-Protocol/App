@@ -103,7 +103,10 @@ export const config: HardhatUserConfig = {
       live: false,
       saveDeployments: true,
       tags: ["local"],
-      chainId:137
+      chainId:137, 
+            allowUnlimitedContractSize: true,
+
+
     },
     hardhat: {
       live: false,
@@ -113,6 +116,8 @@ export const config: HardhatUserConfig = {
       tags: ["test", "local"],
       blockGasLimit: 20_000_000, // polygon limit
       gas: 20_000_000, // hardcoded because ganache ignores the per-tx gasLimit override
+            allowUnlimitedContractSize: true
+
     },
     kovan: {
       url: "https://kovan.infura.io/v3/595111ad66e2410784d484708624f7b1",
@@ -132,7 +137,9 @@ export const config: HardhatUserConfig = {
       accounts: ['5505f9ddf81b3aa83661c849fe8d56ea7a02dd3ede636f47296d85a7fc4e3bd6',
       'f7c11910f42a6cab4436bffea7dca20fed310bd794b7c37a930cc013ae6392d2'],
    gas: 2100000,
-      gasPrice: 8000000000
+      gasPrice: 8000000000,
+            allowUnlimitedContractSize: true
+
     },
     maticMainnet: {
       live: true,

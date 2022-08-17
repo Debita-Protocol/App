@@ -204,7 +204,9 @@ contract MarketManager is Owned {
 		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
 		uint256 yield = controller.vault().fetchInstrumentData(marketId).expectedYield; 
 
-		return PRICE_PRECISION - (yield/(principal * (PRICE_PRECISION - INSURANCE_CONSTANT))/PRICE_PRECISION); 
+		uint256 den = (principal * (PRICE_PRECISION - INSURANCE_CONSTANT))/PRICE_PRECISION; 
+		return PRICE_PRECISION -  (yield*PRICE_PRECISION)/den;
+
 	}
 
 	/// @notice computes maximum amount of quantity that trader can short while being hedged
@@ -214,7 +216,7 @@ contract MarketManager is Owned {
 		uint256 holdings =  controller.vault().balanceOf(trader);
 		uint256 marketCap = controller.vault().totalSupply(); 
 		uint num = (principal * (PRICE_PRECISION - INSURANCE_CONSTANT)/PRICE_PRECISION) * holdings; 
-		return num*PRICE_PRECISION/marketCap; 
+		return num/marketCap; 
 	}	
 
 	/// @notice trader can only buy within their budget limit 

@@ -5,6 +5,18 @@ import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 import {Passport} from "@gitcoinco/passport-sdk-types"
 
+export interface InstrumentData {
+  trusted: boolean; 
+  balance: BigNumber; 
+  faceValue: BigNumber;
+  marketId: BigNumber; 
+  principal: BigNumber; 
+  expectedYield: BigNumber; 
+  duration: BigNumber;
+  description: string; 
+  Instrument_address: string; 
+}; 
+
 export interface Loan {
   id: BytesLike;
   principal: BigNumber;
