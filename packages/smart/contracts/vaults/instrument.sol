@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 import "./vault.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "../prb/PRBMathUD60x18.sol";
 
 
 /// @notice Minimal interface for Vault compatible strategies.
@@ -35,7 +35,7 @@ abstract contract Instrument {
     ) internal {
         vault = Vault(_vault);
         underlying = ERC20(vault.UNDERLYING());
-        underlying.approve(_vault,MAX_UINT ); // Give Vault unlimited access 
+        underlying.approve(_vault, MAX_UINT); // Give Vault unlimited access 
         Utilizer = _Utilizer;
 
     }
@@ -117,6 +117,7 @@ contract CreditLine is Instrument {
     uint256 totalOwed; 
     uint256 principalOwed; 
     uint256 interestOwed; 
+    uint256 maturityDate;
 
     constructor(
         address vault,
@@ -125,8 +126,8 @@ contract CreditLine is Instrument {
         uint256 interestAPR, 
         uint256 duration,
         uint256 faceValue
-        ) public {
-        initialize(vault, borrower, principal, interestAPR, duration,faceValue);
+    ) public {
+        initialize(vault, borrower, principal, interestAPR, duration, faceValue);
     }
 
     /// @notice CreditLine contract is initiated at proposal 
@@ -152,33 +153,37 @@ contract CreditLine is Instrument {
 
     /// @notice use APR and duration to get total owed interest 
     function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256 owed){
-        
         return APR; 
     }
 
     /// @notice Allows a borrower to borrow on their creditline.
     function drawdown(uint256 amount) external onlyUtilizer{
-        require(vault.isTrusted(this), "Not approved"); 
+        require(vault.isTrusted(this), "Not approved");
         require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
+        require(block.timestamp <= maturityDate, "Instrument must not have matured");
         totalOwed += amount; 
         principalOwed += amount; 
         underlying.transfer(msg.sender, amount);
+    }
+
+    /// @notice sets the maturity date for the instrument, after which the user can no longer borrow any funds.
+    function setTime() external onlyUtilizer {
+        maturityDate = block.timestamp + duration;
     }
 
 
     /// @notice allows a borrower to repay their loan
     function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        underlying.transferFrom(msg.sender, address(this), repay_principal+repay_interest);
+        underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
         handleRepay(repay_principal, repay_interest); 
     }   
 
     /// @notice updates balances after repayment
     function handleRepay(uint256 repay_principal, uint256 repay_interest) internal {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
-        principalOwed -= Math.min(repay_principal, principalOwed); 
-        interestOwed -= Math.min(repay_interest, interestOwed); 
-
+        principalOwed -= Math.min(repay_principal, principalOwed);
+        interestOwed -= Math.min(repay_interest, interestOwed);
     }
 
     function resolveLoan() external onlyUtilizer{

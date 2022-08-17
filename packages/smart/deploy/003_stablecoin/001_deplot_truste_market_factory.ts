@@ -4,30 +4,31 @@ import { GroupedMarketFactoryV3__factory } from "../../typechain";
 import { getCollateral, getFees } from "../../src/utils/deploy";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const { deployments, getNamedAccounts } = hre;
-  const { deployer, protocol, timelock } = await getNamedAccounts();
+  // const { deployments, getNamedAccounts } = hre;
+  // const { deployer, protocol, timelock } = await getNamedAccounts();
 
-  const { collateralAddress, shareFactor } = await getCollateral(deployments);
- // const ds = await deployments.get("DS");
+  // const { collateralAddress, shareFactor } = await getCollateral(deployments);
+  // const ds = await deployments.get("DS");
 
-  const { address: feePotAddress } = await deployments.get("FeePot");
-  const fees = getFees();
 
-  const args = [
-    deployer,
-    collateralAddress, //ds.address, 
-    shareFactor,
-    feePotAddress,
-    fees,
-    protocol,
-  ];
+  // const { address: feePotAddress } = await deployments.get("FeePot");
+  // const fees = getFees();
 
-  await deployments.deploy("TrustedMarketFactoryV3", {
-    contract: "TrustedMarketFactoryV3",
-    from: deployer,
-    args,
-    log: true,
-  });
+  // const args = [
+  //   deployer,
+  //   collateralAddress, //ds.address, 
+  //   shareFactor,
+  //   feePotAddress,
+  //   fees,
+  //   protocol,
+  // ];
+
+  // await deployments.deploy("TrustedMarketFactoryV3", {
+  //   contract: "TrustedMarketFactoryV3",
+  //   from: deployer,
+  //   args,
+  //   log: true,
+  // });
 
 };
 

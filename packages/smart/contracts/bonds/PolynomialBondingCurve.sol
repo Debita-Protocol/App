@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 
 import {BondingCurve} from "./bondingcurve.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "../prb/PRBMathUD60x18.sol";
 
 /// @notice y = a * x^n => formulas from Bancor 
 /// https://drive.google.com/file/d/0B3HPNP-GDn7aRkVaV3dkVl9NS2M/view?resourcekey=0-mbIgrdd0B9H8dPNRaeB_TA

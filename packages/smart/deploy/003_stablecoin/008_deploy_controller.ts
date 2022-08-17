@@ -4,16 +4,16 @@ import { GroupedMarketFactoryV3__factory } from "../../typechain";
 import { getCollateral, getFees } from "../../src/utils/deploy";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  const { deployments, getNamedAccounts, ethers } = hre;
-  const { deployer, linkNode, protocol, timelock, interep } = await getNamedAccounts();
+  // const { deployments, getNamedAccounts, ethers } = hre;
+  // const { deployer, linkNode, protocol, timelock, interep } = await getNamedAccounts();
 
-  const { collateralAddress, shareFactor } = await getCollateral(deployments);
+  // const { collateralAddress, shareFactor } = await getCollateral(deployments);
   // const ds = await deployments.get("DS");
-  const masterchef = await deployments.get('MasterChef')
+  // const masterchef = await deployments.get('MasterChef')
   // const lendingpool = await deployments.get('LendingPool')
 
-  const { address: feePotAddress } = await deployments.get("FeePot");
-  const fees = getFees();
+  // const { address: feePotAddress } = await deployments.get("FeePot");
+  // const fees = getFees();
 
   // const masterchefargs = [
   //     ds.address
@@ -30,18 +30,18 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   //   });
   // }
 
-  const args = [
-    deployer,
-    interep
-  ];
+  // const args = [
+  //   deployer,
+  //   interep
+  // ];
 
 
-    const controller = await deployments.deploy("Controller", {
-    contract: "Controller",
-    from: deployer,
-    args,
-    log: true,
-    });
+  //   const controller = await deployments.deploy("Controller", {
+  //   contract: "Controller",
+  //   from: deployer,
+  //   args,
+  //   log: true,
+  //   });
 
 };
 

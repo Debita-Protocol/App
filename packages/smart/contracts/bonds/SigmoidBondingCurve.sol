@@ -1,7 +1,7 @@
 pragma solidity ^0.8.4;
 
 import {BondingCurve} from "./bondingcurve.sol";
-import "@prb/math/contracts/PRBMathUD60x18.sol";
+import "../prb/PRBMathUD60x18.sol";
 
 /// @notice y = exp(x/a) / ( b + exp(x/a) )
 /// @dev NEED TO REDO FOR GAS EFFICIENT
