@@ -60,7 +60,7 @@ contract MarketManager is Owned {
 	uint256 private base_budget; 
 	
     modifier onlyController(){
-        require(address(controller) == msg.sender || msg.sender == owner, "is not controller"); 
+        require(address(controller) == msg.sender || msg.sender == owner || msg.sender == address(this), "is not controller"); 
         _;
     }
 

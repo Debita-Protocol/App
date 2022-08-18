@@ -302,7 +302,38 @@ describe("Cycle", ()=>{
   // //   return (cdp.collateral_amount[trader], cdp.borrowed_amount[trader]);
   // // }
 
-  it("can approve", async()=>{
+  // it("can approve", async()=>{
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+  //   //Check that the supply of the bondingcurve is 0, 
+  //   // await expect(bc.getTotalZCB()).to.equal(0); 
+  //   // await expect(bc.getTotalCollateral()).to.equal(0);
+
+  //   //first need to see if market reverts approving when not enough colalteral bought 
+  //   await expect(controller.approveMarket(marketId)).to.be.reverted; 
+
+  //   //then buy 0.6 * principal amount for the instrument 
+  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
+  //   const amountToBuy = instrumentdata.principal.div(2); 
+  //   await vault.approve(bc_address, amountToBuy); 
+  //   await marketmanager.buy(marketId, amountToBuy); 
+
+  //   //Then approve this market again after chaning phase, now the instrument should be 
+  //   //credited with the proposed principal 
+  //   await marketmanager.setAssessmentPhase(marketId, true, false); 
+  //   await controller.approveMarket(marketId); 
+  //   const creditline_balance = await collateral.balanceOf(creditline.address); 
+  //   expect(creditline_balance).to.equal(instrumentdata.principal); 
+
+
+
+  // }); 
+
+
+  // //need a new market for this 
+  it("can deny market and redeem from denied market", async()=>{
+
     const marketId = await controller.getMarketId(trader.address);
     const bc_address = await controller.getZCB_ad(marketId);
     const bc = LinearBondingCurve__factory.connect(bc_address, owner);
@@ -310,60 +341,29 @@ describe("Cycle", ()=>{
     // await expect(bc.getTotalZCB()).to.equal(0); 
     // await expect(bc.getTotalCollateral()).to.equal(0);
 
-    //first need to see if market reverts approving when not enough colalteral bought 
-    await expect(controller.approveMarket(marketId)).to.be.reverted; 
+    const vaultbalancebeforebuy = await vault.balanceOf(owner.address); 
+    //First buy from market 
+    const buy_amount = pp_.mul(10); 
+    await vault.approve(bc_address, buy_amount); 
+    await marketmanager.buy(marketId, buy_amount); 
+    const vaultbalanceafterbuy = await vault.balanceOf(owner.address); 
 
-    //then buy 0.6 * principal amount for the instrument 
-    const instrumentdata = await vault.fetchInstrumentData(marketId); 
-    const amountToBuy = instrumentdata.principal.div(2); 
-    await vault.approve(bc_address, amountToBuy); 
-    await marketmanager.buy(marketId, amountToBuy); 
+    //for second trader
+    // await vault.connect(trader).approve(bc_address, buy_amount); 
+    // await marketmanager.connect(trader).buy(marketId, buy_amount);     
 
-    //Then approve this market again after chaning phase, now the instrument should be 
-    //credited with the proposed principal 
-    await marketmanager.setAssessmentPhase(marketId, true, false); 
-    await controller.approveMarket(marketId); 
-    const creditline_balance = await collateral.balanceOf(creditline.address); 
-    expect(creditline_balance).to.equal(instrumentdata.principal); 
+    await controller.denyMarket(marketId); 
+    await marketmanager.redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
+    const vaultbalanceafterredemption = await vault.balanceOf(owner.address); 
+    const zcbbalanceafterredemption = await bc.balanceOf(owner.address); 
+    expect(zcbbalanceafterredemption).to.equal(0); 
+    expect(vaultbalanceafterredemption).to.equal(vaultbalancebeforebuy); 
 
-
+    //for second trader
+    // await marketmanager.connect(trader).redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
+    // await expect(bc.balanceOf(trader.address)).to.equal(0); 
 
   }); 
-
-
-  // //need a new market for this 
-  // it("can deny market and redeem from denied market", async()=>{
-
-  //   const marketId = await controller.getMarketId(trader.address);
-  //   const bc_address = await controller.getZCB_ad(marketId);
-  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
-  //   //Check that the supply of the bondingcurve is 0, 
-  //   await expect(bc.getTotalZCB()).to.equal(0); 
-  //   await expect(bc.getTotalCollateral()).to.equal(0);
-
-  //   const vaultbalancebeforebuy = await vault.balanceOf(owner.address); 
-  //   //First buy from market 
-  //   const buy_amount = pp_.mul(10); 
-  //   await vault.approve(bc_address, buy_amount); 
-  //   await marketmanager.buy(marketId, buy_amount); 
-  //   const vaultbalanceafterbuy = await vault.balanceOf(owner.address); 
-
-  //   //for second trader
-  //   await vault.connect(trader).approve(bc_address, buy_amount); 
-  //   await marketmanager.connect(trader).buy(marketId, buy_amount);     
-
-  //   await controller.denyMarket(marketId); 
-  //   await marketmanager.redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
-  //   const vaultbalanceafterredemption = await vault.balanceOf(owner.address); 
-  //   const zcbbalanceafterredemption = await bc.balanceOf(owner.address); 
-  //   expect(zcbbalanceafterredemption).to.equal(0); 
-  //   expect(vaultbalanceafterredemption).to.equal(vaultbalancebeforebuy); 
-
-  //   //for second trader
-  //   await marketmanager.connect(trader).redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
-  //   await expect(bc.balanceOf(trader.address)).to.equal(0); 
-
-  // }); 
 
 
   //TODO do redemption solidity first 
