@@ -8,6 +8,7 @@ import {LinearBondingCurve} from "../bonds/LinearBondingCurve.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Vault} from "../vaults/vault.sol";
 import {Instrument} from "../vaults/instrument.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
@@ -26,7 +27,7 @@ contract Controller {
     mapping(address => bool) public  validators; 
     mapping(address => bool) public  verified;
     mapping(uint256 => MarketData) public market_data; // id => recipient
-    mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment? 
+    mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
 
     address[] validators_array;
 
@@ -42,6 +43,12 @@ contract Controller {
     bytes32 constant private signal = bytes32("twitter-unrated");
     uint256 insurance_constant = 5e5; //1 is 1e6, also needs to be able to be changed 
     uint256 constant PRICE_PRECISION = 1e18; 
+    
+    // Bond Curve Name
+    string constant baseName = "Bond";
+    string constant baseSymbol = "B";
+    uint256 nonce = 0;
+
     /* ========== MODIFIERS ========== */
     modifier onlyValidator() {
         require(validators[msg.sender] == true || msg.sender == creator_address, "Only Validators can call this function");
@@ -147,9 +154,13 @@ contract Controller {
         uint256 b;
         (a, b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
 
+        string memory name = string(abi.encodePacked(baseName, "-", Strings.toString(nonce)));
+        string memory symbol = string(abi.encodePacked(baseSymbol, Strings.toString(nonce)));
+        nonce++;
+
         OwnedERC20 zcb = new LinearBondingCurve(
-            "name",
-            "symbol",
+            name,
+            symbol,
             address(marketManager), // owner
             address(vault), 
             a,

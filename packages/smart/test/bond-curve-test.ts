@@ -77,5 +77,10 @@ describe("Bond Curve Tests", () => {
         expect(await bond.connect(owner).callStatic.trustedSell(owner.address, bd.mul(1))).to.equal(col.mul(35).div(10))
         await bond.connect(owner).trustedSell(owner.address, bd.mul(1))
         expect(await bond.balanceOf(owner.address)).to.equal(bd.mul(1))
+
+        expect(await bond.getReserves()).to.equal(col.mul(25).div(10))
+
     })
+
+    it("redeem")
 });

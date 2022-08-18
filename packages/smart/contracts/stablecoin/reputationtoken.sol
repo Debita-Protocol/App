@@ -52,6 +52,7 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   }
 
   function mint(address to) external {
+    require(_ownerToId[to] == uint256(0), "can only mint one reputation token");
     super._mint(to, nonce);
     _ownerToId[to] = nonce;
     nonce++;
