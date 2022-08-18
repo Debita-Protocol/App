@@ -1,6 +1,5 @@
 pragma solidity ^0.8.4;
 
-
 import {Auth} from "./auth/Auth.sol";
 import {ERC4626} from "./mixins/ERC4626.sol";
 
@@ -10,6 +9,7 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 import {ERC20} from "./tokens/ERC20.sol";
 import {Instrument} from "./instrument.sol";
+import {Controller} from "../stablecoin/controller.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 
@@ -31,10 +31,16 @@ contract Vault is ERC4626, Auth{
     uint256 internal BASE_UNIT;
     uint256 totalInstrumentHoldings; //total holdings deposited into all Instruments 
     ERC20 public immutable UNDERLYING;
+    Controller private controller;
 
     mapping(Instrument => InstrumentData) public getInstrumentData;
     mapping(address => uint256) public  num_proposals;
     mapping(uint256=> Instrument) Instruments; //marketID-> Instrument
+
+    enum InstrumentType {
+        CreditLine,
+        Other
+    }
 
     /// @param trusted Whether the Instrument is trusted.
     /// @param balance The amount of underlying tokens held in the Instrument.
@@ -44,17 +50,21 @@ contract Vault is ERC4626, Auth{
         // Balance of the contract denominated in Underlying, 
         // used to determine profit and loss during harvests of the Instrument.  
         // represents the amount of debt the Instrument has incurred from this vault   
-        uint248 balance;
-        uint256 faceValue;
+        uint248 balance; // in underlying
+        uint256 faceValue; // in underlying
         uint256 marketId;
-    	uint256 principal; //this is total available allowance
-        uint256 expectedYield; // total interest paid over duration
+    	uint256 principal; //this is total available allowance in underlying
+        uint256 expectedYield; // total interest paid over duration in underlying
         uint256 duration;
         string description;
-        address Instrument_address;    
+        address Instrument_address;
+        InstrumentType instrument_type;
     }
 
-    constructor(address _UNDERLYING)
+    constructor(
+        address _UNDERLYING,
+        address _controller
+    )
         ERC4626(
             ERC20(_UNDERLYING),
             string(abi.encodePacked("debita ", ERC20(_UNDERLYING).name(), " Vault")),
@@ -64,6 +74,7 @@ contract Vault is ERC4626, Auth{
     {
         UNDERLYING = ERC20(_UNDERLYING);
         BASE_UNIT = 10**ERC20(_UNDERLYING).decimals();
+        controller = Controller(_controller);
 
         //totalSupply = type(uint256).max;
     }
@@ -148,6 +159,10 @@ contract Vault is ERC4626, Auth{
         return getInstrumentData[Instruments[marketId]];
     }
 
+    function onMarketApproval(uint256 marketId) external requiresAuth {
+        Instruments[marketId].onMarketApproval();
+    }
+
     /// @notice add instrument proposal created by the Utilizer 
     /// @dev Instrument instance should be created before this is called 
     function addProposal(
@@ -170,10 +185,23 @@ contract Vault is ERC4626, Auth{
                 data.expectedYield, 
                 data.duration, 
                 data.description, 
-                data.Instrument_address
+                data.Instrument_address,
+                data.instrument_type
             )
         	); 
 
         Instruments[data.marketId] = Instrument(data.Instrument_address);
+    }
+
+    /**
+     @notice called by instrument on resolution
+     */
+    function resolveMarket(
+        bool atLoss,
+        uint256 extra_gain,
+        uint256 total_loss
+    ) external {
+        require(getInstrumentData[Instrument(msg.sender)].marketId != 0, "caller is not active instrument");
+        controller.resolveMarket(getInstrumentData[Instrument(msg.sender)].marketId, atLoss, extra_gain, total_loss);
     }
 }

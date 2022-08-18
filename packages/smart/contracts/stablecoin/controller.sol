@@ -196,16 +196,16 @@ contract Controller {
    
     
    
-    /*
+    /**
     @notice main function called at maturity OR premature resolve of instrument(from early default)
-
-    @Param atLoss: when actual returns lower than expected 
-    @Param principal_loss: if total returned less than principal, principal-total returned
+    @dev triggered by resolve Loan 
+    @param atLoss: when actual returns lower than expected 
+    @param principal_loss: if total returned less than principal, principal-total returned, this is total loss
     */
     function resolveMarket(
         uint256 marketId,
         bool atLoss,
-        uint256 extra_gain, 
+        uint256 extra_gain,
         uint256 principal_loss
     ) external  {
         marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
@@ -231,7 +231,8 @@ contract Controller {
         // Deposit to the instrument contract
         uint256 principal = vault.fetchInstrumentData(marketId).principal; 
         //maybe this should be separated to prevent attacks 
-        vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal ); 
+        vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
+        vault.onMarketApproval(marketId);
     }
 
     /*
@@ -250,14 +251,6 @@ contract Controller {
     function trustInstrument(uint256 marketId) private  {
         vault.trustInstrument(Instrument(market_data[marketId].instrument_address));
     }
-  
-
-
-
-
-
-
-
 
                         /* --------VIEW FUNCTIONS---------  */
     function getMarketId(address recipient) public view returns(uint256){

@@ -19,7 +19,7 @@ import {
   MINT,
   REDEEM,
   PROPOSAL,
-  USER_PROFILE
+  PROFILE
 } from '../constants';
 import { VerifiedAccount } from "./verified-account";
 
@@ -214,11 +214,16 @@ export const TopNav = () => {
                 Borrow
               </Link>
             </li>
-            <li className={classNames({ [Styles.Active]: path === BORROW })}>
-              <Link to={makePath(USER_PROFILE)} disabled={!isLogged} placeholder="Pools">
+            <li className={classNames({ [Styles.Active]: path === PROFILE })}>
+              <Link to={makePath(PROFILE)} disabled={!isLogged} placeholder="Pools">
                 Profile
               </Link>
-            </li>              
+            </li>
+            <li className={classNames({ [Styles.Active]: path === PROPOSAL })}>
+              <Link to={makePath(PROPOSAL)} disabled={!isLogged} placeholder="Pools">
+                Proposals
+              </Link>
+            </li>               
           </ol>
         )}
       </section>

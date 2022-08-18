@@ -17,18 +17,20 @@ import {
   REDEEM,
   LOAN,
   USER_PROFILE,
-  PROFILE
+  PROFILE,
+  CREDITLINE
 } from '../constants';
 import PortfolioView from '../portfolio/portfolio-view';
 import LiquidityView from '../liquidity/liquidity-view';
 import MarketLiquidityView from '../liquidity/market-liquidity-view';
 import MintView from "../mint/mint";
 import RedeemView from "../redeem/redeem"
-import ProposalView from '../proposal/proposal-view';
+import ProposalsView from '../proposals/proposals-view';
 import BorrowView from "../borrow/borrow-view";
 import LoanView from "../loan/loan-view";
-import UserProfileView from "../user-profile/user-profile-view";
 import ProfileView from "../profile/profile-view";
+import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
+
 const { PathUtils: { makePath } } = Utils;
 
 const Routes = p => {
@@ -40,11 +42,11 @@ const Routes = p => {
       <Route path={makePath(LIQUIDITY)} component={LiquidityView} />
       <Route path={makePath(MINT)} component={MintView} />
       <Route path={makePath(REDEEM)} component={RedeemView} />
-      <Route path={makePath(PROPOSAL)} component={ProposalView} />
+      <Route path={makePath([PROPOSAL, CREDITLINE])} component={CreditLineProposalView} />
+      <Route path={makePath(PROPOSAL)} component={ProposalsView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
       <Route path={makePath(BORROW)} component={BorrowView} />
       <Route path={makePath(LOAN)} component={LoanView} />
-      <Route path={makePath(USER_PROFILE)} component={UserProfileView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
       <Redirect to={makePath(MARKETS)} />
     </Switch>
