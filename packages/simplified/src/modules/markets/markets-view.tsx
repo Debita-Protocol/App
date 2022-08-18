@@ -25,8 +25,8 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
-createMarket_, mintDS, resolveMarket, validator_initiate_market, contractApprovals,
-doBulkTrade} = ContractCalls;
+createMarket_, mintDS, resolveMarket, contractApprovals,
+doBulkTrade, addProposal, doOwnerSettings ,mintRepNFT } = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -87,16 +87,19 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
 const confirmApprove = async({
   account, loginAccount, 
 }) => {
-  await  contractApprovals(account, loginAccount.library)
+
+  await doOwnerSettings(account, loginAccount.library)
+ // await  contractApprovals(account, loginAccount.library)
 
 }
 const confirmInitiate = async({
   account, 
   loginAccount, 
 })=> {
-  await validator_initiate_market(loginAccount.library, account, 
-    "100000",
-    )
+  // await validator_initiate_market(loginAccount.library, account, 
+  //   "100000",
+  //   )
+  await resolveMarket(account, loginAccount.library)
 }
 
 const confirmResolve = async ({
@@ -129,7 +132,6 @@ const confirmAction = async ({
   //newFunction();
   console.log('account', account, provider)
 
- // createMarket(account, provider);
    mintCompleteSets_( provider, "100", account)
 
 }
@@ -138,11 +140,23 @@ const confirmBulkTrade = async({
   account,  loginAccount, formData, 
   afterSigningAction = () => {}
 }) => {
-  // console.log('formData', formData[0])
   await doBulkTrade( loginAccount.library,account, formData)
- // formData)
 }
 
+
+const confirmCreate =async({
+  account, loginAccount
+}) =>{
+  addProposal(
+    account, loginAccount.library 
+    )
+}
+
+const confirmMintRepNFT = async({
+  account,  loginAccount, 
+}) => {
+await mintRepNFT( account, loginAccount.library); 
+}
 
 
 
@@ -368,10 +382,15 @@ const MarketsView = () => {
 )}>MintDS</button>
                       <button onClick={() => confirmResolve( { account,    loginAccount}
 )}>Relovemarket</button>
-                      <button onClick={() => confirmInitiate( { account,loginAccount}
-)}>InitiateMarket</button>
+
                       <button onClick={() => confirmApprove( { account,loginAccount}
-)}>Approve</button>
+)}>ApproveAll</button>
+                      <button onClick={() => confirmCreate( { account,loginAccount}
+)}>InitMarket</button>
+                     <button onClick={() => confirmMintRepNFT( { account,loginAccount}
+)}>MintRep</button>
+
+                      
                     
 
        {/* <SquareDropdown

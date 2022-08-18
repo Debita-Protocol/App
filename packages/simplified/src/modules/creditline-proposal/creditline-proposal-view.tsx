@@ -61,7 +61,9 @@ const {
     SPORTS,
   } = Constants;
 
+
 const { addProposal, createCreditLine } = ContractCalls;
+
 
 
 const DurationInput = ({onChange, label, value}) => {

@@ -13,6 +13,8 @@ import {
 import { getProviderOrSigner } from "../components/ConnectAccount/utils";
 import { decodeBaseMarketFetcher, decodeMarketDetailsFetcher } from "./derived-market-data";
 import { isDataTooOld } from "./date-utils";
+import {getBondingCurvePrice} from "./contract-calls"; 
+import { BigNumber as BN } from "bignumber.js";
 
 export const fetchContractData = async (config: MarketFactory, provider: Web3Provider, account: string) => {
   const offset = 0;
@@ -37,7 +39,7 @@ export const fetchContractData = async (config: MarketFactory, provider: Web3Pro
   // console.log('contract', fetcherContract, 'marketFactoryContract',marketFactoryContract, 
   //   'ammFactoryContract',ammFactoryContract, 'masterChef', masterChef, offset, bundleSize)
 
-const { factoryBundle, markets, timestamp } = await fetchInitialTrusted(
+  const { factoryBundle, markets, timestamp } = await fetchInitialTrusted(
     fetcherContract,
     marketFactoryContract,
     ammFactoryContract,
@@ -59,12 +61,24 @@ const { factoryBundle, markets, timestamp } = await fetchInitialTrusted(
 
 
 
+  const raw_prices = (await Promise.all(
+    markets.map(m=>{ return getBondingCurvePrice(account,provider, m.marketId.toString()) })
+    ))
+
+  const multiplier = new BN(10).pow(new BN(18));
+  const raw_prices_fixed = raw_prices.map(p=> new BN(p).div(multiplier).toFixed())
+
+ 
+
+
+
 
   const factoryDetails = decodeBaseMarketFetcher(factoryBundle);
 
   const popMarkets = markets
     .map((m) => ({ ...m, ...factoryDetails, sportId: null }))
-    .map((m) => decodeMarketDetailsFetcher(m, factoryDetails, config));
+    .map((m,i) => decodeMarketDetailsFetcher(m, factoryDetails, config, raw_prices_fixed[i] ));
+
 
   return popMarkets.reduce((p, m) => ({ ...p, [m.marketId]: m }), {});
 };

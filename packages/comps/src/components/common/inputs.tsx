@@ -201,8 +201,8 @@ const Outcome = ({
       setCustomVal(numInput.join("."));
     }
   }, [outcome.price]);
-
-  const price = !!hasLiquidity ? formatCashPrice(outcome?.price, ammCash?.name).full : prepend ? `-` : `- ${symbol}`;
+  const price = outcome.price
+ // const price = !!hasLiquidity ? formatCashPrice(outcome?.price, ammCash?.name).full : prepend ? `-` : `- ${symbol}`;
   const oppositePrice = !!hasLiquidity
     ? formatCashPrice(ONE.minus(outcome?.price), ammCash?.name).full
     : prepend

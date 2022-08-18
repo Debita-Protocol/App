@@ -45,7 +45,17 @@ interface InstrumentData {
 
 }
 
-
+interface InstrumentData_ {
+  trusted: boolean; 
+  balance: string; 
+  faceValue: string;
+  marketId: string; 
+  principal: string; 
+  expectedYield: string; 
+  duration: string;
+  description: string; 
+  Instrument_address: string; 
+}; 
 
 // async function reset( ): Promise<boolean>   
 // async function buy(): Promise<boolean>
@@ -74,7 +84,7 @@ describe("Cycle", ()=>{
   const duration = 10000000; 
   const faceValue = 12000000; 
 
-  const data = {} as InstrumentData;
+  const data = {} as InstrumentData_;
 
   before(async() =>{
     [owner, trader] = await ethers.getSigners();
@@ -103,7 +113,7 @@ describe("Cycle", ()=>{
     //1 collateral is 1e12 other 
     await creditline.setUtilizer(owner.address); 
 
-    await rep.mint(owner.address); 
+    //await rep.mint(owner.address); 
 
   }); 
 
@@ -122,17 +132,17 @@ describe("Cycle", ()=>{
   // }); 
 
   it("can add proposal and create market", async()=> {
-    data.trusted = true; 
-    data.balance = pp_.mul(0);
-    data.faceValue = pp_.mul(110);
-    data.marketId = pp_.mul(0); 
-    data.principal = pp_.mul(100);
-    data.expectedYield = pp_.mul(10);
-    data.duration = pp_.mul(100);
+    data.trusted = false; 
+    data.balance = pp_.mul(0).toString();
+    data.faceValue = pp_.mul(11).toString();
+    data.marketId = pp_.mul(0).toString(); 
+    data.principal = pp_.mul(10).toString();
+    data.expectedYield = pp_.mul(1).toString();
+    data.duration = pp_.mul(10).toString();
     data.description = "test";
     data.Instrument_address = creditline.address;
 
-
+    console.log('data', data)
     await controller.initiateMarket(trader.address, data); 
     const marketId = await controller.getMarketId(trader.address); 
     const instrumentdata = await vault.fetchInstrumentData(marketId); 
@@ -302,33 +312,33 @@ describe("Cycle", ()=>{
   // //   return (cdp.collateral_amount[trader], cdp.borrowed_amount[trader]);
   // // }
 
-  it("can approve", async()=>{
-    const marketId = await controller.getMarketId(trader.address);
-    const bc_address = await controller.getZCB_ad(marketId);
-    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
-    //Check that the supply of the bondingcurve is 0, 
-    // await expect(bc.getTotalZCB()).to.equal(0); 
-    // await expect(bc.getTotalCollateral()).to.equal(0);
+  // it("can approve", async()=>{
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+  //   //Check that the supply of the bondingcurve is 0, 
+  //   // await expect(bc.getTotalZCB()).to.equal(0); 
+  //   // await expect(bc.getTotalCollateral()).to.equal(0);
 
-    //first need to see if market reverts approving when not enough colalteral bought 
-    await expect(controller.approveMarket(marketId)).to.be.reverted; 
+  //   //first need to see if market reverts approving when not enough colalteral bought 
+  //   await expect(controller.approveMarket(marketId)).to.be.reverted; 
 
-    //then buy 0.6 * principal amount for the instrument 
-    const instrumentdata = await vault.fetchInstrumentData(marketId); 
-    const amountToBuy = instrumentdata.principal.div(2); 
-    await vault.approve(bc_address, amountToBuy); 
-    await marketmanager.buy(marketId, amountToBuy); 
+  //   //then buy 0.6 * principal amount for the instrument 
+  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
+  //   const amountToBuy = instrumentdata.principal.div(2); 
+  //   await vault.approve(bc_address, amountToBuy); 
+  //   await marketmanager.buy(marketId, amountToBuy); 
 
-    //Then approve this market again after chaning phase, now the instrument should be 
-    //credited with the proposed principal 
-    await marketmanager.setAssessmentPhase(marketId, true, false); 
-    await controller.approveMarket(marketId); 
-    const creditline_balance = await collateral.balanceOf(creditline.address); 
-    expect(creditline_balance).to.equal(instrumentdata.principal); 
+  //   //Then approve this market again after chaning phase, now the instrument should be 
+  //   //credited with the proposed principal 
+  //   await marketmanager.setAssessmentPhase(marketId, true, false); 
+  //   await controller.approveMarket(marketId); 
+  //   const creditline_balance = await collateral.balanceOf(creditline.address); 
+  //   expect(creditline_balance).to.equal(instrumentdata.principal); 
 
 
 
-  }); 
+  // }); 
 
 
   // //need a new market for this 
@@ -338,8 +348,8 @@ describe("Cycle", ()=>{
   //   const bc_address = await controller.getZCB_ad(marketId);
   //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
   //   //Check that the supply of the bondingcurve is 0, 
-  //   await expect(bc.getTotalZCB()).to.equal(0); 
-  //   await expect(bc.getTotalCollateral()).to.equal(0);
+  //   // await expect(bc.getTotalZCB()).to.equal(0); 
+  //   // await expect(bc.getTotalCollateral()).to.equal(0);
 
   //   const vaultbalancebeforebuy = await vault.balanceOf(owner.address); 
   //   //First buy from market 
@@ -349,8 +359,8 @@ describe("Cycle", ()=>{
   //   const vaultbalanceafterbuy = await vault.balanceOf(owner.address); 
 
   //   //for second trader
-  //   await vault.connect(trader).approve(bc_address, buy_amount); 
-  //   await marketmanager.connect(trader).buy(marketId, buy_amount);     
+  //   // await vault.connect(trader).approve(bc_address, buy_amount); 
+  //   // await marketmanager.connect(trader).buy(marketId, buy_amount);     
 
   //   await controller.denyMarket(marketId); 
   //   await marketmanager.redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
@@ -360,8 +370,8 @@ describe("Cycle", ()=>{
   //   expect(vaultbalanceafterredemption).to.equal(vaultbalancebeforebuy); 
 
   //   //for second trader
-  //   await marketmanager.connect(trader).redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
-  //   await expect(bc.balanceOf(trader.address)).to.equal(0); 
+  //   // await marketmanager.connect(trader).redeemPostAssessment(marketId, owner.address); //this should give me back my vaults AND get rid of my zcb 
+  //   // await expect(bc.balanceOf(trader.address)).to.equal(0); 
 
   // }); 
 
