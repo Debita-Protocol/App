@@ -19,7 +19,8 @@ import {
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
 import { Slippage } from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
-const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress } = ContractCalls;
+const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
+  canBuy,doZCBTrade } = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 const {
   Icons: { CloseIcon },
@@ -190,6 +191,9 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const amountError = amount !== "" && (isNaN(Number(amount)) || Number(amount) === 0 || Number(amount) < 0);
   const buttonError = amountError ? ERROR_AMOUNT : "";
 
+  const [canbuy, setCanBuy] = useState(false); 
+
+  console.log('ammdata', amm); 
   useEffect(() => {
     let isMounted = true;
     function handleShowTradingForm() {
@@ -240,6 +244,18 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     };
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
+  useEffect(() =>{
+    
+    const getCanBuy = async() =>{
+      const canbuy_ = await canBuy(account, loginAccount.library); 
+      setCanBuy(canbuy_); 
+    }
+
+    getCanBuy(); 
+  }); 
+
+
+ // console.log('canbuy?', canbuy); 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || orderType;
     let subText: string | null = null;
@@ -250,10 +266,15 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     } else if (hasWinner) {
       actionText = RESOLVED_MARKET;
       disabled = true;
-    } else if (!hasLiquidity) {
-      actionText = "Liquidity Depleted";
-      disabled = true;
-    } else if (Number(amount) === 0 || isNaN(Number(amount)) || amount === "") {
+    } else if (!canbuy){
+      actionText = "Trade Restricted"
+      disabled = true; 
+    }
+    //   else if (!hasLiquidity) {
+    //   actionText = "Liquidity Depleted";
+    //   disabled = true;
+    // } 
+    else if (Number(amount) === 0 || isNaN(Number(amount)) || amount === "") {
       actionText = ENTER_AMOUNT;
       disabled = true;
     } else if (new BN(amount).gt(new BN(userBalance))) {
@@ -287,50 +308,54 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     const direction = isBuy ? TradingDirection.ENTRY : TradingDirection.EXIT;
     setWaitingToSign(true);
     setShowTradingForm(false);
-    doTrade(
-      direction,
-      loginAccount?.library,
-      amm,
-      minOutput,
-      amount,
-      selectedOutcomeId,
-      account,
-      ammCash,
-      slippage,
-      outcomeShareTokensIn
-    )
-      .then((response) => {
-        console.log('trading response', response)
-        if (response) {
-          const { hash } = response;
-          setAmount("");
-          setWaitingToSign(false);
-          addTransaction({
-            hash,
-            chainId: loginAccount.chainId,
-            seen: false,
-            status: TX_STATUS.PENDING,
-            from: loginAccount.account,
-            addedTime: new Date().getTime(),
-            message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
-            marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
-          });
-        }
-      })
-      .catch((error) => {
-        setWaitingToSign(false);
-        console.log("Error when trying to trade: ", error?.message);
-        addTransaction({
-          hash: `trade-failure${Date.now()}`,
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.FAILURE,
-          from: loginAccount.account,
-          addedTime: new Date().getTime(),
-          message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
-          marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
-        });
+    doZCBTrade(account, loginAccount.library, amm.turboId, amount).then((response)=>{
+      console.log('tradingresponse', response)}).catch((error)=>{
+        console.log('Trading Error', error)
       });
+    // doTrade(
+    //   direction,
+    //   loginAccount?.library,
+    //   amm,
+    //   minOutput,
+    //   amount,
+    //   selectedOutcomeId,
+    //   account,
+    //   ammCash,
+    //   slippage,
+    //   outcomeShareTokensIn
+    // )
+    //   .then((response) => {
+    //     console.log('trading response', response)
+    //     if (response) {
+    //       const { hash } = response;
+    //       setAmount("");
+    //       setWaitingToSign(false);
+    //       addTransaction({
+    //         hash,
+    //         chainId: loginAccount.chainId,
+    //         seen: false,
+    //         status: TX_STATUS.PENDING,
+    //         from: loginAccount.account,
+    //         addedTime: new Date().getTime(),
+    //         message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
+    //         marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+    //       });
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     setWaitingToSign(false);
+    //     console.log("Error when trying to trade: ", error?.message);
+    //     addTransaction({
+    //       hash: `trade-failure${Date.now()}`,
+    //       chainId: loginAccount.chainId,
+    //       seen: false,
+    //       status: TX_STATUS.FAILURE,
+    //       from: loginAccount.account,
+    //       addedTime: new Date().getTime(),
+    //       message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
+    //       marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+    //     });
+    //   });
   };
 
   const getRate = (): React.Fragment | null => {
@@ -407,7 +432,8 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
           error={amountError}
           maxValue={userBalance}
           ammCash={ammCash}
-          disabled={!hasLiquidity || hasWinner}
+          //disabled={!hasLiquidity || hasWinner}
+          disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
         />

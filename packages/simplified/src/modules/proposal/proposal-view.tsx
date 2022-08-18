@@ -61,7 +61,7 @@ const {
     SPORTS,
   } = Constants;
 
-const { addDiscretionaryLoanProposal, addContractLoanProposal, getNumberProposals, getLoanLimits } = ContractCalls;
+const { getNumberProposals, getLoanLimits } = ContractCalls;
 
 
 const DurationInput = ({onChange, label, value}) => {
@@ -200,16 +200,17 @@ const LoanRequestForm = () => {
       if (loanType === "discretionary") {
         try {
           console.log('trying to submit loan')
-          const tx = await addDiscretionaryLoanProposal(
-            account,
-            loginAccount.library,
-            ID,
-            principal,
-            total_duration,
-            interest,
-            description
-          )
-          await tx.wait()
+          const tx = ""
+          // await addContractLoanProposal(
+          //   account,
+          //   loginAccount.library,
+          //   ID,
+          //   principal,
+          //   total_duration,
+          //   interest,
+          //   description
+          // )
+          // await tx.wait()
           history.push("/borrow")
           
         } catch (err) {
@@ -219,17 +220,18 @@ const LoanRequestForm = () => {
         }
       } else if (loanType === "contract") {
         try {
-          const tx = await addContractLoanProposal(
-            account,
-            loginAccount.library,
-            recipient,
-            ID,
-            principal,
-            total_duration,
-            interest,
-            description
-          );
-          await tx.wait()
+          const tx = ""; 
+          // await addContractLoanProposal(
+          //   account,
+          //   loginAccount.library,
+          //   recipient,
+          //   ID,
+          //   principal,
+          //   total_duration,
+          //   interest,
+          //   description
+         // );
+         // await tx.wait()
           history.push("/borrow")
         } catch (err) {
           console.log(err.reason);

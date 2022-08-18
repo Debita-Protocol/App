@@ -43,7 +43,7 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData} = ContractCalls; 
+const{ fetchTradeData, getHedgePrice} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -150,7 +150,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const amm: AmmExchange = ammExchanges[marketId];
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
-
+  console.log('amm', amm, amm?.ammOutcomes)
   const {
       account,
       loginAccount,
@@ -160,7 +160,8 @@ const MarketView = ({ defaultMarket = null }) => {
   useEffect(async ()=> {
     let stored 
       try{
-      stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
+      //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
+      stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId)); 
     }
     catch (err){console.log("status error", err)
    return;}
@@ -169,6 +170,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
 
   });
+
   useEffect(() => {
     if (!market) {
       timeoutId = setTimeout(() => {
@@ -257,8 +259,9 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
           <li>
-            <span>Supplied Liquidity</span>
-            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+            <span>Hedge Price</span>
+            <span>{formatDai(storedCollateral/1000000 || "0.00").full}</span>
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
 
         </ul>

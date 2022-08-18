@@ -104,7 +104,10 @@ import {
   Instrument, 
   MarketManager__factory,
   ReputationNFT__factory,
-  CreditLine__factory
+  CreditLine__factory,
+  BondingCurve, 
+  BondingCurve__factory, 
+
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
@@ -112,7 +115,7 @@ import {approveERC20Contract} from "../stores/use-approval-callback";
 import {
   TrustedMarketFactoryV3ABI,
   TrustedMarketFactoryV3Address,
-  marketFactoryAddress,
+  
   settlementAddress, 
   dsAddress, 
   lendingPooladdress, 
@@ -128,7 +131,9 @@ import {
 
   Vault_address, 
   MM_address,
-  RepNFT_address
+  RepNFT_address, 
+  sample_instument_address,
+marketFactoryAddress
 } from "../data/constants";
 
 
@@ -168,10 +173,10 @@ export async function createCreditLine(
   duration: string, // in seconds.
   faceValue: string
 ): Promise<string> {
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
-  const decimals = await collateral.decimals()
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account));
+  const decimals = await collateral.decimals(); 
   let creditLineF = new CreditLine__factory(getSigner(library, account));
-
+  console.log('creditlinef', creditLineF); 
   const _principal = new BN(principal).shiftedBy(decimals).toFixed()
   const _interestAPR = new BN(interestAPR).shiftedBy(decimals).toFixed()
   const _faceValue = new BN(faceValue).shiftedBy(decimals).toFixed()
@@ -183,24 +188,87 @@ export async function createCreditLine(
     _interestAPR,
     duration,
     _faceValue
-  );
+  ).catch((e) => {
+    console.error(e);
+    throw e;
+  }); 
 
   return creditLine.address;
 }
 
+export async function canBuy(
+  account: string, 
+  library: Web3Provider
+  ): Promise<boolean>{
+  //const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  //marketmanager.canBuy()
+  return true; 
+}
+export async function getHedgePrice(
+  account: string, 
+  provider:Web3Provider,
+  marketId: string): Promise<boolean>{
+  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(provider, account)); 
+  const hedgePrice = await marketmanager.getHedgePrice( marketId); 
+  return hedgePrice.toString(); 
+}
+
+
+export async function getBondingCurveContract(
+  account: string, 
+  library : Web3Provider, 
+  marketId: string
+  ): Promise<BondingCurve>{
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const bc_ad = await controller.getZCB_ad(marketId);
+  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)) as BondingCurve
+  return bc; 
+}
+
+export async function getBondingCurvePrice(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string
+  ): Promise<any>{
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const bc_ad = await controller.getZCB_ad(marketId);
+  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
+  console.log('bc', bc)
+  //const bc = getBondingCurveContract(account, library, marketId) as BondingCurve; 
+  const price =  await bc.calculateExpectedPrice(0); 
+  const totalsupply = await bc.getTotalZCB(); 
+  console.log('price???', price.toString(), totalsupply.toString(),bc_ad ); 
+  return price.toString(); 
+}
+
+export async function doOwnerSettings(
+  account: string,
+  library: Web3Provider
+  ): Promise<TransactionResponse>{
+    const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+    await controller.setMarketManager(MM_address);
+    await controller.setVault(Vault_address);
+    const tx = await controller.setMarketFactory(marketFactoryAddress);
+    return tx; 
+}
 export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider, 
-  faceValue: string, 
-  principal: string, 
-  expectedYield: string, // this should be amount of collateral yield to be collected over the duration, not percentage
-  duration: string, 
-  description: string, 
-  Instrument_address: string //need to have been created before 
+  faceValue: string = "11", 
+  principal: string= "10", 
+  expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
+  duration: string = "100", 
+  description: string= "Test Description", 
+  Instrument_address: string = controller_address//need to have been created before 
   ): Promise<TransactionResponse>{
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  console.log('here', controller_address, account)
   const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
+  console.log('here2')
+
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  console.log('here3')
+
   const decimals = await collateral.decimals()
   
 
@@ -214,9 +282,16 @@ export async function addProposal(  // calls initiate market
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
   data.description = description; 
-  data.Instrument_address = Instrument_address; 
+  data.Instrument_address = sample_instument_address; 
+  const id = await controller.getMarketId(account); 
+  console.log('id', id, data); 
+  // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
+  // console.log('creation', credit_line_address); 
 
-  const tx = await controller.initiateMarket(account, data); 
+  const tx = await controller.initiateMarket(account, data).catch((e) => {
+    console.error(e);
+    throw e;
+  }); 
   return tx; 
 }
 
@@ -228,13 +303,13 @@ export async function isUtilizerApproved(account: string, library: Web3Provider)
   return isApproved; 
 }
 
-export async function validator_approve_market(
-  account: string, 
-  library: Web3Provider,
-  marketId: string
-) : Promise<TransactionResponse> {
+// export async function validator_approve_market(
+//   account: string, 
+//   library: Web3Provider,
+//   marketId: string
+// ) : Promise<TransactionResponse> {
   
-}
+// }
 
 export const getInstrument = async(
   account: string, 
@@ -293,10 +368,15 @@ export async function mintVaultDS(
 ) {
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
-
   const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
   const amount = not_faucet? new BN(shares_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
-  await vault.mint(amount, account); 
+  console.log('mintamount', amount); 
+  await collateral.approve(Vault_address, amount); 
+
+  const asset = await vault.asset(); 
+  console.log('asset', asset, collateral_address); 
+ // await vault.mint(amount, account); 
+  await vault.deposit(amount, account);
 } 
 
 export async function redeemVaultDS(
@@ -316,18 +396,46 @@ export async function redeemVaultDS(
 }
 
 
+export async function doZCBTrade(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string, 
+  collateralIn: string, 
+  direction: boolean = true, //true if long
+  exit:boolean = false//true if selling position 
+  ): Promise< TransactionResponse>{
+  let tx; 
+  if(direction){
+    console.log()
+    const tx = buyZCB(account, library, marketId, collateralIn); 
+    return tx;
+  }
+  else{
+        const tx = buyZCB(account, library, marketId, collateralIn); 
+
+    //sellamount = get_sellamount()
+   // sellZCB(account, library, marketId, collateralIn,  )
+   return tx; 
+  }
+}
+
 export async function buyZCB(
   account: string, 
   library: Web3Provider,
   marketId: string,
-  collateralIn: string // w/ decimal point.
+  collateralIn: string // without decimal point.
 ): Promise<TransactionResponse> {
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
   const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const bc_ad = await controller.getZCB_ad(marketId);
+
   const _collateralIn = new BN(collateralIn).shiftedBy(decimals).toFixed()
   console.log("collateralIn", _collateralIn);
 
+  await vault.approve(bc_ad, _collateralIn); 
   let tx = MM.buy(marketId, _collateralIn);
   return tx;
 }
@@ -358,7 +466,6 @@ export async function redeemPostAssessment(
   return tx;
 }
 
-export async function 
 
 export async function verifyAddress(
   account: string,
@@ -434,85 +541,84 @@ const getLendingPoolContract = (library: Web3Provider, account: string): Lending
 
 ///DEPRECATED 
 // parameters be BigNumber? or string?
-export async function addDiscretionaryLoanProposal(
-  account: string,
-  provider: Web3Provider,
-  loan_id: string,
-  principal: string, // w/ decimal point
-  duration: string, //in seconds, no fractions of seconds.
-  totalInterest: string, // w/ decimal point
-  description: string
-): Promise<TransactionResponse> {
-  const lpool = getLendingPoolContract(provider, account)
+// export async function addDiscretionaryLoanProposal(
+//   account: string,
+//   provider: Web3Provider,
+//   loan_id: string,
+//   principal: string, // w/ decimal point
+//   duration: string, //in seconds, no fractions of seconds.
+//   totalInterest: string, // w/ decimal point
+//   description: string
+// ): Promise<TransactionResponse> {
+//   const lpool = getLendingPoolContract(provider, account)
   
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+//   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
 
-  const decimals = await collateral.decimals()
+//   const decimals = await collateral.decimals()
   
-  principal = new BN(principal).shiftedBy(decimals).toFixed()
+//   principal = new BN(principal).shiftedBy(decimals).toFixed()
 
-  totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
+//   totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
 
-  const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
-  const {_token1, _token2, name} = getInitialMarketNames(); 
-  const marketInfo = {
-    ammFactoryAddress,
-    marketFactoryAddress: TrustedMarketFactoryV3Address,
-    liquidityAmountUSD: liquidity,
-    marketID: 0,
-    description,
-    names: [_token1, _token2],
-    odds: [weight1, weight2]
-  }
-  let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(
-    formatBytes32String(loan_id), 
-    BigNumber.from(principal), 
-    BigNumber.from(duration), 
-    BigNumber.from(totalInterest), 
-    description, 
-    marketInfo
-    )
+//   const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
+//   const {_token1, _token2, name} = getInitialMarketNames(); 
+//   const marketInfo = {
+//     ammFactoryAddress,
+//     marketFactoryAddress: TrustedMarketFactoryV3Address,
+//     liquidityAmountUSD: liquidity,
+//     marketID: 0,
+//     description,
+//     names: [_token1, _token2],
+//     odds: [weight1, weight2]
+//   }
+//   let transaction = lpool.connect(getSigner(provider, account)).addDiscretionaryLoanProposal(
+//     formatBytes32String(loan_id), 
+//     BigNumber.from(principal), 
+//     BigNumber.from(duration), 
+//     BigNumber.from(totalInterest), 
+//     description, 
+//     marketInfo
+//     )
+//   return transaction;
+// }
 
-  return transaction;
-}
-
-///DEPRECATED 
-export async function addContractLoanProposal(
-  account: string,
-  provider: Web3Provider,
-  recipient: string, // address of smart contract
-  loan_id: string,
-  principal: string, // w/ decimal point
-  duration: string, //in seconds, no fractions of seconds.
-  totalInterest: string, // w/ decimal point
-  description: string
-): Promise<TransactionResponse> {
-  const lpool = getLendingPoolContract(provider, account)
+// ///DEPRECATED 
+// export async function addContractLoanProposal(
+//   account: string,
+//   provider: Web3Provider,
+//   recipient: string, // address of smart contract
+//   loan_id: string,
+//   principal: string, // w/ decimal point
+//   duration: string, //in seconds, no fractions of seconds.
+//   totalInterest: string, // w/ decimal point
+//   description: string
+// ): Promise<TransactionResponse> {
+//   const lpool = getLendingPoolContract(provider, account)
   
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
+//   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(provider, account))
 
-  const decimals = await collateral.decimals()
+//   const decimals = await collateral.decimals()
   
-  principal = new BN(principal).shiftedBy(decimals).toFixed()
+//   principal = new BN(principal).shiftedBy(decimals).toFixed()
 
-  totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
+//   totalInterest = new BN(totalInterest).shiftedBy(decimals).toFixed()
 
-  const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
-  const {_token1, _token2, name} = getInitialMarketNames(); 
-  const marketInfo = {
-    ammFactoryAddress,
-    marketFactoryAddress: TrustedMarketFactoryV3Address,
-    liquidityAmountUSD: liquidity,
-    marketID: 0,
-    description,
-    names: [_token1, _token2],
-    odds: [weight1, weight2]
-  }
+//   const { liquidity, weight1, weight2 } = calculateIntialPriceLiquidity(principal, principal + totalInterest)
+//   const {_token1, _token2, name} = getInitialMarketNames(); 
+//   const marketInfo = {
+//     ammFactoryAddress,
+//     marketFactoryAddress: TrustedMarketFactoryV3Address,
+//     liquidityAmountUSD: liquidity,
+//     marketID: 0,
+//     description,
+//     names: [_token1, _token2],
+//     odds: [weight1, weight2]
+//   }
 
-  let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(formatBytes32String(loan_id), recipient, principal, duration, totalInterest, description, marketInfo)
+//   let transaction = lpool.connect(getSigner(provider, account)).addContractLoanProposal(formatBytes32String(loan_id), recipient, principal, duration, totalInterest, description, marketInfo)
 
-  return transaction;
-}
+//   return transaction;
+// }
 
 ///DEPRECATED 
 export async function borrow(
@@ -653,42 +759,43 @@ export async function getLoanLimits(account: string, provider: Web3Provider) : P
 }
 
 
+
 // SUBMITPROPOSAL ==> ADDPROPOSAL : zeke
-export async function submitProposal(
-  provider: Web3Provider,
-  account: string,
-  principal: string, // w/ decimal point
-  totalDebt: string, // w/ decimal point
-  duration: string, //in seconds, no fractions of seconds.
-  underlying_token: string,
-  id: string = "1", 
-  description: string = "example", 
-): Promise<TransactionResponse> {
+// export async function submitProposal(
+//   provider: Web3Provider,
+//   account: string,
+//   principal: string, // w/ decimal point
+//   totalDebt: string, // w/ decimal point
+//   duration: string, //in seconds, no fractions of seconds.
+//   underlying_token: string,
+//   id: string = "1", 
+//   description: string = "example", 
+// ): Promise<TransactionResponse> {
 
-  const token = await ERC20__factory.connect(usdc, getProviderOrSigner(provider, account));
-  const decimals = await token.decimals();
-  principal = new BN(principal).shiftedBy(decimals).toFixed();
-  totalDebt = new BN(totalDebt).shiftedBy(decimals).integerValue().toFixed();
-  const lendingPool = getLendingPoolContract(provider, account);
+//   const token = await ERC20__factory.connect(usdc, getProviderOrSigner(provider, account));
+//   const decimals = await token.decimals();
+//   principal = new BN(principal).shiftedBy(decimals).toFixed();
+//   totalDebt = new BN(totalDebt).shiftedBy(decimals).integerValue().toFixed();
+//   const lendingPool = getLendingPoolContract(provider, account);
   
- // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
-  // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
-  //Choose and add validator 
-  const validator_address = settlementAddress; //TODO choose randomly from stakers
- // await lendingPool.addValidator(validator_address, controller_address);  
+//  // let tx = await lendingPool.submitProposal(account, principal, totalDebt, duration, underlying_token);
+//   // await lendingPool.addProposal(id, principal, duration, totalDebt, description)
+//   //Choose and add validator 
+//   const validator_address = settlementAddress; //TODO choose randomly from stakers
+//  // await lendingPool.addValidator(validator_address, controller_address);  
 
-  const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
-  const {_token1, _token2, name} = getInitialMarketNames(); 
-  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
-  // console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
-  // console.log('ammFactory', ammFactoryAddress
-  let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
-  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
-  return tx;
-}
+//   const {liquidity, weight1, weight2} = calculateIntialPriceLiquidity(principal, totalDebt)
+//   const {_token1, _token2, name} = getInitialMarketNames(); 
+//   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+//   // console.log('liquidity, weight1, weight2', liquidity, weight1, weight2)
+//   // console.log('ammFactory', ammFactoryAddress
+//   let tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+//   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+//     console.error(e);
+//     throw e;
+//   });
+//   return tx;
+// }
 
 export async function checkBorrowStatus (
   provider: Web3Provider,
@@ -797,35 +904,35 @@ export async function getBorrowerMarketInfo(
   const name = "test"
 }
 
-export async function validator_initiate_market(
-  provider: Web3Provider, 
-  validator_account: string ,
+// export async function validator_initiate_market(
+//   provider: Web3Provider, 
+//   validator_account: string ,
 
 
-  liquidityAmount: string,
-  //Binary for now
-  _weight1: string = "2", //determines initial price, which is determined by borrower proposed interest
-  _weight2: string = "48", 
-  _token1:string = "lCDS", 
-  _token2:string = "sCDS", 
-  name: string = "test", 
+//   liquidityAmount: string,
+//   //Binary for now
+//   _weight1: string = "2", //determines initial price, which is determined by borrower proposed interest
+//   _weight2: string = "48", 
+//   _token1:string = "lCDS", 
+//   _token2:string = "sCDS", 
+//   name: string = "test", 
 
 
 
-  ) {
-  const weight1 = new BN(_weight1).shiftedBy(18).toString()
-  const weight2 = new BN(_weight2).shiftedBy(18).toString()
+//   ) {
+//   const weight1 = new BN(_weight1).shiftedBy(18).toString()
+//   const weight2 = new BN(_weight2).shiftedBy(18).toString()
 
 
-  const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
-  //console.log('weights, liquidity', weight1, weight2, liquidity)
-  const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
-  const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
-  liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
-  }
+//   const liquidity = new BN(liquidityAmount).shiftedBy(6).toFixed()
+//   //console.log('weights, liquidity', weight1, weight2, liquidity)
+//   const manager_contract = Controller__factory.connect(controller_address, getProviderOrSigner(provider, validator_account))
+//   const tx = await manager_contract.initiateMarket(ammFactoryAddress,TrustedMarketFactoryV3Address,
+//   liquidity, name, [_token1, _token2], [weight1, weight2] ).catch((e) => {
+//     console.error(e);
+//     throw e;
+//   });
+//   }
 // }
 //borrower proposes-> their submission will automatically call the controller.initiateMarket 
 //function-> the market page will show borrower info + credit criterion 
@@ -1525,13 +1632,14 @@ export const estimateResetPrices = async (
   };
 
   try {
-    results = await contract.callStatic.bringTokenBalanceToMatchOtherToken(
-      factory.address,
-      amm.turboId,
-      amm.id,
-      maxCollateral.maxOutcomeId,
-      maxCollateral.collateralRaw
-    );
+    results = results; 
+     // await contract.callStatic.bringTokenBalanceToMatchOtherToken(
+     //  factory.address,
+     //  amm.turboId,
+     //  amm.id,
+     //  maxCollateral.maxOutcomeId,
+     //  maxCollateral.collateralRaw
+   //);
   } catch (e) {
     console.log(e);
   }
@@ -2863,18 +2971,15 @@ export const getMarketInfos = async (
 ): Promise<{ markets: MarketInfos; ammExchanges: AmmExchanges; blocknumber: number }> => {
   const factories = marketFactories(loadtype);
   const addresses_ =   {...addresses["80001"]}
-  // console.log('addresses!!', addresses_)
-  // console.log('paraconfigs!!', PARA_CONFIG)
+  // let prices: string[]; 
+  // prices[0] = "1"; 
    console.log('factories!!', factories)
-  // console.log('marketINFOSSSSS!!!', markets, ignoreList)
-  // console.log('categories', {...markets.categories})
-  // console.log('provider', provider)
+
   // TODO: currently filtering out market factories that don't have rewards
   const allMarkets = await Promise.all(
     factories.filter((f) => f.hasRewards).map((config) => fetcherMarketsPerConfig(config, provider, account))
   );
-  //console.log('allmarkets', allMarkets)
- // console.log('ignorlist!!!!', ignor)
+
   // first market infos get all markets with liquidity
   const aMarkets = allMarkets.reduce((p, data) => ({ ...p, ...data.markets }), {});
   let filteredMarkets = { ...markets, ...aMarkets };

@@ -6,11 +6,10 @@ import { useSimplified } from "../stores/simplified-hooks";
 import { useUserStore, Stores, ContractCalls } from "@augurproject/comps";
 
 
-const {mintDS} = ContractCalls;
+const {mintDS, mintVaultDS} = ContractCalls;
 
 
 export const MintContext = React.createContext()
-
 
 
 
@@ -37,8 +36,8 @@ export const MintProvider = ({ children }: any) => {
       const { addressTo, amount } = formData
             console.log('MINTING!', account, loginAccount.library, amount.toString())
 
-      mintDS(account, loginAccount.library, amount.toString(), true )
-     
+      //mintDS(account, loginAccount.library, amount.toString(), true )
+        mintVaultDS(account, loginAccount.library, amount.toString(), true)
 
     }
 

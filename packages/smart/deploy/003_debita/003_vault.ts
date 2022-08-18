@@ -12,8 +12,17 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args,
     log: true,
   });
+
+  const vault_addr = (await deployments.get("Vault")).address;
+  const cr_args = [vault_addr, deployer, 1000000, 100000, 1000000, 1100000]
+  await deployments.deploy("CreditLine", {
+    from: deployer,
+    args: cr_args,
+    log: true,
+  });
+
 };
-  
+        
 func.tags = ["Vault"];
   
 export default func;

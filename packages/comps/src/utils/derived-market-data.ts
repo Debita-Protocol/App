@@ -212,7 +212,8 @@ export const decodeBaseMarketFetcher = (marketData: any) => {
   };
 };
 
-export const decodeMarketDetailsFetcher = (marketData: any, factoryDetails: any, config: MarketFactory) => {
+export const decodeMarketDetailsFetcher = (marketData: any, factoryDetails: any, config: MarketFactory,
+  prices: string ="0") => {
   const {
     shareTokens,
     endTime,
@@ -258,7 +259,8 @@ export const decodeMarketDetailsFetcher = (marketData: any, factoryDetails: any,
   if (config.type==MARKET_FACTORY_TYPES.TRUSTED){
     print = true
   }
-  marketInfo.amm = decodePool(marketInfo, pool, factoryDetails, config, print);
+  console.log('newprices here', prices)
+  marketInfo.amm = decodePool(marketInfo, pool, factoryDetails, config, print, prices);
   return marketInfo;
 };
 
@@ -331,18 +333,23 @@ export const decodeGroupedMarketDetailsFetcher = (marketData: any, factoryDetail
 };
 
 const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: MarketFactory, 
-  printmarket:boolean = false): AmmExchange => {
+  printmarket:boolean = false, bondPrices: string = "0"): AmmExchange => {
+  const shortprice_ =  1 - Number(bondPrices); 
+  const shortprice = Number(shortprice_).toFixed(3); 
+  const outcomePrice = [bondPrices, String(shortprice)]; 
   const outcomePrices = calculatePrices(market, pool.ratios || pool.tokenRatios, pool.weights);
   const fee = new BN(String(pool.swapFee || "0")).toFixed();
   const balancesRaw = pool.balances || [];
   const weights = pool.weights ? pool.weights.map((w) => String(w)) : [];
   const id = pool.addr;
   const created = pool.addr !== NULL_ADDRESS;
+  console.log('outcomeprices', outcomePrice, outcomePrices)
   // if (printmarket){
   //     console.log('ammoutcomes', market)
   // }
   const ammOutcomes = market.outcomes.map((o, i) => ({
-    price: created ? String(outcomePrices[i]) : "",
+    //price: created ? String(outcomePrices[i]) : "",
+    price: String(outcomePrice[i]), 
     ratioRaw: created ? getArrayValue(pool.ratios || pool.tokenRatios, i) : "",
     ratio: created ? toDisplayRatio(getArrayValue(pool.ratios || pool.tokenRatios, i)) : "",
     balanceRaw: created ? getArrayValue(pool.balances, i) : "",
