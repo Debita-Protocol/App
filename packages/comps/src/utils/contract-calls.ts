@@ -163,6 +163,7 @@ interface InstrumentData_ {
   duration: string;
   description: string; 
   Instrument_address: string; 
+  instrument_type: string;
 }; 
 
 export async function createCreditLine(
