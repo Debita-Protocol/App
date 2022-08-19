@@ -1,12 +1,38 @@
 @import (reference) '~assets/styles/shared';
 
-.LoanRequestForm {
+.CreditlineProposalView {
   .ThemeBorder;
   .FixedBoxShadow;
 
   display: flex;
   flex-flow: column nowrap;
   background: var(--quaternary-bg);
+
+  > span {
+    font-size:large;
+    padding: @size-32;
+    align-items: center;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  > div {
+    .PrimaryBottomBorderRadius;
+    padding: @size-32;
+    display: grid;
+    align-items:center;
+    > label {
+      font-size: large;
+      color:black;
+      text-decoration: underline; 
+    }
+    > input {
+      background-color:antiquewhite;
+    }
+    > textarea {
+      background-color:antiquewhite;
+    }
+  }
 
   > header {
     .text-16-bold;

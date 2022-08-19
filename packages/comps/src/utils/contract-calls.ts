@@ -176,12 +176,13 @@ export async function createCreditLine(
 ): Promise<string> {
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account));
   const decimals = await collateral.decimals(); 
-  let creditLineF = new CreditLine__factory(getSigner(library, account));
+  let creditLineF = new CreditLine__factory(library.getSigner(account));
   console.log('creditlinef', creditLineF); 
   const _principal = new BN(principal).shiftedBy(decimals).toFixed()
   const _interestAPR = new BN(interestAPR).shiftedBy(decimals).toFixed()
   const _faceValue = new BN(faceValue).shiftedBy(decimals).toFixed()
 
+  console.log(account)
   let creditLine = await creditLineF.deploy(
     Vault_address,
     account,
@@ -192,7 +193,9 @@ export async function createCreditLine(
   ).catch((e) => {
     console.error(e);
     throw e;
-  }); 
+  });
+  creditLine = await creditLine.deployed();
+  console.log("here");
 
   return creditLine.address;
 }
@@ -254,7 +257,7 @@ export async function doOwnerSettings(
 }
 export async function addProposal(  // calls initiate market
   account: string, 
-  library: Web3Provider, 
+  library: Web3Provider,
   faceValue: string = "11", 
   principal: string= "10", 
   expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
