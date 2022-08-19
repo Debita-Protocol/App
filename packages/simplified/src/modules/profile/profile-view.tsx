@@ -13,7 +13,7 @@ import { PassportReader } from "@gitcoinco/passport-sdk-reader";
 import InstrumentCard from "../common/instrument-card";
 import BigNumber from "bignumber.js";
 
-const { getInstrumentData } = ContractCalls
+const { getFormattedInstrumentData } = ContractCalls
 
 const { PathUtils: { makePath, makeQuery, parseQuery } } = Utils;
 
@@ -95,7 +95,7 @@ const ProfileView = () => {
     }, [account, loginAccount])
 
     const getInstruments = useCallback(async ()=> {
-        const _instrument = await getInstrumentData(address, loginAccount.library)
+        const _instrument = await getFormattedInstrumentData(address, loginAccount.library)
         if (parseInt(_instrument.marketId) === 0) {
             console.log(_instrument)
             setInstrument(_instrument)

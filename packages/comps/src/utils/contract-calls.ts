@@ -396,7 +396,7 @@ export const getInstrument = async(
   return Instrument__factory.connect(Instrument_address, getProviderOrSigner(library, account));
 }; 
 
-export const getInstrumentData = async (
+export const getFormattedInstrumentData = async (
   account:string,
   library: Web3Provider
 ): Promise<InstrumentData_> => {

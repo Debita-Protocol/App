@@ -113,8 +113,8 @@ contract Controller {
         uint256 a = (price_precision -b).divWadDown(principal_+interest_); 
         console.log('a,b', a,b); 
 
-        // uint256 b = ((2*principal_)*price_precision)/(principal_ + interest_) - price_precision; 
-        // uint256 a = (price_precision-b)*price_precision/(principal_+interest_); 
+        // uint256 b = ((2*principal_)*price_precision)/(principal_ + interest_) - price_precision;
+        // uint256 a = (price_precision-b)*price_precision/(principal_+interest_);
         return (a,b);
         // b = 9e17; //do setup
         // a = ((price_precision - b)**2)/price_precision; 
@@ -191,7 +191,7 @@ contract Controller {
         );
 
 
-        ad_to_id[recipient] = marketId; 
+        ad_to_id[recipient] = marketId;
         instrumentData.marketId = marketId;
 
 
@@ -200,7 +200,7 @@ contract Controller {
         );
 
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-        marketManager.setAssessmentPhase(marketId, true, true);  
+        marketManager.setAssessmentPhase(marketId, true, true);  // need to set min rep score here as well.
 
         emit MarketInitiated(marketId, recipient);
     }

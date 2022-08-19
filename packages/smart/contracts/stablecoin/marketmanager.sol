@@ -266,7 +266,7 @@ contract MarketManager is Owned {
 		uint256 amount, //this is in DS with decimals.
 		uint256 marketId
 	) public returns(bool, uint) {
-		require(marketActive(marketId), "Market Not Active"); 
+		require(marketActive(marketId), "Market Not Active"); // this is not correct since marketDenied set to false by default.
 		bool _duringMarketAssessment = duringMarketAssessment(marketId);
 		bool _onlyReputable =  onlyReputable(marketId);
 
@@ -340,8 +340,8 @@ contract MarketManager is Owned {
 	) public {
 		require(restriction_data[marketId].marketDenied, "Market Still During Assessment");
 		uint256 collateral_amount = assessment_collaterals[marketId][trader]; 
-		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
-		zcb.redeemPostAssessment(trader, collateral_amount); // SOMEHOW GET ZCB
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+		zcb.redeemPostAssessment(trader, collateral_amount); 
 	}
 
 	/// @notice denies market from validator 
@@ -506,7 +506,7 @@ contract MarketManager is Owned {
 		}	
 
 			console.log('redemption_price', redemption_prices[marketId]); 
-		}
+	}
 
 
 	/* 
@@ -581,7 +581,7 @@ contract MarketManager is Owned {
 		bool atLoss = restriction_data[marketId].atLoss; 
 		uint256 priceOut = assessment_prices[marketId][msg.sender]; 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
-		uint256 traderBudget = getTraderBudget(msg.sender); 
+		uint256 traderBudget = getTraderBudget(msg.sender);
 		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
 
 		uint256 scoreToAdd; 
@@ -608,7 +608,5 @@ contract MarketManager is Owned {
 	        z = 1;
 	    }
 	}
-
-
 }
 

@@ -163,17 +163,18 @@ const CreditLineRequestForm = () => {
       let instrument_address = await createCreditLine(account, loginAccount.library, principal, interestRate, total_duration, faceValue)
       console.log("instrument address: ", instrument_address);
       
-      // let tx = await addProposal(
-      //   account,
-      //   loginAccount.library,
-      //   principal + interest,
-      //   principal,
-      //   interest,
-      //   total_duration,
-      //   description,
-      //   instrument_address
-      // )
-      // await tx.wait();
+      let tx = await addProposal(
+        account,
+        loginAccount.library,
+        faceValue,
+        principal,
+        interest,
+        total_duration,
+        description,
+        instrument_address
+      )
+      console.log("PROPOSAL ADDED")
+      await tx.wait(1);
       reset();
     }
   })
