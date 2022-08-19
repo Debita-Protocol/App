@@ -457,9 +457,9 @@ const MarketsView = () => {
               marketTransactions={transactions[market.marketId]}
             />         
           ))}
-     <button onClick={() => confirmBulkTrade( { account, loginAccount, formData}
-)}>Buy</button>
-        </section>
+    { /*<button onClick={() => confirmBulkTrade( { account, loginAccount, formData}
+)}>Buy</button> */}
+        </section> 
 
       ) : (
         <span className={Styles.EmptyMarketsMessage}>No markets to show. Try changing the filter options.</span>

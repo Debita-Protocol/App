@@ -10,6 +10,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 abstract contract BondingCurve is OwnedERC20 {
     // ASSUMES 18 TRAILING DECIMALS IN UINT256
     using SafeERC20 for ERC20;
+    using FixedPointMathLib for uint256;
 
     uint256 internal price_upper_bound;
     uint256 internal price_lower_bound;
@@ -106,10 +107,40 @@ abstract contract BondingCurve is OwnedERC20 {
     }
 
 
+
+    /// @notice calculates implied probability of the trader 
+    /// @param quantity is the ratio amount(in colalteral) / total collateral budget for trader, in 18 decimals 
+    function calcImpliedProbability(uint256 collateral_amount, uint256 quantity) public view returns(uint256 prob){
+    	uint256 zcb_amount = calculatePurchaseReturn(collateral_amount); 
+    	console.log('zcb_amount', zcb_amount); 
+    	//uint256 avg_price = collateral_amount/zcb_amount; 
+    	uint256 avg_price = calcAveragePrice(zcb_amount); //18 decimals 
+    	console.log('avg_price', avg_price); 
+    	uint256 b = avg_price.mulWadDown(math_precision - avg_price);
+    	console.log('b', b);
+    	uint256 prob = quantity.mulWadDown(b)+ avg_price; 
+    	return prob; 
+    }
+
+    /// @notice caluclates average price for the user to buy amount tokens 
+    /// @dev which is average under the curve divided by amount 
+    /// amount is the amount of bonds, 18 decimals 
+    function calcAveragePrice(uint256 amount) public view returns(uint256){
+
+    	uint256 area = calcAreaUnderCurve(amount); //this takes in 18 
+    	console.log("area", area); 
+
+    	//area is in decimal 6, amount is in 18
+    	uint256 area_in_precision = area*(10**12); 
+    	uint256 result = area_in_precision.divWadDown(amount); 
+    	//returns a 18 decimal avg price 
+    	return result; 
+    }
+
     /**
      @notice calculates expected price given user buys X tokens
      @param amount: hypothetical amount of tokens bought
-     */
+     */	
     function calculateExpectedPrice(uint256 amount) public view  returns (uint256 result) {
         result = _calculateExpectedPrice(amount);
     }

@@ -20,7 +20,7 @@ import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurp
 import { Slippage } from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
-  canBuy,doZCBTrade } = ContractCalls;
+  canBuy,doZCBTrade,estimateZCBBuyTrade } = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 const {
   Icons: { CloseIcon },
@@ -96,11 +96,11 @@ const getEnterBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) =>
       tooltipKey: "averagePrice",
     },
     {
-      label: "Estimated Shares",
+      label: "Estimated ZCB returned",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
     {
-      label: "Max Profit",
+      label: "Estimated APR",
       value: !isNaN(Number(breakdown?.maxProfit)) ? formatCash(breakdown?.maxProfit || 0, cash?.name).full : "-",
     },
     {
@@ -168,6 +168,12 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const [orderType, setOrderType] = useState(BUY);
   const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
   const [breakdown, setBreakdown] = useState<EstimateTradeResult | null>(null);
+
+  //
+  const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
+
+  //
+
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);
@@ -193,7 +199,30 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
 
   const [canbuy, setCanBuy] = useState(false); 
 
-  console.log('ammdata', amm); 
+  //console.log('ammdata', amm); 
+  useEffect(async()=> {
+    let breakdown; 
+
+  // account: string,
+  // library: Web3Provider,
+  // marketId: string,
+  // inputDisplayAmount: string,
+  // selectedOutcomeId: number,
+  // cash: Cash
+      try{
+        if(amount){
+          breakdown = await estimateZCBBuyTrade(account, loginAccount.library, String(amm?.turboId), amount,
+           selectedOutcomeId, ammCash)
+
+        }
+      }
+      catch (err){console.log("status error", err)
+      return;}
+
+
+      setBondBreakDown(breakdown);
+
+  })
   useEffect(() => {
     let isMounted = true;
     function handleShowTradingForm() {
@@ -222,6 +251,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
   );
 
+
   useEffect(() => {
     let isMounted = true;
 
@@ -244,6 +274,8 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     };
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
+
+
   useEffect(() =>{
     
     const getCanBuy = async() =>{
@@ -254,6 +286,8 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     getCanBuy(); 
   }); 
 
+  const canRedeem = false; 
+  //console.log('bondbreakdown',bondbreakdown); 
 
  // console.log('canbuy?', canbuy); 
   const canMakeTrade: CanTradeProps = useMemo(() => {
@@ -438,7 +472,9 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
           isBuy={orderType === BUY}
         />
         {isBuy && <Slippage />}
-        <InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} />
+       { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
+        <InfoNumbers infoNumbers={formatBreakdown(isBuy, bondbreakdown, ammCash)} />
+
         {isLogged && !isApprovedTrade && (
           <ApprovalButton
             {...{
@@ -450,14 +486,26 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
             }}
           />
         )}
-        <SecondaryThemeButton
+        
+        {!canRedeem &&(<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
           action={makeTrade}
           text={canMakeTrade.actionText}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
+        />) }
+
+        {canRedeem && (
+          <SecondaryThemeButton
+          disabled={canMakeTrade.disabled || !isApprovedTrade}
+          action={makeTrade}
+          text={'Redeem ZCB'}
+          subText={canMakeTrade.subText}
+          error={buttonError}
+          customClass={ButtonStyles.BuySellButton}
         />
+        )}
       </div>
     </div>
   );

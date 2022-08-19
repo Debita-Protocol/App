@@ -30,10 +30,10 @@ contract MarketManager is Owned {
 	ReputationNFT rep;
     Controller controller;
 
-    mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
-    mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
-    mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
-    mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
+  mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
+  mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
+  mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
+  mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
 	mapping(uint256=> MarketPhaseData) restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
@@ -136,13 +136,13 @@ contract MarketManager is Owned {
 	/**
 	 @dev verification of trader initializes reputation score at 0, to gain reputation need to participate in markets.
 	 */
-	function isVerified(address trader) internal view returns(bool){
+	function isVerified(address trader) public view returns(bool){
 		return (controller.isVerified(trader) || trader == owner);
 		//return (rep.balanceOf(trader) >= 1 || trader == owner); 
 	}
 
 
-	function isReputable(address trader, uint256 marketId) internal view returns(bool){
+	function isReputable(address trader, uint256 marketId) public view returns(bool){
 		return (restriction_data[marketId].min_rep_score <= rep.getReputationScore(trader) || trader == owner); 
 	}
 
@@ -150,7 +150,7 @@ contract MarketManager is Owned {
 	Returns true if during risk assessment phase
 	*/
 	function duringMarketAssessment(
-		uint256 marketId) internal view returns(bool){
+		uint256 marketId) public view returns(bool){
 		return restriction_data[marketId].duringMarketAssessment; 
 	}
 
@@ -222,24 +222,63 @@ contract MarketManager is Owned {
 
 	/// @notice trader can only buy within their budget limit 
 	/// @dev Called offchain before doTrade contract calls 
+	// function canBuy(
+	// 	address trader,
+	// 	uint256 amount, //this is in DS with decimals.
+	// 	uint256 marketId
+	// ) public returns(bool) {
+	// 	require(marketActive(marketId), "Market Not Active"); 
+	// 	bool _duringMarketAssessment = duringMarketAssessment(marketId);
+	// 	bool _onlyReputable =  onlyReputable(marketId);
+
+	// 	if (_duringMarketAssessment){
+	// 		require(isVerified(trader), "User Not Verified");
+	// 		require(getTraderBudget(trader)>= amount, "Amount Exceeds Budget"); 
+	// 	}
+
+ //  		//During the early risk assessment phase only reputable can buy 
+	// 	if (_onlyReputable){
+	// 		require(_duringMarketAssessment, "Market needs to be in assessment phase"); 
+	// 		require(isReputable(trader, marketId));
+	// 	}
+
+	// 	//If after assessment there is a set buy threshold, people can't buy above this threshold
+	// 	if (!_duringMarketAssessment){
+		
+	// 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+	// 		uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
+	// 		uint256 price_after_trade = zcb.calculateExpectedPrice(tokens_bought);
+	// 		uint256 price_upper_bound = zcb.getUpperBound();
+
+	// 		require(price_upper_bound > 0, "Restrictions need to be set"); 
+	// 		require(price_upper_bound > price_after_trade, "Quantity exceeds buy threshold"); 
+	// 	}
+
+	// 	return true; 
+	// 	// require(_duringMarketAssessment, "Sells not allowed during assessments");
+	// 	// require(exposureset(trader, ammFactoryAddress, marketId), "Not enough liquidity");
+
+	// }
+
+	
 	function canBuy(
 		address trader,
 		uint256 amount, //this is in DS with decimals.
 		uint256 marketId
-	) public returns(bool) {
+	) public returns(bool, uint) {
 		require(marketActive(marketId), "Market Not Active"); 
 		bool _duringMarketAssessment = duringMarketAssessment(marketId);
 		bool _onlyReputable =  onlyReputable(marketId);
 
 		if (_duringMarketAssessment){
-			require(isVerified(trader), "User Not Verified");
-			require(getTraderBudget(trader)>= amount, "Amount Exceeds Budget"); 
+			if (!isVerified(trader) || !(getTraderBudget(trader)>= amount)) return (false, 0); 
+	
 		}
 
   		//During the early risk assessment phase only reputable can buy 
 		if (_onlyReputable){
 			require(_duringMarketAssessment, "Market needs to be in assessment phase"); 
-			require(isReputable(trader, marketId));
+			if (!isReputable(trader, marketId)) return (false, 1); 
 		}
 
 		//If after assessment there is a set buy threshold, people can't buy above this threshold
@@ -249,19 +288,15 @@ contract MarketManager is Owned {
 			uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
 			uint256 price_after_trade = zcb.calculateExpectedPrice(tokens_bought);
 			uint256 price_upper_bound = zcb.getUpperBound();
-
 			require(price_upper_bound > 0, "Restrictions need to be set"); 
-			require(price_upper_bound > price_after_trade, "Quantity exceeds buy threshold"); 
+			if (price_upper_bound > price_after_trade) return (false, 2); 
 		}
 
-		return true; 
+		return (true, 0); 
 		// require(_duringMarketAssessment, "Sells not allowed during assessments");
 		// require(exposureset(trader, ammFactoryAddress, marketId), "Not enough liquidity");
 
 	}
-
-	
-
 
 	function canSell(
 		address trader,
@@ -326,10 +361,8 @@ contract MarketManager is Owned {
         uint256 _marketId,
         uint256 _collateralIn
     ) external  returns (uint256){
-		require(canBuy(msg.sender,
-		 	_collateralIn, 
-		 	_marketId),"Trade Restricted"
-		);
+		(bool canbuy, uint256 error) = canBuy(msg.sender, _collateralIn, _marketId); 
+		require(canbuy,"Trade Restricted");
 
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
