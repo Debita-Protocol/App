@@ -25,8 +25,8 @@ export const deriveMarketInfo = (market: MarketInfo, marketData: any) =>{
 }
 
 const getMarketTitle_ = (name: string): {title:string; description_:string}=>{
-  const title = name + " " + "Zero Coupon Bond"; 
-  const description_ = "Buy " + name + "'s ZCB and potentially earn more rewards";
+  const title = name + " " + "ZCB"; 
+  const description_ = "Bet on " + name + " success";
   return {title, description_}; 
 }
 const getMarketTitle = (): { title: string; description: string } => {

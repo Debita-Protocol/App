@@ -133,6 +133,12 @@ const NonexistingMarketView = ({ text, showLink = false }) => {
   );
 };
 
+const getAddress =async({
+  account, loginAccount, marketId
+}) =>{
+  return ""; 
+}
+
 const MarketView = ({ defaultMarket = null }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [marketNotFound, setMarketNotFound] = useState(false);
@@ -157,7 +163,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const amm: AmmExchange = ammExchanges[marketId];
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
-  console.log('amm', amm, amm?.ammOutcomes)
+  // console.log('amm', amm, amm?.ammOutcomes)
   const {
       account,
       loginAccount,
@@ -175,7 +181,7 @@ const MarketView = ({ defaultMarket = null }) => {
       stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
       instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
       tc = await getTotalCollateral(account, loginAccount.library, String(market.amm.turboId)); 
-      console.log('instruments', instrument); 
+     // console.log('instruments', instrument); 
     }
     catch (err){console.log("status error", err)
    return;}
@@ -263,7 +269,11 @@ const MarketView = ({ defaultMarket = null }) => {
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
           )}
-          {details.length === 0 && <p>There are no additional details for this .</p>}
+          {details.length === 0 && 
+           <div>
+           <p>Instrument Address</p> 
+           <span> {"d"} </span>
+           <p>however it is good</p> </div>}
         </div>
 
         <ul className={Styles.StatsRow}>
@@ -280,8 +290,8 @@ const MarketView = ({ defaultMarket = null }) => {
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Approval Criterion Met </span>
-            <span>{"False"}</span>
+            <span>Market Phase </span>
+            <span>{"Assessment/a"}</span>
           </li>
 
           <li>
@@ -319,10 +329,10 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>CDS Price History</h4>
+          {/*<h4>CDS Price History</h4> */}
         </div>
 
-        <OutcomesGrid
+       {/* <OutcomesGrid
           outcomes={amm?.ammOutcomes}
           selectedOutcome={amm?.ammOutcomes[2]}
           showAllHighlighted
@@ -334,15 +344,15 @@ const MarketView = ({ defaultMarket = null }) => {
           hasLiquidity={amm?.hasLiquidity}
           marketFactoryType={amm?.market?.marketFactoryType}
         />
-        <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
-        <PositionsLiquidityViewSwitcher ammExchange={amm} />
+        <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />*/}
+        <PositionsLiquidityViewSwitcher ammExchange={amm} /> 
 
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Market Resolution Details</h4>
+          <h4>Instrument Details</h4>
           {details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))}
@@ -354,7 +364,7 @@ const MarketView = ({ defaultMarket = null }) => {
           {details.length === 0 && <p>There are no additional details for this Market.</p>}
         </div>
         <div className={Styles.TransactionsTable}>
-          <span>Transactions</span>
+          <span>Activity</span>
           <TransactionsTable transactions={marketTransactions} />
         </div>
         <SecondaryThemeButton

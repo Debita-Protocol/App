@@ -96,10 +96,14 @@ const OutcomesTable = ({ amm }: { amm: AmmExchange }) => {
     orderOutcomesForDisplay(amm.ammOutcomes, amm?.market?.marketFactoryType)
       .slice(0, 3)
       .map((outcome) => {
-        const OutcomePrice =
-          !hasLiquidity || isNaN(Number(outcome?.price)) || Number(outcome?.price) <= 0
-            ? `-`
-            : formatCashPrice(outcome.price, amm?.cash?.name).full;
+        const OutcomePrice = formatCashPrice(outcome.price, amm?.cash?.name).full
+
+
+        //  !hasLiquidity || isNaN(Number(outcome?.price)) || Number(outcome?.price) <= 0
+         //   ? `-`
+         //   : formatCashPrice(outcome.price, amm?.cash?.name).full;
+
+
         return (
           <div key={`${outcome.name}-${amm?.marketId}-${outcome.id}`}>
             <span>{outcome.name.toLowerCase()}</span>
@@ -194,7 +198,7 @@ export const MarketCardView = ({
             [Styles.Trading]: reportingState === MARKET_STATUS.TRADING,
           })}
         >
-          {/* <CategoryLabel {...{ categories }} /> */}
+         {/* <CategoryLabel {...{ categories }} />  */}
           <ReportingStateLabel {...{ reportingState }} />
         {/*  <CategoryIcon {...{ categories }} /> */ }
           <div>
@@ -203,20 +207,20 @@ export const MarketCardView = ({
               <TinyThemeButton
                 customClass={Styles.NoLiquidityPill}
                 action={() => {}}
-                text="Add liquidity to earn fees"
+                text={"Discretionary Loan"}
                 disabled
               />
             ) : (
               <ValueLabel label="Liquidity Provider APR" value={formattedApy || "-"} />
             )}
 
-          </div>
+          </div> 
 
-          <div>
+          {/*<div>
             {(
               <ValueLabel label="Short CDS APR" value={formattedApy || "-"} />
-            )}
-          </div>
+            )} 
+          </div> */}
     <div>
             {(
               <ValueLabel label="Is Approved" value={formattedApy || "False"} />
@@ -226,8 +230,8 @@ export const MarketCardView = ({
         </article>
         <section>
           <MarketTitleArea {...{ ...market, timeFormat }} />
-          <ValueLabel label="total volume" value={formattedVol || "-"} />
-          <ValueLabel label="Liquidity" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
+          <ValueLabel label="Success Probability" value={formattedVol || "-"} />
+          <ValueLabel label="Yield APR" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
           <OutcomesTable {...{ amm }} />
           {!hasWinner && extraOutcomes > 0 && (
             <span className={Styles.ExtraOutcomes}>{`+ ${extraOutcomes} more Outcomes`}</span>
@@ -236,9 +240,9 @@ export const MarketCardView = ({
         </section>
 
       </MarketLink>
-        <button onClick={() => handleChange(market.turboId)} >
+       {/* <button onClick={() => handleChange(market.turboId)} >
           Select 
-        </button>
+        </button>  */}
         
 
     </article>

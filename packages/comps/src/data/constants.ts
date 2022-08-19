@@ -19,29 +19,22 @@ export const chefAddress = "0x42a0549a4063378cb96cac64ffb434da1e2817bd";
 export const PRICE_PRECISION = 6;
 
 // DEBITA 2.0
-export const controller_address = "0x7C3F747C70762BCc0C3b125d27860270D39b3f99";
-export const Vault_address = "0x55C6C0ACEd3d83A1F66E37a6d9a31d0B0259FA70";
-export const MM_address = "0x403A3536616eceBd6b4729DA0A1b1FD183DA44d6";
-export const Controller_address = "0x7C3F747C70762BCc0C3b125d27860270D39b3f99";
-export const RepNFT_address = "0xb73f0C7b39e7A2b9F11AD68D76036F1ac6d6AFaC";
-export const sample_instument_address = "0x8317C1239A04BB5442DAEd216916678D8dC5160B"; 
-export const marketFactoryAddress = "0x8c9758F8ad431c83D6fF8291e555869eAf1C0feB"
+export const controller_address = "0x6Bad2685217683B9395e11AAbc468c3919c6FB84";
+export const Vault_address = "0xCFedCe5185055d4478d52fbE31a7fefBDD972433";
+export const MM_address = "0xcC0F5e97D6326811932b9a49647De232f7FD6806";
+export const Controller_address = "0x6Bad2685217683B9395e11AAbc468c3919c6FB84";
+export const RepNFT_address = "0x575b9b7dBD0Bb1124A5dBEB53eA0c8614a74Ce33";
+export const sample_instument_address = "0x7657334F6fb9E74F224A5386f100E2C7Bd5F682c"; 
+export const marketFactoryAddress = "0x21Bf714953425a08a94F62913e93f49259b4cf0d"
 
-// deploying "AMMFactory" (tx: 0x48c5ed3f0628dd3f8cecfde8da8f0e0ecfda0bddca7a42e98b803bf3ddde4c28)...: deployed at 0x0A54AFFFcC4A08017BC34e17994dBF612955e1aF with 3849105 gas
-// deploying "Controller" (tx: 0x475c1896ecda68581f5a66bfd5feee030b2e7fc4e99cbf27ed8c13bd88f1dd8e)...: deployed at 0x7609e874dEe3160A0Cc07EF1E52c0Bde8D23d046 with 3898941 gas
-// deploying "ReputationNFT" (tx: 0xbc86089e4c5f043bdf07790c0c5802dcd5bc69ffe59fd6a61b2e97c1f972cee4)...: deployed at 0xf39cd0caeeb5A02dCf51817d1aFF8D7BCd752002 with 1168626 gas
-// deploying "MarketManager" (tx: 0x19d935c3887a85c3c00262cccdc715615c01abdbb241877b2c4a3cb9a8f8380e)...: deployed at 0xe0746079b499a8d10BdF3fdeF91417657Ff21289 with 3211328 gas
-// deploying "Vault" (tx: 0x5beabb2083d141e51b487ef2698dc92127a063fe12f5361afc44c2e205129f30)...: deployed at 0x55C6C0ACEd3d83A1F66E37a6d9a31d0B0259FA70 with 2534977 gas
-// deploying "TrancheAMMFactory" (tx: 0x29562e1274249c0111719391dd6212d1fbaaf8a526ab8084e81b4feb116db7a7)...: deployed at 0xa94Ab06f65A3D75dc183abBA737E9BF4f630BD91 with 1618673 gas
-// deploying "TrancheFactory" (tx: 0x578297b0a40b883d5bf684764fd1014e844687eefba41304011dda23aea199f4)...: deployed at 0xcBff2FEBd3Ddd1cF9F3620844D08290a298665Aa with 4968793 gas
-// deploying "TrancheMaster" (tx: 0x428e160c43dc1b5aaa13bf1cb1e8c53932fb6ebe25e305760e059c6e4068fd10)...: deployed at 0x5A9a8908d0B066c210f1F5a50AbD871b0fF0b717 with 1515599 gas
-
-// deploying "MasterChef" (tx: 0x249e66751b34850e59126bc571a26edf4713221f7e24f01ef0f848999415b216)...: deployed at 0x9d5FBCf67985040d1479069958F8663350122dba with 3119695 gas
-// deploying "AMMFactory" (tx: 0x3151c3459fe475d6e3258d9686865db3ab3462ce0e416f9e359d4300395815fd)...: deployed at 0x6285e323769eAD20E7dD06C196EA55AB15F30582 with 3849105 gas
-// deploying "Controller" (tx: 0x7e4dc7590f175f6ede576446d8a1920c91414d4d4d86ea998e693e1a7c5b3328)...: deployed at 0x7C3F747C70762BCc0C3b125d27860270D39b3f99 with 4085642 gas
-// deploying "ReputationNFT" (tx: 0x8f7059450740ff76170b74fd0fb4cb88d98b989ad994d42b00f8a04c34eb861b)...: deployed at 0xb73f0C7b39e7A2b9F11AD68D76036F1ac6d6AFaC with 1168626 gas
-// deploying "MarketManager" (tx: 0xb31b8c6d51bf862224ad6fc083260d86f079c69b7927bac410e207a37f727b5e)...: deployed at 0x403A3536616eceBd6b4729DA0A1b1FD183DA44d6 with 3237243 gas
-// reusing "Vault" at 0x55C6C0ACEd3d83A1F66E37a6d9a31d0B0259FA70
-// reusing "CreditLine" at 0x8317C1239A04BB5442DAEd216916678D8dC5160B
-// deploying "TrustedMarketFactoryV3" (tx: 0x340eca8116fa0df46c2406bc2bea024a7b6d1eaea729181f4dcc1383bc6c6792)...: deployed at 0x8c9758F8ad431c83D6fF8291e555869eAf1C0feB with 3941144 gas
-// deploying "TrustedFetcher" (tx: 0x020832cb04da27410b3cf33ece84cf72c891c8cc1c3be4bf481f0abba197a436)...: deployed at 0x39Dc97Adf8Bd48c8B6036091EF3d4a56F4D04141 with 1832562 gas
+// deploying "AMMFactory" (tx: 0xdb2bfd4abb8ff125fdf88ff6830a2386864eb89c6470d8234fd98a54ff2c71b6)...: deployed at 0x63be015Ec11Aa2928f8731bE32C4E604aadc38af with 3849105 gas
+// deploying "Controller" (tx: 0xf958a3127307a7c0bd632a34db014111cf3928beba41336158910314292023b6)...: deployed at 0x6Bad2685217683B9395e11AAbc468c3919c6FB84 with 4147792 gas
+// deploying "ReputationNFT" (tx: 0xd7a1316e9822372449db118007378c1ba910d3e57b4b14a1494ff04836445514)...: deployed at 0x575b9b7dBD0Bb1124A5dBEB53eA0c8614a74Ce33 with 1168626 gas
+// deploying "MarketManager" (tx: 0x8b154d32f46e21bb4c43a4c4e0e75619ed6dae560db634ed4242bd3cbae78e5d)...: deployed at 0xcC0F5e97D6326811932b9a49647De232f7FD6806 with 3244799 gas
+// deploying "Vault" (tx: 0xd9fdb8b9c4b3b29226a9b314736fcda374e60746dfb55c6264327b68a469211d)...: deployed at 0xCFedCe5185055d4478d52fbE31a7fefBDD972433 with 2753893 gas
+// deploying "CreditLine" (tx: 0x9d9c5b227538e3b0e897563e7166a09796a07cef11ae1d172cf0de6b4b380c6f)...: deployed at 0x7657334F6fb9E74F224A5386f100E2C7Bd5F682c with 886853 gas
+// deploying "TrustedMarketFactoryV3" (tx: 0x42a6ec49b9130237265d889250795a3398a06d8c2e69a74a9bb6db4f10e944ed)...: deployed at 0x21Bf714953425a08a94F62913e93f49259b4cf0d with 3941144 gas
+// deploying "TrustedFetcher" (tx: 0x247a1676b0d4ee792485ca6725e2ff5d0af0032f5be6375de17506c20478392b)...: deployed at 0x1c3D0E2faf2411B628cB9707B7396E7D3b024349 with 1832562 gas
+// deploying "TrancheAMMFactory" (tx: 0x910b485c4fe6d5bb0f75cb1ec4f6376321fa2408f87805cc2206a6023f70d585)...: deployed at 0xd9A4e17C2FCD4C2DB250CBa6cfFAC7295fd7C21F with 1618673 gas
+// deploying "TrancheFactory" (tx: 0x60d5a1ed954bef23c1146b4565929666692bceef1d036d6b3ab9953b8ce0de22)...: deployed at 0xf6aE969Cd284dF6A78eCd3024cd1b47278C1d286 with 4968805 gas
+// deploying "TrancheMaster" (tx: 0xf03ef2bf6154883be870e21cd807d77da7dd39067e9d48ff1298c399a914cbc8)...: deployed at 0xC524E70b3Be115F2e753e1683Fa4D95A5b06af7b with 1515611 gas

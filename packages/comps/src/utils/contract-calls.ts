@@ -166,6 +166,51 @@ interface InstrumentData_ {
   instrument_type: string;
 }; 
 
+
+export async function estimateZCBBuyTrade(
+  account: string,
+  library: Web3Provider,
+  marketId: string,
+  inputDisplayAmount: string,
+  selectedOutcomeId: number,
+  cash: Cash
+): Promise<EstimateTradeResult>  {
+  const amount = convertDisplayCashAmountToOnChainCashAmount(inputDisplayAmount, cash.decimals)
+    .decimalPlaces(0, 1)
+    .toFixed();
+  
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const bc_ad = await controller.getZCB_ad(marketId);
+  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
+
+  //how much I get from this vault amount
+  console.log(inputDisplayAmount, amount)
+  const estimatedShares_ = await bc.calculatePurchaseReturn(amount); 
+  // console.log('est', estimatedShares_.toString())
+  var estimatedShares = estimatedShares_.toString(); 
+  const averagePrice_ = await bc.calcAveragePrice(estimatedShares);
+  // console.log('avg', averagePrice_.toString())
+
+  const tradeFees = "0";  //APR 
+  estimatedShares = new BN(estimatedShares).div(10**18).toFixed(4); 
+  const averagePrice = new BN(averagePrice_.toString()).div(10**18).toFixed(4);
+  //const maxProfit = (new BN(estimatedShares).minus(new BN(amount))); 
+  const maxProfit =  (1 - Number(averagePrice))* Number(estimatedShares)
+  //const maxProfit = "1";
+  const priceImpact = "1";
+  const ratePerCash = "1";
+  return {
+    outputValue: estimatedShares,
+    tradeFees,
+    averagePrice: averagePrice,//.tofixed(4),
+    maxProfit: String(maxProfit),
+    ratePerCash,
+    priceImpact,
+  };
+};
+
+
+
 export async function createCreditLine(
   account: string, 
   library: Web3Provider,
@@ -268,6 +313,7 @@ export async function doOwnerSettings(
     const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
     await controller.setMarketManager(MM_address);
     await controller.setVault(Vault_address);
+    //await mintVaultDS(account, library); 
     const tx = await controller.setMarketFactory(marketFactoryAddress);
     return tx; 
 }
@@ -303,7 +349,7 @@ export async function addProposal(  // calls initiate market
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
   data.description = description; 
   data.Instrument_address = sample_instument_address;
-  data.instrument_type = new BN(0).toString(); 
+  data.instrument_type = new BN(100).toString(); 
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 

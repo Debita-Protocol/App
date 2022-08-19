@@ -336,7 +336,7 @@ const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: 
   printmarket:boolean = false, bondPrices: string = "0"): AmmExchange => {
   const shortprice_ =  1 - Number(bondPrices); 
   const shortprice = Number(shortprice_).toFixed(3); 
-  const outcomePrice = [bondPrices, String(shortprice)]; 
+  const outcomePrice = [String(Number(bondPrices).toFixed(3)), String(shortprice)]; 
   const outcomePrices = calculatePrices(market, pool.ratios || pool.tokenRatios, pool.weights);
   const fee = new BN(String(pool.swapFee || "0")).toFixed();
   const balancesRaw = pool.balances || [];
