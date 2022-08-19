@@ -209,11 +209,6 @@ export const TopNav = () => {
                 Redeem
               </Link>
             </li> 
-            <li className={classNames({ [Styles.Active]: path === BORROW })}>
-              <Link to={makePath(BORROW)} disabled={!isLogged} placeholder="Pools">
-                Borrow
-              </Link>
-            </li>
             <li className={classNames({ [Styles.Active]: path === PROFILE })}>
               <Link to={makePath(PROFILE)} disabled={!isLogged} placeholder="Pools">
                 Profile

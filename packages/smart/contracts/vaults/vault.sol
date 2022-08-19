@@ -81,7 +81,7 @@ contract Vault is ERC4626, Auth{
 
 
     /// @notice Harvest a trusted Instrument, records profit/loss 
-    function harvest(Instrument instrument) external requiresAuth{
+    function harvest(Instrument instrument) external requiresAuth {
         require(getInstrumentData[instrument].trusted, "UNTRUSTED_Instrument");
     	uint256 oldTotalInstrumentHoldings = totalInstrumentHoldings; 
         uint256 balanceLastHarvest = getInstrumentData[instrument].balance;

@@ -173,7 +173,9 @@ contract CreditLine is Instrument {
         return APR; 
     }
 
-    
+    function getMaturityDate() external view returns (uint256 result) {
+        result = maturityDate;
+    }
 
     function onMarketApproval() external override {
         maturityDate = block.timestamp + duration;

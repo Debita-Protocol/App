@@ -56,13 +56,26 @@ const ProfileView = () => {
     } = useUserStore()
     const isUser = !query_address;
     let address = query_address ? query_address : account;
-    const [instrument, setInstrument] = useState<InstrumentData>()
-    const [path, setPath] = useState("")
+    const [instrument, setInstrument] = useState<InstrumentData>({
+        trusted: true,
+        balance: "150.052", 
+        faceValue: "200.5",
+        marketId: "1",
+        principal: "175.0",
+        expectedYield: "25.5", 
+        duration: "31536000",
+        description: "a description about the usage of the creditline perhaps", 
+        Instrument_address: "address",
+        instrument_type: "0"
+    })
+    const [path, setPath] = useState("creditline")
     const [query, setQuery] = useState("")
+    const [ isLink, setIsLink ] = useState(isUser && path.length > 0)
 
     console.log("passport: ", passport)
     console.log("activePassport: ", activePassport)
     console.log("instrument:", instrument)
+    console.log("query address: ", query_address)
 
     const getPassport = useCallback(async () => {
         // Dynamically load @gitcoinco/passport-sdk-verifier
@@ -87,14 +100,14 @@ const ProfileView = () => {
             console.log(_instrument)
             setInstrument(_instrument)
         }
-        if (_instrument.trusted && isUser && _instrument.instrument_type.isZero()) {
+        if (_instrument.trusted && isUser && parseInt(_instrument.instrument_type) === 0 ) {
             setPath(makePath("creditline"))
         }
     })
 
     useEffect(() => {
         getPassport()
-        getInstruments()
+        //getInstruments()
     }, [])
     
     return (
@@ -111,10 +124,10 @@ const ProfileView = () => {
             </div>
             <section>
                 <InstrumentCard
-                    isLink={isUser && path.length > 0 }
+                    isLink={isLink}
                     path={path}
                     query={query}
-                    {...instrument}
+                    instrument={instrument}
                 />
             </section>
         </>

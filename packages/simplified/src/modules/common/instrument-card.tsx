@@ -6,50 +6,38 @@ import { ethers, BigNumber, BytesLike } from "ethers";
 import BN from "bignumber.js"
 import { ContractCalls, useUserStore } from "@augurproject/comps";
 import { PrimaryThemeButton } from "@augurproject/comps/build/components/common/buttons";
-
+import Styles from "./instrument-card.styles.less"
 const { checkInstrumentStatus } = ContractCalls;
 
 
+interface InstrumentData {
+    trusted: boolean; 
+    balance: string; 
+    faceValue: string;
+    marketId: string; 
+    principal: string;
+    expectedYield: string; 
+    duration: string;
+    description: string; 
+    Instrument_address: string;
+    instrument_type: string;
+  }; 
 
-interface InstrumentCardProps {
-    isLink: boolean,
-    path: string,
-    query: string,
-    trusted: boolean, 
-    balance: string, 
-    faceValue: string,
-    marketId: string,
-    principal: string, 
-    expectedYield: string, 
-    duration: string,
-    description: string, 
-    address: string,
-    instrument_type: string,
-}
 // card displayed for info about stuff. optional link to acutal instrument if on profile page.
 const InstrumentCard = ({
+    instrument,
     isLink,
     path,
-    query,
-    trusted, 
-    balance, 
-    faceValue,
-    marketId,
-    principal, 
-    expectedYield, 
-    duration,
-    description, 
-    address,
-    instrument_type,
-}:InstrumentCardProps) => {
+    query
+}:{instrument: InstrumentData, isLink: boolean, path:string, query:string}) => {
 
-    let _duration = new BN(duration).div(24*60*60).toFixed(6).toString()
-    let type_label = parseInt(instrument_type) === 1 ? "Credit Line" : "Other"
+    let _duration = new BN(instrument.duration).div(24*60*60).toFixed(6).toString()
+    let type_label = parseInt(instrument.instrument_type) === 0 ? "Credit Line" : "Other"
 
     const { account, loginAccount } = useUserStore();
 
     const handleCheck = useCallback(async () => {
-        let tx = await checkInstrumentStatus(account, loginAccount.library, address)
+        let tx = await checkInstrumentStatus(account, loginAccount.library, instrument.Instrument_address)
 
         await tx.wait();
         console.log("checked loan!")
@@ -57,41 +45,52 @@ const InstrumentCard = ({
 
     let Props = (
         <>
-            <section>
-                <ValueLabel label={"Approved"} value={trusted ? "Yes" : "No"}/>
-                <ValueLabel label={"Balance"} value={ balance }/>
+            <span>
+                Instrument:
+            </span>
+            <section className={Styles.InstrumentLabels}>
+                <ValueLabel label={"Approved"} value={instrument.trusted ? "Yes" : "No"}/>
+                <ValueLabel label={"Balance"} value={ instrument.balance }/>
                 <ValueLabel label={"Duration (Days)"} value={ _duration }/>
-                <ValueLabel label={"Face Value"} value={ faceValue }/> 
-                <ValueLabel label={"MarketId"} value={ marketId }/>
-                <ValueLabel label={"Principal"} value={ principal }/>
-                <ValueLabel label={"Expected Yield"} value={ expectedYield }/> 
+                <ValueLabel label={"Face Value"} value={ instrument.faceValue }/> 
+                <ValueLabel label={"MarketId"} value={ instrument.marketId }/>
+                <ValueLabel label={"Principal"} value={ instrument.principal }/>
+                <ValueLabel label={"Expected Yield"} value={ instrument.expectedYield }/> 
                 <ValueLabel label={"Type"} value={ type_label }/>
-                <ValueLabel label={"Instrument Address"} value={ address }/>
+                <ValueLabel label={"Instrument Address"} value={ instrument.Instrument_address }/>
             </section>
-            <div>
+            <div className={"Description"}>
                 <span>Description</span>
-                { description }
+                <br />
+                { instrument.description }
             </div>
-            <PrimaryThemeButton id={marketId} text={"Check Instrument Status"} action={handleCheck}/>
+            <PrimaryThemeButton id={instrument.marketId} text={"Check Instrument Status"} action={handleCheck}/>
         </>   
     )
 
+    console.log("HERE IS INSTRUMENT", instrument)
+
     return (
         <>
-            <section>
-                { isLink ? (
-                    <Link to={
-                        {
+            <section className={Styles.InstrumentCard}>
+            {isLink ? (
+                <div>
+                    <Link
+                        to={{
                             pathname: path,
-                            search: query
-                        }
-                    }>
-                        { Props }       
-                    </Link>
-                ) : (
+                            search: query,
+                          }}
+                    >
                     {Props}
-                )}
+                    </Link>
+                </div>
+            ) : (
+                <div>
+                    {Props}
+                </div>
+            )}
             </section>
+
         </>
     )
 }

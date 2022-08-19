@@ -243,7 +243,7 @@ const CreditLineRequestForm = () => {
         <div>
         { inputError }
         </div>
-        <div className={Styles.SubmitButton}>
+        <div className={Styles}>
           <TinyThemeButton {... buttonProps} />
         </div>
       </div>

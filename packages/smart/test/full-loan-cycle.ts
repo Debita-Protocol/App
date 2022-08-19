@@ -72,8 +72,6 @@ describe("* Full Cycle Test", () => {
         it("controller: initiateMarket", async () => {
             await ctrlr.initiateMarket(
                 trader.address,
-                description,
-                [BigNumber.from(10).pow(18).mul(1), BigNumber.from(10).pow(18).mul(2)],
                 {
                     trusted: true, // shouldn't affect
                     balance: 0,
@@ -83,7 +81,8 @@ describe("* Full Cycle Test", () => {
                     expectedYield: totalInterest,
                     duration,
                     description,
-                    Instrument_address: creditline.address 
+                    Instrument_address: creditline.address,
+                    instrument_type: 0
                 }
             )
             console.log("a")

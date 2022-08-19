@@ -5,7 +5,8 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deployer } = await getNamedAccounts();
   const cash_addr = (await deployments.get("Collateral")).address;
-  const args = [cash_addr];
+  const controller_addr = (await deployments.get("Controller")).address;
+  const args = [cash_addr,controller_addr];
 
   await deployments.deploy("Vault", {
     from: deployer,
