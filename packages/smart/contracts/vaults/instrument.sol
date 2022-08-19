@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.4;
 
@@ -40,6 +41,22 @@ abstract contract Instrument {
 
     }
 
+    /**
+     @notice hooks for approval logic that are specific to each instrument type, called by controller for approval/default logic
+     */
+    function onMarketApproval() virtual external;
+
+    /// called by anyone.
+    function checkStatus() virtual external;
+
+    function _resolveMarket(
+        bool atLoss,
+        uint256 extra_gain,
+        uint256 total_loss
+    ) internal {
+        vault.resolveMarket(atLoss, extra_gain, total_loss);
+    }
+
 
     function setUtilizer(address _Utilizer) external onlyAuthorized {
         require(_Utilizer != address(0));
@@ -58,7 +75,7 @@ abstract contract Instrument {
     /// @param user The user to get the underlying balance of.
     /// @return The user's Instrument balance in underlying tokens.
     /// @dev May mutate the state of the Instrument by accruing interest.
-    function balanceOfUnderlying(address user) external  returns (uint256){
+    function balanceOfUnderlying(address user) external view returns (uint256){
         return underlying.balanceOf(user); 
         }
 }
@@ -66,37 +83,37 @@ abstract contract Instrument {
 
 
 /// @notice Simple Instrument that provides USDC on stableswap 3pool 
-contract Curve3pool_Instrument is Instrument{
+// contract Curve3pool_Instrument is Instrument{
 
-    /// @notice invests amount into Instrument 
-    function invest(uint256 amount ) external 
-    //onlyGuardian 
-    {   
-        require(this.balanceOfUnderlying(address(this)) >= amount);
-        _invest(amount);  
+//     /// @notice invests amount into Instrument 
+//     function invest(uint256 amount ) external 
+//     //onlyGuardian 
+//     {   
+//         require(this.balanceOfUnderlying(address(this)) >= amount);
+//         _invest(amount);  
 
-    }
+//     }
 
-    function _invest(uint256 _amount) internal {
+//     function _invest(uint256 _amount) internal {
 
-    }
+//     }
 
 
 
-}
+// }
 
 
 /// @notice Instrument that a) lends usdc fix rate at notional.finance and get zcb
 /// b) use that zcb as collateral to borrow fiat from fiatdao, c) swap fiat dao to usdc
 /// d) repeat
-contract LeveragedFixedRate_Instrument is Instrument{
+// contract LeveragedFixedRate_Instrument is Instrument{
 
-}
+// }
 
-/// @notice Instrument that lends to risky collateral in fuse pools
-contract RariLend_Instrument is Instrument{
+// /// @notice Instrument that lends to risky collateral in fuse pools
+// contract RariLend_Instrument is Instrument{
 
-}
+// }
 
 
 
@@ -122,12 +139,12 @@ contract CreditLine is Instrument {
     constructor(
         address vault,
         address borrower, 
-        uint256 principal,
-        uint256 interestAPR, 
-        uint256 duration,
-        uint256 faceValue
+        uint256 _principal,
+        uint256 _interestAPR, 
+        uint256 _duration,
+        uint256 _faceValue
     ) public {
-        initialize(vault, borrower, principal, interestAPR, duration, faceValue);
+        initialize(vault, borrower, _principal, _interestAPR, _duration, _faceValue);
     }
 
     /// @notice CreditLine contract is initiated at proposal 
@@ -148,12 +165,20 @@ contract CreditLine is Instrument {
         duration = _duration;   
         faceValue = _faceValue; 
 
-        interestOwed = getOwedInterest(_interestAPR, _duration); 
+        interestOwed = faceValue - principal; // getOwedInterest(_interestAPR, _duration); 
     }
 
     /// @notice use APR and duration to get total owed interest 
     function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256 owed){
         return APR; 
+    }
+
+    function getMaturityDate() external view returns (uint256 result) {
+        result = maturityDate;
+    }
+
+    function onMarketApproval() external override {
+        maturityDate = block.timestamp + duration;
     }
 
     /// @notice Allows a borrower to borrow on their creditline.
@@ -166,15 +191,10 @@ contract CreditLine is Instrument {
         underlying.transfer(msg.sender, amount);
     }
 
-    /// @notice sets the maturity date for the instrument, after which the user can no longer borrow any funds.
-    function setTime() external onlyUtilizer {
-        maturityDate = block.timestamp + duration;
-    }
-
-
     /// @notice allows a borrower to repay their loan
     function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
+        require(block.timestamp <= maturityDate, "Instrument must not have matured");
         underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
         handleRepay(repay_principal, repay_interest); 
     }   
@@ -186,8 +206,18 @@ contract CreditLine is Instrument {
         interestOwed -= Math.min(repay_interest, interestOwed);
     }
 
-    function resolveLoan() external onlyUtilizer{
-        
+    /**
+     @notice called by anyone to check if the loan is past maturity
+     */
+    function checkStatus() external override {
+        if (maturityDate >= block.timestamp) {
+            
+            if (principalOwed == 0 && interestOwed == 0) {
+                _resolveMarket(false, 0, 0);
+            } else if (principalOwed > 0 || interestOwed > 0) {
+                _resolveMarket(true, 0, principalOwed + interestOwed);
+            }
+        }
     }
 }
 

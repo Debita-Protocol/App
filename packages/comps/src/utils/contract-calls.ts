@@ -163,6 +163,7 @@ interface InstrumentData_ {
   duration: string;
   description: string; 
   Instrument_address: string; 
+  instrument_type: string;
 }; 
 
 export async function createCreditLine(
@@ -223,7 +224,7 @@ export async function getTotalCollateral(
   return total_collateral; 
 }
 
-export async function getInstrumentData(
+export async function getInstrumentData_(
   account: string, 
   library: Web3Provider, 
   marketId: string
@@ -301,7 +302,8 @@ export async function addProposal(  // calls initiate market
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
   data.description = description; 
-  data.Instrument_address = sample_instument_address; 
+  data.Instrument_address = sample_instument_address;
+  data.instrument_type = new BN(0).toString(); 
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
@@ -340,8 +342,53 @@ export const getInstrument = async(
   const data = await vault.fetchInstrumentData( marketId); 
   const Instrument_address = data.Instrument_address; 
   return Instrument__factory.connect(Instrument_address, getProviderOrSigner(library, account));
-
 }; 
+
+export const getInstrumentData = async (
+  account:string,
+  library: Web3Provider
+): Promise<InstrumentData_> => {
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  const marketId = await controller.getMarketId(account); 
+  let data = await vault.fetchInstrumentData( marketId);
+
+  let result = {
+    trusted: false,
+    balance: "",
+    faceValue: "",
+    marketId: "",
+    principal: "",
+    expectedYield: "",
+    duration: "",
+    description: "",
+    Instrument_address: "",
+    instrument_type: ""
+  }
+  result.trusted = data.trusted;
+  result.Instrument_address = data.Instrument_address
+  result.description = data.description
+  result.instrument_type = data.instrument_type.toString()
+  result.marketId = data.marketId.toString()
+  result.balance = new BN(data.balance.toString()).div(10**decimals).toString()
+  result.faceValue = new BN(data.faceValue.toString()).div(10**decimals).toString()
+  result.principal = new BN(data.principal.toString()).div(10**decimals).toString()
+  result.expectedYield = new BN(data.expectedYield.toString()).div(10**decimals).toString()
+  result.duration = data.duration.toString()
+  return result;
+}
+
+export const checkInstrumentStatus = async (
+  account: string,
+  library: Web3Provider,
+  instrument_address: string
+): Promise<TransactionResponse> => {
+  const instrument = Instrument__factory.connect(instrument_address, getProviderOrSigner(library, account))
+  const tx = instrument.checkStatus()
+  return tx;
+}
 
 export async function borrow_from_creditline(
   account: string,

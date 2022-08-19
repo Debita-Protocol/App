@@ -43,7 +43,7 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData, getHedgePrice, getInstrumentData, getTotalCollateral} = ContractCalls; 
+const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -173,7 +173,7 @@ const MarketView = ({ defaultMarket = null }) => {
       try{
       //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
       stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
-      instrument = await getInstrumentData(account, loginAccount.library, String(market.amm.turboId)); 
+      instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
       tc = await getTotalCollateral(account, loginAccount.library, String(market.amm.turboId)); 
       console.log('instruments', instrument); 
     }

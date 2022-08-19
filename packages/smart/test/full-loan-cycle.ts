@@ -45,6 +45,7 @@ describe("* Full Cycle Test", () => {
          * manager => bond buyer/seller, interacts with market, gains reputation
          * trader => initializes instrument, borrows and repays vault instrument.
          */
+    
         [owner, trader, manager] = await ethers.getSigners();
 
         ctrlr = await ethers.getContract("Controller");
@@ -64,36 +65,13 @@ describe("* Full Cycle Test", () => {
         await ctrlr.setMarketFactory(MF.address);
         await ctrlr.setReputationNFT(repToken.address);
         await ctrlr.addValidator(owner.address);
-        await ctrlr.connect(manager).verifyAddress();
-    });
-
-    describe("# Rep Token Tests", () => {
-        it("Add score tests", async () => {
-            await repToken.mint(manager.address);
-            expect(await repToken.getReputationScore(manager.address)).to.equal(BigNumber.from(0));
-            let score = BigNumber.from(10).pow(18).mul(2)
-            await repToken.addScore(manager.address, score)
-
-            score = BigNumber.from(10).pow(18).mul(1)
-            await repToken.addScore(manager.address, score)
-
-            expect((await repToken.getReputationScore(manager.address)).score).to.equal(BigNumber.from(10).pow(18).mul(1.5));
-            expect((await repToken.getReputationScore(manager.address)).n).to.equal(BigNumber.from(2));
-            console.log("A")
-
-            await repToken.resetScore(manager.address)
-
-            console.log("B")
-            
-        });
+        await ctrlr.connect(manager).verifyAddress(1,2,[1,2,3,4,5,6,7,8]);
     });
 
     describe("# Initiate instrument from controller", () => {
         it("controller: initiateMarket", async () => {
             await ctrlr.initiateMarket(
                 trader.address,
-                description,
-                [BigNumber.from(10).pow(18).mul(1), BigNumber.from(10).pow(18).mul(2)],
                 {
                     trusted: true, // shouldn't affect
                     balance: 0,
@@ -103,7 +81,8 @@ describe("* Full Cycle Test", () => {
                     expectedYield: totalInterest,
                     duration,
                     description,
-                    Instrument_address: creditline.address 
+                    Instrument_address: creditline.address,
+                    instrument_type: 0
                 }
             )
             console.log("a")

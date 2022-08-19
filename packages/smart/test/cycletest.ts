@@ -55,6 +55,7 @@ interface InstrumentData_ {
   duration: string;
   description: string; 
   Instrument_address: string; 
+  instrument_type: string;
 }; 
 
 // async function reset( ): Promise<boolean>   
@@ -144,7 +145,7 @@ describe("Cycle", ()=>{
     data.duration = pp_.mul(10).toString();
     data.description = "test";
     data.Instrument_address = creditline.address;
-
+    data.instrument_type = String(0);
     console.log('data', data)
     await controller.initiateMarket(trader.address, data); 
     const marketId = await controller.getMarketId(trader.address); 

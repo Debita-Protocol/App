@@ -20,6 +20,7 @@ export const PROPOSAL = "proposal";
 export const LOAN = "loan";
 export const USER_PROFILE = "user-profile";
 export const PROFILE = "profile";
+export const CREDITLINE = "creditline"
 
 // Directions
 export const BUY = "buy";

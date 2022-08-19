@@ -14,7 +14,8 @@ export interface InstrumentData {
   expectedYield: BigNumber; 
   duration: BigNumber;
   description: string; 
-  Instrument_address: string; 
+  Instrument_address: string;
+  instrument_type: BigNumber;
 }; 
 
 export interface Loan {
