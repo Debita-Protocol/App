@@ -283,7 +283,8 @@ export async function addProposal(  // calls initiate market
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
   data.description = description; 
-  data.Instrument_address = sample_instument_address; 
+  data.Instrument_address = sample_instument_address;
+  data.instrument_type = new BN(0).toString(); 
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 

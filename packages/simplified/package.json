@@ -104,7 +104,7 @@
     "**/react-dom": "^17.0.1"
   },
   "scripts": {
-    "start": "set TSC_COMPILE_ON_ERROR=true set DEFAULT_NETWORK_ID=137 && node scripts/start.js",
+    "start": "set TSC_COMPILE_ON_ERROR=true && node scripts/start.js",
     "build": "set TSC_COMPILE_ON_ERROR=true && node scripts/build.js"
   },
   "eslintConfig": {
