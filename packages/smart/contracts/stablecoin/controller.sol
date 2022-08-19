@@ -9,13 +9,16 @@ import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Vault} from "../vaults/vault.sol";
 import {Instrument} from "../vaults/instrument.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
+
 // Controller contract responsible for providing initial liquidity to the
 // borrower cds market, collect winnings when default, and burn the corresponding DS
 contract Controller {
     using SafeMath for uint256;
+    using FixedPointMathLib for uint256;
 
     struct MarketData {
         address instrument_address;
@@ -100,14 +103,23 @@ contract Controller {
     /// @dev both principal/interest should be in price precision
     /// @param interest is amount of interest in dollars, not percentage,
     /// returns a,b is both in 18 price_precision
-    function getCurveParams(uint256 principal, uint256 interest) internal pure returns (uint256 a, uint256 b){
+    function getCurveParams(uint256 principal, uint256 interest) internal view returns (uint256, uint256){
 
-        uint price_precision = 1e18; 
-        b = 9e17; //do setup
-        a = ((price_precision - b)**2)/price_precision; 
-       // a = price_precision - (2*b) + (b*b)/price_precision; 
-        //a = 1;
-      //  b = 1;
+        uint256 price_precision = 1e18; 
+        uint256 interest_ = interest * (10**12); 
+        uint256 principal_ = principal * (10**12); 
+
+        uint256 b = (2*principal_).divWadDown(principal_+interest_) - price_precision; 
+        uint256 a = (price_precision -b).divWadDown(principal_+interest_); 
+        console.log('a,b', a,b); 
+
+        // uint256 b = ((2*principal_)*price_precision)/(principal_ + interest_) - price_precision; 
+        // uint256 a = (price_precision-b)*price_precision/(principal_+interest_); 
+        return (a,b);
+        // b = 9e17; //do setup
+        // a = ((price_precision - b)**2)/price_precision; 
+        // a = (a*PRICE_PRECISION)/(2*interest_); 
+  
     }
 
     function verifyAddress(
@@ -150,10 +162,9 @@ contract Controller {
         address recipient,
         Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
     ) external  {
-        uint256 a;
-        uint256 b;
-        (a, b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
-
+   
+        (uint256 a, uint256 b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
+        console.log('a,b', a,b); 
         string memory name = string(abi.encodePacked(baseName, "-", Strings.toString(nonce)));
         string memory symbol = string(abi.encodePacked(baseSymbol, Strings.toString(nonce)));
         nonce++;

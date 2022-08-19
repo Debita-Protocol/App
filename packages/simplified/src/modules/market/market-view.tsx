@@ -43,7 +43,7 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData, getHedgePrice} = ContractCalls; 
+const{ fetchTradeData, getHedgePrice, getInstrumentData, getTotalCollateral} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -137,6 +137,13 @@ const MarketView = ({ defaultMarket = null }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
+  const [principal, setPrincipal] = useState("");
+  const [Yield, setYield] = useState("");
+  const [totalCollateral, setTotalCollateral] = useState("");
+
+
+  const [duration, setDuration] = useState("");
+
   const marketId = useMarketQueryId();
   const { isMobile } = useAppStatusStore();
   const {
@@ -157,17 +164,27 @@ const MarketView = ({ defaultMarket = null }) => {
       balances,
       actions: { addTransaction },
     } = useUserStore();
+
   useEffect(async ()=> {
-    let stored 
+    let stored ;
+    let instrument;
+    let tc; 
+
       try{
       //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
-      stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId)); 
+      stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
+      instrument = await getInstrumentData(account, loginAccount.library, String(market.amm.turboId)); 
+      tc = await getTotalCollateral(account, loginAccount.library, String(market.amm.turboId)); 
+      console.log('instruments', instrument); 
     }
     catch (err){console.log("status error", err)
    return;}
     setstoredCollateral(stored);
-
-
+    setPrincipal(instrument.principal.toString());
+    setYield(instrument.expectedYield.toString()); 
+    const dur = Number(instrument.duration.toString())/1000000; 
+    setDuration(String(dur)); 
+    setTotalCollateral(tc); 
 
   });
 
@@ -209,6 +226,11 @@ const MarketView = ({ defaultMarket = null }) => {
   const isFinalized = isMarketFinal(market);
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
       //console.log('amm!!', market.amm.turboId)
+  // principal: string= "10", 
+  // expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
+  // duration: string = "100", 
+  // description: string= "Test Description", 
+
 
 
   return (
@@ -232,7 +254,7 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Debt Asset Details</h4>
+          <h4>Instrument Details</h4>
           {details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))}
@@ -241,20 +263,24 @@ const MarketView = ({ defaultMarket = null }) => {
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
           )}
-          {details.length === 0 && <p>There are no additional details for this Loan/Structured Product.</p>}
+          {details.length === 0 && <p>There are no additional details for this .</p>}
         </div>
 
         <ul className={Styles.StatsRow}>
 <li>
-            <span>Net Short CDS buyers </span>
-            <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
+            <span>Net ZCB Bought / Required</span>
+            <span>{formatDai(totalCollateral/1000000 || "0.00").full}</span>
+            <span>{formatDai(principal/5/1000000 || "0.00").full}</span>
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Required Net Short CDS buyers </span>
-            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span>
+            <span>ZCB Start Price </span>
+            <span>{formatDai(principal/5/1000000 || "0.00").full}</span>
+
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Credit Criterion met </span>
+            <span>Approval Criterion Met </span>
             <span>{"False"}</span>
           </li>
 
@@ -268,20 +294,23 @@ const MarketView = ({ defaultMarket = null }) => {
         <ul className={Styles.StatsRow}>
           <li>
             <span>Principal </span>
-            <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
+            <span>{formatDai(principal/1000000 || "0.00").full}</span>
+
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>APR </span>
-            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span>
+            <span>Expected Tot.Yield</span>
+            <span>{formatDai(Yield /1000000 || "0.00").full}</span>
+          {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Time Until Maturity </span>
-            <span>{"10"}</span>
+            <span>Duration(days) </span>
+            <span>{duration}</span>
           </li>
 
           <li>
-            <span>Supplied Liquidity</span>
-            <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+            <span>Start Date</span>
+            <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
           </li>
 
         </ul>

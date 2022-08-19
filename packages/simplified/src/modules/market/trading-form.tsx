@@ -254,6 +254,8 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     getCanBuy(); 
   }); 
 
+  const canRedeem = true; 
+
 
  // console.log('canbuy?', canbuy); 
   const canMakeTrade: CanTradeProps = useMemo(() => {
@@ -450,14 +452,26 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
             }}
           />
         )}
-        <SecondaryThemeButton
+        
+        {!canRedeem &&(<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
           action={makeTrade}
           text={canMakeTrade.actionText}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
+        />) }
+
+        {canRedeem && (
+          <SecondaryThemeButton
+          disabled={canMakeTrade.disabled || !isApprovedTrade}
+          action={makeTrade}
+          text={'Redeem ZCB'}
+          subText={canMakeTrade.subText}
+          error={buttonError}
+          customClass={ButtonStyles.BuySellButton}
         />
+        )}
       </div>
     </div>
   );

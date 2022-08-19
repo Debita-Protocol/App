@@ -176,7 +176,6 @@ export async function createCreditLine(
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account));
   const decimals = await collateral.decimals(); 
   let creditLineF = new CreditLine__factory(getSigner(library, account));
-  console.log('creditlinef', creditLineF); 
   const _principal = new BN(principal).shiftedBy(decimals).toFixed()
   const _interestAPR = new BN(interestAPR).shiftedBy(decimals).toFixed()
   const _faceValue = new BN(faceValue).shiftedBy(decimals).toFixed()
@@ -212,8 +211,28 @@ export async function getHedgePrice(
   const hedgePrice = await marketmanager.getHedgePrice( marketId); 
   return hedgePrice.toString(); 
 }
+export async function getTotalCollateral(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string
+  ): Promise<string>{
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const bc_ad = await controller.getZCB_ad(marketId);
+  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account))
+  const total_collateral = await bc.getTotalCollateral()
+  return total_collateral; 
+}
 
+export async function getInstrumentData(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string
+  ): Promise<any>{
 
+  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
+  const instrument_data = await vault.fetchInstrumentData(marketId); 
+  return instrument_data; 
+}
 export async function getBondingCurveContract(
   account: string, 
   library : Web3Provider, 
