@@ -43,7 +43,7 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral} = ContractCalls; 
+const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral, redeemZCB} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -62,9 +62,10 @@ export const getWinningOutcome = (ammOutcomes: AmmOutcome[], marketOutcomes: Mar
 
 const WinningOutcomeLabel = ({ winningOutcome }) => (
   <span className={Styles.WinningOutcomeLabel}>
-    <span>Winning Outcome</span>
+    <span>Instrument Status</span>
     <span>
-      {winningOutcome.name}
+      {/*winningOutcome.name*/}
+      {'Success'}
       {ConfirmedCheck}
     </span>
   </span>
@@ -164,6 +165,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
   // console.log('amm', amm, amm?.ammOutcomes)
+  const longZCBTokenAddress = market?.shareTokens[0]; 
+
   const {
       account,
       loginAccount,
@@ -231,12 +234,16 @@ const MarketView = ({ defaultMarket = null }) => {
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = isMarketFinal(market);
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
-      //console.log('amm!!', market.amm.turboId)
   // principal: string= "10", 
   // expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
   // duration: string = "100", 
   // description: string= "Test Description", 
-
+  const redeem = () =>{
+    redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
+      console.log('tradingresponse', response)}).catch((error)=>{
+        console.log('Trading Error', error)
+      }); 
+  }
 
 
   return (
@@ -271,8 +278,8 @@ const MarketView = ({ defaultMarket = null }) => {
           )}
           {details.length === 0 && 
            <div>
-           <p>Instrument Address</p> 
-           <span> {"d"} </span>
+           <p>ZCB Address</p> 
+           <span> {longZCBTokenAddress} </span>
            <p>however it is good</p> </div>}
         </div>
 
@@ -378,7 +385,14 @@ const MarketView = ({ defaultMarket = null }) => {
           [Styles.ShowTradingForm]: showTradingForm,
         })}
       >
-        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} />
+        {!(isFinalized && winningOutcome )&& <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} />}
+        {isFinalized && winningOutcome &&      <SecondaryThemeButton
+          text="Redeem All ZCB"
+          action={redeem}
+          customClass={ButtonStyles.BuySellButton}
+        />}
+
+        {/*<TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> */}
       </section>
     </div>
   );

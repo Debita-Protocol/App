@@ -17,9 +17,18 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 /// @notice have to separate factories because of code size limit 
 contract TrancheAMMFactory{
 
-	function newPool() external returns(address){
-		StableSwap amm = new StableSwap(); 
-		return address(amm); 
+	address base_factory;
+	mapping(address=>bool) _isPool; 
+	constructor(){
+		base_factory = msg.sender; 
+	}
+	function newPool(address token1, address token2) external returns(StableSwap){
+		StableSwap amm = new StableSwap(token1, token2); 
+		_isPool[address(amm)] = true; 
+		return amm; 
+	}
+	function isPool(address pooladd) public view returns(bool){
+		return _isPool[pooladd]; 
 	}
 } 
 
@@ -28,9 +37,9 @@ contract TrancheAMMFactory{
 contract TrancheFactory{
 
 	uint256 numVaults; 
-    address owner; 
+  address owner; 
 
-    TrancheAMMFactory ammFactory; 
+  TrancheAMMFactory ammFactory; 
 
 	/// @notice initialization parameters for the vault
 	struct InitParams{
@@ -78,15 +87,15 @@ contract TrancheFactory{
 
 		tVault newvault = new tVault(param); 
 		Splitter splitter = new Splitter(newvault);
-		address amm_ad = ammFactory.newPool(); 
+		address[] memory tokens = splitter.getTrancheTokens(); 
+		StableSwap amm = ammFactory.newPool(tokens[0], tokens[1]); 
 
 		uint vaultId = param.vaultId; 
 		Contracts storage contracts = vaultContracts[vaultId]; 
 		contracts.vault = address(newvault); 
 		contracts.splitter = address(splitter);
-		contracts.amm = amm_ad; 
+		contracts.amm = address(amm); 
 		contracts.param = param;
-
 
 		numVaults++; 
 	}	
@@ -159,10 +168,13 @@ contract TrancheMaster{
 		vault.approve(address(splitter), shares);
 		(uint ja, uint sa) = splitter.split(vault, shares); 
 
-		//provide
+		//provide(same amount to get a balanced pool)
 		uint[2] memory amounts; 
-		amounts[0] = sa; 
+		amounts[0] = ja; 
 		amounts[1] = ja; 
+		address[] memory tranches = splitter.getTrancheTokens(); 
+		ERC20(tranches[0]).approve(address(amm), ja); 
+		ERC20(tranches[1]).approve(address(amm), ja); 
 		uint lpshares = amm.addLiquidity(amounts, 0); 
 
 		//Transfer
@@ -188,7 +200,7 @@ contract TrancheMaster{
 		//Remove
 		uint[2] memory minAmounts;
 		minAmounts[0] =0;
-		minAmounts[1] =1;
+		minAmounts[1] =0;
 		uint[2] memory amountsOut = amm.removeLiquidity(shares,minAmounts);
 		uint junioramount = amountsOut[1]; 
 
@@ -236,9 +248,9 @@ contract TrancheMaster{
 		uint tokenOut = 1-tokenIn; 
 		uint tokenInAmount = isSenior? sa: ja; 
 		address[] memory tranches = splitter.getTrancheTokens(); 
-		ERC20(tranches[tokenIn]).approve(address(amm), tokenInAmount); 
 
 		//3. Swap 
+		ERC20(tranches[tokenIn]).approve(address(amm), tokenInAmount); 
 		uint tokenOutAmount = amm.swap(tokenIn, tokenOut, tokenInAmount, 0); //this will give this contract tokenOut
 
 		//4. Transfer 

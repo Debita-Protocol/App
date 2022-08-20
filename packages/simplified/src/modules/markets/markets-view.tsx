@@ -26,7 +26,7 @@ import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 const { newFunction, createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
 createMarket_, mintDS, resolveMarket, contractApprovals,
-doBulkTrade, addProposal, doOwnerSettings ,mintRepNFT } = ContractCalls;
+doBulkTrade, addProposal, doOwnerSettings ,mintRepNFT, resolveZCBMarket} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -110,8 +110,15 @@ const confirmResolve = async ({
 
   afterSigningAction = () => {},
 }) => {
-  
-   await resolveMarket(account, loginAccount.library)
+    
+  await resolveZCBMarket(
+  account, loginAccount.library); 
+  // marketId: string = "2", 
+  // atLoss: boolean = false, 
+  // extra_gain: string ="0", 
+  // principal_loss: string = "0"
+  // )
+   //await resolveMarket(account, loginAccount.library)
 };
 
 
@@ -166,112 +173,114 @@ const applyFiltersAndSort = (
   transactions,
   { filter, primaryCategory, subCategories, sortBy, currency, reportingState, showLiquidMarkets }
 ) => {
-  let updatedFilteredMarkets = passedInMarkets;
-  if (filter !== "") {
-    updatedFilteredMarkets = updatedFilteredMarkets.filter((market) => {
-      const { title, description, categories, outcomes } = market;
-      const searchRegex = new RegExp(filter, "i");
-      const matchTitle = searchRegex.test(title);
-      const matchDescription = searchRegex.test(description);
-      const matchCategories = searchRegex.test(JSON.stringify(categories));
-      const matchOutcomes = searchRegex.test(JSON.stringify(outcomes.map((outcome) => outcome.name)));
-      if (matchTitle || matchDescription || matchCategories || matchOutcomes) {
-        return true;
-      }
-      return false;
-    });
-  }
+  // let updatedFilteredMarkets = passedInMarkets;
+  // if (filter !== "") {
+  //   updatedFilteredMarkets = updatedFilteredMarkets.filter((market) => {
+  //     const { title, description, categories, outcomes } = market;
+  //     const searchRegex = new RegExp(filter, "i");
+  //     const matchTitle = searchRegex.test(title);
+  //     const matchDescription = searchRegex.test(description);
+  //     const matchCategories = searchRegex.test(JSON.stringify(categories));
+  //     const matchOutcomes = searchRegex.test(JSON.stringify(outcomes.map((outcome) => outcome.name)));
+  //     if (matchTitle || matchDescription || matchCategories || matchOutcomes) {
+  //       return true;
+  //     }
+  //     return false;
+  //   });
+  // }
 
-  updatedFilteredMarkets = updatedFilteredMarkets.filter((market: MarketInfo) => {
-    if (
-      showLiquidMarkets &&
-      (!market.amm || !market.amm.id || Number(market.amm.liquidityUSD) <= MIN_LIQUIDITY_AMOUNT)
-    ) {
-      return false;
-    }
-    if (
-      primaryCategory !== ALL_MARKETS &&
-      primaryCategory !== OTHER &&
-      market.categories[0].toLowerCase() !== primaryCategory.toLowerCase()
-    ) {
-      return false;
-    }
-    if (primaryCategory === OTHER && POPULAR_CATEGORIES_ICONS[market.categories[0].toLowerCase()]) {
-      return false;
-    }
-    if (primaryCategory === SPORTS && subCategories.length > 0) {
-      // subCategories is always a max 2 length, markets are 3.
-      const indexToCheck = subCategories.length === 1 ? 1 : market.categories.length - 1;
-      if (
-        market.categories[indexToCheck] &&
-        market.categories[indexToCheck].toLowerCase() !== subCategories[indexToCheck - 1].toLowerCase()
-      ) {
-        return false;
-      }
-    }
-    if (currency !== ALL_CURRENCIES) {
-      if (!market.amm) {
-        return false;
-      } else if (market?.amm?.cash?.name !== currency) {
-        return false;
-      }
-    }
-    if (reportingState === OPEN) {
-      if (market.reportingState !== MARKET_STATUS.TRADING) {
-        return false;
-      }
-    } else if (reportingState === IN_SETTLEMENT) {
-      if (market.reportingState !== MARKET_STATUS.REPORTING && market.reportingState !== MARKET_STATUS.DISPUTING)
-        return false;
-    } else if (reportingState === RESOLVED) {
-      if (market.reportingState !== MARKET_STATUS.FINALIZED && market.reportingState !== MARKET_STATUS.SETTLED)
-        return false;
-    }
+  // updatedFilteredMarkets = updatedFilteredMarkets.filter((market: MarketInfo) => {
+  //   if (
+  //     showLiquidMarkets &&
+  //     (!market.amm || !market.amm.id || Number(market.amm.liquidityUSD) <= MIN_LIQUIDITY_AMOUNT)
+  //   ) {
+  //     return false;
+  //   }
+  //   if (
+  //     primaryCategory !== ALL_MARKETS &&
+  //     primaryCategory !== OTHER &&
+  //     market.categories[0].toLowerCase() !== primaryCategory.toLowerCase()
+  //   ) {
+  //     return false;
+  //   }
+  //   if (primaryCategory === OTHER && POPULAR_CATEGORIES_ICONS[market.categories[0].toLowerCase()]) {
+  //     return false;
+  //   }
+  //   if (primaryCategory === SPORTS && subCategories.length > 0) {
+  //     // subCategories is always a max 2 length, markets are 3.
+  //     const indexToCheck = subCategories.length === 1 ? 1 : market.categories.length - 1;
+  //     if (
+  //       market.categories[indexToCheck] &&
+  //       market.categories[indexToCheck].toLowerCase() !== subCategories[indexToCheck - 1].toLowerCase()
+  //     ) {
+  //       return false;
+  //     }
+  //   }
+  //   if (currency !== ALL_CURRENCIES) {
+  //     if (!market.amm) {
+  //       return false;
+  //     } else if (market?.amm?.cash?.name !== currency) {
+  //       return false;
+  //     }
+  //   }
+  //   if (reportingState === OPEN) {
+  //     if (market.reportingState !== MARKET_STATUS.TRADING) {
+  //       return false;
+  //     }
+  //   } else if (reportingState === IN_SETTLEMENT) {
+  //     if (market.reportingState !== MARKET_STATUS.REPORTING && market.reportingState !== MARKET_STATUS.DISPUTING)
+  //       return false;
+  //   } else if (reportingState === RESOLVED) {
+  //     if (market.reportingState !== MARKET_STATUS.FINALIZED && market.reportingState !== MARKET_STATUS.SETTLED)
+  //       return false;
+  //   }
 
-    return true;
-  });
-  updatedFilteredMarkets = updatedFilteredMarkets.sort((marketA, marketB) => {
-    const aTransactions = transactions ? transactions[marketA.marketId] : {};
-    const bTransactions = transactions ? transactions[marketB.marketId] : {};
+  //   return true;
+  // });
+  // updatedFilteredMarkets = updatedFilteredMarkets.sort((marketA, marketB) => {
+  //   const aTransactions = transactions ? transactions[marketA.marketId] : {};
+  //   const bTransactions = transactions ? transactions[marketB.marketId] : {};
 
-    const mod = reportingState === RESOLVED ? -1 : 1;
-    if (sortBy === TOTAL_VOLUME) {
-      return (bTransactions?.volumeTotalUSD || 0) > (aTransactions?.volumeTotalUSD || 0) ? 1 : -1;
-    } else if (sortBy === TWENTY_FOUR_HOUR_VOLUME) {
-      return (bTransactions?.volume24hrTotalUSD || 0) > (aTransactions?.volume24hrTotalUSD || 0) ? 1 : -1;
-    } else if (sortBy === LIQUIDITY) {
-      return (Number(marketB?.amm?.liquidityUSD) || 0) > (Number(marketA?.amm?.liquidityUSD) || 0) ? 1 : -1;
-    } else if (sortBy === STARTS_SOON) {
-      return (marketA?.startTimestamp > marketB?.startTimestamp ? 1 : -1) * mod;
-    }
-    return true;
-  });
-  if (reportingState === OPEN) {
-    if (sortBy !== STARTS_SOON) {
-      // if we aren't doing start time, then move illiquid markets to the back
-      // half of the list, also sort by start time ascending for those.
-      const sortedIlliquid = updatedFilteredMarkets
-        .filter((m) => m?.amm?.id === null)
-        .sort((a, b) => (a?.startTimestamp > b?.startTimestamp ? 1 : -1));
+  //   const mod = reportingState === RESOLVED ? -1 : 1;
+  //   if (sortBy === TOTAL_VOLUME) {
+  //     return (bTransactions?.volumeTotalUSD || 0) > (aTransactions?.volumeTotalUSD || 0) ? 1 : -1;
+  //   } else if (sortBy === TWENTY_FOUR_HOUR_VOLUME) {
+  //     return (bTransactions?.volume24hrTotalUSD || 0) > (aTransactions?.volume24hrTotalUSD || 0) ? 1 : -1;
+  //   } else if (sortBy === LIQUIDITY) {
+  //     return (Number(marketB?.amm?.liquidityUSD) || 0) > (Number(marketA?.amm?.liquidityUSD) || 0) ? 1 : -1;
+  //   } else if (sortBy === STARTS_SOON) {
+  //     return (marketA?.startTimestamp > marketB?.startTimestamp ? 1 : -1) * mod;
+  //   }
+  //   return true;
+  // });
+  // if (reportingState === OPEN) {
+  //   if (sortBy !== STARTS_SOON) {
+  //     // if we aren't doing start time, then move illiquid markets to the back
+  //     // half of the list, also sort by start time ascending for those.
+  //     const sortedIlliquid = updatedFilteredMarkets
+  //       .filter((m) => m?.amm?.id === null)
+  //       .sort((a, b) => (a?.startTimestamp > b?.startTimestamp ? 1 : -1));
 
-      updatedFilteredMarkets = updatedFilteredMarkets.filter((m) => m?.amm?.id !== null).concat(sortedIlliquid);
-    }
+  //     updatedFilteredMarkets = updatedFilteredMarkets.filter((m) => m?.amm?.id !== null).concat(sortedIlliquid);
+  //   }
 
-    // Move games where the start time is < current time
-    const now = Date.now();
-    const isExpired = (market) => {
-      var thirtyHoursLaterMillis = market.startTimestamp
-        ? (market.startTimestamp + 30 * 60 * 60) * 1000
-        : market.endTimestamp;
-      return now >= thirtyHoursLaterMillis;
-    };
+  //   // Move games where the start time is < current time
+  //   const now = Date.now();
+  //   const isExpired = (market) => {
+  //     var thirtyHoursLaterMillis = market.startTimestamp
+  //       ? (market.startTimestamp + 30 * 60 * 60) * 1000
+  //       : market.endTimestamp;
+  //     return now >= thirtyHoursLaterMillis;
+  //   };
 
-    const expired = updatedFilteredMarkets.filter((m) => isExpired(m));
-    const scheduled = updatedFilteredMarkets.filter((m) => !isExpired(m));
-    setFilteredMarkets([...scheduled, ...expired]);
-  } else {
-    setFilteredMarkets(updatedFilteredMarkets);
-  }
+  //   const expired = updatedFilteredMarkets.filter((m) => isExpired(m));
+  //   const scheduled = updatedFilteredMarkets.filter((m) => !isExpired(m));
+  //   setFilteredMarkets([...scheduled, ...expired]);
+  // } else {
+  //   setFilteredMarkets(updatedFilteredMarkets);
+  // }
+      setFilteredMarkets(passedInMarkets);
+
 };
 
 const SearchButton = (props) => (
@@ -339,7 +348,7 @@ const MarketsView = () => {
   Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
     if (marketsViewSettings[setting] !== DEFAULT_MARKET_VIEW_SETTINGS[setting]) changedFilters++;
   });
-
+  console.log('filteredMarketsfrontend', filteredMarkets)
 
   const {
       account,
@@ -380,8 +389,8 @@ const MarketsView = () => {
 )}>CreateMarket</button>
            <button onClick={() => confirmMint( { account,    loginAccount}
 )}>MintDS</button>
-                      <button onClick={() => confirmResolve( { account,    loginAccount}
-)}>Relovemarket</button>
+                      <button onClick={() => confirmResolve( { account, loginAccount}
+)}>Resolvezcbmarket</button>
 
                       <button onClick={() => confirmApprove( { account,loginAccount}
 )}>ApproveAll</button>

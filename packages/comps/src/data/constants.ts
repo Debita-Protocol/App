@@ -19,13 +19,21 @@ export const chefAddress = "0x42a0549a4063378cb96cac64ffb434da1e2817bd";
 export const PRICE_PRECISION = 6;
 
 // DEBITA 2.0
-export const controller_address = "0x6Bad2685217683B9395e11AAbc468c3919c6FB84";
-export const Vault_address = "0xCFedCe5185055d4478d52fbE31a7fefBDD972433";
-export const MM_address = "0xcC0F5e97D6326811932b9a49647De232f7FD6806";
-export const Controller_address = "0x6Bad2685217683B9395e11AAbc468c3919c6FB84";
-export const RepNFT_address = "0x575b9b7dBD0Bb1124A5dBEB53eA0c8614a74Ce33";
-export const sample_instument_address = "0x7657334F6fb9E74F224A5386f100E2C7Bd5F682c"; 
+export const controller_address = "0x7d90D8190195E1435a4db20cFdF0764B75DDF649";
+export const Vault_address = "0x8c05D03eff257e7d0E5711F4Ab4cd2277cB9B119";
+export const MM_address = "0xfc5410f1985C59f7924868FFd8f95B86EfE9eB9D";
+export const Controller_address = "0x7d90D8190195E1435a4db20cFdF0764B75DDF649";
+export const RepNFT_address = "0x745c04eEAb4C90E242130460919dFe8ED0845725";
+export const sample_instument_address = "0x518662466dfcad248968808F07f5066176bda060"; 
 export const marketFactoryAddress = "0x21Bf714953425a08a94F62913e93f49259b4cf0d"
+
+
+// deploying "Controller" (tx: 0x8daf2cf033d167aba866b3b41cd8449dd8f15682c78ba6e92e75b67268fcd35c)...: deployed at 0x7d90D8190195E1435a4db20cFdF0764B75DDF649 with 4229240 gas
+// deploying "ReputationNFT" (tx: 0xd8398e978678bea79d0e6806c9002bec46b0d137facdb02585ae5d131c35fdac)...: deployed at 0x745c04eEAb4C90E242130460919dFe8ED0845725 with 1168626 gas
+// deploying "MarketManager" (tx: 0x23f8a222bea65325d0322df08c7b62c0d7800f1fb1e980cfaeba11123ef36b06)...: deployed at 0xfc5410f1985C59f7924868FFd8f95B86EfE9eB9D with 3267370 gas
+// deploying "Vault" (tx: 0x2811b931c0ca8be055c73f7cbf5223ae6ccc1b1b23d69f02aca1c13ccbc9b10d)...: deployed at 0x8c05D03eff257e7d0E5711F4Ab4cd2277cB9B119 with 2821756 gas
+// deploying "CreditLine" (tx: 0x1ff52efbe2994132c17e7032a4ab6335eb6351aa9f9a35c842aa697d0ec221b8)...: deployed at 0x518662466dfcad248968808F07f5066176bda060 with 886865 gas
+// reusing "TrustedMarketFactoryV3" at 0x21Bf714953425a08a94F62913e93f49259b4cf0d
 
 // deploying "AMMFactory" (tx: 0xdb2bfd4abb8ff125fdf88ff6830a2386864eb89c6470d8234fd98a54ff2c71b6)...: deployed at 0x63be015Ec11Aa2928f8731bE32C4E604aadc38af with 3849105 gas
 // deploying "Controller" (tx: 0xf958a3127307a7c0bd632a34db014111cf3928beba41336158910314292023b6)...: deployed at 0x6Bad2685217683B9395e11AAbc468c3919c6FB84 with 4147792 gas
