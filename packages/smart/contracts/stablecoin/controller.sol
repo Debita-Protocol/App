@@ -200,7 +200,7 @@ contract Controller {
         );
 
         market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-        marketManager.setAssessmentPhase(marketId, true, true);  // need to set min rep score here as well.
+        marketManager.setMarketPhase(marketId, true, true, 0, insurance_constant * instrumentData.principal);  // need to set min rep score here as well.
 
         emit MarketInitiated(marketId, recipient);
     }
@@ -236,7 +236,7 @@ contract Controller {
         ) external onlyValidator{
         if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
         require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-        marketManager.setAssessmentPhase(marketId, false, false);
+        marketManager.approveMarket(marketId);
         trustInstrument(marketId); 
 
         // Deposit to the instrument contract

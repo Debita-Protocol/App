@@ -104,7 +104,7 @@ contract LinearBondingCurve is BondingCurve {
   }
 
   /**
-   @param amount: amount added in 60.18
+   @param amount: amount added in ZCB 60.18
    @dev returns price in whatever collateral decimal format.
    */
   function _calculateExpectedPrice(uint256 amount) view internal override virtual returns (uint256 result) {

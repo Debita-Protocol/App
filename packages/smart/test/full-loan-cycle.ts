@@ -43,7 +43,7 @@ describe("* Full Cycle Test", () => {
     /**
      * p = 30, i = 20, IAPR = 2/3, 
      * a = 1.6*10^(-2), b = 0.2, y=1 intercept => (50,1)
-     * 
+     * w/ reputation @ 30% and market condition @ 50 % => 15 ZCB then 25 ZCB respectively.
      */
     let principal = col_one.mul(30)
     let duration = BigNumber.from(365).mul(24*60*60)
@@ -118,6 +118,8 @@ describe("* Full Cycle Test", () => {
 
         // gives market_trader a reputation nft
         repToken.mint(market_trader.address)
+        repToken.mint(vault_lender.address)
+        repToken.mint(.address)
     });
 
     describe("# Initiate instrument from controller", () => {
@@ -168,23 +170,43 @@ describe("* Full Cycle Test", () => {
             it("can buy ZCB before reputation threshold", async () => {
                 let data = await MM.restriction_data(marketId)
                 
-                expect(data.duringMarketAssessment).to.equal(true)
+                expect(data.duringAssessment).to.equal(true)
                 expect(data.onlyReputable).to.equal(true)
-                expect(data.marketDenied).to.equal(false)
+                expect(data.resolved).to.equal(false)
                 console.log("min_rep_score: ", data.min_rep_score)
                 expect(data.atLoss).to.equal(false)
                 
-                console.log("buying 20 ZCB => 7.2 col");
-                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(72).div(10))
-                let tx = await MM.connect(market_trader).buy(BigNumber.from(marketId), col_one.mul(72).div(10))
+                console.log("5 col");
+                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(5))
+                let tx = await MM.connect(market_trader).buy(BigNumber.from(marketId), col_one.mul(5))
 
-                expect(await ZCB.balanceOf(market_trader.address)).to.equal(bd_one.mul(20))
-                expect(await ZCB.calculateExpectedPrice(col_one)).to.equal(col_one.mul(216).div(100))
+                data = await MM.restriction_data(marketId)
+                expect(data.duringAssessment).to.equal(true)
+                expect(data.onlyReputable).to.equal(true)
+                expect(data.resolved).to.equal(false)
+                console.log("min_rep_score: ", data.min_rep_score)
+                expect(data.atLoss).to.equal(false)
+                console.log(data.alive)
+                expect(data.alive).to.equal(true)
+
+                // expect(await ctrlr.approveMarket(1)).to.be.revertedWith("Market Condition Not met");
             })
 
-            it("buying ZCB changes assessment phase", async () => {
-                
+            it("buying ZCB changes to reputation phase", async () => {
+                // buying 6 cols => total 11 => pushed over insurance constant
+                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(6))
+                let tx = await MM.connect(market_trader).buy(marketId, col_one.mul(6))
+                let data = await MM.restriction_data(marketId)
+                expect(data.duringAssessment).to.equal(true)
+                expect(data.onlyReputable).to.equal(false)
+                expect(data.resolved).to.equal(false)
+                console.log("min_rep_score: ", data.min_rep_score)
+                expect(data.atLoss).to.equal(false)
             })
+
+            it("not allowed to approve without meeting market condition", async () => {
+                //await MM.approveMarket()
+            });
         })
     })
 });

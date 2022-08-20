@@ -47,17 +47,17 @@ contract MarketManager is Owned {
 	}
 
 	struct MarketPhaseData {
-		bool duringMarketAssessment;
+		bool duringAssessment;
 		bool onlyReputable;
-		bool marketDenied;
+		bool resolved;
 		uint256 min_rep_score;
-		bool atLoss; 
-		// buy threshold should be the max quantity of bond tokesn bought
+		bool alive;
+		bool atLoss;
+		uint256 base_budget;
 	}
 
 	uint256 private INSURANCE_CONSTANT = 5 * 10**5; // 0.5 for DS decimal format.
-	uint256 private REPUTATION_CONSTANT = 3 * 10**5; 
-	uint256 private base_budget; 
+	uint256 private REPUTATION_CONSTANT = 3 * 10**5;
 	
     modifier onlyController(){
         require(address(controller) == msg.sender || msg.sender == owner || msg.sender == address(this), "is not controller"); 
@@ -70,55 +70,54 @@ contract MarketManager is Owned {
 		address _controllerAddress
 	) Owned(_creator_address){
 		rep = ReputationNFT(reputationNFTaddress);
-		controller = Controller(_controllerAddress);
-		base_budget = 100*PRICE_PRECISION; 
+		controller = Controller(_controllerAddress); 
 	}
 
 	/*----Phase Functions----*/
 
 	/*
-	1.When Market is intialized, set both params as true
-	2.When reputation constant bought, change _onlyReputable to false 
-	3.When validator approves, set _duringMarketAssessment to false
+	called on market initialization by controller
 	*/
-	function setAssessmentPhase(
+	function setMarketPhase(
 		uint256 marketId, 
-		bool _duringMarketAssessment,
-		bool _onlyReputable
+		bool duringAssessment,
+		bool _onlyReputable,
+		uint256 min_rep_score,
+		uint256 base_budget
 	) external  onlyController {
 		MarketPhaseData storage data = restriction_data[marketId]; 
 		data.onlyReputable = _onlyReputable; 
-		data.duringMarketAssessment = _duringMarketAssessment; 
+		data.duringAssessment = duringAssessment;
+		data.min_rep_score = min_rep_score;
+		data.base_budget = base_budget;
+		data.alive = true;
+	}
+
+	/**
+	 called by this when onlyRep => false.
+	 */
+	function setReputationPhase(
+		uint256 marketId,
+		bool _onlyReputable
+	) internal {
+		require(restriction_data[marketId].alive, "market must be alive");
+		restriction_data[marketId].onlyReputable = _onlyReputable;
+	}
+
+	function approveMarket(uint256 marketId) external onlyOwner {
+		require(restriction_data[marketId].alive);
+		require(restriction_data[marketId].duringAssessment);
+
+		restriction_data[marketId].duringAssessment = false;		
 	}
 
 	/* 
 	Called when market should end, a) when denied b) when maturity 
 	*/
 	function deactivateMarket(uint256 marketId, bool atLoss) external  onlyController{
-		restriction_data[marketId].marketDenied = true; 
+		restriction_data[marketId].resolved = true; 
 		restriction_data[marketId].atLoss = atLoss; 
 
-	}
-
-
-	/**
-	@dev Sets reputation score requirements and for the market, called by the controller when
-	market is initiated. Buy threshold is set after the assessment is completed 
-	 */
-	function setMarketRestrictionData(
-		bool _duringMarketAssessment,
-		bool _onlyReputable, 
-		uint256 marketId, 
-		uint256 min_rep_score
-	) external  onlyController {
-		min_rep_score = getMinRepScore(marketId);
-		restriction_data[marketId] = MarketPhaseData(
-			_duringMarketAssessment, 
-			_onlyReputable,
-			false,
-			min_rep_score, 
-			false
-		);
 	}
 
 	/*---View Functions---*/
@@ -151,7 +150,7 @@ contract MarketManager is Owned {
 	*/
 	function duringMarketAssessment(
 		uint256 marketId) public view returns(bool){
-		return restriction_data[marketId].duringMarketAssessment; 
+		return restriction_data[marketId].duringAssessment; 
 	}
 
 	/*
@@ -165,7 +164,7 @@ contract MarketManager is Owned {
 	}
 
 	function isMarketApproved(uint256 marketId) public view returns(bool){
-		return(!restriction_data[marketId].duringMarketAssessment && !restriction_data[marketId].marketDenied); 
+		return(!restriction_data[marketId].duringAssessment && restriction_data[marketId].alive); 
 		
 	}
 
@@ -175,7 +174,7 @@ contract MarketManager is Owned {
 	}
 
 	function marketActive(uint256 marketId) public view returns(bool){
-		return !restriction_data[marketId].marketDenied; 
+		return restriction_data[marketId].alive; 
 	}
 
 	/// @notice returns true if amount bought is greater than the insurance threshold
@@ -193,10 +192,9 @@ contract MarketManager is Owned {
 
 	/// @notice get trade budget = f(reputation)
 	/// sqrt for now 
-	function getTraderBudget(address trader) public view returns(uint256){
-		uint256 repscore = rep.getReputationScore(trader); 
-		return sqrt(repscore) + base_budget; 
-  	
+	function getTraderBudget(uint256 marketId, address trader) public view returns(uint256){
+		uint256 repscore = rep.getReputationScore(trader);	
+		return restriction_data[marketId].base_budget; // sqrt(repscore * 10**6), since w/ decimals.
 	}
  	
  	/// @notice computes the price for ZCB one needs to short at to completely
@@ -271,7 +269,7 @@ contract MarketManager is Owned {
 		bool _onlyReputable =  onlyReputable(marketId);
 
 		if (_duringMarketAssessment){
-			if (!isVerified(trader) || !(getTraderBudget(trader)>= amount)) return (false, 0); 
+			if (!isVerified(trader) || !(getTraderBudget(marketId, trader)>= amount)) return (false, 0); 
 	
 		}
 
@@ -338,7 +336,7 @@ contract MarketManager is Owned {
 		uint256 marketId, 
 		address trader 
 	) public {
-		require(restriction_data[marketId].marketDenied, "Market Still During Assessment");
+		require(restriction_data[marketId].resolved, "Market Still During Assessment");
 		uint256 collateral_amount = assessment_collaterals[marketId][trader]; 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
 		zcb.redeemPostAssessment(trader, collateral_amount); 
@@ -349,10 +347,10 @@ contract MarketManager is Owned {
 		uint256 marketId
 	) external  onlyController {
 		require(marketActive(marketId), "Market Not Active"); 
-		require(restriction_data[marketId].duringMarketAssessment, "Not in assessment"); 
+		require(restriction_data[marketId].duringAssessment, "Not in assessment"); 
 		MarketPhaseData storage data = restriction_data[marketId]; 
-		data.marketDenied = true; 
-		data.duringMarketAssessment = false; 
+		data.resolved = true; 
+		data.duringAssessment = false;
 	}
 
 
@@ -378,11 +376,12 @@ contract MarketManager is Owned {
 			// and make transitions from onlyReputation true->false
 			uint256 principal = controller.vault().fetchInstrumentData(_marketId).principal;
 			uint256 total_bought = zcb.getTotalCollateral();
+			console.log("total_bought", total_bought);
 
 			if (onlyReputable(_marketId)){
 
 				if (total_bought > (REPUTATION_CONSTANT * principal)/PRICE_PRECISION){
-					this.setAssessmentPhase(_marketId, true, false); 
+					setReputationPhase(_marketId, false); 
 				}
 
 			}
@@ -575,13 +574,13 @@ contract MarketManager is Owned {
 	/// @notice when market is resolved(maturity/early default), calculates score
 	/// and update each assessment phase trader's reputation, called by individual traders
 	function updateReputation(uint256 marketId) external  {
-		require(restriction_data[marketId].marketDenied, "Market not resolved"); 	
+		require(restriction_data[marketId].resolved, "Market not resolved"); 	
 		require(assessment_trader[marketId][msg.sender], "Not manager"); 
 
 		bool atLoss = restriction_data[marketId].atLoss; 
 		uint256 priceOut = assessment_prices[marketId][msg.sender]; 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
-		uint256 traderBudget = getTraderBudget(msg.sender);
+		uint256 traderBudget = getTraderBudget(marketId, msg.sender);
 		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
 
 		uint256 scoreToAdd; 
