@@ -117,6 +117,7 @@ contract Controller {
 
   }
 
+
     function verifyAddress(
         uint256 nullifier_hash, 
         uint256 external_nullifier,
@@ -245,6 +246,7 @@ contract Controller {
       //maybe this should be separated to prevent attacks 
       vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
       vault.onMarketApproval(marketId);
+   
     }
 
     /*

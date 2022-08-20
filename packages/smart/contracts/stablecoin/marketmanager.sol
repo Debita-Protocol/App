@@ -30,11 +30,11 @@ contract MarketManager is Owned {
 	ReputationNFT rep;
   Controller controller;
 
-  mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
-  mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
-  mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
-  mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
-	mapping(uint256=> MarketPhaseData) restriction_data; // market ID => restriction data
+  	mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
+  	mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
+  	mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
+  	mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
+	mapping(uint256=> MarketPhaseData) public restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
 
@@ -226,7 +226,7 @@ contract MarketManager is Owned {
 		uint256 amount, //this is in DS with decimals.
 		uint256 marketId
 	) public returns(bool, uint) {
-		require(marketActive(marketId), "Market Not Active"); 
+		require(marketActive(marketId), "Market Not Active"); // this is not correct since marketDenied set to false by default.
 		bool _duringMarketAssessment = duringMarketAssessment(marketId);
 		bool _onlyReputable =  onlyReputable(marketId);
 
@@ -300,8 +300,8 @@ contract MarketManager is Owned {
 	) public {
 		require(restriction_data[marketId].marketDenied, "Market Still During Assessment");
 		uint256 collateral_amount = assessment_collaterals[marketId][trader]; 
-		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
-		zcb.redeemPostAssessment(trader, collateral_amount); // SOMEHOW GET ZCB
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+		zcb.redeemPostAssessment(trader, collateral_amount); 
 	}
 
 	/// @notice denies market from validator 
@@ -465,7 +465,7 @@ contract MarketManager is Owned {
 		}	
 
 			console.log('redemption_price', redemption_prices[marketId]); 
-		}
+	}
 
 
 	/* 
@@ -536,7 +536,7 @@ contract MarketManager is Owned {
 		bool atLoss = restriction_data[marketId].atLoss; 
 		uint256 priceOut = assessment_prices[marketId][msg.sender]/(10**12); 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
-		uint256 traderBudget = getTraderBudget(msg.sender); 
+		uint256 traderBudget = getTraderBudget(msg.sender);
 		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
 
 		uint256 scoreToAdd; 
@@ -565,7 +565,5 @@ contract MarketManager is Owned {
 	        z = 1;
 	    }
 	}
-
-
 }
 

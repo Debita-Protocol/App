@@ -12,7 +12,7 @@ import {
     Components,
     getCategoryIconLabel,
   } from "@augurproject/comps";
-import { BaseThemeButtonProps, TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
+import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import Styles from "./creditline-proposal-view.styles.less";
 import MarketStyles from "../markets/markets-view.styles.less";
@@ -141,9 +141,12 @@ const CreditLineRequestForm = () => {
 
     let total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
     
-    // total interest accrued.
+    // total interest accrued
     let interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
-    
+    console.log("interestRate", interestRate)
+    console.log(new BN(interestRate).toString())
+    console.log("interest: ", interest)
+    console.log("total_duration: ", total_duration)
     if (checkInput(
       new BN(total_duration),
       new BN(interest),
@@ -151,20 +154,27 @@ const CreditLineRequestForm = () => {
       description
     )) {
       console.log("submitted!")
-      let instrument_address = await createCreditLine(account, loginAccount.library, principal, interestRate, total_duration, principal + interest)
-      console.log(instrument_address);
+      console.log("principal: ", principal)
+      console.log("interestRate: ", interestRate)
+      console.log("total_duration: ", total_duration)
+      console.log("faceVaule: ", new BN(principal).plus(new BN(interest)).toString())
+      console.log("description: ", description)
+      let faceValue = new BN(principal).plus(new BN(interest)).toString()
+      let instrument_address = await createCreditLine(account, loginAccount.library, principal, interestRate, total_duration, faceValue)
+      console.log("instrument address: ", instrument_address);
       
-      // let tx = await addProposal(
-      //   account,
-      //   loginAccount.library,
-      //   principal + interest,
-      //   principal,
-      //   interest,
-      //   total_duration,
-      //   description,
-      //   instrument_address
-      // )
-      // await tx.wait();
+      let tx = await addProposal(
+        account,
+        loginAccount.library,
+        faceValue,
+        principal,
+        interest,
+        total_duration,
+        description,
+        instrument_address
+      )
+      console.log("PROPOSAL ADDED")
+      await tx.wait(1);
       reset();
     }
   })
@@ -176,76 +186,78 @@ const CreditLineRequestForm = () => {
 
   return (
   <>
-    <div className={Styles.LoanRequestForm}>
+    <div className={Styles.CreditlineProposalView}>
+      <SUPER_BUTTON />
+      <span>
+        CreditLine Creation/Proposal
+      </span>
+      <div className="principal">
+        <label>Principal: </label> <br />
+        <input 
+          type="text"
+          placeholder="0.0"
+          value={ principal }
+          onChange={(e) => {
+            if (/^\d*\.?\d*$/.test(e.target.value)) {
+              setPrincipal(e.target.value)
+            }
+          }}
+        />
+      </div>
+      <div className="interest">
+        <label>Interest Rate (Annual) %: </label> <br />
+        <input 
+          type="text"
+          placeholder="0.0"
+          value={ interestRate }
+          onChange={(e) => {
+            if (/^\d*\.?\d*$/.test(e.target.value)) {
+              setInterestRate(e.target.value);
+            }
+          }}
+        />
+      </div>
+      <div className="duration">
+        <label>Credit Line Duration: </label> <br />
+        <DurationInput label="years" value={duration.years} onChange={(e)=> {
+          if (/^\d*$/.test(e.target.value)) {
+            setDuration((prev) => { return {...prev, years: e.target.value}})
+          }
+        }}/>
+        <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
+          if (/^\d*$/.test(e.target.value)) {
+            setDuration((prev) => { return {...prev, weeks: e.target.value}})
+          }
+        }}/>
+        <DurationInput label="days" value={duration.days} onChange={(e)=> {
+          if (/^\d*$/.test(e.target.value)) {
+            setDuration((prev) => { return {...prev, days: e.target.value}})
+          }
+        }}/>
+        <DurationInput label="minutes" value={duration.minutes} onChange={(e)=> {
+          if (/^\d*$/.test(e.target.value)) {
+            setDuration((prev) => { return {...prev, minutes: e.target.value}})
+          }
+        }}/>
+      </div>
+      <div className="description">
+        <label>Description: </label> <br />
+        <textarea 
+        rows="4" 
+        cols="15" 
+        placeholder="description of creditline..."
+        onChange={(e) => {
+            setDescription(e.target.value)
+          }
+        }
+        value= { description }
+        ></textarea>
+      </div>
       <div>
-        <SUPER_BUTTON />
-        <div className="principal">
-          <label>Principal: </label> <br />
-          <input 
-            type="text"
-            placeholder="0.0"
-            value={ principal }
-            onChange={(e) => {
-              if (/^\d*\.?\d*$/.test(e.target.value)) {
-                setPrincipal(e.target.value)
-              }
-            }}
-          />
-        </div>
-        <div className="interest">
-          <label>Interest Rate (Annual) %: </label> <br />
-          <input 
-            type="text"
-            placeholder="0.0"
-            value={ interestRate }
-            onChange={(e) => {
-              if (/^\d*\.?\d*$/.test(e.target.value)) {
-                setInterestRate(e.target.value);
-              }
-            }}
-          />
-        </div>
-        <div className="duration">
-          <label>Credit Line Duration: </label> <br />
-          <DurationInput label="years" value={duration.years} onChange={(e)=> {
-            if (/^\d*$/.test(e.target.value)) {
-              setDuration((prev) => { return {...prev, years: e.target.value}})
-            }
-          }}/>
-          <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
-            if (/^\d*$/.test(e.target.value)) {
-              setDuration((prev) => { return {...prev, weeks: e.target.value}})
-            }
-          }}/>
-          <DurationInput label="days" value={duration.days} onChange={(e)=> {
-            if (/^\d*$/.test(e.target.value)) {
-              setDuration((prev) => { return {...prev, days: e.target.value}})
-            }
-          }}/>
-          <DurationInput label="minutes" value={duration.minutes} onChange={(e)=> {
-            if (/^\d*$/.test(e.target.value)) {
-              setDuration((prev) => { return {...prev, minutes: e.target.value}})
-            }
-          }}/>
-        </div>
-        <div className="description">
-          <label>Description: </label> <br />
-          <input
-              type="text"
-              placeholder=""
-              value={ description }
-              onChange={(e) => {
-                  setDescription(e.target.value)
-                }
-              }
-            />
-        </div>
-        <div>
-        { inputError }
-        </div>
-        <div className={Styles}>
-          <TinyThemeButton {... buttonProps} />
-        </div>
+      { inputError }
+      </div>
+      <div>
+        <SecondaryThemeButton {... buttonProps} />
       </div>
     </div>
     </>

@@ -21,7 +21,7 @@ const { ValueLabel } = LabelComps;
 const PRICE_PRECISION = 6;
 const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-const { getInstrumentData, checkInstrumentStatus, borrow_from_creditline, repay_to_creditline} = ContractCalls;
+const { getFormattedInstrumentData, checkInstrumentStatus, borrow_from_creditline, repay_to_creditline} = ContractCalls;
 
 interface InstrumentData {
     trusted: boolean; 
@@ -56,7 +56,7 @@ const CreditLineView = () => {
     })
 
     const retrieveInstrument = useCallback(async () => {
-        const result = await getInstrumentData(account, loginAccount.library)
+        const result = await getFormattedInstrumentData(account, loginAccount.library)
         console.log("success retrieving instrument")
         console.log("marketId: ", result.marketId)
         setInstrument(result)
@@ -149,10 +149,6 @@ const CreditLineView = () => {
                 </div>
                 <SecondaryThemeButton action={_repay} text={"repay"}/>
             </div>
-            <div>
-            <SecondaryThemeButton action={_checkInstrument} text={"check status"}/>
-            </div>
-            
         </section>
     )
 
