@@ -17,11 +17,12 @@ import {
   PARA_CONFIG,
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
-import { Slippage } from "../common/slippage";
+import { Slippage, Budget} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
-  canBuy,doZCBTrade,estimateZCBBuyTrade } = ContractCalls;
+  canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
+
 const {
   Icons: { CloseIcon },
   LabelComps: { generateTooltip },
@@ -140,6 +141,7 @@ const getExitBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) => 
 const formatBreakdown = (isBuy: boolean, breakdown: EstimateTradeResult | null, cash: Cash) =>
   isBuy ? getEnterBreakdown(breakdown, cash) : getExitBreakdown(breakdown, cash);
 
+
 interface TradingFormProps {
   amm: any;
   initialSelectedOutcome: AmmOutcome | any;
@@ -197,32 +199,57 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const amountError = amount !== "" && (isNaN(Number(amount)) || Number(amount) === 0 || Number(amount) < 0);
   const buttonError = amountError ? ERROR_AMOUNT : "";
 
-  const [canbuy, setCanBuy] = useState(false); 
+  const [canbuy, setCanBuy] = useState(true);
+  const [canRedeem, setCanRedeem] = useState(false);
+  const [hedgeQuantity, setHedgeQuantity] = useState("1"); 
+  const [traderBudget, setTraderBudget] = useState("1");
+  const userBalance = String(
+    useMemo(() => {
+      return isBuy
+        ? ammCash?.name
+          ? balances[ammCash?.name]?.balance
+          : "0"
+        : marketShares?.outcomeShares
+        ? marketShares?.outcomeShares[selectedOutcomeId]
+        : "0";
+    }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
+  );
+
+  const getbudget = async()=>{
+    const b =  await getTraderBudget(account, loginAccount.library); 
+    const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
+    setTraderBudget(Number(b)/1000000); 
+    setHedgeQuantity(Number(h)/1000000);
+
+  } 
+
+
+  useEffect(async()=>{
+    getbudget(); 
+  }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance])
 
   //console.log('ammdata', amm); 
   useEffect(async()=> {
     let breakdown; 
+    let hedgeq; 
+    let budget_; 
 
-  // account: string,
-  // library: Web3Provider,
-  // marketId: string,
-  // inputDisplayAmount: string,
-  // selectedOutcomeId: number,
-  // cash: Cash
-      try{
-        if(amount){
-          breakdown = await estimateZCBBuyTrade(account, loginAccount.library, String(amm?.turboId), amount,
-           selectedOutcomeId, ammCash)
 
-        }
+    try{
+      if(amount){
+        breakdown = await estimateZCBBuyTrade(account, loginAccount.library, String(amm?.turboId), amount,
+         selectedOutcomeId, ammCash)
+        hedgeq = "1";
+        //hedgeq = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) ); 
+       // budget_ = await getTraderBudget(account, loginAccount.library); 
       }
-      catch (err){console.log("status error", err)
-      return;}
+    }
+    catch (err){console.log("status error", err)
+    return;}
 
+    // setTraderBudget(budget_); 
 
-      setBondBreakDown(breakdown);
-
-  })
+  }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance])
   useEffect(() => {
     let isMounted = true;
     function handleShowTradingForm() {
@@ -239,17 +266,6 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     };
   }, []);
 
-  const userBalance = String(
-    useMemo(() => {
-      return isBuy
-        ? ammCash?.name
-          ? balances[ammCash?.name]?.balance
-          : "0"
-        : marketShares?.outcomeShares
-        ? marketShares?.outcomeShares[selectedOutcomeId]
-        : "0";
-    }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
-  );
 
 
   useEffect(() => {
@@ -280,13 +296,15 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     
     const getCanBuy = async() =>{
       const canbuy_ = await canBuy(account, loginAccount.library); 
+      //const canRedeem = aw
       setCanBuy(canbuy_); 
+
+
     }
-
     getCanBuy(); 
+    setCanRedeem(amm.market.hasWinner); 
   }); 
-
-  const canRedeem = false; 
+  // console.log('canredeem', canRedeem, canbuy);
   //console.log('bondbreakdown',bondbreakdown); 
 
  // console.log('canbuy?', canbuy); 
@@ -301,6 +319,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       actionText = RESOLVED_MARKET;
       disabled = true;
     } else if (!canbuy){
+      console.log('??')
       actionText = "Trade Restricted"
       disabled = true; 
     }
@@ -316,7 +335,6 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       disabled = true;
     } else if (breakdown?.maxSellAmount && breakdown?.maxSellAmount !== "0") {
       actionText = INSUFFICIENT_LIQUIDITY;
-      console.log("this is getting called");
       subText = `Max Shares to Sell ${breakdown?.maxSellAmount}`;
       disabled = true;
     } else if (waitingToSign) {
@@ -328,6 +346,9 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       actionText = INSUFFICIENT_LIQUIDITY;
       disabled = true;
     }
+    // else {
+    //  actionText = "Trade Restricted"
+    //   disabled = ;     }
 
     return {
       disabled,
@@ -336,11 +357,18 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     };
   }, [orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, hasWinner]);
 
+  const redeem = () =>{
+    redeemZCB(account, loginAccount.library, amm.turboId).then((response)=>{
+      console.log('tradingresponse', response)}).catch((error)=>{
+        console.log('Trading Error', error)
+      }); 
+  }
+
   const makeTrade = () => {
     const minOutput = breakdown?.outputValue;
     const outcomeShareTokensIn = breakdown?.outcomeShareTokensIn;
     const direction = isBuy ? TradingDirection.ENTRY : TradingDirection.EXIT;
-    setWaitingToSign(true);
+    setWaitingToSign(false);
     setShowTradingForm(false);
     doZCBTrade(account, loginAccount.library, amm.turboId, amount).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
@@ -471,7 +499,19 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
           rate={getRate()}
           isBuy={orderType === BUY}
         />
-        {isBuy && <Slippage />}
+        {/* {isBuy && <Slippage />} */}
+        {isBuy && (<Budget 
+          {...{
+            budget:traderBudget, 
+            idx:0
+          }}
+          />)}
+        {isBuy && (<Budget 
+          {...{
+            budget:hedgeQuantity, 
+            idx:1
+          }}
+          />)}
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
         <InfoNumbers infoNumbers={formatBreakdown(isBuy, bondbreakdown, ammCash)} />
 
@@ -498,9 +538,9 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
 
         {canRedeem && (
           <SecondaryThemeButton
-          disabled={canMakeTrade.disabled || !isApprovedTrade}
-          action={makeTrade}
-          text={'Redeem ZCB'}
+          disabled={false}
+          action={redeem}
+          text={'Redeem All ZCB'}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
@@ -545,7 +585,6 @@ export const ApprovalButton = ({
       setIsPendingTx(false);
     }
   }, [isApproved, loginAccount, isPendingTx]);
-  console.log('need approval!!!', isApproved,loginAccount, isPendingTx )
   const approve = 
   //  useCallback(async()=>{
   //         let approvalAction = approveERC20Contract;
@@ -621,7 +660,6 @@ export const ApprovalButton = ({
 
   let buttonText = "";
   let subText = "";
-  console.log('actiontype?', actionType)
   switch (actionType) {
     case ApprovalAction.ENTER_POSITION: {
       buttonText = "Approve to Buy";

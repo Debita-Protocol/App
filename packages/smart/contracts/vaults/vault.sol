@@ -78,6 +78,21 @@ contract Vault is ERC4626, Auth{
 
         //totalSupply = type(uint256).max;
     }
+    
+    modifier onlyController(){
+        require(address(controller) == msg.sender || msg.sender == owner ,  "is not controller"); 
+        _;
+    }
+
+    /// @notice called by controller at maturity 
+    function controller_burn(uint256 amount, address bc_address) external onlyController {
+        _burn(bc_address,amount); 
+    }
+    /// @notice called by controller at maturity, since redeem amount > balance in bc
+    function controller_mint(uint256 amount, address to) external onlyController {
+        _mint(to , amount); 
+    }
+
 
 
     /// @notice Harvest a trusted Instrument, records profit/loss 

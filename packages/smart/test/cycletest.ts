@@ -195,57 +195,57 @@ describe("Cycle", ()=>{
 
   // })
 
-  it("can buy/sell during onlyAssessment/onlyReputation ", async()=>{
-    const amount = pp_.mul(30); 
-    await collateral.connect(owner).faucet(amount); 
-    await collateral.approve(vault.address, amount); 
-    await vault.mint(amount.toString(), owner.address);
+  // it("can buy/sell during onlyAssessment/onlyReputation ", async()=>{
+  //   const amount = pp_.mul(30); 
+  //   await collateral.connect(owner).faucet(amount); 
+  //   await collateral.approve(vault.address, amount); 
+  //   await vault.mint(amount.toString(), owner.address);
 
-    var vaultBalance = await vault.balanceOf(owner.address);
+  //   var vaultBalance = await vault.balanceOf(owner.address);
 
-    const marketId = await controller.getMarketId(trader.address);
-    const bc_address = await controller.getZCB_ad(marketId);
-    const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
-    await vault.approve(bc_address, amount); 
-    await marketmanager.buy(marketId, amount);
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+  //   await vault.approve(bc_address, amount); 
+  //   await marketmanager.buy(marketId, amount);
 
-    var balance = await bc.balanceOf(owner.address); 
-    var totalsupply = await bc.getTotalZCB();
-    var reserves = await bc.getReserves();
-    var vaultBalanceAfter = await vault.balanceOf(owner.address)
-    expect(reserves).to.equal(amount); 
-    expect(balance).to.equal(totalsupply);
-    expect(vaultBalance.sub(vaultBalanceAfter)).to.equal(amount); 
-    console.log('Before RESERVES, BALANCES, totalsupply, ', reserves.toString(), balance.toString(),
-     totalsupply.toString(), vaultBalanceAfter.toString()); 
-    const priceafterbuy = await bc.calculateExpectedPrice(0); 
-    console.log('pricenow', priceafterbuy.toString());
-    //now sell
-
-
-    await marketmanager.sell(marketId, balance);
-    const balance2 = await bc.balanceOf(owner.address); 
-    const totalsupply2 = await bc.getTotalZCB();
-    const reserves2 = await bc.getReserves();
-    const vaultBalance2 = await vault.balanceOf(owner.address)
-    console.log('After RESERVES, BALANCES, totalsupply, ', reserves2.toString(), balance2.toString(), 
-      totalsupply2.toString(), vaultBalance2.toString()); 
-
-    const priceaftersell = await bc.calculateExpectedPrice(0); 
-    console.log('pricenow', priceaftersell.toString()); 
+  //   var balance = await bc.balanceOf(owner.address); 
+  //   var totalsupply = await bc.getTotalZCB();
+  //   var reserves = await bc.getReserves();
+  //   var vaultBalanceAfter = await vault.balanceOf(owner.address)
+  //   expect(reserves).to.equal(amount); 
+  //   expect(balance).to.equal(totalsupply);
+  //   expect(vaultBalance.sub(vaultBalanceAfter)).to.equal(amount); 
+  //   console.log('Before RESERVES, BALANCES, totalsupply, ', reserves.toString(), balance.toString(),
+  //    totalsupply.toString(), vaultBalanceAfter.toString()); 
+  //   const priceafterbuy = await bc.calculateExpectedPrice(0); 
+  //   console.log('pricenow', priceafterbuy.toString());
+  //   //now sell
 
 
-    const avg_price = await bc.calcAveragePrice(pp.mul(1100)); 
-    const implied_prob = await bc.calcImpliedProbability(pp_.mul(10), pp.mul(5).div(10)); 
-    console.log('avg_price for buying 1100 bonds', avg_price.toString());
-    console.log('implied_prob for buying 10 collateral worth of bonds', implied_prob.toString()); 
+  //   await marketmanager.sell(marketId, balance);
+  //   const balance2 = await bc.balanceOf(owner.address); 
+  //   const totalsupply2 = await bc.getTotalZCB();
+  //   const reserves2 = await bc.getReserves();
+  //   const vaultBalance2 = await vault.balanceOf(owner.address)
+  //   console.log('After RESERVES, BALANCES, totalsupply, ', reserves2.toString(), balance2.toString(), 
+  //     totalsupply2.toString(), vaultBalance2.toString()); 
 
-    // expect(reserves).to.equal(0); 
-    // expect(balance).to.equal(0);
-    // expect(totalsupply).to.equal(0);
-    //expect(vaultBalance.sub(vaultBalance)).to.equal(amount); 
+  //   const priceaftersell = await bc.calculateExpectedPrice(0); 
+  //   console.log('pricenow', priceaftersell.toString()); 
 
-  }); 
+
+  //   const avg_price = await bc.calcAveragePrice(pp.mul(1100)); 
+  //   const implied_prob = await bc.calcImpliedProbability(pp_.mul(10), pp.mul(5).div(10)); 
+  //   console.log('avg_price for buying 1100 bonds', avg_price.toString());
+  //   console.log('implied_prob for buying 10 collateral worth of bonds', implied_prob.toString()); 
+
+  //   // expect(reserves).to.equal(0); 
+  //   // expect(balance).to.equal(0);
+  //   // expect(totalsupply).to.equal(0);
+  //   //expect(vaultBalance.sub(vaultBalance)).to.equal(amount); 
+
+  // }); 
 
 
 
@@ -396,9 +396,73 @@ describe("Cycle", ()=>{
 
   //TODO do redemption solidity first 
   // it("can close market and redeem at maturity", async()=>{
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+
+  //   const amount = pp_.mul(30); 
+  //   await collateral.connect(owner).faucet(amount); 
+  //   await collateral.approve(vault.address, amount); 
+  //   await vault.mint(amount.toString(), owner.address);
+
+  //   var vaultBalance = await vault.balanceOf(owner.address);
+  //   console.log('vaultBalance before buying', vaultBalance.toString()); 
+  
+  //   await vault.approve(bc_address, amount); 
+  //   await marketmanager.buy(marketId, vaultBalance);
+
+  //   const bccollateralbalance_before = await vault.balanceOf(bc.address);
+  //   await controller.resolveMarket(marketId, false, 0, 0); 
+
+  //   const marketactive = await marketmanager.marketActive( marketId)
+  //   console.log('marketactive', marketactive); 
+
+  //   const vaultBalanceAfterBuy = await vault.balanceOf(owner.address); 
+  //   const ownerzcbbalance = await bc.balanceOf(owner.address); 
+  //   const bccollateralbalance = await vault.balanceOf(bc.address); 
+  //   const redemption_price = await marketmanager.get_redemption_price(marketId);
+  //   const redeem_amount =  await ownerzcbbalance.mul(redemption_price).div(pp_); 
+  //   console.log('vaultBalanceAfterBuy',vaultBalanceAfterBuy.toString()); 
+  //   console.log('ownerzcbbalance', ownerzcbbalance.toString());
+  //   console.log('bcCollateralbalance',bccollateralbalance_before.toString(), bccollateralbalance.toString()) ;
+  //   console.log('redemption_price', redemption_price.toString(), redeem_amount.toString()); 
+
+  //   //now vaultbalance should increase, zcb should go to 0
+  //   await marketmanager.redeem(marketId, owner.address) 
+  //   const new_ownerzcbbalance = await bc.balanceOf(owner.address);
+  //   const vaultBalanceAfterRedeem = await vault.balanceOf(owner.address); 
+  //   expect(new_ownerzcbbalance).to.equal(0); 
+  //   console.log("vaultBalanceAfterRedeem", vaultBalanceAfterRedeem.toString())
 
 
-  // })
+  // }); 
+
+
+ it("can close market and show and add reputation score", async()=>{
+
+    const marketId = await controller.getMarketId(trader.address);
+    const bc_address = await controller.getZCB_ad(marketId);
+    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+
+    const amount = pp_.mul(30); 
+    await collateral.connect(owner).faucet(amount); 
+    await collateral.approve(vault.address, amount); 
+    await vault.mint(amount.toString(), owner.address);
+
+    var vaultBalance = await vault.balanceOf(owner.address);
+    console.log('vaultBalance before buying', vaultBalance.toString()); 
+  
+    await vault.approve(bc_address, amount); 
+    await marketmanager.buy(marketId, vaultBalance);
+    
+    await controller.resolveMarket(marketId, false, 0, 0); 
+
+    //await rep.addScore(owner.address, 100, address to, uint256 score, bool atLoss); 
+    await marketmanager.updateReputation(marketId); 
+    const rep_score = await rep.getReputationScore(owner.address);
+    console.log('repscore', rep_score.toString()); 
+
+ })
 
 
 

@@ -20,31 +20,31 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 contract tToken is ERC20{
 
 	modifier onlySplitter() {
-        require(msg.sender == splitter, "!Splitter");
-        _;
-    }
+    require(msg.sender == splitter, "!Splitter");
+     _;
+  }
 
-    address splitter; 
-    ERC20 asset; 
+  address splitter; 
+  ERC20 asset; 
 
-    /// @notice asset is the tVault  
-    constructor(
-        ERC20 _asset, 
-        string memory _name,
-        string memory _symbol, 
-        address _splitter
-    ) ERC20(_name, _symbol, _asset.decimals()) {
-        asset = _asset;
-        splitter = _splitter; 
-    }
+  /// @notice asset is the tVault  
+  constructor(
+      ERC20 _asset, 
+      string memory _name,
+      string memory _symbol, 
+      address _splitter
+  ) ERC20(_name, _symbol, _asset.decimals()) {
+      asset = _asset;
+      splitter = _splitter; 
+  }
 
-    function mint(address to, uint256 amount) external onlySplitter{
-    	_mint(to, amount); 
-    }
+  function mint(address to, uint256 amount) external onlySplitter{
+  	_mint(to, amount); 
+  }
 
-    function burn(address from, uint256 amount) external onlySplitter{
-    	_burn(from, amount);
-    }
+  function burn(address from, uint256 amount) external onlySplitter{
+  	_burn(from, amount);
+  }
 
 
 }
@@ -56,34 +56,34 @@ contract tToken is ERC20{
 /// @dev new instance is generated for each vault
 contract Splitter{
 	using SafeCastLib for uint256; 
-    using SafeTransferLib for ERC20;
-    using FixedPointMathLib for uint256;
+  using SafeTransferLib for ERC20;
+  using FixedPointMathLib for uint256;
 
-    tVault underlying; 
-    tToken senior;
-    tToken junior;  
+  tVault underlying; 
+  tToken senior;
+  tToken junior;  
 
-    //weight is in PRICE_PRECISION 6, i.e 5e5 = 0.5
-    uint256 junior_weight; 
-    uint256 PRICE_PRECISION; 
-    uint promised_return; 
+  //weight is in PRICE_PRECISION 6, i.e 5e5 = 0.5
+  uint256 junior_weight; 
+  uint256 PRICE_PRECISION; 
+  uint promised_return; 
 
 
-    //Redemption Prices 
-    uint256 s_r; 
-    uint256 j_r; 
+  //Redemption Prices 
+  uint256 s_r; 
+  uint256 j_r; 
 
-    constructor(
-    	tVault _underlying //underlying vault token to split 
-    	){
-    	underlying = _underlying; 
-    	senior = new tToken(_underlying, "senior", string(abi.encodePacked("se_", _underlying.symbol())), address(this));
-    	junior = new tToken(_underlying, "junior", string(abi.encodePacked("ju_", _underlying.symbol())), address(this));
+  constructor(
+  	tVault _underlying //underlying vault token to split 
+  	){
+  	underlying = _underlying; 
+  	senior = new tToken(_underlying, "senior", string(abi.encodePacked("se_", _underlying.symbol())), address(this));
+  	junior = new tToken(_underlying, "junior", string(abi.encodePacked("ju_", _underlying.symbol())), address(this));
 
-    	junior_weight = underlying.getJuniorWeight(); 
-    	promised_return = underlying.getPromisedReturn(); 
-    	PRICE_PRECISION = underlying.PRICE_PRECISION(); 
-    }
+  	junior_weight = underlying.getJuniorWeight(); 
+  	promised_return = underlying.getPromisedReturn(); 
+  	PRICE_PRECISION = underlying.PRICE_PRECISION(); 
+  }
 
 	/// @notice accepts token_to_split and mints s,j tokens
 	/// ex. 1 vault token-> 0.3 junior and 0.7 senior for weight of 0.3, 0.7

@@ -259,7 +259,6 @@ export const decodeMarketDetailsFetcher = (marketData: any, factoryDetails: any,
   if (config.type==MARKET_FACTORY_TYPES.TRUSTED){
     print = true
   }
-  console.log('newprices here', prices)
   marketInfo.amm = decodePool(marketInfo, pool, factoryDetails, config, print, prices);
   return marketInfo;
 };
@@ -343,7 +342,6 @@ const decodePool = (market: MarketInfo, pool: any, factoryDetails: any, config: 
   const weights = pool.weights ? pool.weights.map((w) => String(w)) : [];
   const id = pool.addr;
   const created = pool.addr !== NULL_ADDRESS;
-  console.log('outcomeprices', outcomePrice, outcomePrices)
   // if (printmarket){
   //     console.log('ammoutcomes', market)
   // }

@@ -166,6 +166,7 @@ interface InstrumentData_ {
   instrument_type: string;
 }; 
 
+// export async function getAddresses()
 
 export async function estimateZCBBuyTrade(
   account: string,
@@ -285,6 +286,34 @@ export async function getInstrumentData_(
   const instrument_data = await vault.fetchInstrumentData(marketId); 
   return instrument_data; 
 }
+
+  // function getHedgeQuantity(address trader, uint256 marketId) public view returns(uint256){
+  //   uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
+  //   uint256 holdings =  controller.vault().balanceOf(trader);
+  //   uint256 marketCap = controller.vault().totalSupply(); 
+  //   uint num = (principal * (PRICE_PRECISION - INSURANCE_CONSTANT)/PRICE_PRECISION) * holdings; 
+  //   return num/marketCap; 
+  // } 
+
+export async function getTraderBudget(
+  account: string,
+  library: Web3Provider
+): Promise<string>{
+  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const budget = await marketmanager.getTraderBudget(account); 
+  return budget.toString(); 
+}
+
+export async function getHedgeQuantity(
+  account: string,
+  library: Web3Provider, 
+  marketId: string, 
+): Promise<string>{
+  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const hedgeQuantity = await marketmanager.getHedgeQuantity(account, marketId);
+
+  return hedgeQuantity.toString(); 
+}
 export async function getBondingCurveContract(
   account: string, 
   library : Web3Provider, 
@@ -295,7 +324,11 @@ export async function getBondingCurveContract(
   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)) as BondingCurve
   return bc; 
 }
-
+// export async function isMarketActive(
+//   account:string, 
+//   library: Web3Provider, 
+//   marketId: string
+//   )
 export async function getBondingCurvePrice(
   account: string, 
   library: Web3Provider, 
@@ -308,10 +341,8 @@ export async function getBondingCurvePrice(
   //const bc = getBondingCurveContract(account, library, marketId) as BondingCurve; 
   const price =  await bc.calculateExpectedPrice(0); 
   const totalsupply = await bc.getTotalZCB(); 
-  console.log('price???', price.toString(), totalsupply.toString(),bc_ad ); 
   return price.toString(); 
 }
-
 export async function doOwnerSettings(
   account: string,
   library: Web3Provider
@@ -322,6 +353,19 @@ export async function doOwnerSettings(
     //await mintVaultDS(account, library); 
     const tx = await controller.setMarketFactory(marketFactoryAddress);
     return tx; 
+}
+export async function resolveZCBMarket(
+  account:string, 
+  library: Web3Provider, 
+  marketId: string = "3", 
+  atLoss: boolean = false, 
+  extra_gain: string ="0", 
+  principal_loss: string = "0"
+  ){
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  await controller.resolveMarket(marketId, atLoss, extra_gain, principal_loss); 
+
+
 }
 export async function addProposal(  // calls initiate market
   account: string, 
@@ -355,7 +399,7 @@ export async function addProposal(  // calls initiate market
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
   data.description = description; 
   data.Instrument_address = sample_instument_address;
-  data.instrument_type = new BN(100).toString(); 
+  data.instrument_type = String(0); 
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
@@ -513,6 +557,16 @@ export async function redeemVaultDS(
 
 }
 
+export async function redeemZCB(
+  account: string,
+  library: Web3Provider, 
+  marketId: string 
+  ){
+  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  await MM.redeem(marketId, account); 
+  
+}
+
 
 export async function doZCBTrade(
   account: string, 
@@ -636,6 +690,7 @@ export async function mintRepNFT(
 
   return tx
 }
+
 
 
 
@@ -3106,7 +3161,7 @@ export const getMarketInfos = async (
   if (Object.keys(ignoreList).length === 0) {
     filteredMarkets = setIgnoreRemoveMarketList(filteredMarkets, ignoreList, loadtype);
   }
-
+  console.log('filteredMarkets', filteredMarkets); 
   const exchanges = Object.values(filteredMarkets as MarketInfos).reduce((p, m) => ({ ...p, [m.marketId]: m.amm }), {});
   return { markets: filteredMarkets, ammExchanges: exchanges, blocknumber: newBlocknumber };
 };
@@ -3117,11 +3172,14 @@ const setIgnoreRemoveMarketList = (
   loadtype: string = MARKET_LOAD_TYPE.SIMPLIFIED
 ): MarketInfos => {
   // <Removal> resolved markets with no liquidity
-  const nonLiqResolvedMarkets = Object.values(allMarkets).filter((m) => !m?.amm?.hasLiquidity && m?.hasWinner);
-  const sportsMarkets = Object.values(allMarkets).filter((m) => m?.categories[0]== "Sports");
-  console.log(['ignored', ...nonLiqResolvedMarkets]);
-  console.log(['ignored2', ...sportsMarkets]);
+  // const nonLiqResolvedMarkets = Object.values(allMarkets).filter((m) => !m?.amm?.hasLiquidity && m?.hasWinner);
+  //TODO 
+  const nonLiqResolvedMarkets = Object.values(allMarkets).filter((m) => !m?.amm?.hasLiquidity && m?.hasWinner &&!m?.shareTokens);
 
+  const sportsMarkets = Object.values(allMarkets).filter((m) => m?.categories[0]== "Sports");
+  // console.log(['ignored', ...nonLiqResolvedMarkets]);
+  // console.log(['ignored2', ...sportsMarkets]);
+  console.log('allmarkets', allMarkets)
   // <Removal> speard marketw with zero line
   const zeroSpreadMarkets = Object.values(allMarkets).filter(
     (m) => m?.sportsMarketType === SPORTS_MARKET_TYPE.SPREAD && m?.spreadLine === 0 && m.amm.hasLiquidity === false
@@ -3145,13 +3203,13 @@ const setIgnoreRemoveMarketList = (
 
   const ignoreRemovedMarkets = [
     ...ignoredCrypto,
-    ...nonLiqResolvedMarkets,
+    //...nonLiqResolvedMarkets,
     ...zeroSpreadMarkets,
     ...ignoredSportsMarkets,
     ...openNbaV1Markets,
     ...sportsMarkets,
   ].reduce((p, m) => ({ ...p, [m.marketFactoryAddress]: [...(p[m.marketFactoryAddress] || []), m.turboId] }), {});
-
+  console.log('ignored,', ignoreRemovedMarkets)
   Object.keys(ignoreRemovedMarkets).forEach((factoryAddress) =>
     addToIgnoreList(ignoreList, factoryAddress, ignoreRemovedMarkets[factoryAddress] || [])
   );

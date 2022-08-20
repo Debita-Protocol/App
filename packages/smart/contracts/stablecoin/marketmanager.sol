@@ -28,7 +28,7 @@ contract MarketManager is Owned {
     uint256 private constant PRICE_PRECISION = 1e6; 
 
 	ReputationNFT rep;
-    Controller controller;
+  Controller controller;
 
   	mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
   	mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
@@ -218,46 +218,6 @@ contract MarketManager is Owned {
 		return num/marketCap; 
 	}	
 
-	/// @notice trader can only buy within their budget limit 
-	/// @dev Called offchain before doTrade contract calls 
-	// function canBuy(
-	// 	address trader,
-	// 	uint256 amount, //this is in DS with decimals.
-	// 	uint256 marketId
-	// ) public returns(bool) {
-	// 	require(marketActive(marketId), "Market Not Active"); 
-	// 	bool _duringMarketAssessment = duringMarketAssessment(marketId);
-	// 	bool _onlyReputable =  onlyReputable(marketId);
-
-	// 	if (_duringMarketAssessment){
-	// 		require(isVerified(trader), "User Not Verified");
-	// 		require(getTraderBudget(trader)>= amount, "Amount Exceeds Budget"); 
-	// 	}
-
- //  		//During the early risk assessment phase only reputable can buy 
-	// 	if (_onlyReputable){
-	// 		require(_duringMarketAssessment, "Market needs to be in assessment phase"); 
-	// 		require(isReputable(trader, marketId));
-	// 	}
-
-	// 	//If after assessment there is a set buy threshold, people can't buy above this threshold
-	// 	if (!_duringMarketAssessment){
-		
-	// 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-	// 		uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
-	// 		uint256 price_after_trade = zcb.calculateExpectedPrice(tokens_bought);
-	// 		uint256 price_upper_bound = zcb.getUpperBound();
-
-	// 		require(price_upper_bound > 0, "Restrictions need to be set"); 
-	// 		require(price_upper_bound > price_after_trade, "Quantity exceeds buy threshold"); 
-	// 	}
-
-	// 	return true; 
-	// 	// require(_duringMarketAssessment, "Sells not allowed during assessments");
-	// 	// require(exposureset(trader, ammFactoryAddress, marketId), "Not enough liquidity");
-
-	// }
-
 	
 	function canBuy(
 		address trader,
@@ -445,8 +405,7 @@ contract MarketManager is Owned {
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId)));
 		address collateral_address = zcb.getCollateral();
 		zcb.trustedBurn(trader, repaying_zcb);
-		// address collateral_address = BondingCurve(bondingCurveAddress).getCollateral(); 
-		// BondingCurve(bondingCurveAddress).burn(_marketId, repaying_zcb, trader); 
+
 		uint256 _collateralOut = repaying_zcb; 
 
 		CDP storage cdp = debt_pools[_marketId];
@@ -519,7 +478,7 @@ contract MarketManager is Owned {
 		bool atLoss, 
 		uint256 principal_loss
 	) external  onlyController {
-		// BondingCurve bondingcurve = BondingCurve(bondingCurveAddress);
+
 		BondingCurve zcb =  BondingCurve(address(controller.getZCB(marketId)));
 
 		uint256 redemption_price = get_redemption_price(marketId); 
@@ -535,8 +494,7 @@ contract MarketManager is Owned {
 			if(principal_loss >0){
 				require(burnamount>0,"burn amount err"); 
 				zcb.burnFirstLoss(burnamount);
-				//bondingcurve.burn_first_loss( marketId, burnamount); 
-				zcb.getCollateral();
+
 			}
 		
 		}
@@ -544,27 +502,24 @@ contract MarketManager is Owned {
 	}
 
 	/* 
+	@notice trader will redeem entire balance of ZCB
 	Needs to be called at maturity, market needs to be resolved first(from controller)
 	*/
 	function redeem(
 		uint256 marketId,
-	 	address marketFactory,
-	 	address receiver, 
-	 	uint256 zcb_redeem_amount
+	 	address receiver 
 	) public returns(uint256){
-		//require(AbstractMarketFactoryV3(marketFactory).isMarketResolved(marketId), "Market not resolved"); 
+		require(!marketActive(marketId), "Market Active"); 
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+		uint256 zcb_redeem_amount = zcb.balanceOf(msg.sender); 
+		zcb.trustedBurn(msg.sender, zcb_redeem_amount); 
 
 		uint256 redemption_price = get_redemption_price(marketId); 
 		require(redemption_price > 0, "Redeem price is 0");
+		uint256 zcb_redeem_amount_prec = zcb_redeem_amount/(10**12); 
+		uint256 collateral_redeem_amount = (redemption_price * zcb_redeem_amount_prec)/PRICE_PRECISION; 
 
-		uint256 collateral_redeem_amount = (redemption_price * zcb_redeem_amount)/PRICE_PRECISION; 
-
-		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-		zcb.redeem(receiver, zcb_redeem_amount, collateral_redeem_amount);
-		// BondingCurve(bondingCurveAddress).redeem(marketId,
-		//  receiver,
-		//  zcb_redeem_amount,
-		//  collateral_redeem_amount);
+		controller.redeem_mint(collateral_redeem_amount, msg.sender); 
 
 		return collateral_redeem_amount; 
 
@@ -578,13 +533,15 @@ contract MarketManager is Owned {
 		require(assessment_trader[marketId][msg.sender], "Not manager"); 
 
 		bool atLoss = restriction_data[marketId].atLoss; 
-		uint256 priceOut = assessment_prices[marketId][msg.sender]; 
+		uint256 priceOut = assessment_prices[marketId][msg.sender]/(10**12); 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
 		uint256 traderBudget = getTraderBudget(marketId, msg.sender);
 		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
 
 		uint256 scoreToAdd; 
-		if (!atLoss) scoreToAdd = ((num_bonds_bought)/traderBudget) * (PRICE_PRECISION - priceOut)*(num_bonds_bought);
+		// if (!atLoss) scoreToAdd = (((num_bonds_bought*PRICE_PRECISION/traderBudget) * (PRICE_PRECISION - priceOut))/PRICE_PRECISION)*(num_bonds_bought)/PRICE_PRECISION;
+		// console.log('num_bonds_bought'); 
+		if(!atLoss) scoreToAdd = num_bonds_bought; 
 		else scoreToAdd = (num_bonds_bought/traderBudget) * priceOut * num_bonds_bought; 
 
 		rep.addScore(msg.sender, scoreToAdd, !atLoss); 

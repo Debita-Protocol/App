@@ -88,8 +88,10 @@ const OutcomesTable = ({ amm }: { amm: AmmExchange }) => {
   } = amm;
   const content = hasWinner ? (
     <div className={Styles.WinningOutcome}>
-      <span>Winning Outcome</span>
-      <span>{amm.ammOutcomes.find((o) => o.id === winner)?.name}</span>
+     {/* <span>Winning Outcome</span>
+      <span>{amm.ammOutcomes.find((o) => o.id === winner)?.name}</span> */}
+      <span>Instrument Status</span>
+      <span>{"Success"}</span>
       {ConfirmedCheck}
     </div>
   ) : (
@@ -203,7 +205,16 @@ export const MarketCardView = ({
         {/*  <CategoryIcon {...{ categories }} /> */ }
           <div>
             <ReportingStateLabel {...{ reportingState }} />
-            {marketHasNoLiquidity ? (
+            {marketHasNoLiquidity && (
+              <TinyThemeButton
+                customClass={Styles.NoLiquidityPill}
+                action={() => {}}
+                text={"Discretionary Loan"}
+                disabled
+              />)}
+
+
+          {/* {marketHasNoLiquidity ? (
               <TinyThemeButton
                 customClass={Styles.NoLiquidityPill}
                 action={() => {}}
@@ -212,7 +223,7 @@ export const MarketCardView = ({
               />
             ) : (
               <ValueLabel label="Liquidity Provider APR" value={formattedApy || "-"} />
-            )}
+            )} */}
 
           </div> 
 
