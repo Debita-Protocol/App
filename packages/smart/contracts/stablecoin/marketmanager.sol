@@ -30,11 +30,11 @@ contract MarketManager is Owned {
 	ReputationNFT rep;
     Controller controller;
 
-  mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
-  mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
-  mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
-  mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
-	mapping(uint256=> MarketPhaseData) restriction_data; // market ID => restriction data
+  	mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
+  	mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
+  	mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
+  	mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
+	mapping(uint256=> MarketPhaseData) public restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
 

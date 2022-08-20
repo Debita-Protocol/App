@@ -173,7 +173,7 @@ contract Controller {
             name,
             symbol,
             address(marketManager), // owner
-            address(vault), 
+            address(vault), // collateral token is the vault token
             a,
             b
         );
@@ -236,7 +236,7 @@ contract Controller {
         ) external onlyValidator{
         if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
         require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-        marketManager.setAssessmentPhase(marketId, false, false); 
+        marketManager.setAssessmentPhase(marketId, false, false);
         trustInstrument(marketId); 
 
         // Deposit to the instrument contract

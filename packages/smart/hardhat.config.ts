@@ -103,6 +103,7 @@ export const config: HardhatUserConfig = {
       live: false,
       saveDeployments: true,
       tags: ["local"],
+      gas: 20_000_000, // hardcoded because ganache ignores the per-tx gasLimit override
       chainId:137, 
             allowUnlimitedContractSize: true,
 

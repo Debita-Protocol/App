@@ -149,10 +149,6 @@ const CreditLineView = () => {
                 </div>
                 <SecondaryThemeButton action={_repay} text={"repay"}/>
             </div>
-            <div>
-            <SecondaryThemeButton action={_checkInstrument} text={"check status"}/>
-            </div>
-            
         </section>
     )
 
