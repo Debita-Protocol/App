@@ -1,0 +1,161 @@
+@import (reference) '~assets/styles/shared';
+
+.InstrumentProposalView {
+  .ThemeBorder;
+  .FixedBoxShadow;
+
+  display: flex;
+  flex-flow: column nowrap;
+  background: var(--quaternary-bg);
+
+  > span {
+    font-size:large;
+    padding: @size-32;
+    align-items: center;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  > div {
+    .PrimaryBottomBorderRadius;
+    padding: @size-32;
+    display: grid;
+    align-items:center;
+    > label {
+      font-size: large;
+      color:black;
+      text-decoration: underline; 
+    }
+    > input {
+      background-color:antiquewhite;
+    }
+    > textarea {
+      background-color:antiquewhite;
+    }
+  }
+
+  > header {
+    .text-16-bold;
+    .PrimaryTopBorderRadius;
+
+    height: @size-74;
+    border-bottom: @size-1 solid var(--theme-border);
+    padding: @size-24;
+    display: grid;
+    grid-gap: @size-32;
+    grid-template-columns: max-content max-content 1fr;
+
+    > button {
+      .text-16-bold;
+
+      border: none;
+      background: transparent;
+      color: var(--secondary-text);
+      white-space: nowrap;
+
+      &:hover,
+      &.selected {
+        color: var(--primary-text);
+        cursor: pointer;
+      }
+    }
+
+    > span {
+      .ThemeBorder;
+      .text-14;
+
+      display: flex;
+      flex-flow: row nowrap;
+      background: rgba(var(--success-rgb), 0.2);
+      border-color: rgba(var(--success-rgb), 0.2);
+      padding: @size-5 @size-12;
+      color: var(--success);
+      white-space: nowrap;
+      word-break: nowrap;
+      grid-column: 3;
+      margin-left: auto;
+      max-width: max-content;
+      text-transform: uppercase;
+    }
+  }
+
+  > main {
+    .PrimaryBottomBorderRadius;
+
+    padding: @size-32;
+    display: grid;
+    grid-gap: @size-32 @size-64;
+    grid-template-columns: 0.595fr 0.405fr;
+    grid-auto-flow: column;
+
+    > div[class*="AmountInput"] {
+      border: none;
+      background: none;
+      padding: 0;
+
+      > span:first-of-type {
+        color: var(--primary-text);
+      }
+
+      > div:first-of-type {
+        .ThemeBorder;
+      }
+    }
+
+    > section.BreakdownAndAction {
+      grid-row: span 2;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: min-content;
+      grid-gap: @size-32 0;
+    }
+  }
+
+  &.isRemove {
+    max-width: 534px;
+    width: 100%;
+
+    > main {
+      grid-template-columns: 1fr;
+      grid-auto-flow: dense;
+
+      > div[class*="AmountInput"],
+      > div.PriceInstructions,
+      > div.PricesAndOutcomes {
+        display: none;
+      }
+    }
+  }
+
+  &.isResetPrices,
+  &.isMint {
+    max-width: 534px;
+    width: 100%;
+
+    > main {
+      grid-template-columns: 1fr;
+      grid-auto-flow: dense;
+
+      > div.PriceInstructions,
+      > div.PricesAndOutcomes {
+        display: none;
+      }
+    }
+  }
+
+  &.isResetPrices {
+    > main {
+      > div[class*="AmountInput"] {
+        display: none;
+      }
+
+      > section.BreakdownAndAction {
+        > div.Breakdown:not(:nth-of-type(3)) {
+          padding-bottom: @size-24;
+          border-bottom: @size-1 solid var(--theme-border);
+        }
+      }
+
+    }
+  }
+}

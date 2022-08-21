@@ -195,8 +195,8 @@ contract Controller {
           instrumentData
       );
 
-        market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-        marketManager.setMarketPhase(marketId, true, true, 0, insurance_constant * instrumentData.principal);  // need to set min rep score here as well.e
+      market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
+      marketManager.setMarketPhase(marketId, true, true, 0, insurance_constant * instrumentData.principal);  // need to set min rep score here as well.e
 
       emit MarketInitiated(marketId, recipient);
   }
@@ -235,18 +235,18 @@ contract Controller {
     /// @notice called by the validator when market conditions are met
     function approveMarket(
         uint256 marketId
-        ) external onlyValidator{
-        if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
-        require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-        marketManager.approveMarket(marketId);
-        trustInstrument(marketId); 
+    ) external onlyValidator {
+      if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
+      require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
+      marketManager.approveMarket(marketId);
+      trustInstrument(marketId); 
 
       // Deposit to the instrument contract
       uint256 principal = vault.fetchInstrumentData(marketId).principal; 
       //maybe this should be separated to prevent attacks 
       vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
+      vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
       vault.onMarketApproval(marketId);
-   
     }
 
     /*
@@ -257,8 +257,12 @@ contract Controller {
     ) external  onlyValidator {
       marketManager.denyMarket(marketId);
         //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
+      
       uint256 winning_outcome = 0; //TODO  
+      
       marketFactory.trustedResolveMarket(marketId, winning_outcome);
+      
+      vault.denyInstrument(marketId);
     }
 
 
@@ -270,11 +274,7 @@ contract Controller {
       vault.controller_mint(amount,to); 
     }
 
-
-
-
-
-                        /* --------VIEW FUNCTIONS---------  */
+    /* --------VIEW FUNCTIONS---------  */
     function getMarketId(address recipient) public view returns(uint256){
       return ad_to_id[recipient];
     }

@@ -52,9 +52,9 @@ contract LinearBondingCurve is BondingCurve {
     return result; 
 
 
-      // uint256 two = uint256(2).fromUint();
-      // result = (((a.mul(s) + b).pow(two) + two.mul(a).mul(amount)).sqrt() - (a.mul(s) + b)).div(a);
-      //result = ( ( ( ((a.mulWadDown(s) + b) ** 2)/math_precision + 2 * a.mulWadDown(_amount) ) * math_precision ).sqrt() - (a.mulWadDown(s) + b) ).divWadDown(a);
+    // uint256 two = uint256(2).fromUint();
+    // result = (((a.mul(s) + b).pow(two) + two.mul(a).mul(amount)).sqrt() - (a.mul(s) + b)).div(a);
+    //result = ( ( ( ((a.mulWadDown(s) + b) ** 2)/math_precision + 2 * a.mulWadDown(_amount) ) * math_precision ).sqrt() - (a.mulWadDown(s) + b) ).divWadDown(a);
   }
 
   /// @notice calculates area under the curve from current supply to s+amount

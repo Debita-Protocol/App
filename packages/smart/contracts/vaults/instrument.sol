@@ -21,6 +21,21 @@ abstract contract Instrument {
         _;
     }
 
+    modifier onlyVault() {
+        require(msg.sender == address(vault), "caller must be vault");
+        _;
+    }
+
+    constructor (
+        address _vault,
+        address _Utilizer
+    ) {
+        vault = Vault(_vault);
+        underlying = ERC20(vault.UNDERLYING());
+        underlying.approve(_vault, MAX_UINT); // Give Vault unlimited access 
+        Utilizer = _Utilizer;
+    }
+
 
     ERC20 public underlying;
     Vault public vault; 
@@ -29,7 +44,8 @@ abstract contract Instrument {
     /// @notice address of user who submits the liquidity proposal 
     address Utilizer; 
 
-    /// @notice initializes a new Instrument 
+    /// @notice initializes a new Instrument
+    /// DEPRECATED
     function _initialize(
         address _vault,
         address _Utilizer
@@ -44,19 +60,7 @@ abstract contract Instrument {
     /**
      @notice hooks for approval logic that are specific to each instrument type, called by controller for approval/default logic
      */
-    function onMarketApproval() virtual external;
-
-    /// called by anyone.
-    function checkStatus() virtual external;
-
-    function _resolveMarket(
-        bool atLoss,
-        uint256 extra_gain,
-        uint256 total_loss
-    ) internal {
-        vault.resolveMarket(atLoss, extra_gain, total_loss);
-    }
-
+    function onMarketApproval() virtual external {}
 
     function setUtilizer(address _Utilizer) external onlyAuthorized {
         require(_Utilizer != address(0));
@@ -67,7 +71,7 @@ abstract contract Instrument {
     /// @notice Withdraws a specific amount of underlying tokens from the Instrument.
     /// @param amount The amount of underlying tokens to withdraw.
     /// @return An error code, or 0 if the withdrawal was successful.
-    function redeemUnderlying(uint256 amount) external  returns (bool){
+    function redeemUnderlying(uint256 amount) external onlyVault returns (bool){
         return underlying.transfer(address(vault), amount); 
     }
 
@@ -133,8 +137,7 @@ contract CreditLine is Instrument {
     // Modify-able Variables during repayments, borrow
     uint256 totalOwed; 
     uint256 principalOwed; 
-    uint256 interestOwed; 
-    uint256 maturityDate;
+    uint256 interestOwed;
 
     constructor(
         address vault,
@@ -143,13 +146,18 @@ contract CreditLine is Instrument {
         uint256 _interestAPR, 
         uint256 _duration,
         uint256 _faceValue
-    ) public {
-        initialize(vault, borrower, _principal, _interestAPR, _duration, _faceValue);
+    ) public Instrument(vault, borrower){
+        principal = _principal; 
+        interestAPR = _interestAPR; 
+        duration = _duration;   
+        faceValue = _faceValue;
+        interestOwed = faceValue - principal;
     }
 
     /// @notice CreditLine contract is initiated at proposal 
     /// @dev include any Instrument specific initialization logic  
-    /// @param _borrower stored as Utilizer 
+    /// @param _borrower stored as Utilizer
+    /// DEPRECATED
     function initialize(
         address _vault,
         address _borrower,         
@@ -173,19 +181,10 @@ contract CreditLine is Instrument {
         return APR; 
     }
 
-    function getMaturityDate() external view returns (uint256 result) {
-        result = maturityDate;
-    }
-
-    function onMarketApproval() external override {
-        maturityDate = block.timestamp + duration;
-    }
-
     /// @notice Allows a borrower to borrow on their creditline.
     function drawdown(uint256 amount) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
         require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
-        require(block.timestamp <= maturityDate, "Instrument must not have matured");
         totalOwed += amount; 
         principalOwed += amount; 
         underlying.transfer(msg.sender, amount);
@@ -194,34 +193,17 @@ contract CreditLine is Instrument {
     /// @notice allows a borrower to repay their loan
     function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        require(block.timestamp <= maturityDate, "Instrument must not have matured");
+        require(repay_principal <= principalOwed, "overpaid principal");
+        require(repay_interest <= interestOwed, "overpaid interest");
         underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
         handleRepay(repay_principal, repay_interest); 
     }   
 
     /// @notice updates balances after repayment
+    /// need to remove min.
     function handleRepay(uint256 repay_principal, uint256 repay_interest) internal {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
     }
-
-    /**
-     @notice called by anyone to check if the loan is past maturity
-     */
-    function checkStatus() external override {
-        if (maturityDate >= block.timestamp) {
-            
-            if (principalOwed == 0 && interestOwed == 0) {
-                _resolveMarket(false, 0, 0);
-            } else if (principalOwed > 0 || interestOwed > 0) {
-                _resolveMarket(true, 0, principalOwed + interestOwed);
-            }
-        }
-    }
 }
-
-
-
-
-

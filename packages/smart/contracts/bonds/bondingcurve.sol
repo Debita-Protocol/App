@@ -54,6 +54,8 @@ abstract contract BondingCurve is OwnedERC20 {
         console.log('TOKENS', tokens, collateral_amount); 
         reserves += collateral_amount;
 
+        require(_calculateExpectedPrice(tokens) < 10**collateral_dec, "resulting price must be less than 1");
+
         require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
         collateral.safeTransferFrom(trader, address(this), collateral_amount);
         _mint(trader, tokens);

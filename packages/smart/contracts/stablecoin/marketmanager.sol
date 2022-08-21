@@ -104,7 +104,10 @@ contract MarketManager is Owned {
 		restriction_data[marketId].onlyReputable = _onlyReputable;
 	}
 
-	function approveMarket(uint256 marketId) external onlyOwner {
+	/**
+	 called by controller
+	 */
+	function approveMarket(uint256 marketId) external onlyController {
 		require(restriction_data[marketId].alive);
 		require(restriction_data[marketId].duringAssessment);
 

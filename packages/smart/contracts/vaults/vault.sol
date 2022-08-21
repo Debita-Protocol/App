@@ -23,13 +23,14 @@ contract Vault is ERC4626, Auth{
     event InstrumentWithdrawal(address indexed user, Instrument indexed instrument, uint256 underlyingAmount);
     event InstrumentTrusted(address indexed user, Instrument indexed instrument);
     event InstrumentDistrusted(address indexed user, Instrument indexed instrument);
+    event InstrumentHarvest(address indexed instrument, uint256 instrument_balance, uint256 mag, bool sign); //sign is direction of mag, + or -.
 
     /*///////////////////////////////////////////////////////////////
                                  CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
     uint256 internal BASE_UNIT;
-    uint256 totalInstrumentHoldings; //total holdings deposited into all Instruments 
+    uint256 totalInstrumentHoldings; //total holdings deposited into all Instruments collateral
     ERC20 public immutable UNDERLYING;
     Controller private controller;
 
@@ -59,6 +60,7 @@ contract Vault is ERC4626, Auth{
         string description;
         address Instrument_address;
         InstrumentType instrument_type;
+        uint256 maturityDate;
     }
 
     constructor(
@@ -96,61 +98,83 @@ contract Vault is ERC4626, Auth{
 
 
     /// @notice Harvest a trusted Instrument, records profit/loss 
-    function harvest(Instrument instrument) external requiresAuth {
+    /**
+     public bc anyone can call => records
+     */
+    function harvest(Instrument instrument) public {
         require(getInstrumentData[instrument].trusted, "UNTRUSTED_Instrument");
-    	uint256 oldTotalInstrumentHoldings = totalInstrumentHoldings; 
+    	
+        uint256 oldTotalInstrumentHoldings = totalInstrumentHoldings; 
+        
         uint256 balanceLastHarvest = getInstrumentData[instrument].balance;
+        
         uint256 balanceThisHarvest = instrument.balanceOfUnderlying(address(instrument));
         
+        if (balanceLastHarvest == balanceThisHarvest) {
+            return;
+        }
+        
         getInstrumentData[instrument].balance = balanceThisHarvest.safeCastTo248();
-        uint256 profit = balanceThisHarvest - balanceLastHarvest; 
 
-        totalInstrumentHoldings = oldTotalInstrumentHoldings + profit; 
+        uint256 delta;
+       
+        bool net_positive = balanceThisHarvest >= balanceLastHarvest;
+        
+        delta = net_positive ? balanceThisHarvest - balanceLastHarvest : balanceLastHarvest - balanceThisHarvest;
 
+        totalInstrumentHoldings = net_positive ? oldTotalInstrumentHoldings + delta : oldTotalInstrumentHoldings - delta;
+
+        emit InstrumentHarvest(address(instrument), balanceThisHarvest, delta, net_positive);
     }
 
     /// @notice Deposit a specific amount of float into a trusted Instrument.
    	/// Called when market is approved. 
    	/// Also has the role of granting a credit line to a credit-based Instrument like uncol.loans 
-    function depositIntoInstrument(Instrument instrument, uint256 underlyingAmount) external requiresAuth{
+    function depositIntoInstrument(Instrument instrument, uint256 underlyingAmount) external onlyController{
     	require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
     	totalInstrumentHoldings += underlyingAmount; 
 
         getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
 
         UNDERLYING.transfer(address(instrument), underlyingAmount);
-        emit InstrumentDeposit(msg.sender, instrument, underlyingAmount);
 
+        emit InstrumentDeposit(msg.sender, instrument, underlyingAmount);
     }
 
     /// @notice Withdraw a specific amount of underlying tokens from a Instrument.
     function withdrawFromInstrument(Instrument instrument, uint256 underlyingAmount) external requiresAuth{
     	require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
+        
         getInstrumentData[instrument].balance -= underlyingAmount.safeCastTo248();
+        
         totalInstrumentHoldings -= underlyingAmount;
+        
         require(instrument.redeemUnderlying(underlyingAmount), "REDEEM_FAILED");
+        
         emit InstrumentWithdrawal(msg.sender, instrument, underlyingAmount);
 
     }
 
 
     /// @notice Withdraws all underyling balance from the Instrument to the vault 
-    function withdrawAllFromInstrument(Instrument instrument) external requiresAuth{
+    function withdrawAllFromInstrument(Instrument instrument) internal {
     	uint248 total_Instrument_balance = instrument.balanceOfUnderlying(address(instrument)).safeCastTo248();
-    	uint248 current_balance =  getInstrumentData[instrument].balance;
-    	getInstrumentData[instrument].balance -= Math.min(total_Instrument_balance, current_balance).safeCastTo248();
-    	instrument.redeemUnderlying(total_Instrument_balance);
-
+    	
+        uint248 current_balance =  getInstrumentData[instrument].balance;
+    	
+        getInstrumentData[instrument].balance -= Math.min(total_Instrument_balance, current_balance).safeCastTo248();
+    	
+        instrument.redeemUnderlying(total_Instrument_balance);
     }
 
     /// @notice Stores a Instrument as trusted when its approved
-    function trustInstrument(Instrument instrument) external requiresAuth{
+    function trustInstrument(Instrument instrument) external onlyController{
     	getInstrumentData[instrument].trusted = true;
 
     }
 
     /// @notice Stores a Instrument as untrusted
-    function distrustInstrument(Instrument instrument) external requiresAuth{
+    function distrustInstrument(Instrument instrument) external onlyController {
     	getInstrumentData[instrument].trusted = false; 
     }
 
@@ -174,12 +198,24 @@ contract Vault is ERC4626, Auth{
         return getInstrumentData[Instruments[marketId]];
     }
 
-    function onMarketApproval(uint256 marketId) external requiresAuth {
+    /**
+     called on market denial + removal, maybe no chekcs?
+     */
+    function removeInstrument(uint256 marketId) internal {
+        InstrumentData storage data = getInstrumentData[Instruments[marketId]];
+        require(data.marketId > 0, "instrument doesn't exist");
+        delete getInstrumentData[Instruments[marketId]];
+        delete Instruments[marketId];
+        // emit event here;
+    }
+
+    function onMarketApproval(uint256 marketId) external onlyController {
         Instruments[marketId].onMarketApproval();
     }
 
     /// @notice add instrument proposal created by the Utilizer 
-    /// @dev Instrument instance should be created before this is called 
+    /// @dev Instrument instance should be created before this is called
+    /// need to add authorization
     function addProposal(
         InstrumentData memory data
     ) external {
@@ -187,7 +223,7 @@ contract Vault is ERC4626, Auth{
         require(data.duration > 0, "duration must be greater than 0");
         require(data.faceValue > 0, "faceValue must be greater than 0");
         require(data.principal >= BASE_UNIT, "Needs to be in decimal format"); // should be collateral address, not DS. Can't be less than 1.0 X?
-   
+        require(data.marketId > 0, "must be valid instrument");
 
         num_proposals[msg.sender] ++; 
         getInstrumentData[Instrument(data.Instrument_address)] = (
@@ -201,7 +237,8 @@ contract Vault is ERC4626, Auth{
                 data.duration, 
                 data.description, 
                 data.Instrument_address,
-                data.instrument_type
+                data.instrument_type,
+                0
             )
         	); 
 
@@ -209,14 +246,62 @@ contract Vault is ERC4626, Auth{
     }
 
     /**
-     @notice called by instrument on resolution
+     @notice checks status of instrument
+     returns true if resolution, false if not.
      */
-    function resolveMarket(
-        bool atLoss,
-        uint256 extra_gain,
-        uint256 total_loss
-    ) external {
-        require(getInstrumentData[Instrument(msg.sender)].marketId != 0, "caller is not active instrument");
-        controller.resolveMarket(getInstrumentData[Instrument(msg.sender)].marketId, atLoss, extra_gain, total_loss);
+    function checkInstrument(
+        uint256 marketId
+    ) external returns (bool) {
+        InstrumentData storage data = getInstrumentData[Instruments[marketId]];
+        
+        require(data.marketId > 0 && data.trusted, "instrument already resolved");
+        require(data.maturityDate > 0, "instrument hasn't been approved yet" );
+
+        if (block.timestamp >= data.maturityDate) {
+            resolveInstrument(Instruments[marketId]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     @notice called by controller on approveMarket.
+     */
+    function setMaturityDate(Instrument _instrument) external onlyController {
+        getInstrumentData[_instrument].maturityDate = getInstrumentData[_instrument].duration + block.timestamp;
+    }
+
+    /**
+     @notice called on resolution => checkInstrument => called by anyone, withdraws all funds to vault, triggers resolveMarket for controller.
+     @dev no checks, checks performed by checkInstrument()
+     */
+    function resolveInstrument(
+        Instrument _instrument
+    ) internal {
+        harvest(_instrument);
+
+        InstrumentData storage data = getInstrumentData[_instrument];
+
+        bool atLoss = data.balance < data.faceValue;
+
+        uint256 total_loss = atLoss ? data.faceValue - data.balance : 0;
+        uint256 extra_gain = !atLoss ? data.balance - data.faceValue : 0;
+
+        withdrawAllFromInstrument(_instrument);
+        controller.resolveMarket(data.marketId, atLoss, extra_gain, total_loss);
+        removeInstrument(data.marketId);
+    }
+
+    /**
+     called on market denial by controller.
+     */
+    function denyInstrument(uint256 marketId) external requiresAuth {
+        InstrumentData storage data = getInstrumentData[Instruments[marketId]];
+        
+        require(marketId > 0 && data.Instrument_address != address(0), "invalid instrument");
+
+        require(!data.trusted, "can't deny approved instrument");
+        
+        removeInstrument(marketId);
     }
 }
