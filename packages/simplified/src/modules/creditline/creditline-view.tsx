@@ -95,18 +95,7 @@ const CreditLineView = () => {
         }
     });
 
-    const _checkInstrument = useCallback(async () => {
-        if (parseInt(instrument.marketID) !== 0) {
-            try {
-                const tx =  await checkInstrumentStatus(account, loginAccount.library, instrument.marketId);
-                tx.wait()
-                console.log("checked instrument status")
-            } catch (err) {
-                console.log(err)
-            }
-        }
-    })
-
+    
     return (
         <section className={Styles.CreditlineView}>
             <InstrumentCard isLink={false} path={""} query={""} instrument={instrument}/>

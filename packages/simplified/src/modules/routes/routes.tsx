@@ -51,7 +51,6 @@ const Routes = p => {
       <Route path={makePath(LOAN)} component={LoanView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
       <Route path={makePath(CREDITLINE)} component={CreditlineView} />
-      
       <Redirect to={makePath(MARKETS)} />
     </Switch>
   );

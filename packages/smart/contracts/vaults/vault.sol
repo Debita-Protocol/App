@@ -254,7 +254,7 @@ contract Vault is ERC4626, Auth{
     ) external returns (bool) {
         InstrumentData storage data = getInstrumentData[Instruments[marketId]];
         
-        require(data.marketId > 0 && data.trusted, "instrument already resolved");
+        require(data.marketId > 0 && data.trusted, "instrument must be active");
         require(data.maturityDate > 0, "instrument hasn't been approved yet" );
 
         if (block.timestamp >= data.maturityDate) {
