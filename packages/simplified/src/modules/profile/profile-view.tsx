@@ -21,6 +21,7 @@ const { PathUtils: { makePath, makeQuery, parseQuery } } = Utils;
 
 const useAddressQuery = () => {
     const location = useLocation();
+    console.log("location.search: ", location.search)
     const { address } = parseQuery(location.search); //TODO make sure it's a valid address
     return address;
 };
@@ -39,6 +40,7 @@ interface InstrumentData {
     description: string; 
     Instrument_address: string;
     instrument_type: string;
+    maturityDate: string;
   }; 
 
 // for displaying borrower - market profile., takes marketID => get's borrower address
@@ -57,17 +59,19 @@ const ProfileView = () => {
     const isUser = !query_address;
     let address = query_address ? query_address : account;
     const [instrument, setInstrument] = useState<InstrumentData>({
-        trusted: true,
-        balance: "150.052", 
-        faceValue: "200.5",
-        marketId: "1",
-        principal: "175.0",
-        expectedYield: "25.5", 
-        duration: "31536000",
-        description: "a description about the usage of the creditline perhaps", 
-        Instrument_address: "address",
-        instrument_type: "0"
+        trusted: false,
+        balance: "", 
+        faceValue: "",
+        marketId: "",
+        principal: "",
+        expectedYield: "", 
+        duration: "",
+        description: "", 
+        Instrument_address: "",
+        instrument_type: "",
+        maturityDate: ""
     })
+
     const [path, setPath] = useState("creditline")
     const [query, setQuery] = useState("")
     const [ isLink, setIsLink ] = useState(isUser && path.length > 0)
@@ -96,7 +100,7 @@ const ProfileView = () => {
 
     const getInstruments = useCallback(async ()=> {
         const _instrument = await getFormattedInstrumentData(address, loginAccount.library)
-        if (parseInt(_instrument.marketId) === 0) {
+        if (parseInt(_instrument.marketId) !== 0) {
             console.log(_instrument)
             setInstrument(_instrument)
         }
@@ -106,9 +110,11 @@ const ProfileView = () => {
     })
 
     useEffect(() => {
-        getPassport()
-        //getInstruments()
-    }, [])
+        if (account && loginAccount.library) {
+            getPassport()
+            getInstruments()
+        }
+    }, [account, loginAccount])
     
     return (
         <>

@@ -21,6 +21,7 @@ interface InstrumentData {
     description: string; 
     Instrument_address: string;
     instrument_type: string;
+    maturityDate: string;
   }; 
 
 // card displayed for info about stuff. optional link to acutal instrument if on profile page.
@@ -33,11 +34,14 @@ const InstrumentCard = ({
 
     let _duration = new BN(instrument.duration).div(24*60*60).toFixed(6).toString()
     let type_label = parseInt(instrument.instrument_type) === 0 ? "Credit Line" : "Other"
+    let url = "https://mumbai.polygonscan.com/address/" + instrument.Instrument_address
+    console.log("instrument_address: ", instrument.Instrument_address.toString())
+    console.log("url: ", url)
 
     const { account, loginAccount } = useUserStore();
 
     const handleCheck = useCallback(async () => {
-        let tx = await checkInstrumentStatus(account, loginAccount.library, instrument.Instrument_address)
+        let tx = await checkInstrumentStatus(account, loginAccount.library, instrument.marketId)
 
         await tx.wait();
         console.log("checked loan!")
@@ -58,6 +62,7 @@ const InstrumentCard = ({
                 <ValueLabel label={"Expected Yield"} value={ instrument.expectedYield }/> 
                 <ValueLabel label={"Type"} value={ type_label }/>
                 <ValueLabel label={"Instrument Address"} value={ instrument.Instrument_address }/>
+                <ValueLabel label={"Maturity Date"} value={ instrument.maturityDate }/>
             </section>
             <div className={"Description"}>
                 <span>Description</span>
@@ -65,6 +70,9 @@ const InstrumentCard = ({
                 { instrument.description }
             </div>
             <PrimaryThemeButton id={instrument.marketId} text={"Check Instrument Status"} action={handleCheck}/>
+            <a href={ url } target="_blank" rel="noopener noreferrer">
+                PolyScan Link
+            </a>
         </>   
     )
 

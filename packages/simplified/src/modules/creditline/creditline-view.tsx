@@ -34,6 +34,7 @@ interface InstrumentData {
     description: string; 
     Instrument_address: string;
     instrument_type: string;
+    maturityDate: string;
   }; 
 
 const CreditLineView = () => {
@@ -43,16 +44,17 @@ const CreditLineView = () => {
     const [ repayInterest, setRepayInterest ] = useState("0.0");
     const [ loading, setLoading ] = useState(false);
     const [ instrument, setInstrument ] = useState<InstrumentData>({
-        trusted: true,
-        balance: "150.052", 
-        faceValue: "200.5",
-        marketId: "1",
-        principal: "175.0",
-        expectedYield: "25.5", 
-        duration: "31536000",
-        description: "a description about the usage of the creditline perhaps", 
-        Instrument_address: "address",
-        instrument_type: "0"
+        trusted: false,
+        balance: "", 
+        faceValue: "",
+        marketId: "",
+        principal: "",
+        expectedYield: "", 
+        duration: "",
+        description: "", 
+        Instrument_address: "",
+        instrument_type: "",
+        maturityDate: ""
     })
 
     const retrieveInstrument = useCallback(async () => {
@@ -63,8 +65,10 @@ const CreditLineView = () => {
     });
 
     useEffect(() => {
-        //retrieveInstrument()
-    },[])
+        if (account && loginAccount) {
+            retrieveInstrument()
+        }
+    },[account, loginAccount])
     
     const _borrow = useCallback(async () => {
         if (parseInt(instrument.marketID) !== 0) {
@@ -94,7 +98,7 @@ const CreditLineView = () => {
     const _checkInstrument = useCallback(async () => {
         if (parseInt(instrument.marketID) !== 0) {
             try {
-                const tx =  await checkInstrumentStatus(account, loginAccount.library, instrument.address)
+                const tx =  await checkInstrumentStatus(account, loginAccount.library, instrument.marketId);
                 tx.wait()
                 console.log("checked instrument status")
             } catch (err) {

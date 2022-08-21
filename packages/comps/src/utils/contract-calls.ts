@@ -147,8 +147,39 @@ const { parseBytes32String, formatBytes32String } = utils;
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 // ONLY FOR TESTING.
-export async function setupContracts (account: string, provider: Web3Provider) {
+export async function setupContracts (account: string, library: Web3Provider) {
 
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  // let tx = await controller.setMarketManager(MM_address);
+  // tx.wait()
+  // tx = await controller.setVault(Vault_address);
+  // tx.wait()
+  // tx = await controller.setMarketFactory(marketFactoryAddress);
+  // tx.wait()
+  // tx = await controller.setReputationNFT(RepNFT_address);
+  // tx.wait()
+  
+  let data = {} as InstrumentData_; 
+  data.balance = String(0);
+  data.Instrument_address = sample_instument_address;
+  data.principal = "1000000"; //new BN(1000000).toString()
+  data.expectedYield = "100000"; //new BN(100000).toString()
+  data.duration = "1000000"; //new BN(1000000).toString()
+  data.description = "a description of the instrument"
+  data.faceValue = "1100000"; //new BN(1100000).toString()
+  data.instrument_type = String(0)
+  data.maturityDate = String(0)
+  data.balance = String(0)
+  data.trusted = false;
+  data.marketId = "0";
+  console.log(data);
+
+  const tx2 = await controller.initiateMarket(account, data).catch((e) => {
+    console.error(e);
+    throw e;
+  }); 
+
+  console.log("setup success")
 }
 
 // NEW STUFF BELOW
@@ -164,6 +195,7 @@ interface InstrumentData_ {
   description: string; 
   Instrument_address: string; 
   instrument_type: string;
+  maturityDate: string;
 }; 
 
 // export async function getAddresses()
@@ -375,7 +407,8 @@ export async function addProposal(  // calls initiate market
   expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
   description: string= "Test Description", 
-  Instrument_address: string = controller_address//need to have been created before 
+  Instrument_address: string = controller_address, //need to have been created before
+  instrument_type: string = "0"
   ): Promise<TransactionResponse>{
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   console.log('here', controller_address, account)
@@ -394,12 +427,13 @@ export async function addProposal(  // calls initiate market
   data.balance = new BN(0).toFixed(); 
   data.faceValue = new BN(faceValue).shiftedBy(decimals).toFixed(); 
   data.marketId = new BN(0).toFixed(); 
-  data.principal =new BN(principal).shiftedBy(decimals).toFixed(); 
+  data.principal = new BN(principal).shiftedBy(decimals).toFixed(); 
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
-  data.description = description; 
-  data.Instrument_address = sample_instument_address;
-  data.instrument_type = String(0); 
+  data.description = description;
+  data.Instrument_address = Instrument_address; //sample_instument_address;
+  data.instrument_type = instrument_type;
+  data.maturityDate = String(0);
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
@@ -440,6 +474,15 @@ export const getInstrument = async(
   return Instrument__factory.connect(Instrument_address, getProviderOrSigner(library, account));
 }; 
 
+export const vaultHarvest = async (
+  account: string,
+  library: Web3Provider,
+  instrument_address: string
+): Promise<TransactionResponse> => {
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  return vault.harvest(instrument_address);
+}
+
 export const getFormattedInstrumentData = async (
   account:string,
   library: Web3Provider
@@ -449,7 +492,7 @@ export const getFormattedInstrumentData = async (
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
   const marketId = await controller.getMarketId(account); 
-  let data = await vault.fetchInstrumentData( marketId);
+  let data = await vault.fetchInstrumentData(marketId);
 
   let result = {
     trusted: false,
@@ -461,7 +504,8 @@ export const getFormattedInstrumentData = async (
     duration: "",
     description: "",
     Instrument_address: "",
-    instrument_type: ""
+    instrument_type: "",
+    maturityDate: ""
   }
   result.trusted = data.trusted;
   result.Instrument_address = data.Instrument_address
@@ -473,16 +517,17 @@ export const getFormattedInstrumentData = async (
   result.principal = new BN(data.principal.toString()).div(10**decimals).toString()
   result.expectedYield = new BN(data.expectedYield.toString()).div(10**decimals).toString()
   result.duration = data.duration.toString()
+  result.maturityDate = data.maturityDate.toString()
   return result;
 }
 
 export const checkInstrumentStatus = async (
   account: string,
   library: Web3Provider,
-  instrument_address: string
+  marketId: string
 ): Promise<TransactionResponse> => {
-  const instrument = Instrument__factory.connect(instrument_address, getProviderOrSigner(library, account))
-  const tx = instrument.checkStatus()
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account)); 
+  const tx = vault.checkInstrument(marketId)
   return tx;
 }
 
@@ -511,11 +556,21 @@ export async function repay_to_creditline(
 ) : Promise<TransactionResponse> {
   const instrument = await getInstrument(account, library);  
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+
+  // approving collateral transfer to creditline from account
+  collateral.approve(instrument.address, amount);
+
   const decimals = await collateral.decimals()
   
   const repayAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
   const repayInterest = new BN(interest).shiftedBy(decimals).toFixed(); 
-  const tx =  await instrument.repay(repayAmount,repayInterest ); 
+
+  const totalAmount = new BN(repayAmount).plus(repayInterest).toString();
+
+  let tx = await collateral.approve(instrument.address, totalAmount);
+  tx.wait();
+
+  tx =  await instrument.repay(repayAmount, repayInterest); 
   return tx; 
 }
 
@@ -563,8 +618,7 @@ export async function redeemZCB(
   marketId: string 
   ){
   const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
-  await MM.redeem(marketId, account); 
-  
+  await MM.redeem(marketId, account);
 }
 
 

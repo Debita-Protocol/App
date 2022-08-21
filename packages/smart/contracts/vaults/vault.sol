@@ -101,20 +101,20 @@ contract Vault is ERC4626, Auth{
     /**
      public bc anyone can call => records
      */
-    function harvest(Instrument instrument) public {
-        require(getInstrumentData[instrument].trusted, "UNTRUSTED_Instrument");
+    function harvest(address instrument) public {
+        require(getInstrumentData[Instrument(instrument)].trusted, "UNTRUSTED_Instrument");
     	
         uint256 oldTotalInstrumentHoldings = totalInstrumentHoldings; 
         
-        uint256 balanceLastHarvest = getInstrumentData[instrument].balance;
+        uint256 balanceLastHarvest = getInstrumentData[Instrument(instrument)].balance;
         
-        uint256 balanceThisHarvest = instrument.balanceOfUnderlying(address(instrument));
+        uint256 balanceThisHarvest = Instrument(instrument).balanceOfUnderlying(address(instrument));
         
         if (balanceLastHarvest == balanceThisHarvest) {
             return;
         }
         
-        getInstrumentData[instrument].balance = balanceThisHarvest.safeCastTo248();
+        getInstrumentData[Instrument(instrument)].balance = balanceThisHarvest.safeCastTo248();
 
         uint256 delta;
        
@@ -124,7 +124,7 @@ contract Vault is ERC4626, Auth{
 
         totalInstrumentHoldings = net_positive ? oldTotalInstrumentHoldings + delta : oldTotalInstrumentHoldings - delta;
 
-        emit InstrumentHarvest(address(instrument), balanceThisHarvest, delta, net_positive);
+        emit InstrumentHarvest(instrument, balanceThisHarvest, delta, net_positive);
     }
 
     /// @notice Deposit a specific amount of float into a trusted Instrument.
@@ -278,7 +278,7 @@ contract Vault is ERC4626, Auth{
     function resolveInstrument(
         Instrument _instrument
     ) internal {
-        harvest(_instrument);
+        harvest(address(_instrument));
 
         InstrumentData storage data = getInstrumentData[_instrument];
 

@@ -355,10 +355,6 @@ describe("* Full Cycle Test", () => {
 
                 await vault.connect(vault_lender).checkInstrument(marketId);
             });
-
-            it("can't buy ZCB no mo", async () => {
-                //need to approve here, await MM.connect(market_trader).buy(marketId, 10);
-            });
         });
     })
 });
