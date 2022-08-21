@@ -339,7 +339,7 @@ describe("* Full Cycle Test", () => {
             })
 
             it("repay functionality", async () => {
-                let tx = await collateral.connect(utilizer).approve(creditline.address, principal.div(2));
+                let tx = await collateral.connect(utilizer).approve(creditline.address, principal.div(2).add(interest));
                 await tx.wait();
 
                 tx = await creditline.connect(utilizer).repay(principal.div(2), interest);
@@ -357,7 +357,7 @@ describe("* Full Cycle Test", () => {
             });
 
             it("can't buy ZCB no mo", async () => {
-                await MM.connect(market_trader).buy(marketId, 10);
+                //need to approve here, await MM.connect(market_trader).buy(marketId, 10);
             });
         });
     })

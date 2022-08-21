@@ -237,15 +237,22 @@ contract Controller {
         uint256 marketId
     ) external onlyValidator {
       if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
+      
       require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
+      
       marketManager.approveMarket(marketId);
+      marketManager.setUpperBound(marketId, 10**6); // need to get upper bound 
+      
       trustInstrument(marketId); 
 
       // Deposit to the instrument contract
       uint256 principal = vault.fetchInstrumentData(marketId).principal; 
       //maybe this should be separated to prevent attacks 
+      
       vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
+      
       vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
+      
       vault.onMarketApproval(marketId);
     }
 

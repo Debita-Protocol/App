@@ -272,6 +272,13 @@ contract MarketManager is Owned {
 		return true; 
 	}
 
+	/**
+	 called by controller on approveMarket, preset upper bound for assessment phase is 1.
+	 */
+	function setUpperBound(uint256 marketId, uint256 upper_bound) external onlyController {
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+		zcb.setUpperBound(upper_bound);
+	}
 	
 
 	/// @notice During assessment phase, need to log the trader's 
@@ -322,6 +329,7 @@ contract MarketManager is Owned {
         uint256 _marketId,
         uint256 _collateralIn
     ) external  returns (uint256){
+		require(!restriction_data[_marketId].resolved, "must not be resolved");
 		(bool canbuy, uint256 error) = canBuy(msg.sender, _collateralIn, _marketId); 
 		require(canbuy,"Trade Restricted");
 
@@ -359,14 +367,14 @@ contract MarketManager is Owned {
         uint256 _marketId,
         uint256 _zcb_amount_in
     ) external  returns (uint256){
-
+		require(!restriction_data[_marketId].resolved, "must not be resolved");
 		require(canSell(msg.sender, 
 		 	_zcb_amount_in, 
 		 	_marketId),"Trade Restricted");
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
 		uint256 amountOut = zcb.trustedSell(msg.sender, _zcb_amount_in);
-
+		return amountOut;
 	}
 
 
@@ -451,6 +459,8 @@ contract MarketManager is Owned {
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
 		uint256 total_bought_collateral = zcb.getTotalCollateral();
 		uint256 total_bought_bonds = zcb.getTotalZCB();
+		console.log("total_bought_bonds", total_bought_bonds);
+		console.log("principal_loss", principal_loss);
 
 		if (atLoss){
 			if (total_bought_collateral - principal_loss > 0){
