@@ -107,6 +107,7 @@ import {
   CreditLine__factory,
   BondingCurve, 
   BondingCurve__factory, 
+  //LinearShortZCB__factory, 
 
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
@@ -168,6 +169,12 @@ interface InstrumentData_ {
 
 // export async function getAddresses()
 
+export async function getERCBalance(
+  account: string, 
+  library: Web3Provider, 
+  address: string) : Promise<string>{
+  return ERC20__factory.connect(address, getProviderOrSigner(library, account)).balanceOf(account);
+}
 export async function estimateZCBBuyTrade(
   account: string,
   library: Web3Provider,
@@ -209,6 +216,47 @@ export async function estimateZCBBuyTrade(
     priceImpact,
   };
 };
+
+// export async function estimateZCBShortTrade(
+//   account: string,
+//   library: Web3Provider,
+//   marketId: string,
+//   inputDisplayAmount: string,
+//   selectedOutcomeId: number,
+//   cash: Cash
+// ): Promise<EstimateTradeResult> {
+//   const amount = convertDisplayCashAmountToOnChainCashAmount(inputDisplayAmount, cash.decimals)
+//     .decimalPlaces(0, 1)
+//     .toFixed();
+  
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+//   const sbc_ad = await controller.getshortZCB_ad(marketId);
+//   const sbc = LinearShortZCB__factory.connect(sbc_ad, getProviderOrSigner(library, account)); 
+
+//   const output = await calculateAveragePrice(amount); 
+//   const average_price_ = output[0];
+//   const estimatedShares_ = output[1]; 
+//   // const average_price_ = await calculateAveragePrice(amount); 
+//   // const estimatedShares_ = await calculateAmountGivenSell(amount); 
+
+//   const average_price = new BN(averagePrice_.toString()).div(10**18).toFixed(4);
+//   const estimatedShares = new BN(estimatedShares_).div(10**18).toFixed(4); 
+
+//   const tradeFees = "0"; 
+//   const maxProfit = (1-Number(averagePrice)) * Number(estimatedShares); 
+//   const priceImpact = "1";
+//   const ratePerCash = "1";
+//   return {
+//     outputValue: estimatedShares,
+//     tradeFees,
+//     averagePrice: averagePrice,//.tofixed(4),
+//     maxProfit: String(maxProfit),
+//     ratePerCash,
+//     priceImpact,
+//   };
+
+
+// }; 
 
 
 
@@ -337,7 +385,6 @@ export async function getBondingCurvePrice(
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   const bc_ad = await controller.getZCB_ad(marketId);
   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
-  console.log('bc', bc)
   //const bc = getBondingCurveContract(account, library, marketId) as BondingCurve; 
   const price =  await bc.calculateExpectedPrice(0); 
   const totalsupply = await bc.getTotalZCB(); 
@@ -567,6 +614,16 @@ export async function redeemZCB(
   
 }
 
+export async function getZCBBalances(
+  account :string, 
+  library: Web3Provider, 
+  marketId: string): Promise<string[]>{
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  //controller.getBalnaces(address addr, uint256 marketId); 
+
+  return ["1","1"]; 
+}
+
 
 export async function doZCBTrade(
   account: string, 
@@ -690,6 +747,26 @@ export async function mintRepNFT(
 
   return tx
 }
+export async function approveUtilizer(
+  account:string, 
+  library: Web3Provider, 
+  marketId: string
+  ){
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  await controller.approveMarket(marketId); 
+
+}
+
+export async function canApproveUtilizer(
+  account:string, 
+  library: Web3Provider, 
+  marketId: string 
+  ):Promise<boolean>{
+  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const canApprove =  await marketmanager.marketCondition(marketId)
+  return canApprove; 
+}
+
 
 
 

@@ -105,13 +105,12 @@ contract LinearBondingCurve is BondingCurve {
 
   /**
    @param amount: amount added in 60.18
-   @dev returns price in whatever collateral decimal format.
+   @dev returns price in 60.18
    */
   function _calculateExpectedPrice(uint256 amount) view internal override virtual returns (uint256 result) {
     uint256 s = totalSupply();
 
     result = (s + amount).mulWadDown(a) + b;
-    result = result / (10 ** (18 - collateral_dec));
   }
 
   function _calculateDecreasedPrice(uint256 amount) view internal override virtual returns (uint256 result) {

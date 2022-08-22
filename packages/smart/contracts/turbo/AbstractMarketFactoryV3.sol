@@ -367,16 +367,16 @@ abstract contract AbstractMarketFactoryV3 is ZCBFactory, TurboShareTokenFactory,
         address _settlementAddress,
         uint256[] memory _initialOdds,
         bool _active,
-        OwnedERC20 _zcb
+        OwnedERC20[] memory _zcb
     ) internal returns (uint256 _marketId){
 
         _marketId = markets.length;
-        OwnedERC20[] memory zcb = new OwnedERC20[](2);
-        zcb[0] = _zcb;
+        // OwnedERC20[] memory zcb = new OwnedERC20[](2);
+        // zcb[0] = _zcb;
         markets.push(
             Market(
                 _settlementAddress,
-                zcb,
+                _zcb,
                 OwnedERC20(address(0)),
                 0,
                 settlementFee,

@@ -142,9 +142,22 @@
 
 // positions table
 
+// .PositionRowHeader {
+//   grid-template-columns: repeat(6, 1fr);
+//   min-width: @size-320;
+
+//   @media @breakpoint-mobile-tablet {
+//     grid-template-columns: @size-50 repeat(4, 1fr);
+
+//     > li:nth-of-type(4) {
+//       display: none;
+//     }
+//   }
+// }
 .PositionRowHeader {
-  grid-template-columns: repeat(6, 1fr);
-  min-width: @size-320;
+  grid-template-columns: repeat(3, 1fr);
+  min-width: @size-160;
+ // max-width: @size-320;
 
   @media @breakpoint-mobile-tablet {
     grid-template-columns: @size-50 repeat(4, 1fr);
@@ -154,7 +167,6 @@
     }
   }
 }
-
 .PositionTable {
   .SharedTable;
 }

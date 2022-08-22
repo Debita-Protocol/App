@@ -152,9 +152,10 @@ export const AmountInput = ({
         <TinyThemeButton text="Max" action={setMax} noHighlight />
         {!!currencyName && chosenCash !== SHARES && !showCurrencyDropdown && (
           <span className={Styles.CurrencyLabel}>
-            {icon} {label}
+            {/*icon*/} 
+            {"dbUSDC"}
           </span>
-        )}
+        )} 
         {chosenCash === SHARES && !showCurrencyDropdown && <span className={Styles.SharesLabel}>Shares</span>}
         {showCurrencyDropdown && <CurrencyDropdown defaultValue={chosenCash} onChange={(cash) => updateCash(cash)} />}
       </div>

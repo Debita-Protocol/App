@@ -46,6 +46,13 @@ interface PositionsTableProps {
   positions: PositionBalance[];
   claimableWinnings?: Winnings;
   singleMarket?: boolean;
+
+  la?: string; 
+  sa?: string; 
+  lb?: string; 
+  sb?: string; 
+
+    
 }
 
 const MarketTableHeader = ({
@@ -83,10 +90,13 @@ const PositionHeader = () => {
             owned
           </>
         ) : (
-          "quantity owned"
+          "Token Address"
         )}
       </li>
       <li>
+      Quantity Owned
+      </li>
+     {/* <li>
         {isMobile ? (
           <>
             avg.
@@ -105,7 +115,8 @@ const PositionHeader = () => {
           "Display values might be rounded. Dashes are displayed when liquidity is depleted.",
           "pnltip-positionheader"
         )}
-      </li>
+      </li> */}
+
     </ul>
   );
 };
@@ -113,13 +124,25 @@ const PositionHeader = () => {
 const PositionRow = ({
   position,
   hasLiquidity = true,
+  outcome = 'outcome', 
+  address = "-", 
+  quantity = '1', 
+  averagePricePurchased = "0.9"
 }: {
   position: PositionBalance;
   hasLiquidity: boolean;
   key?: string;
+  outcome: string;
+  quantity: string; 
+  averagePricePurchased:string; 
+  address: string; 
+
 }) => (
   <ul className={Styles.PositionRow}>
-    <li>{position.outcomeName}</li>
+    <li>{outcome} </li>
+    <li>{address} </li>
+    <li>{quantity}</li>
+  {/*  <li>{position.outcomeName}</li>
     <li>{formatSimpleShares(position.quantity).formattedValue}</li>
     <li>{formatSimplePrice(position.avgPrice).full}</li>
     <li>{formatDai(position.initCostUsd).full}</li>
@@ -130,7 +153,7 @@ const PositionRow = ({
       ) : (
         "-"
       )}
-    </li>
+    </li> */}
   </ul>
 );
 
@@ -331,7 +354,10 @@ const applyFiltersAndSort = (passedInPositions, filter, setFilteredMarketPositio
   setFilteredMarketPositions(updatedFilteredPositions);
 };
 
-export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition = true}) => {
+export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition = true, 
+lb="0.1" ,sb="0.1", la="0xx" ,sa="0xx"}) => {
+
+
   const {
     balances: { marketShares },
   }: UserState = useUserStore();
@@ -340,7 +366,6 @@ export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition =
   } = useSimplifiedStore();
   const [filter, setFilter] = useState("");
   const [filteredMarketPositions, setFilteredMarketPositions] = useState([]);
-
   const positions = marketShares 
     ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
         ammExchange: AmmExchange;
@@ -375,6 +400,11 @@ export const AllPositionTable = ({ page, claimableFirst = false, isCDSPosition =
         ammExchange={position.ammExchange}
         positions={position.positions}
         claimableWinnings={position.claimableWinnings}
+
+        la ={la}
+        sa ={sa}
+        lb ={lb}
+        sb ={sb}
       />  
     ) : ( <></>
       /*
@@ -410,6 +440,8 @@ export const PositionTable = ({
   positions,
   claimableWinnings,
   singleMarket,
+  la,sa,lb,sb
+     
 }: PositionsTableProps) => {
   const {
     seenPositionWarnings,
@@ -424,16 +456,24 @@ export const PositionTable = ({
   const seenMarketPositionWarningRemove = seenPositionWarnings && seenPositionWarnings[marketAmmId]?.remove;
   const { hasLiquidity } = ammExchange;
 
+  // const[longQuantity, setLongQuantity] = useState("0"); 
+  // const 
+  // console.log('la,lb', la,sa,lb,sb); 
+  let position; 
   return (
     <>
       <div className={Styles.PositionTable}>
         {!singleMarket && <MarketTableHeader timeFormat={timeFormat} market={market} ammExchange={ammExchange} />}
         <PositionHeader />
-        {positions.length === 0 && <span>No positions to show</span>}
-        {positions &&
+        
+        {/*positions.length === 0 && <span>No positions to show</span>*/}
+        {<PositionRow key={String(0)} position={position} hasLiquidity={hasLiquidity} outcome={"longZCB"} quantity={lb} averagePricePurchased={"0.9"} address={la}/>}
+        {<PositionRow key={String(1)} position={position} hasLiquidity={hasLiquidity} outcome={"shortZCB"} quantity={sb} averagePricePurchased={"0.1"} address={sa}/>}
+
+        {/*{positions &&
           positions
             .filter((p) => p.visible)
-            .map((position, id) => <PositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)}
+            .map((position, id) => <PositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)} */}
         <PositionFooter showTradeButton={!singleMarket} market={market} claimableWinnings={claimableWinnings} />
       </div>
       {!seenMarketPositionWarningAdd &&
@@ -503,6 +543,10 @@ interface PositionsLiquidityViewSwitcherProps {
   setActivity?: Function;
   setTables?: Function;
   claimableFirst?: boolean;
+  lb?: string; 
+  sb?: string; 
+  la?: string; 
+  sa?: string; 
 }
 
 const POSITIONS_LIQUIDITY_LIMIT = 50;
@@ -513,6 +557,9 @@ export const PositionsLiquidityViewSwitcher = ({
   setActivity,
   setTables,
   claimableFirst = false,
+
+  lb,sb,la,sa
+
 }: PositionsLiquidityViewSwitcherProps) => {
   const {
     balances: { lpTokens, marketShares },
@@ -520,7 +567,6 @@ export const PositionsLiquidityViewSwitcher = ({
   const {
     settings: { showResolvedPositions },
   } = useSimplifiedStore();
-
   const { ammExchanges, markets } = useDataStore();
   const marketId = ammExchange?.marketId;
 
@@ -572,7 +618,7 @@ export const PositionsLiquidityViewSwitcher = ({
             [Styles.Selected]: tableView === POSITIONS,
           })}
         >
-          {"CDS Positions"}
+          {"My ZCB Positions"}
         </span>
         <span />
         {showActivityButton && (
@@ -589,7 +635,8 @@ export const PositionsLiquidityViewSwitcher = ({
       {tableView !== null && (
         <div>
           {!marketId && (positions.length > 0 || liquidities.length > 0) && (
-            <>{tableView === POSITIONS && <AllPositionTable page={page} claimableFirst={claimableFirst} />}</>
+            <>{tableView === POSITIONS && <AllPositionTable page={page} claimableFirst={claimableFirst} 
+            lb={lb} sb={sb} la={la} sa={sa}/>}</>
           )} 
           {!marketId &&
             ((positions.length > 0 && tableView === POSITIONS) ||
@@ -614,6 +661,7 @@ export const PositionsLiquidityViewSwitcher = ({
                   ammExchange={ammExchange}
                   positions={userPositions}
                   claimableWinnings={winnings}
+                  lb={lb} sb={sb} la={la} sa={sa}
                 />
               )}
             </>

@@ -22,6 +22,8 @@ import {
   LinearBondingCurve, 
   LinearBondingCurve__factory,
   MarketManager__factory, 
+  LinearShortZCB__factory, 
+  LinearShortZCB
 
 
 } from "../typechain";
@@ -99,6 +101,7 @@ describe("Cycle", ()=>{
     creditline = await CreditLine__factory.deploy(
       vault.address, trader.address, principal, interestAPR, duration, faceValue) as CreditLine;
     rep = (await ethers.getContract("ReputationNFT")) as ReputationNFT; 
+
    // MarketManager__factory = (await ethers.getContractFactory("MarketManager")) as MarketManager__factory; 
    // marketmanager = await MarketManager__factory.deploy(
      // owner.address, vault.address, controller.address) as MarketManager; 
@@ -138,10 +141,10 @@ describe("Cycle", ()=>{
   it("can add proposal and create market", async()=> {
     data.trusted = false; 
     data.balance = pp_.mul(0).toString();
-    data.faceValue = pp_.mul(1100).toString();
+    data.faceValue = pp_.mul(11).toString();
     data.marketId = pp_.mul(0).toString(); 
-    data.principal = pp_.mul(1000).toString();
-    data.expectedYield = pp_.mul(100).toString();
+    data.principal = pp_.mul(10).toString();
+    data.expectedYield = pp_.mul(1).toString();
     data.duration = pp_.mul(10).toString();
     data.description = "test";
     data.Instrument_address = creditline.address;
@@ -438,13 +441,43 @@ describe("Cycle", ()=>{
   // }); 
 
 
- it("can close market and show and add reputation score", async()=>{
+ // it("can close market and show and add reputation score", async()=>{
 
+ //    const marketId = await controller.getMarketId(trader.address);
+ //    const bc_address = await controller.getZCB_ad(marketId);
+ //    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+
+ //    const amount = pp_.mul(30); 
+ //    await collateral.connect(owner).faucet(amount); 
+ //    await collateral.approve(vault.address, amount); 
+ //    await vault.mint(amount.toString(), owner.address);
+
+ //    var vaultBalance = await vault.balanceOf(owner.address);
+ //    console.log('vaultBalance before buying', vaultBalance.toString()); 
+  
+ //    await vault.approve(bc_address, amount); 
+ //    await marketmanager.buy(marketId, vaultBalance);
+
+ //    await controller.resolveMarket(marketId, false, 0, 0); 
+
+ //    //await rep.addScore(owner.address, 100, address to, uint256 score, bool atLoss); 
+ //    await marketmanager.updateReputation(marketId); 
+ //    const rep_score = await rep.getReputationScore(owner.address);
+ //    console.log('repscore', rep_score.toString()); 
+
+ // })
+
+
+  it("can short via shortzcb", async() =>{
+
+    //someone needs to buy first 
     const marketId = await controller.getMarketId(trader.address);
     const bc_address = await controller.getZCB_ad(marketId);
     const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+    const shortzcb_ad = await controller.getshortZCB_ad(marketId);
+    const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
 
-    const amount = pp_.mul(30); 
+    const amount = pp_.mul(5); 
     await collateral.connect(owner).faucet(amount); 
     await collateral.approve(vault.address, amount); 
     await vault.mint(amount.toString(), owner.address);
@@ -452,18 +485,46 @@ describe("Cycle", ()=>{
     var vaultBalance = await vault.balanceOf(owner.address);
     console.log('vaultBalance before buying', vaultBalance.toString()); 
   
-    await vault.approve(bc_address, amount); 
-    await marketmanager.buy(marketId, vaultBalance);
-    
-    await controller.resolveMarket(marketId, false, 0, 0); 
+    await vault.approve(bc_address, amount.div(2)); 
+    await marketmanager.buy(marketId, amount.div(2)); //buy 304
+    const bcsupply = await bc.getTotalZCB(); 
+    const bcCollateralbalance = await bc.getTotalCollateral();
+    const vaultBalanceAterBuy = await vault.balanceOf(owner.address);
+    const currentprice = await bc.calculateExpectedPrice(0); 
 
-    //await rep.addScore(owner.address, 100, address to, uint256 score, bool atLoss); 
-    await marketmanager.updateReputation(marketId); 
-    const rep_score = await rep.getReputationScore(owner.address);
-    console.log('repscore', rep_score.toString()); 
+   // expect(bcCollateralbalance).to.equal(vaultBalance); 
+    console.log('vaultBalacnce after buying', vaultBalanceAterBuy.toString()); 
+    console.log('supply and pooled collateral, ', bcsupply.toString(), bcCollateralbalance.toString()); 
+    console.log('currentprice', currentprice.toString()); 
 
- })
+    const amountgivensell = await sbc.calculateAmountGivenSell(amount.div(20)); 
+    const average_price_sell = await sbc.calculateAveragePrice(amount.div(20));
+    const maxshortamount = await sbc.getMaxShortAmount();
+    console.log('amountgivensell', amountgivensell.toString(), average_price_sell.toString()); 
+    console.log('max short amount', maxshortamount.toString()); 
 
+    await vault.approve(shortzcb_ad, amount); 
+    await marketmanager.sellShort(marketId, amount.div(20)); 
+    const shortzcb_balance = await sbc.balanceOf(owner.address); 
+    const vaultBalanceAfterShort = await vault.balanceOf(owner.address);
+    const sbc_vaultBalance = await vault.balanceOf(shortzcb_ad); 
+    console.log('shortzcb', shortzcb_balance.toString(), vaultBalanceAfterShort.toString(), sbc_vaultBalance.toString()); 
+
+    await controller.denyMarket(marketId); 
+    await marketmanager.shortRedeemDeniedMarket( marketId,  owner.address); 
+    const vaultBalanceAfterRedeem = await vault.balanceOf(owner.address);
+    const sortzcb_balanceAfterRedeem =  await sbc.balanceOf(owner.address);
+    console.log('after redeem',vaultBalanceAfterRedeem.toString(), sortzcb_balanceAfterRedeem.toString() ); 
+   // await sbc.calculateAveragePrice(uint256 amount)
+
+    // await marketmanager.sellShort(marketId, 
+    // uint256 marketId, 
+    // uint256 collateralIn
+
+    // ) 
+
+
+  })
 
 
 })

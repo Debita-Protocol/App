@@ -20,7 +20,8 @@ import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurp
 import { Slippage, Budget} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
-  canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity} = ContractCalls;
+  canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity,
+   getERCBalance} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -97,15 +98,16 @@ const getEnterBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) =>
       tooltipKey: "averagePrice",
     },
     {
-      label: "Estimated ZCB returned",
+      label: "Estimated Tokens returned",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
     {
-      label: "Estimated APR",
+      label: "Estimated Returns",
       value: !isNaN(Number(breakdown?.maxProfit)) ? formatCash(breakdown?.maxProfit || 0, cash?.name).full : "-",
     },
     {
-      label: `Estimated Fees (${cash.name})`,
+      //label: `Estimated Fees (${cash.name})`,
+      label: `Estimated Fees`,
       value: !isNaN(Number(breakdown?.tradeFees)) ? formatCash(breakdown?.tradeFees || 0, cash?.name).full : "-",
     },
   ];
@@ -203,17 +205,27 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const [canRedeem, setCanRedeem] = useState(false);
   const [hedgeQuantity, setHedgeQuantity] = useState("1"); 
   const [traderBudget, setTraderBudget] = useState("1");
-  const userBalance = String(
-    useMemo(() => {
-      return isBuy
-        ? ammCash?.name
-          ? balances[ammCash?.name]?.balance
-          : "0"
-        : marketShares?.outcomeShares
-        ? marketShares?.outcomeShares[selectedOutcomeId]
-        : "0";
-    }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
-  );
+  const [userBalance, setUserBalance] = useState("1"); 
+  // const userBalance = String(
+  //   useMemo(() => {
+  //     return isBuy
+  //       ? ammCash?.name
+  //         ? balances[ammCash?.name]?.balance
+  //         : "0"
+  //       : marketShares?.outcomeShares
+  //       ? marketShares?.outcomeShares[selectedOutcomeId]
+  //       : "0";
+  //   }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
+  // );
+
+  useEffect(async() => {
+        let bal; 
+        const vaultad = "0x8c05D03eff257e7d0E5711F4Ab4cd2277cB9B119"
+        bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
+        console.log('bal', bal.toString()); 
+        setUserBalance(Number(bal.toString())/(10**6)); 
+          
+      }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
   const getbudget = async()=>{
     const b =  await getTraderBudget(account, loginAccount.library); 
@@ -246,6 +258,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     }
     catch (err){console.log("status error", err)
     return;}
+    setBondBreakDown(breakdown); 
 
     // setTraderBudget(budget_); 
 
@@ -460,7 +473,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
           }}
         />
         <div>
-          <span>fee</span>
+          <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
         </div>
         <div

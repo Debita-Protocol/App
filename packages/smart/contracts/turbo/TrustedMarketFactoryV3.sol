@@ -54,15 +54,17 @@ contract TrustedMarketFactoryV3 is AbstractMarketFactoryV3, CalculateLinesToBPoo
     }
     
 
-
     //ZCB markets
       function createZCBMarket(
         address _creator,
         string calldata _description,
-        uint256[] calldata _odds, 
-        OwnedERC20 zcb
+        OwnedERC20[] memory zcb
     ) public  returns (uint256) {
+        uint256[] memory odds = new uint256[](2); //TODO get rid of this 
+        odds[0] = 0;
+        odds[1] = 0; 
+
         marketDetails.push(MarketDetails(_description));
-        return startZCBMarket(_creator, _odds, true, zcb);
+        return startZCBMarket(_creator, odds, true, zcb);
     }
 }

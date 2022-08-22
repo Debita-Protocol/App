@@ -5,11 +5,12 @@ import "../turbo/AMMFactory.sol";
 import "./reputationtoken.sol"; 
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Controller} from "./controller.sol";
+import {OwnedERC20} from "../turbo/OwnedShareToken.sol";
 import "./IMarketManager.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../prb/PRBMathUD60x18.sol";
-
+import {LinearShortZCB} from "../bonds/LinearShortZCB.sol"; 
 
 
 contract MarketManager is Owned {
@@ -258,16 +259,19 @@ contract MarketManager is Owned {
 
 	}
 
+
+	/// @notice amount is greater than 
 	function canSell(
 		address trader,
 		uint256 amount, 
 		uint256 marketId
 	) internal view returns(bool) {
 		require(marketActive(marketId), "Market Not Active"); 
-		bool _duringMarketAssessment = duringMarketAssessment( marketId);
-		if (_duringMarketAssessment){
-			require(isVerified(trader), "User Not Verified");
-		}
+
+		// bool _duringMarketAssessment = duringMarketAssessment( marketId);
+		// if (_duringMarketAssessment){
+		// 	require(isVerified(trader), "User Not Verified");
+		// }
 		return true; 
 	}
 
@@ -364,8 +368,84 @@ contract MarketManager is Owned {
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
 		uint256 amountOut = zcb.trustedSell(msg.sender, _zcb_amount_in);
+		return amountOut; 
 
 	}
+
+
+
+
+
+	///// Shorting logic  /////
+	mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
+	mapping(uint256=>address) shortZCBs; 
+	mapping(uint256=>mapping(address=>uint256) )assessment_shorts; 
+	function add_short_zcb(
+		uint256 marketId,
+		address shortZCB_address
+		) external onlyController{
+		isShortZCB[marketId][shortZCB_address] = true;
+		shortZCBs[marketId] = shortZCB_address;
+
+
+	}
+
+	/// @notice borrow for shorting from shortZCB, no collateral is posted here 
+	/// instead the collateral is stored in the shortZCB contract 
+	function borrow_for_shortZCB(
+		uint256 marketId, 
+		uint256 requested_zcb 
+		) external {
+		require(isShortZCB[marketId][msg.sender], "No");
+		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+
+		CDP storage cdp = debt_pools[marketId];
+		cdp.collateral_amount[msg.sender] += requested_zcb; //the collateral should be stored in the shortZCB
+		cdp.borrowed_amount[msg.sender] += requested_zcb;  
+		cdp.total_debt += requested_zcb; 
+		cdp.total_collateral += requested_zcb; //only ds 
+		collateral_pot[marketId] += requested_zcb; //Total ds collateral 
+
+		zcb.trustedMint(msg.sender, requested_zcb); 
+
+	}
+
+	function sellShort(
+		uint256 marketId, 
+		uint256 collateralIn
+
+		) external {
+		//TODO do can sell 
+		LinearShortZCB(shortZCBs[marketId]).trustedShort(msg.sender, collateralIn); 
+		if (duringMarketAssessment(marketId)){
+			log_assessment_shorts(marketId, msg.sender, collateralIn); 
+		}
+	}
+
+	function log_assessment_shorts(uint256 marketId, address trader, uint256 collateralIn) internal {
+		assessment_shorts[marketId][trader] += collateralIn; 
+	}
+
+	/// @notice called when market is denied 
+	function shortRedeemDeniedMarket(uint256 marketId, address trader) public {
+		require(restriction_data[marketId].marketDenied, "Market Still During Assessment");
+		LinearShortZCB shortZCB = LinearShortZCB(shortZCBs[marketId]);
+
+		uint256 trader_shorts_balance = shortZCB.balanceOf(trader); 
+		shortZCB.trustedBurn( trader,  trader_shorts_balance);
+		 
+		uint256 collateral_amount = assessment_shorts[marketId][trader]; 
+		ERC20 collateral = ERC20(shortZCB.getCollateral()); 
+		collateral.transferFrom(shortZCBs[marketId], trader,collateral_amount ); 
+
+	}
+
+	// function redeemShort() external{
+
+	// }
+
+
+
 
 
 	/* 
@@ -406,6 +486,7 @@ contract MarketManager is Owned {
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId)));
 		address collateral_address = zcb.getCollateral();
 		zcb.trustedBurn(trader, repaying_zcb);
+
 
 		uint256 _collateralOut = repaying_zcb; 
 
@@ -565,5 +646,10 @@ contract MarketManager is Owned {
 	        z = 1;
 	    }
 	}
+
+
+
+
+
 }
 

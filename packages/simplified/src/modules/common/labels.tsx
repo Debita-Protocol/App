@@ -47,13 +47,14 @@ export const AppViewStats = ({ small = false, liquidity = false, trading = false
       ),
     [isLogged, balances?.totalPositionUsd]
   );
-  const usdValueUSDC = useMemo(() => handleValue(balances?.USDC?.usdValue || 0), [balances?.USDC?.usdValue]);
-  const usdValueLP = useMemo(() => handleValue(balances?.totalCurrentLiquidityUsd || 0), [
+  const usdValueUSDC = useMemo(() => handleValue(balances?.USDC?.usdValue/100000 || 0), [balances?.USDC?.usdValue]);
+  const usdValueLP = useMemo(() => handleValue(balances?.USDC?.usdValue/300000 || 0), [
     balances?.totalCurrentLiquidityUsd,
   ]);
 
-  const verified = false
-  const reputation = 1
+
+  const verified = false; 
+  const reputation = 1;
   var isVerified = verified ? "True": "False"
   if (!verified){
     isVerified = isVerified + " --"
@@ -64,12 +65,12 @@ export const AppViewStats = ({ small = false, liquidity = false, trading = false
 
   return (
     <div className={classNames(Styles.AppStats, { [Styles.small]: small, [Styles.full]: liquidity && trading, [Styles.LPOnly]: liquidity && !trading })}>
-      <ValueLabel large={!small} label="total acc value" light={!isLogged} value={totalAccountValue} small={small} />
+      <ValueLabel large={!small} label="Current Vault APR" light={!isLogged} value={"13%"} small={small} />
       {trading && (
-        <ValueLabel large={!small} label="total positions value" light={!isLogged} value={positionsValue} small={small} />
+        <ValueLabel large={!small} label="My USDC Vault" light={!isLogged} value={usdValueUSDC} small={small} />
       )}
       {/*{liquidity && <ValueLabel large={!small} small={small} label="Liquidity Positions" value={usdValueLP} />} */}
-      <ValueLabel large={!small} small={small} label="Available USDC" value={usdValueUSDC} />
+      <ValueLabel large={!small} small={small} label="My Bond Positions" value={usdValueLP} />
 
       <ValueLabel large={!small} small={small} label="Is Verified/REPU Score" value={isVerified} />
 

@@ -43,7 +43,8 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral, redeemZCB} = ContractCalls; 
+const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral, redeemZCB, getZCBBalances, approveUtilizer, 
+canApproveUtilizer} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -166,7 +167,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
   // console.log('amm', amm, amm?.ammOutcomes)
   const longZCBTokenAddress = market?.shareTokens[0]; 
-
+  const shortZCBTokenAddress = market?.shareTokens[1]; 
+  const [longBalance, setLongBalance] = useState("0");
+  const [shortBalance, setShortBalance] = useState("0"); 
   const {
       account,
       loginAccount,
@@ -178,12 +181,16 @@ const MarketView = ({ defaultMarket = null }) => {
     let stored ;
     let instrument;
     let tc; 
+    let bal; 
 
       try{
       //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
       stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
       instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
       tc = await getTotalCollateral(account, loginAccount.library, String(market.amm.turboId)); 
+      bal = await getZCBBalances( account, loginAccount.library, String(market.amm.turboId)); 
+     // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))
+  
      // console.log('instruments', instrument); 
     }
     catch (err){console.log("status error", err)
@@ -194,7 +201,8 @@ const MarketView = ({ defaultMarket = null }) => {
     const dur = Number(instrument.duration.toString())/1000000; 
     setDuration(String(dur)); 
     setTotalCollateral(tc); 
-
+    setLongBalance(bal[0]); 
+    setShortBalance(bal[1]); 
   });
 
   useEffect(() => {
@@ -234,18 +242,23 @@ const MarketView = ({ defaultMarket = null }) => {
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = isMarketFinal(market);
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
-  // principal: string= "10", 
-  // expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
-  // duration: string = "100", 
-  // description: string= "Test Description", 
+
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
         console.log('Trading Error', error)
       }); 
   }
-
-
+  const approve_utilizer = ()=>{
+    approveUtilizer(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
+      console.log('tradingresponse', response)}).catch((error)=>{
+        console.log('Trading Error', error)
+      }); 
+  }
+  const canbeApproved = true; 
+  const utilizer_description = "Assess whether x DAO is creditworthy ";
+  const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "name, with a linear bonding curve AMM." +
+   " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
   return (
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={description} ogTitle={description} twitterTitle={description} />
@@ -267,7 +280,7 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Instrument Details</h4>
+          <h4>Instrument Overview</h4>
           {details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))}
@@ -278,9 +291,9 @@ const MarketView = ({ defaultMarket = null }) => {
           )}
           {details.length === 0 && 
            <div>
-           <p>ZCB Address</p> 
-           <span> {longZCBTokenAddress} </span>
-           <p>however it is good</p> </div>}
+         { /* <p>ZCB Address</p> 
+          <span> {longZCBTokenAddress} </span> */}
+           <p>{utilizer_description}</p> </div>}
         </div>
 
         <ul className={Styles.StatsRow}>
@@ -292,7 +305,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>ZCB Start Price </span>
-            <span>{formatDai(principal/5/1000000 || "0.00").full}</span>
+            <span>{formatDai(0.818 || "0.00").full}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -352,14 +365,15 @@ const MarketView = ({ defaultMarket = null }) => {
           marketFactoryType={amm?.market?.marketFactoryType}
         />
         <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />*/}
-        <PositionsLiquidityViewSwitcher ammExchange={amm} /> 
+        <PositionsLiquidityViewSwitcher ammExchange={amm} 
+        lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> 
 
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Instrument Details</h4>
+          <h4>Market Details</h4>
           {details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))}
@@ -368,11 +382,12 @@ const MarketView = ({ defaultMarket = null }) => {
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
           )}
-          {details.length === 0 && <p>There are no additional details for this Market.</p>}
+          {details.length === 0 && <p>{description1}</p>}
+
         </div>
         <div className={Styles.TransactionsTable}>
-          <span>Activity</span>
-          <TransactionsTable transactions={marketTransactions} />
+         {/* <span>Activity</span>
+          <TransactionsTable transactions={marketTransactions} /> */}
         </div>
         <SecondaryThemeButton
           text="Buy / Sell"
@@ -391,7 +406,11 @@ const MarketView = ({ defaultMarket = null }) => {
           action={redeem}
           customClass={ButtonStyles.BuySellButton}
         />}
-
+        { (!(isFinalized && winningOutcome ) && canbeApproved)&& <SecondaryThemeButton
+          text="Approve Utilizer"
+          action={approve_utilizer}
+          customClass={ButtonStyles.TinyTransparentButton}
+        />}
         {/*<TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> */}
       </section>
     </div>
