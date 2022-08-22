@@ -30,7 +30,7 @@ import {
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
-import { addresses, DS } from "@augurproject/smart";
+import { AbstractMarketFactoryV3__factory, addresses, DS, LinearBondingCurve__factory } from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -150,6 +150,8 @@ const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalP
 export async function setupContracts (account: string, library: Web3Provider) {
 
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account));
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   // let tx = await controller.setMarketManager(MM_address);
   // tx.wait()
   // tx = await controller.setVault(Vault_address);
@@ -183,13 +185,40 @@ export async function setupContracts (account: string, library: Web3Provider) {
   // console.log("ZCB address: ", tx);
 
   // console.log("setup success")
-  // const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
-  // let tx = await marketmanager.buy(1, "900000"); 
-  // tx.wait()
-  // console.log("setup success")
+  const marketManager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  let id = 4;
+  let data = await marketManager.restriction_data(id);
+  
+  console.log("data", data);
+  
+  const marketFactory = AbstractMarketFactoryV3__factory.connect(marketFactoryAddress, getProviderOrSigner(library,account));
 
-  let MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
-  MM.buy(4, )
+  let zcb_addr = await controller.getZCB_ad(id);
+  // await controller.verifyAddress(1, 1, [1,1,1,1,1,1,1,1]);
+  
+  let market_data = await marketFactory.getZCBMarket(id);
+
+
+  console.log("verified: ", await controller.isVerified(account));
+  
+  console.log("market data: ", market_data);
+  let amount = "9000000";
+
+  // let tx = await controller.approveMarket(id);
+  // tx.wait(3);
+
+  data = await marketManager.restriction_data(id);
+  console.log("data2", data);
+  // await vault.approve(zcb_addr, amount);
+ 
+  // let tx = await marketManager.buy(id, amount).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
+  // tx.wait(3);
+  console.log("setup success")
+
+  // let MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
 }
 
 // NEW STUFF BELOW
@@ -207,6 +236,13 @@ interface InstrumentData_ {
   instrument_type: string;
   maturityDate: string;
 }; 
+
+export async function getMarketData(
+  account: string,
+  loginAccount: Web3Provider
+) {
+  
+}
 
 // export async function getAddresses()
 
@@ -339,11 +375,21 @@ export async function getInstrumentData_(
 
 export async function getTraderBudget(
   account: string,
-  library: Web3Provider
+  library: Web3Provider,
+  marketId: string
 ): Promise<string>{
   const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
-  const budget = await marketmanager.getTraderBudget(account); 
+  const budget = await marketmanager.getTraderBudget(marketId, account); 
   return budget.toString(); 
+}
+
+export async function getMarketId(
+  account: string,
+  library: Web3Provider
+): Promise<string> {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account));
+  let id = await controller.ad_to_id(account);
+  return id.toString();
 }
 
 export async function getHedgeQuantity(
@@ -544,15 +590,15 @@ export const checkInstrumentStatus = async (
 export async function borrow_from_creditline(
   account: string,
   library: Web3Provider,
-  marketId: string, // decimal format
+  instrument_address:string,
   amount: string //decimal format
 ) : Promise<TransactionResponse> {
-  const instrument = await getInstrument(account, library);  
+  let creditLine = CreditLine__factory.connect(instrument_address, getProviderOrSigner(library, account));
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
   
   const drawdownAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
-  const tx =  await instrument.drawdown(drawdownAmount); 
+  const tx =  await creditLine.drawdown(drawdownAmount); 
   return tx; 
 
 }
@@ -560,15 +606,12 @@ export async function borrow_from_creditline(
 export async function repay_to_creditline(
   account: string,
   library: Web3Provider,
-  marketId: string, // decimal format
+  instrument_address: string, // decimal format
   amount: string,  //decimal format
   interest: string
 ) : Promise<TransactionResponse> {
-  const instrument = await getInstrument(account, library);  
+  let creditLine = CreditLine__factory.connect(instrument_address, getProviderOrSigner(library, account));
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
-
-  // approving collateral transfer to creditline from account
-  collateral.approve(instrument.address, amount);
 
   const decimals = await collateral.decimals()
   
@@ -577,10 +620,11 @@ export async function repay_to_creditline(
 
   const totalAmount = new BN(repayAmount).plus(repayInterest).toString();
 
-  let tx = await collateral.approve(instrument.address, totalAmount);
+  let tx = await collateral.approve(instrument_address, totalAmount);
   tx.wait();
 
-  tx =  await instrument.repay(repayAmount, repayInterest); 
+  tx =  await creditLine.repay(repayAmount, repayInterest);
+  tx.wait();
   return tx; 
 }
 
@@ -593,20 +637,47 @@ export async function mintVaultDS(
   shares_amount: string = "0",  
   not_faucet: boolean = false
 ) {
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const collateral = Cash__factory.connect(collateral_address, library.getSigner(account));
   const decimals = await collateral.decimals()
-  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const vault = Vault__factory.connect(Vault_address, library.getSigner(account)); 
   const amount = not_faucet? new BN(shares_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
   console.log('mintamount', amount); 
-  let tx = await collateral.approve(Vault_address, amount); 
+
+  console.log((await collateral.callStatic.increaseAllowance(Vault_address, amount)));
+  let tx = await collateral.increaseAllowance(Vault_address, amount).catch(
+    (e) => {
+      console.error("allowance error", e);
+      throw e;
+    }
+  );; 
   tx.wait(1);
+  console.log("tx: ", tx);
 
-  const asset = await vault.asset(); 
+  let allowance = await collateral.allowance(account, Vault_address);
+  console.log("allowance: ", allowance.toString());
 
-  console.log('asset', asset, collateral_address); 
- // await vault.mint(amount, account); 
+  console.log("desposit result: ", (await vault.callStatic.deposit(amount, account)).toString());
   let tx2 = await vault.deposit(amount, account);
-  tx2.wait();
+  tx2.wait(6);
+  const balance = await vault.balanceOf(account);
+  console.log("VT balance: ", balance.toString())
+
+  // tx = await collateral.increaseAllowance(Vault_address, amount).catch(
+  //   (e) => {
+  //     console.error("allowance error", e);
+  //     throw e;
+  //   }
+  // );
+  // tx.wait();
+
+  // allowance = await collateral.allowance(account, Vault_address);
+  // console.log("allowance2: ", allowance.toString());
+
+  // const asset = await vault.asset(); 
+
+  // console.log('asset', asset, collateral_address); 
+  // await vault.mint(amount, account);
+  
 } 
 
 export async function redeemVaultDS(

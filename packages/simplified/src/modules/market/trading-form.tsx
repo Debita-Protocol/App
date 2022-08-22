@@ -20,7 +20,7 @@ import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurp
 import { Slippage, Budget} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
-  canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity} = ContractCalls;
+  canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity, getMarketId} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -216,7 +216,8 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   );
 
   const getbudget = async()=>{
-    const b =  await getTraderBudget(account, loginAccount.library); 
+    const id = await getMarketId(account, loginAccount.library);
+    const b =  await getTraderBudget(account, loginAccount.library, id); 
     const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
     setTraderBudget(Number(b)/1000000); 
     setHedgeQuantity(Number(h)/1000000);

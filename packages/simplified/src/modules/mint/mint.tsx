@@ -103,7 +103,7 @@ const MintView= () => {
 
   const getBalance = useCallback(async () => {
     let result = await getVaultTokenBalance(account, loginAccount.library);
-    console.log("balance: ", result);
+    //console.log("balance: ", result);
     setBalance(result);
   });
 
@@ -133,7 +133,7 @@ const MintView= () => {
 
      <div className = {styleMint.wrapper}>  
         <div className = {formStyles.MintForm}>
-          <div style={{'font-weight':'750', 'display':'flex', 'justify-content':'center', 'font-size':'20px'}}>
+          <div style={{'fontWeight':'750', 'display':'flex', 'justifyContent':'center', 'fontSize':'20px'}}>
             Mint DS for USDC
           </div>
           <ValueLabel large={true} label="Vault Token Balance" value={balance} />

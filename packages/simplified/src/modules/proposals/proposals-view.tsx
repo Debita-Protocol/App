@@ -7,11 +7,11 @@ import Styles from "./proposals-view.styles.less"
 
 const proposal_types = [
     {
-        title: "Credit Line",
+        title: "Uncollateralized Loans",
         path: "creditline"
     },
     {
-        title: "Other Instrument",
+        title: "Strategies",
         path: "other"
     }
 ]

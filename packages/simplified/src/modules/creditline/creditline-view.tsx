@@ -70,10 +70,11 @@ const CreditLineView = () => {
         }
     },[account, loginAccount])
     
-    const _borrow = useCallback(async () => {
+    const _borrow = useCallback(async (e) => {
+        e.preventDefault();
         if (parseInt(instrument.marketID) !== 0) {
             try {
-                const tx = await borrow_from_creditline(account, loginAccount.library, instrument.marketId, borrowAmount)
+                const tx = await borrow_from_creditline(account, loginAccount.library, instrument.Instrument_address, borrowAmount)
                 tx.wait()
                 console.log("success borrowing amount: ", borrowAmount) 
             } catch (err) {
@@ -85,7 +86,7 @@ const CreditLineView = () => {
     const _repay = useCallback(async () => {
         if (parseInt(instrument.marketID) !== 0) {
             try {
-                const tx = await repay_to_creditline(account, loginAccount.library, instrument.marketId, repayPrincipal, repayInterest)
+                const tx = await repay_to_creditline(account, loginAccount.library, instrument.Instrument_address, repayPrincipal, repayInterest)
                 tx.wait()
                 console.log("success repay principal: ", repayPrincipal)
                 console.log("success repay interest: ", repayInterest) 
