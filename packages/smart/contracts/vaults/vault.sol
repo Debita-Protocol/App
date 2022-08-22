@@ -9,7 +9,7 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 import {ERC20} from "./tokens/ERC20.sol";
 import {Instrument} from "./instrument.sol";
-import {Controller} from "../stablecoin/controller.sol";
+import {Controller} from "../protocol/controller.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 

@@ -6,7 +6,7 @@ import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinearBondingCurve} from "./LinearBondingCurve.sol"; 
-import {MarketManager} from "../stablecoin/marketmanager.sol"; 
+import {MarketManager} from "../protocol/marketmanager.sol"; 
 
 /// @notice this contract allows tokenized short positions at a price 1-zcb
 /// 1 shortZCB is a representation of borrowing+ selling 1 longZCB  
@@ -101,9 +101,7 @@ contract LinearShortZCB is OwnedERC20{
    	
 	console.log('cprime', cprime, c); 
 
-   	return ((c -cprime), cprime); 
-
-
+   	return ((c - cprime), cprime); 
   }
 
 	/// @notice called from the marketmanager 

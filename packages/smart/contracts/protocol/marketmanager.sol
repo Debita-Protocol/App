@@ -6,7 +6,6 @@ import "./reputationtoken.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Controller} from "./controller.sol";
 import {OwnedERC20} from "../turbo/OwnedShareToken.sol";
-import "./IMarketManager.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../prb/PRBMathUD60x18.sol";
@@ -24,12 +23,11 @@ contract MarketManager is Owned {
 	Misc. 
 		a) To avoid securitization, enforce selling Fee  
 	*/
-	using PRBMathUD60x18 for uint256;
 
     uint256 private constant PRICE_PRECISION = 1e6; 
 
 	ReputationNFT rep;
-  Controller controller;
+  	Controller controller;
 
   	mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
   	mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
@@ -172,11 +170,6 @@ contract MarketManager is Owned {
 		
 	}
 
-	//TODO Need to find out if the given market has enough (liquidity-required liq)
-	function exposureSet(address trader, address ammFactoryAddress, address marketId) internal view returns(bool){
-		return true; 
-	}
-
 	function marketActive(uint256 marketId) public view returns(bool){
 		return restriction_data[marketId].alive; 
 	}
@@ -272,10 +265,10 @@ contract MarketManager is Owned {
 	) internal view returns(bool) {
 		require(marketActive(marketId), "Market Not Active"); 
 
-		// bool _duringMarketAssessment = duringMarketAssessment( marketId);
-		// if (_duringMarketAssessment){
-		// 	require(isVerified(trader), "User Not Verified");
-		// }
+		bool _duringMarketAssessment = duringMarketAssessment( marketId);
+		if (_duringMarketAssessment){
+			require(isVerified(trader), "User Not Verified");
+		}
 		return true; 
 	}
 

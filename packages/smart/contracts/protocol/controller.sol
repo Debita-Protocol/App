@@ -276,7 +276,7 @@ contract Controller {
   Market is denied by validator or automatically if conditions are not met 
   */
   function denyMarket(
-      uint256 marketId
+    uint256 marketId
   ) external  onlyValidator {
     marketManager.denyMarket(marketId);
     
