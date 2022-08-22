@@ -179,14 +179,17 @@ export async function setupContracts (account: string, library: Web3Provider) {
   //   throw e;
   // }); 
   
-  let tx = await controller.getZCB_ad(1);
-  console.log("ZCB address: ", tx);
+  // let tx = await controller.getZCB_ad(1);
+  // console.log("ZCB address: ", tx);
 
-  console.log("setup success")
+  // console.log("setup success")
   // const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
   // let tx = await marketmanager.buy(1, "900000"); 
   // tx.wait()
   // console.log("setup success")
+
+  let MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  MM.buy(4, )
 }
 
 // NEW STUFF BELOW
@@ -595,12 +598,15 @@ export async function mintVaultDS(
   const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
   const amount = not_faucet? new BN(shares_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
   console.log('mintamount', amount); 
-  await collateral.approve(Vault_address, amount); 
+  let tx = await collateral.approve(Vault_address, amount); 
+  tx.wait(1);
 
   const asset = await vault.asset(); 
+
   console.log('asset', asset, collateral_address); 
  // await vault.mint(amount, account); 
-  await vault.deposit(amount, account);
+  let tx2 = await vault.deposit(amount, account);
+  tx2.wait();
 } 
 
 export async function redeemVaultDS(
@@ -617,6 +623,18 @@ export async function redeemVaultDS(
   const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
   await vault.redeem(amount, account, account); 
 
+}
+
+export async function getVaultTokenBalance(
+  account: string,
+  library: Web3Provider
+): Promise<string> {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+
+  let amount = await vault.balanceOf(account);
+  return new BN(amount.toString()).div(10**(decimals)).toString();
 }
 
 export async function redeemZCB(

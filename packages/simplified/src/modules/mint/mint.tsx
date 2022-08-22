@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import Styles from "../markets/markets-view.styles.less";
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
@@ -26,6 +26,7 @@ import buttonStyles from "../common/buttons.styles.less";
 import inputStyles from "../common/inputs.styles.less";
 import formStyles from "../market/trading-form.styles.less";
 import { FailedX } from "@augurproject/comps/build/components/common/icons";
+import { ValueLabel } from "@augurproject/comps/build/components/common/labels";
 // import { RiSettings3Fill } from 'react-icons/ri'
 
 
@@ -57,7 +58,7 @@ const {
   TWENTY_FOUR_HOUR_VOLUME,
   SPORTS,
 } = Constants;
-const { mintVaultDS } = ContractCalls; 
+const { mintVaultDS, getVaultTokenBalance } = ContractCalls; 
 
 const PAGE_LIMIT = 21;
 const MIN_LIQUIDITY_AMOUNT = 1;
@@ -94,17 +95,28 @@ const MintView= () => {
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
+  const [ balance, setBalance ] = useState("0.0");
 
-  const handleSubmit = async (e: any) => {
-    await mintVaultDS(account, loginAccount.library, amount);
+  const handleSubmit = async (e: any) => { 
+    await mintVaultDS(account, loginAccount.library, amount, true);
   }
+
+  const getBalance = useCallback(async () => {
+    let result = await getVaultTokenBalance(account, loginAccount.library);
+    console.log("balance: ", result);
+    setBalance(result);
+  });
+
+  useEffect(() => {
+    if (account && loginAccount.library) {
+      getBalance();
+    }
+  }, [account, loginAccount])
 
   useScrollToTopOnMount(page);
   // console.log('UI markets', markets)
 
   let changedFilters = 0;
-
-
 
   return (
     <div
@@ -118,13 +130,13 @@ const MintView= () => {
 
       </ul>
  
- 
 
      <div className = {styleMint.wrapper}>  
         <div className = {formStyles.MintForm}>
           <div style={{'font-weight':'750', 'display':'flex', 'justify-content':'center', 'font-size':'20px'}}>
             Mint DS for USDC
           </div>
+          <ValueLabel large={true} label="Vault Token Balance" value={balance} />
           <div style={{ 'padding-left': '1.5rem', 'padding-right': '1.5rem' }}>
           <div className={inputStyles.AmountInput}>
             <div className={inputStyles.AmountInputField}>

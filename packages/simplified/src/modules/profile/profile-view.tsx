@@ -138,12 +138,18 @@ const ProfileView = () => {
                 }
             </div>
             <section>
-                <InstrumentCard
+                {instrument.marketId !== "" ? (
+                    <InstrumentCard
                     isLink={isLink}
                     path={path}
                     query={query}
                     instrument={instrument}
                 />
+                ) : (
+                    <div>
+                        No Instrument Found ...
+                    </div>
+                )}
             </section>
         </>
     )
