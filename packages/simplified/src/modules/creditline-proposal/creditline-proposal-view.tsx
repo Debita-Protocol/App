@@ -24,7 +24,6 @@ import { DropdownProps } from "@augurproject/comps/build/components/common/selec
 // ALL CURRENCY ADDRESSES ARE JUST USDC
 import { CURRENCY_ADDRESSES } from "../constants";
 import { utils } from "ethers";
-import { LendingPool__factory} from "@augurproject/smart"
 
 
 
@@ -174,8 +173,9 @@ const CreditLineRequestForm = () => {
         instrument_address
       )
       console.log("PROPOSAL ADDED")
-      await tx.wait(1);
       reset();
+      await tx.wait();
+      
     }
   })
 

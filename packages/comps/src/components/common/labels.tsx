@@ -67,7 +67,7 @@ interface CategoriesProps {
 
 export const CategoryLabel = ({ categories, big = false }: CategoriesProps) => (
   <div data-big={big} className={Styles.CategoryLabel}>
-    {'Discretionary Loan'}
+    {'Isolated Lending'}
     {/*{!!categories[2] ? categories[2] : !!categories[1] ? categories[1] : categories[0]}*/}
   </div>
 );

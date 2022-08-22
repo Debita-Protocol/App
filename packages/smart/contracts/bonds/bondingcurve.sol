@@ -68,10 +68,10 @@ abstract contract BondingCurve is OwnedERC20 {
 		uint256 collateral_out = _calculateSaleReturn(zcb_amount);
 		console.log("colalteralout", collateral_out); 
 		_burn(trader, zcb_amount);
-		console.log('here');
+		console.log('here', zcb_amount);
 
 		collateral.safeTransfer(trader, collateral_out);
-		console.log('here2');
+		console.log('here2', collateral_out);
 
 		reserves -= collateral_out;
 		console.log('here3');

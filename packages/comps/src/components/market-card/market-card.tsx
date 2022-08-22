@@ -187,6 +187,20 @@ export const MarketCardView = ({
   );
   const extraOutcomes = amm?.ammOutcomes?.length - 3;
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
+
+  console.log('marketidhere', amm?.turboId); 
+
+  //Example Types 
+  const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation"]; 
+  const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot" ];
+  const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions"] 
+  const marketisApproved = ["False", "False", "True", "False", "True", "True"]; 
+  const principals = ["1000$", "3000$", "2500$","1400$", "4200$", "500$"]; 
+  const aprs = ["100$", "120$","150$", "320$", "210$", "80$"]; 
+  const durations = ["120 days", "1 Year", "30days", "60days", "1 Year", "10 days"]; 
+
+
+
   return (
     <article
       className={classNames(Styles.MarketCard, {
@@ -209,7 +223,7 @@ export const MarketCardView = ({
               <TinyThemeButton
                 customClass={Styles.NoLiquidityPill}
                 action={() => {}}
-                text={"Discretionary Loan"}
+                text={types[amm?.turboId-1]}
                 disabled
               />)}
 
@@ -234,15 +248,22 @@ export const MarketCardView = ({
           </div> */}
     <div>
             {(
-              <ValueLabel label="Is Approved" value={formattedApy || "False"} />
+              <ValueLabel label="Is Approved" value={marketisApproved[amm?.turboId-1]} />
             )}
           </div>
 
         </article>
         <section>
-          <MarketTitleArea {...{ ...market, timeFormat }} />
-          <ValueLabel label="Success Probability" value={formattedVol || "-"} />
-          <ValueLabel label="Yield APR" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
+          {/*<MarketTitleArea {...{ ...market, timeFormat }} /> */}
+          <MarketTitleArea title={titles[amm?.turboId-1]} description={descriptions[amm?.turboId-1]} />
+
+          <ValueLabel label="Principal" value={principals[amm?.turboId-1] || "-"} />
+          <ValueLabel label="Projected Return" value={aprs[amm?.turboId-1] || "-"} />
+          <ValueLabel label="Term" value={durations[amm?.turboId-1] || "-"} />
+
+    { /*     <ValueLabel label="Projected Yield" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
+          <ValueLabel label="Term" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} /> */}
+
           <OutcomesTable {...{ amm }} />
           {!hasWinner && extraOutcomes > 0 && (
             <span className={Styles.ExtraOutcomes}>{`+ ${extraOutcomes} more Outcomes`}</span>

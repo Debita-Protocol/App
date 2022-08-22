@@ -30,7 +30,7 @@ import {
 } from "../types";
 import { ethers } from "ethers";
 import { Contract } from "@ethersproject/contracts";
-import { addresses, DS } from "@augurproject/smart";
+import { AbstractMarketFactoryV3__factory, addresses, DS, LinearBondingCurve__factory } from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -148,8 +148,78 @@ const { parseBytes32String, formatBytes32String } = utils;
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 // ONLY FOR TESTING.
-export async function setupContracts (account: string, provider: Web3Provider) {
+export async function setupContracts (account: string, library: Web3Provider) {
 
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account));
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  // let tx = await controller.setMarketManager(MM_address);
+  // tx.wait()
+  // tx = await controller.setVault(Vault_address);
+  // tx.wait()
+  // tx = await controller.setMarketFactory(marketFactoryAddress);
+  // tx.wait()
+  // tx = await controller.setReputationNFT(RepNFT_address);
+  // tx.wait()
+  
+  // let data = {} as InstrumentData_; 
+  // data.balance = String(0);
+  // data.Instrument_address = sample_instument_address;
+  // data.principal = "1000000"; //new BN(1000000).toString()
+  // data.expectedYield = "100000"; //new BN(100000).toString()
+  // data.duration = "1000000"; //new BN(1000000).toString()
+  // data.description = "a description of the instrument"
+  // data.faceValue = "1100000"; //new BN(1100000).toString()
+  // data.instrument_type = String(0)
+  // data.maturityDate = String(0)
+  // data.balance = String(0)
+  // data.trusted = false;
+  // data.marketId = "0";
+  // console.log(data);
+
+  // const tx2 = await controller.initiateMarket(account, data).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // }); 
+  
+  // let tx = await controller.getZCB_ad(1);
+  // console.log("ZCB address: ", tx);
+
+  // console.log("setup success")
+  const marketManager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  let id = 4;
+  let data = await marketManager.restriction_data(id);
+  
+  console.log("data", data);
+  
+  const marketFactory = AbstractMarketFactoryV3__factory.connect(marketFactoryAddress, getProviderOrSigner(library,account));
+
+  let zcb_addr = await controller.getZCB_ad(id);
+  // await controller.verifyAddress(1, 1, [1,1,1,1,1,1,1,1]);
+  
+  let market_data = await marketFactory.getZCBMarket(id);
+
+
+  console.log("verified: ", await controller.isVerified(account));
+  
+  console.log("market data: ", market_data);
+  let amount = "9000000";
+
+  // let tx = await controller.approveMarket(id);
+  // tx.wait(3);
+
+  data = await marketManager.restriction_data(id);
+  console.log("data2", data);
+  // await vault.approve(zcb_addr, amount);
+ 
+  // let tx = await marketManager.buy(id, amount).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
+  // tx.wait(3);
+  console.log("setup success")
+
+  // let MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
 }
 
 // NEW STUFF BELOW
@@ -165,7 +235,15 @@ interface InstrumentData_ {
   description: string; 
   Instrument_address: string; 
   instrument_type: string;
+  maturityDate: string;
 }; 
+
+export async function getMarketData(
+  account: string,
+  loginAccount: Web3Provider
+) {
+  
+}
 
 // export async function getAddresses()
 
@@ -345,11 +423,21 @@ export async function getInstrumentData_(
 
 export async function getTraderBudget(
   account: string,
-  library: Web3Provider
+  library: Web3Provider,
+  marketId: string
 ): Promise<string>{
   const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
-  const budget = await marketmanager.getTraderBudget(account); 
+  const budget = await marketmanager.getTraderBudget(marketId, account); 
   return budget.toString(); 
+}
+
+export async function getMarketId(
+  account: string,
+  library: Web3Provider
+): Promise<string> {
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account));
+  let id = await controller.ad_to_id(account);
+  return id.toString();
 }
 
 export async function getHedgeQuantity(
@@ -422,7 +510,8 @@ export async function addProposal(  // calls initiate market
   expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
   description: string= "Test Description", 
-  Instrument_address: string = controller_address//need to have been created before 
+  Instrument_address: string = controller_address, //need to have been created before
+  instrument_type: string = "0"
   ): Promise<TransactionResponse>{
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   console.log('here', controller_address, account)
@@ -441,12 +530,13 @@ export async function addProposal(  // calls initiate market
   data.balance = new BN(0).toFixed(); 
   data.faceValue = new BN(faceValue).shiftedBy(decimals).toFixed(); 
   data.marketId = new BN(0).toFixed(); 
-  data.principal =new BN(principal).shiftedBy(decimals).toFixed(); 
+  data.principal = new BN(principal).shiftedBy(decimals).toFixed(); 
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
-  data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
-  data.description = description; 
-  data.Instrument_address = sample_instument_address;
-  data.instrument_type = String(0); 
+  data.duration = new BN(duration).toString(); 
+  data.description = description;
+  data.Instrument_address = Instrument_address; //sample_instument_address;
+  data.instrument_type = instrument_type;
+  data.maturityDate = String(0);
   const id = await controller.getMarketId(account); 
   console.log('id', id, data); 
   // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
@@ -487,6 +577,15 @@ export const getInstrument = async(
   return Instrument__factory.connect(Instrument_address, getProviderOrSigner(library, account));
 }; 
 
+export const vaultHarvest = async (
+  account: string,
+  library: Web3Provider,
+  instrument_address: string
+): Promise<TransactionResponse> => {
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  return vault.harvest(instrument_address);
+}
+
 export const getFormattedInstrumentData = async (
   account:string,
   library: Web3Provider
@@ -496,7 +595,7 @@ export const getFormattedInstrumentData = async (
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
   const marketId = await controller.getMarketId(account); 
-  let data = await vault.fetchInstrumentData( marketId);
+  let data = await vault.fetchInstrumentData(marketId);
 
   let result = {
     trusted: false,
@@ -508,7 +607,8 @@ export const getFormattedInstrumentData = async (
     duration: "",
     description: "",
     Instrument_address: "",
-    instrument_type: ""
+    instrument_type: "",
+    maturityDate: ""
   }
   result.trusted = data.trusted;
   result.Instrument_address = data.Instrument_address
@@ -520,31 +620,32 @@ export const getFormattedInstrumentData = async (
   result.principal = new BN(data.principal.toString()).div(10**decimals).toString()
   result.expectedYield = new BN(data.expectedYield.toString()).div(10**decimals).toString()
   result.duration = data.duration.toString()
+  result.maturityDate = data.maturityDate.toString()
   return result;
 }
 
 export const checkInstrumentStatus = async (
   account: string,
   library: Web3Provider,
-  instrument_address: string
+  marketId: string
 ): Promise<TransactionResponse> => {
-  const instrument = Instrument__factory.connect(instrument_address, getProviderOrSigner(library, account))
-  const tx = instrument.checkStatus()
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account)); 
+  const tx = vault.checkInstrument(marketId)
   return tx;
 }
 
 export async function borrow_from_creditline(
   account: string,
   library: Web3Provider,
-  marketId: string, // decimal format
+  instrument_address:string,
   amount: string //decimal format
 ) : Promise<TransactionResponse> {
-  const instrument = await getInstrument(account, library);  
+  let creditLine = CreditLine__factory.connect(instrument_address, getProviderOrSigner(library, account));
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
   
   const drawdownAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
-  const tx =  await instrument.drawdown(drawdownAmount); 
+  const tx =  await creditLine.drawdown(drawdownAmount); 
   return tx; 
 
 }
@@ -552,17 +653,25 @@ export async function borrow_from_creditline(
 export async function repay_to_creditline(
   account: string,
   library: Web3Provider,
-  marketId: string, // decimal format
+  instrument_address: string, // decimal format
   amount: string,  //decimal format
   interest: string
 ) : Promise<TransactionResponse> {
-  const instrument = await getInstrument(account, library);  
+  let creditLine = CreditLine__factory.connect(instrument_address, getProviderOrSigner(library, account));
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+
   const decimals = await collateral.decimals()
   
   const repayAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
   const repayInterest = new BN(interest).shiftedBy(decimals).toFixed(); 
-  const tx =  await instrument.repay(repayAmount,repayInterest ); 
+
+  const totalAmount = new BN(repayAmount).plus(repayInterest).toString();
+
+  let tx = await collateral.approve(instrument_address, totalAmount);
+  tx.wait();
+
+  tx =  await creditLine.repay(repayAmount, repayInterest);
+  tx.wait();
   return tx; 
 }
 
@@ -575,17 +684,47 @@ export async function mintVaultDS(
   shares_amount: string = "0",  
   not_faucet: boolean = false
 ) {
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const collateral = Cash__factory.connect(collateral_address, library.getSigner(account));
   const decimals = await collateral.decimals()
-  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+  const vault = Vault__factory.connect(Vault_address, library.getSigner(account)); 
   const amount = not_faucet? new BN(shares_amount).shiftedBy(decimals).toFixed() : new BN(100000).shiftedBy(6).toFixed(); 
   console.log('mintamount', amount); 
-  await collateral.approve(Vault_address, amount); 
 
-  const asset = await vault.asset(); 
-  console.log('asset', asset, collateral_address); 
- // await vault.mint(amount, account); 
-  await vault.deposit(amount, account);
+  console.log((await collateral.callStatic.increaseAllowance(Vault_address, amount)));
+  let tx = await collateral.increaseAllowance(Vault_address, amount).catch(
+    (e) => {
+      console.error("allowance error", e);
+      throw e;
+    }
+  );; 
+  tx.wait(1);
+  console.log("tx: ", tx);
+
+  let allowance = await collateral.allowance(account, Vault_address);
+  console.log("allowance: ", allowance.toString());
+
+  console.log("desposit result: ", (await vault.callStatic.deposit(amount, account)).toString());
+  let tx2 = await vault.deposit(amount, account);
+  tx2.wait(6);
+  const balance = await vault.balanceOf(account);
+  console.log("VT balance: ", balance.toString())
+
+  // tx = await collateral.increaseAllowance(Vault_address, amount).catch(
+  //   (e) => {
+  //     console.error("allowance error", e);
+  //     throw e;
+  //   }
+  // );
+  // tx.wait();
+
+  // allowance = await collateral.allowance(account, Vault_address);
+  // console.log("allowance2: ", allowance.toString());
+
+  // const asset = await vault.asset(); 
+
+  // console.log('asset', asset, collateral_address); 
+  // await vault.mint(amount, account);
+  
 } 
 
 export async function redeemVaultDS(
@@ -604,14 +743,25 @@ export async function redeemVaultDS(
 
 }
 
+export async function getVaultTokenBalance(
+  account: string,
+  library: Web3Provider
+): Promise<string> {
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const decimals = await collateral.decimals()
+  const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
+
+  let amount = await vault.balanceOf(account);
+  return new BN(amount.toString()).div(10**(decimals)).toString();
+}
+
 export async function redeemZCB(
   account: string,
   library: Web3Provider, 
   marketId: string 
   ){
   const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
-  await MM.redeem(marketId, account); 
-  
+  await MM.redeem(marketId, account);
 }
 
 export async function getZCBBalances(

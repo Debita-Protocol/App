@@ -196,9 +196,9 @@ const MarketView = ({ defaultMarket = null }) => {
     catch (err){console.log("status error", err)
    return;}
     setstoredCollateral(stored);
-    setPrincipal(instrument.principal.toString());
-    setYield(instrument.expectedYield.toString()); 
-    const dur = Number(instrument.duration.toString())/1000000; 
+    setPrincipal(instrument.principal.mul(300).toString());
+    setYield(instrument.expectedYield.mul(300).toString()); 
+    const dur = Number(instrument.duration.toString()); 
     setDuration(String(dur)); 
     setTotalCollateral(tc); 
     setLongBalance(bal[0]); 
@@ -227,6 +227,14 @@ const MarketView = ({ defaultMarket = null }) => {
   }, [market]);
 
 
+  //Example types 
+  const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation"]; 
+  const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool#3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot" ];
+  const descriptions = ["Buy bonds issued by Flint Dao, or bet on its default", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Buy bonds issued by Kao Dao, or bet on its default", "Long or Short Spot Positions"] 
+  const marketisApproved = ["False", "False", "True", "False", "True", "True"]; 
+  const principals = ["1000$", "3000$", "2500$","1400$", "4200$", "500$"]; 
+  const aprs = ["100$", "120$","150$", "320$", "210$", "80$"]; 
+  const durations = ["120 days", "1 Year", "30days", "60days", "1 Year", "10 days"]; 
 
 
 
@@ -256,8 +264,8 @@ const MarketView = ({ defaultMarket = null }) => {
       }); 
   }
   const canbeApproved = true; 
-  const utilizer_description = "Assess whether x DAO is creditworthy ";
-  const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "name, with a linear bonding curve AMM." +
+  const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. ";
+  const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "pool, with a linear bonding curve AMM." +
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
   return (
     <div className={Styles.MarketView}>
@@ -270,8 +278,8 @@ const MarketView = ({ defaultMarket = null }) => {
           <CategoryLabel big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         </div>
-        {!!title && <h1>{title}</h1>}
-        {!!description && <h2>{description}</h2>}
+        {!!title && <h1>{titles[1]}</h1>}
+        {!!description && <h2>{descriptions[1]}</h2>}
         {!!startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />}
 

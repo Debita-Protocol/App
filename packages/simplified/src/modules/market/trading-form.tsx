@@ -228,7 +228,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
   const getbudget = async()=>{
-    const b =  await getTraderBudget(account, loginAccount.library); 
+    const b =  await getTraderBudget(account, loginAccount.library, String(amm?.turboId)); 
     const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
     setTraderBudget(Number(b)/1000000); 
     setHedgeQuantity(Number(h)/1000000);

@@ -1,7 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect, use as chaiUse } from "chai";
-import { deployments, ethers } from "hardhat";
+import { deployments, ethers, network } from "hardhat";
 import { BigNumber } from "ethers";
+
 import {
     Controller,
     Vault,
@@ -43,7 +44,7 @@ describe("* Full Cycle Test", () => {
     /**
      * p = 30, i = 20, IAPR = 2/3, 
      * a = 1.6*10^(-2), b = 0.2, y=1 intercept => (50,1)
-     * 
+     * w/ reputation @ 30% and market condition @ 50 % => 15 ZCB then 25 ZCB respectively.
      */
     let principal = col_one.mul(30)
     let duration = BigNumber.from(365).mul(24*60*60)
@@ -79,8 +80,6 @@ describe("* Full Cycle Test", () => {
             duration, 
             faceValue
         ) as CreditLine;
-        
-        await creditline.setUtilizer(owner.address);
 
         await ctrlr.setMarketManager(MM.address);
         await ctrlr.setVault(vault.address);
@@ -89,7 +88,7 @@ describe("* Full Cycle Test", () => {
         await ctrlr.addValidator(owner.address);
         
         // verify market trader
-        await ctrlr.connect(market_trader).verifyAddress(1,2,[1,2,3,4,5,6,7,8]);
+        await ctrlr.connect(market_trader).testVerifyAddress();
         
         // give everyone 100 cash collateral
         let tx = await collateral.connect(market_trader).faucet(col_one.mul(1000));
@@ -134,7 +133,8 @@ describe("* Full Cycle Test", () => {
                     duration,
                     description,
                     Instrument_address: creditline.address,
-                    instrument_type: 0
+                    instrument_type: 0,
+                    maturityDate: 0
                 }
             )
             console.log("a")
@@ -165,26 +165,206 @@ describe("* Full Cycle Test", () => {
 
     describe("# Market Mechanics (market manager + instrument) tests", () => {
         describe("- assessment phase", () => {
-            it("can buy ZCB before reputation threshold", async () => {
+            
+            it("can buy/sell ZCB before reputation threshold", async () => {
                 let data = await MM.restriction_data(marketId)
                 
-                expect(data.duringMarketAssessment).to.equal(true)
+                expect(data.duringAssessment).to.equal(true)
                 expect(data.onlyReputable).to.equal(true)
-                expect(data.marketDenied).to.equal(false)
+                expect(data.resolved).to.equal(false)
                 console.log("min_rep_score: ", data.min_rep_score)
                 expect(data.atLoss).to.equal(false)
                 
-                console.log("buying 20 ZCB => 7.2 col");
-                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(72).div(10))
-                let tx = await MM.connect(market_trader).buy(BigNumber.from(marketId), col_one.mul(72).div(10))
+                console.log("buying w/ 5 col");
+                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(5))
+                let tx = await MM.connect(market_trader).buy(BigNumber.from(marketId), col_one.mul(5))
+                tx.wait()
 
-                expect(await ZCB.balanceOf(market_trader.address)).to.equal(bd_one.mul(20))
-                expect(await ZCB.calculateExpectedPrice(col_one)).to.equal(col_one.mul(216).div(100))
+                data = await MM.restriction_data(marketId)
+                expect(data.duringAssessment).to.equal(true)
+                expect(data.onlyReputable).to.equal(true)
+                expect(data.resolved).to.equal(false)
+                console.log("min_rep_score: ", data.min_rep_score)
+                expect(data.atLoss).to.equal(false)
+                console.log(data.alive)
+                expect(data.alive).to.equal(true)
+                
+                console.log("selling tokens");
+                tx = await MM.connect(market_trader).sell(marketId, bd_one.mul(1545).div(100))
+                tx.wait()
+
+                console.log("ZCB amount: ", (await ZCB.connect(market_trader).balanceOf(market_trader.address)).toString())
+                console.log("market condition: ", await MM.marketCondition(1));
+                console.log("total ZCB collateral: ", (await ZCB.getTotalCollateral()).toString());
             })
 
-            it("buying ZCB changes assessment phase", async () => {
+            // it("can't approveMarket bc of marketConditions during onlyRep", async () => {
+            //     expect(await ctrlr.connect(owner).approveMarket(marketId)).to.be.revertedWith("Market Conditions not met");
+            // })
+
+            it("buying ZCB changes to reputation phase", async () => {
+                // buying 16 cols => total aprox 16 col => pushed over insurance constant
+                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(10))
+                let tx = await MM.connect(market_trader).buy(marketId, col_one.mul(10))
                 
+                let data = await MM.restriction_data(marketId)
+                
+                expect(data.duringAssessment).to.equal(true)
+                
+                expect(data.onlyReputable).to.equal(false)
+                
+                expect(data.resolved).to.equal(false)
+                
+                console.log("min_rep_score: ", data.min_rep_score)
+                
+                expect(data.atLoss).to.equal(false)
+
+                console.log("market condition: ", await MM.marketCondition(1));
+            })
+
+            it("selling ZCB doesn't change onlyRep to false", async () => {
+                let tokens = await ZCB.balanceOf(market_trader.address);
+                let tx = await MM.connect(market_trader).sell(marketId, tokens);
+                tx.wait();
+
+                console.log("total collateral of ZCB", (await ZCB.getTotalCollateral()))
+                
+                let data = await MM.restriction_data(marketId)
+                
+                expect(data.duringAssessment).to.equal(true)
+                
+                expect(data.onlyReputable).to.equal(false)
+                
+                expect(data.resolved).to.equal(false)
+                
+                console.log("min_rep_score: ", data.min_rep_score)
+                
+                expect(data.atLoss).to.equal(false)
+            })
+
+            // it("not allowed to approve without meeting market condition", async () => {
+            //     expect(await ctrlr.connect(owner).approveMarket(marketId)).to.be.revertedWith("Market Conditions not met");
+            // });
+
+            it("buying ZCB to pass market condition", async () => {
+                // 15 col bought => passes market condition
+                await vault.connect(market_trader).approve(ZCB.address, col_one.mul(16))
+                let tx = await MM.connect(market_trader).buy(marketId, col_one.mul(16));
+                tx.wait();
+
+                expect(await MM.connect(market_trader).marketCondition(marketId)).to.equal(true);
+                
+                let data = await MM.restriction_data(marketId)
+                
+                expect(data.duringAssessment).to.equal(true)
+                
+                expect(data.onlyReputable).to.equal(false)
+                
+                expect(data.resolved).to.equal(false)
+                
+                console.log("min_rep_score: ", data.min_rep_score)
+                
+                expect(data.atLoss).to.equal(false)
+            })
+
+            it("approves market", async () => {
+                expect(await collateral.balanceOf(creditline.address)).to.equal(BigNumber.from(0));
+
+                let tx = await ctrlr.connect(owner).approveMarket(marketId);
+                tx.wait();
+
+                expect(await collateral.balanceOf(creditline.address)).to.equal(principal);
+
+                let i_data = await vault.fetchInstrumentData(marketId);
+
+                expect(i_data.balance).to.equal(principal);
+
+                expect(i_data.trusted).to.equal(true);
+
+                //let latest = await time.latest();
+
+                let maturity = new Date(Number(i_data.maturityDate)*1000);
+                console.log(maturity.toDateString());
+                let data = await MM.restriction_data(marketId)
+                
+                expect(data.duringAssessment).to.equal(false)
+                
+                expect(data.onlyReputable).to.equal(false)
+                
+                expect(data.resolved).to.equal(false)
+
+                expect(data.alive).to.equal(true)
+                
+                console.log("min_rep_score: ", data.min_rep_score)
+                
+                expect(data.atLoss).to.equal(false)
             })
         })
+
+        describe("- instrument mechanics", () => {
+            // tested w/ market_trader as utilizer => didn't work
+            it("can't overborrow", async () => {
+                try {
+                    let tx = await creditline.connect(utilizer).drawdown(principal.mul(3))
+                } catch (err) {
+                    console.log(err.reason);
+                }             
+            })
+            it("borrow functionality", async () => {
+                /**
+                 * test
+                 * borrow, repay functionality + checkInstrument + check maturityDate
+                 * 
+                 */
+
+                let tx = await creditline.connect(utilizer).drawdown(principal.div(2));
+                tx.wait();
+
+                expect(await collateral.balanceOf(creditline.address)).to.equal(principal.div(2));
+            });
+
+            it("can't overpay principal or interest", async () => {
+                
+                try {
+                    await creditline.connect(utilizer).repay(principal, 0);
+                } catch (err) {
+                    console.log(err.reason)
+                }
+
+                try {
+                    await creditline.connect(utilizer).repay(0, interest.mul(2));
+                } catch (err) {
+                    console.log(err.reason)
+                }
+            })
+
+            it("repay functionality", async () => {
+                let tx = await collateral.connect(utilizer).approve(creditline.address, principal.div(2).add(interest));
+                await tx.wait();
+
+                tx = await creditline.connect(utilizer).repay(principal.div(2), interest);
+                await tx.wait();
+
+                //expect(await vault.connect(vault_lender).checkInstrument(marketId)).to.equal(false);
+                console.log(await vault.connect(vault_lender).callStatic.checkInstrument(marketId));
+            })
+
+            it("resolve instrument + everything", async () => {
+                await network.provider.send("evm_increaseTime", [Number(duration)+24*60*60]);
+                await network.provider.send("evm_mine");
+
+                await vault.connect(vault_lender).checkInstrument(marketId);
+            });
+
+            it("checking resolve instrument", async () => {
+                expect(await collateral.balanceOf(creditline.address)).to.be.equal(BigNumber.from(0));
+                let data = await MM.restriction_data(marketId);
+                console.log(data);
+                let tx = await MM.connect(market_trader).updateReputation(marketId);
+                await tx.wait();
+                let rep = await repToken.getReputationScore(market_trader.address);
+                console.log("reputation: ", rep);
+            })
+        });
     })
 });

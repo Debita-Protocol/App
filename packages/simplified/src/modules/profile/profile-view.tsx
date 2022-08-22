@@ -21,6 +21,7 @@ const { PathUtils: { makePath, makeQuery, parseQuery } } = Utils;
 
 const useAddressQuery = () => {
     const location = useLocation();
+    console.log("location.search: ", location.search)
     const { address } = parseQuery(location.search); //TODO make sure it's a valid address
     return address;
 };
@@ -39,6 +40,7 @@ interface InstrumentData {
     description: string; 
     Instrument_address: string;
     instrument_type: string;
+    maturityDate: string;
   }; 
 
 // for displaying borrower - market profile., takes marketID => get's borrower address
@@ -57,17 +59,19 @@ const ProfileView = () => {
     const isUser = !query_address;
     let address = query_address ? query_address : account;
     const [instrument, setInstrument] = useState<InstrumentData>({
-        trusted: true,
-        balance: "150.052", 
-        faceValue: "200.5",
-        marketId: "1",
-        principal: "175.0",
-        expectedYield: "25.5", 
-        duration: "31536000",
-        description: "a description about the usage of the creditline perhaps", 
-        Instrument_address: "address",
-        instrument_type: "0"
+        trusted: false,
+        balance: "", 
+        faceValue: "",
+        marketId: "",
+        principal: "",
+        expectedYield: "", 
+        duration: "",
+        description: "", 
+        Instrument_address: "",
+        instrument_type: "",
+        maturityDate: ""
     })
+
     const [path, setPath] = useState("creditline")
     const [query, setQuery] = useState("")
     const [ isLink, setIsLink ] = useState(isUser && path.length > 0)
@@ -79,12 +83,19 @@ const ProfileView = () => {
 
     const getPassport = useCallback(async () => {
         // Dynamically load @gitcoinco/passport-sdk-verifier
-        const PassportVerifier = (await import("@gitcoinco/passport-sdk-verifier")).PassportVerifier;
-        const verifier = new PassportVerifier(PASSPORT_CERAMIC_NODE_URL);
-        const reader = new PassportReader(PASSPORT_CERAMIC_NODE_URL)
-        const _passport = await reader.getPassport(address);
-        const verifiedPassport = await verifier.verifyPassport(address, _passport)
-        console.log("Verified Passport: ", verifiedPassport)
+        let _passport;
+        let verifiedPassport;
+        try {
+            const PassportVerifier = (await import("@gitcoinco/passport-sdk-verifier")).PassportVerifier;
+            const verifier = new PassportVerifier(PASSPORT_CERAMIC_NODE_URL);
+            const reader = new PassportReader(PASSPORT_CERAMIC_NODE_URL)
+            _passport = await reader.getPassport(address);
+            verifiedPassport = await verifier.verifyPassport(address, _passport)
+            console.log("Verified Passport: ", verifiedPassport)
+        } catch (err) {
+            console.log(err);
+        }
+
 
         if (!_passport) {
             updatePassportStatus(false)
@@ -92,12 +103,14 @@ const ProfileView = () => {
             updatePassport(verifiedPassport)
             updatePassportStatus(true)
         }
-    }, [account, loginAccount])
+    }, [account, loginAccount]);
+
 
     const getInstruments = useCallback(async ()=> {
         const _instrument = await getFormattedInstrumentData(address, loginAccount.library)
-        if (parseInt(_instrument.marketId) === 0) {
-            console.log(_instrument)
+        console.log("retrieved instrument: ", _instrument);
+        if (parseInt(_instrument.marketId) !== 0) {
+            console.log("got instrument: ", _instrument)
             setInstrument(_instrument)
         }
         if (_instrument.trusted && isUser && parseInt(_instrument.instrument_type) === 0 ) {
@@ -106,9 +119,11 @@ const ProfileView = () => {
     })
 
     useEffect(() => {
-        getPassport()
-        //getInstruments()
-    }, [])
+        if (account && loginAccount.library) {
+            getInstruments()
+            getPassport()
+        }
+    }, [account, loginAccount])
     
     return (
         <>
@@ -123,12 +138,18 @@ const ProfileView = () => {
                 }
             </div>
             <section>
-                <InstrumentCard
+                {instrument.marketId !== "" ? (
+                    <InstrumentCard
                     isLink={isLink}
                     path={path}
                     query={query}
                     instrument={instrument}
                 />
+                ) : (
+                    <div>
+                        No Instrument Found ...
+                    </div>
+                )}
             </section>
         </>
     )

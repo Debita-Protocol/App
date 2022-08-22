@@ -124,15 +124,19 @@ contract Controller {
 }
 
 
+
   function verifyAddress(
       uint256 nullifier_hash, 
       uint256 external_nullifier,
       uint256[8] calldata proof
   ) external  {
-      //require(!verified[msg.sender], "address already verified");
-      //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
+      require(!verified[msg.sender], "address already verified");
+      interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
       verified[msg.sender] = true;
+  }
 
+  function testVerifyAddress() external {
+    verified[msg.sender] = true;
   }
 
 
@@ -141,10 +145,7 @@ contract Controller {
     address trader
     ) external  {
     ReputationNFT(NFT_address).mint(msg.sender);
-}
-
-
-
+  }
   //Validator should be added for each borrower
   function addValidator(address validator_address) external  {
     require(validator_address != address(0), "Zero address detected");
@@ -155,40 +156,44 @@ contract Controller {
 }
 
 
-  /**
-   @dev initiates market, called by frontend loan proposal or instrument form submit button.
-   @param recipient is the 
-   @dev a and b must be 60.18 format
-   */
-  function initiateMarket(
-      address recipient,
-      Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
-  ) external  {
 
-    (uint256 a, uint256 b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
-    console.log('a,b', a,b); 
+  function createZCBs(
+    uint256 a,
+    uint256 b
+    ) internal returns(OwnedERC20[] memory) {
+
     string memory name = string(abi.encodePacked(baseName, "-", Strings.toString(nonce)));
     string memory symbol = string(abi.encodePacked(baseSymbol, Strings.toString(nonce)));
     string memory s_name = string(abi.encodePacked(s_baseName, "-", Strings.toString(nonce)));
     string memory s_symbol = string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce)));
     nonce++;
 
-    // OwnedERC20 zcb = new LinearBondingCurve(
-    //     name,
-    //     symbol,
-    //     address(marketManager), // owner
-    //     address(vault), 
-    //     a,
-    //     b
-    // );
     uint256 marketId = marketFactory.marketCount(); 
     OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), address(vault), a,b); 
     OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), address(vault), address(longzcb), marketId); 
 
-
     OwnedERC20[] memory zcb_tokens = new OwnedERC20[](2);
     zcb_tokens[0] = longzcb;
     zcb_tokens[1] = shortzcb; 
+
+    return zcb_tokens;
+  }
+
+  /**
+   @dev initiates market, called by frontend loan proposal or instrument form submit button.
+   @param recipient is the 
+   @dev a and b must be 60.18 format
+   */
+
+  function initiateMarket(
+      address recipient,
+      Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
+  ) external  {
+
+    (uint256 a, uint256 b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
+    uint256 marketId = marketFactory.marketCount(); 
+
+    OwnedERC20[] memory zcb_tokens = createZCBs(a,b); 
 
     require(marketFactory.createZCBMarket(
         address(this), // controller is the settlement address
@@ -199,14 +204,14 @@ contract Controller {
     ad_to_id[recipient] = marketId; 
     instrumentData.marketId = marketId;
 
-
     vault.addProposal(
         instrumentData
     );
 
     market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-    marketManager.setAssessmentPhase(marketId, true, true);  
-    marketManager.add_short_zcb( marketId, address(shortzcb)); 
+    // marketManager.setAssessmentPhase(marketId, true, true);  
+    marketManager.setMarketPhase(marketId, true, true, 0, 1000 * (10**6));  // need to set min rep score here as well.e
+    marketManager.add_short_zcb( marketId, address(zcb_tokens[1])); 
   
     emit MarketInitiated(marketId, recipient);
 }
@@ -242,23 +247,27 @@ function resolveMarket(
     marketFactory.trustedResolveMarket(marketId, winning_outcome);
   }
 
+
   /// @notice called by the validator when market conditions are met
-  function approveMarket( 
-    uint256 marketId
-    ) external onlyValidator{
-    if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met"); 
+  function approveMarket(
+      uint256 marketId
+  ) external onlyValidator {
+    if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met");    
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-    marketManager.setAssessmentPhase(marketId, false, false); 
+    
+    marketManager.approveMarket(marketId);
+    marketManager.setUpperBound(marketId, 1000000*10**6); // need to get upper bound 
+    
     trustInstrument(marketId); 
 
     // Deposit to the instrument contract
     uint256 principal = vault.fetchInstrumentData(marketId).principal; 
     //maybe this should be separated to prevent attacks 
+    
     vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
+    vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
     vault.onMarketApproval(marketId);
- 
   }
-
   /*
   Market is denied by validator or automatically if conditions are not met 
   */
@@ -267,9 +276,14 @@ function resolveMarket(
   ) external  onlyValidator {
     marketManager.denyMarket(marketId);
       //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
+    
     uint256 winning_outcome = 0; //TODO  
+    
     marketFactory.trustedResolveMarket(marketId, winning_outcome);
+    
+    vault.denyInstrument(marketId);
   }
+ 
 
 
   function trustInstrument(uint256 marketId) private  {
@@ -280,35 +294,31 @@ function resolveMarket(
     vault.controller_mint(amount,to); 
   }
 
+  /* --------VIEW FUNCTIONS---------  */
+  function getMarketId(address recipient) public view returns(uint256){
+    return ad_to_id[recipient];
+  }
 
+  function getZCB(uint256 marketId) public view returns (OwnedERC20){
+    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+    return OwnedERC20(market.shareTokens[0]);
+  }
+  function getZCB_ad(uint256 marketId) public view returns (address){
+    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+    return address(OwnedERC20(market.shareTokens[0]));
+  }
+  function getshortZCB_ad(uint256 marketId) public view returns(address){
+    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+    return address(OwnedERC20(market.shareTokens[1]));
+  }
 
+  function canBeApproved(uint256 marketId) public view returns (bool) {
+      //TODO
+    return true;
+  }
 
-
-                        /* --------VIEW FUNCTIONS---------  */
-    function getMarketId(address recipient) public view returns(uint256){
-      return ad_to_id[recipient];
-    }
-
-    function getZCB(uint256 marketId) public view returns (OwnedERC20){
-      AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-      return OwnedERC20(market.shareTokens[0]);
-    }
-    function getZCB_ad(uint256 marketId) public view returns (address){
-      AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-      return address(OwnedERC20(market.shareTokens[0]));
-    }
-    function getshortZCB_ad(uint256 marketId) public view returns(address){
-      AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-      return address(OwnedERC20(market.shareTokens[1]));
-    }
-
-    function canBeApproved(uint256 marketId) public view returns (bool) {
-        //TODO
-      return true;
-    }
-
-    function isVerified(address addr) view public returns (bool) {
-      return verified[addr];
-    }
+  function isVerified(address addr) view public returns (bool) {
+    return verified[addr];
+  }
 }
 
