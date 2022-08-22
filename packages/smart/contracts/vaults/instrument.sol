@@ -154,28 +154,6 @@ contract CreditLine is Instrument {
         interestOwed = faceValue - principal;
     }
 
-    /// @notice CreditLine contract is initiated at proposal 
-    /// @dev include any Instrument specific initialization logic  
-    /// @param _borrower stored as Utilizer
-    /// DEPRECATED
-    function initialize(
-        address _vault,
-        address _borrower,         
-        uint256 _principal,
-        uint256 _interestAPR, 
-        uint256 _duration, 
-        uint256 _faceValue
-    ) internal {
-        _initialize(_vault, _borrower); 
-
-        principal = _principal; 
-        interestAPR = _interestAPR; 
-        duration = _duration;   
-        faceValue = _faceValue; 
-
-        interestOwed = faceValue - principal; // getOwedInterest(_interestAPR, _duration); 
-    }
-
     /// @notice use APR and duration to get total owed interest 
     function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256 owed){
         return APR; 

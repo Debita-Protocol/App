@@ -152,8 +152,6 @@ contract Vault is ERC4626, Auth{
 
     }
 
-
-
     /// @notice Withdraws all underyling balance from the Instrument to the vault 
     function withdrawAllFromInstrument(Instrument instrument) internal {
       uint248 total_Instrument_balance = instrument.balanceOfUnderlying(address(instrument)).safeCastTo248();
@@ -164,10 +162,10 @@ contract Vault is ERC4626, Auth{
       
         instrument.redeemUnderlying(total_Instrument_balance);
     }
+
     /// @notice Stores a Instrument as trusted when its approved
     function trustInstrument(Instrument instrument) external onlyController{
     	getInstrumentData[instrument].trusted = true;
-
     }
 
     /// @notice Stores a Instrument as untrusted
@@ -237,7 +235,7 @@ contract Vault is ERC4626, Auth{
                 data.instrument_type,
                 0
             )
-        	); 
+        ); 
 
         Instruments[data.marketId] = Instrument(data.Instrument_address);
     }
@@ -285,7 +283,9 @@ contract Vault is ERC4626, Auth{
         uint256 extra_gain = !atLoss ? data.balance - data.faceValue : 0;
 
         withdrawAllFromInstrument(_instrument);
+        
         controller.resolveMarket(data.marketId, atLoss, extra_gain, total_loss);
+        
         removeInstrument(data.marketId);
     }
 
