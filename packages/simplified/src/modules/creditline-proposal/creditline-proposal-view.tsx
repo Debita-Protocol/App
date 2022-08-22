@@ -173,8 +173,9 @@ const CreditLineRequestForm = () => {
         instrument_address
       )
       console.log("PROPOSAL ADDED")
-      await tx.wait(1);
       reset();
+      await tx.wait();
+      
     }
   })
 

@@ -340,7 +340,7 @@ contract MarketManager is Owned {
  		//Need to log assessment trades for updating reputation scores or returning collateral
  		//when market denied 
 		if (duringMarketAssessment(_marketId)){
-			uint256 priceOut = zcb.calculateExpectedPrice(0); 
+			uint256 priceOut = zcb.calculateExpectedPrice(0); // 60.18 for some reason
 			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn, priceOut);
 
 			//  keeps track of amount bought during reputation phase
@@ -549,7 +549,11 @@ contract MarketManager is Owned {
 		uint256 priceOut = assessment_prices[marketId][msg.sender]/(10**12); 
 		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
 		uint256 traderBudget = getTraderBudget(marketId, msg.sender);
-		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION; 
+		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION;
+		console.log("collateralIn: ", collateralIn);
+		console.log("traderBudget: ", traderBudget);
+		console.log("num_bonds bought: ", num_bonds_bought); 
+		console.log("Price Out: ", priceOut);
 
 		uint256 scoreToAdd; 
 		// if (!atLoss) scoreToAdd = (((num_bonds_bought*PRICE_PRECISION/traderBudget) * (PRICE_PRECISION - priceOut))/PRICE_PRECISION)*(num_bonds_bought)/PRICE_PRECISION;

@@ -88,7 +88,7 @@ describe("* Full Cycle Test", () => {
         await ctrlr.addValidator(owner.address);
         
         // verify market trader
-        await ctrlr.connect(market_trader).verifyAddress(1,2,[1,2,3,4,5,6,7,8]);
+        await ctrlr.connect(market_trader).testVerifyAddress();
         
         // give everyone 100 cash collateral
         let tx = await collateral.connect(market_trader).faucet(col_one.mul(1000));
@@ -355,6 +355,16 @@ describe("* Full Cycle Test", () => {
 
                 await vault.connect(vault_lender).checkInstrument(marketId);
             });
+
+            it("checking resolve instrument", async () => {
+                expect(await collateral.balanceOf(creditline.address)).to.be.equal(BigNumber.from(0));
+                let data = await MM.restriction_data(marketId);
+                console.log(data);
+                let tx = await MM.connect(market_trader).updateReputation(marketId);
+                await tx.wait();
+                let rep = await repToken.getReputationScore(market_trader.address);
+                console.log("reputation: ", rep);
+            })
         });
     })
 });

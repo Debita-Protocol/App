@@ -159,27 +159,34 @@ export async function setupContracts (account: string, library: Web3Provider) {
   // tx = await controller.setReputationNFT(RepNFT_address);
   // tx.wait()
   
-  let data = {} as InstrumentData_; 
-  data.balance = String(0);
-  data.Instrument_address = sample_instument_address;
-  data.principal = "1000000"; //new BN(1000000).toString()
-  data.expectedYield = "100000"; //new BN(100000).toString()
-  data.duration = "1000000"; //new BN(1000000).toString()
-  data.description = "a description of the instrument"
-  data.faceValue = "1100000"; //new BN(1100000).toString()
-  data.instrument_type = String(0)
-  data.maturityDate = String(0)
-  data.balance = String(0)
-  data.trusted = false;
-  data.marketId = "0";
-  console.log(data);
+  // let data = {} as InstrumentData_; 
+  // data.balance = String(0);
+  // data.Instrument_address = sample_instument_address;
+  // data.principal = "1000000"; //new BN(1000000).toString()
+  // data.expectedYield = "100000"; //new BN(100000).toString()
+  // data.duration = "1000000"; //new BN(1000000).toString()
+  // data.description = "a description of the instrument"
+  // data.faceValue = "1100000"; //new BN(1100000).toString()
+  // data.instrument_type = String(0)
+  // data.maturityDate = String(0)
+  // data.balance = String(0)
+  // data.trusted = false;
+  // data.marketId = "0";
+  // console.log(data);
 
-  const tx2 = await controller.initiateMarket(account, data).catch((e) => {
-    console.error(e);
-    throw e;
-  }); 
+  // const tx2 = await controller.initiateMarket(account, data).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // }); 
+  
+  let tx = await controller.getZCB_ad(1);
+  console.log("ZCB address: ", tx);
 
   console.log("setup success")
+  // const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  // let tx = await marketmanager.buy(1, "900000"); 
+  // tx.wait()
+  // console.log("setup success")
 }
 
 // NEW STUFF BELOW
@@ -429,7 +436,7 @@ export async function addProposal(  // calls initiate market
   data.marketId = new BN(0).toFixed(); 
   data.principal = new BN(principal).shiftedBy(decimals).toFixed(); 
   data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
-  data.duration = new BN(duration).shiftedBy(decimals).toFixed(); 
+  data.duration = new BN(duration).toString(); 
   data.description = description;
   data.Instrument_address = Instrument_address; //sample_instument_address;
   data.instrument_type = instrument_type;

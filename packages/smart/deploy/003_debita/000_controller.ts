@@ -5,7 +5,8 @@ import { DeployFunction } from "hardhat-deploy/types";
 
 const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { deployments, getNamedAccounts } = hre;
-    const { deployer, interep } = await getNamedAccounts();
+    const { deployer } = await getNamedAccounts();
+    const interep = "0xb1dA5d9AC4B125F521DeF573532e9DBb6395B925";
     const args = [deployer, interep];
 
     

@@ -123,10 +123,13 @@ contract Controller {
         uint256 external_nullifier,
         uint256[8] calldata proof
     ) external  {
-        //require(!verified[msg.sender], "address already verified");
-        //interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
+        require(!verified[msg.sender], "address already verified");
+        interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
         verified[msg.sender] = true;
+    }
 
+    function testVerifyAddress() external {
+      verified[msg.sender] = true;
     }
 
 
@@ -174,6 +177,8 @@ contract Controller {
           b
       );
 
+      console.log("deployed ZCB address: ", address(zcb));
+
 
       uint256[] memory odds = new uint256[](2); //TODO get rid of this 
       odds[0] = 0;
@@ -196,7 +201,7 @@ contract Controller {
       );
 
       market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-      marketManager.setMarketPhase(marketId, true, true, 0, insurance_constant * instrumentData.principal);  // need to set min rep score here as well.e
+      marketManager.setMarketPhase(marketId, true, true, 0, insurance_constant * instrumentData.principal / (10**6));  // need to set min rep score here as well.e
 
       emit MarketInitiated(marketId, recipient);
   }
@@ -224,7 +229,7 @@ contract Controller {
       marketManager.deactivateMarket(marketId, atLoss);
       
       //Burn all vault tokens in BC
-      address bc_ad = getZCB_ad( marketId); 
+      address bc_ad = getZCB_ad(marketId); 
       uint256 bc_vault_balance = vault.balanceOf(bc_ad); 
       vault.controller_burn(bc_vault_balance,bc_ad); 
 

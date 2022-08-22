@@ -83,12 +83,19 @@ const ProfileView = () => {
 
     const getPassport = useCallback(async () => {
         // Dynamically load @gitcoinco/passport-sdk-verifier
-        const PassportVerifier = (await import("@gitcoinco/passport-sdk-verifier")).PassportVerifier;
-        const verifier = new PassportVerifier(PASSPORT_CERAMIC_NODE_URL);
-        const reader = new PassportReader(PASSPORT_CERAMIC_NODE_URL)
-        const _passport = await reader.getPassport(address);
-        const verifiedPassport = await verifier.verifyPassport(address, _passport)
-        console.log("Verified Passport: ", verifiedPassport)
+        let _passport;
+        let verifiedPassport;
+        try {
+            const PassportVerifier = (await import("@gitcoinco/passport-sdk-verifier")).PassportVerifier;
+            const verifier = new PassportVerifier(PASSPORT_CERAMIC_NODE_URL);
+            const reader = new PassportReader(PASSPORT_CERAMIC_NODE_URL)
+            _passport = await reader.getPassport(address);
+            verifiedPassport = await verifier.verifyPassport(address, _passport)
+            console.log("Verified Passport: ", verifiedPassport)
+        } catch (err) {
+            console.log(err);
+        }
+
 
         if (!_passport) {
             updatePassportStatus(false)
@@ -96,12 +103,14 @@ const ProfileView = () => {
             updatePassport(verifiedPassport)
             updatePassportStatus(true)
         }
-    }, [account, loginAccount])
+    }, [account, loginAccount]);
+
 
     const getInstruments = useCallback(async ()=> {
         const _instrument = await getFormattedInstrumentData(address, loginAccount.library)
+        console.log("retrieved instrument: ", _instrument);
         if (parseInt(_instrument.marketId) !== 0) {
-            console.log(_instrument)
+            console.log("got instrument: ", _instrument)
             setInstrument(_instrument)
         }
         if (_instrument.trusted && isUser && parseInt(_instrument.instrument_type) === 0 ) {
@@ -111,8 +120,8 @@ const ProfileView = () => {
 
     useEffect(() => {
         if (account && loginAccount.library) {
-            getPassport()
             getInstruments()
+            getPassport()
         }
     }, [account, loginAccount])
     
