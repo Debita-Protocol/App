@@ -1,4 +1,7 @@
 ## Smart Contract Overview
+link to whitepaper rough draft 
+https://github.com/Debita-Protocol/docs/blob/main/rough_whitepaper.pdf
+
 ## Primary Contracts for Tulu
 - the main contracts for Tulu are in the folder protocol, bonds, and vault.
 
@@ -57,3 +60,5 @@ handles trusting/distrusting instruments on market approval/denial.
 - called via the `controller.resolveMarket`, which burns all existing VT held by the underlying ZCBs. 
 - redemption price calculated using the realized yield in the marketmanager
 - New VT is minted for redemption. If the realized return for the instrument is positive then minting amount> burning amount and vice versa
+
+
