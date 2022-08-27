@@ -191,13 +191,13 @@ export const MarketCardView = ({
   console.log('marketidhere', amm?.turboId); 
 
   //Example Types 
-  const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation"]; 
-  const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot" ];
-  const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions"] 
-  const marketisApproved = ["False", "False", "True", "False", "True", "True"]; 
-  const principals = ["1000$", "3000$", "2500$","1400$", "4200$", "500$"]; 
-  const aprs = ["100$", "120$","150$", "320$", "210$", "80$"]; 
-  const durations = ["120 days", "1 Year", "30days", "60days", "1 Year", "10 days"]; 
+  const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation","Isolated Lending"]; 
+  const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot", "USDC lending in Fuse pool #3" ];
+  const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions","Long or Short Isolated Lending Positions"] 
+  const marketisApproved = ["True", "True", "True", "True", "True", "True", "False"]; 
+  const principals = ["1000$", "3000$", "2500$","1400$", "4200$", "500$", "3200"]; 
+  const aprs = ["100$", "120$","150$", "320$", "210$", "80$", "120$"]; 
+  const durations = ["120 days", "1 Year", "30days", "60days", "1 Year", "10 days", "30days"]; 
 
 
 

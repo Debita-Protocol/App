@@ -224,7 +224,7 @@ contract TrancheMaster{
 	function buy_tranche(
 		uint vaultId, 
 		uint amount, 
-		bool isSenior
+		bool wantSenior
 		) external 
 	{
 		TrancheFactory.Contracts memory contracts = tFactory.getContracts(vaultId); 
@@ -244,9 +244,9 @@ contract TrancheMaster{
 		(uint ja, uint sa) = splitter.split(vault, shares); //junior and senior now minted to this address 
 
 		//Senior tokens are indexed at 0 in each amm 
-		uint tokenIn = isSenior? 0 : 1;
+		uint tokenIn = wantSenior? 1 : 0;
 		uint tokenOut = 1-tokenIn; 
-		uint tokenInAmount = isSenior? sa: ja; 
+		uint tokenInAmount = wantSenior? ja: sa; 
 		address[] memory tranches = splitter.getTrancheTokens(); 
 
 		//3. Swap 
@@ -254,7 +254,8 @@ contract TrancheMaster{
 		uint tokenOutAmount = amm.swap(tokenIn, tokenOut, tokenInAmount, 0); //this will give this contract tokenOut
 
 		//4. Transfer 
-		ERC20(tranches[tokenOut]).transfer(msg.sender, tokenOutAmount); 
+		uint transferamount = wantSenior? sa: ja; 
+		ERC20(tranches[tokenOut]).transfer(msg.sender, transferamount + tokenOutAmount); 
 
 	}
 

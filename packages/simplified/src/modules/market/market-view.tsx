@@ -44,7 +44,7 @@ const {
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
 const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral, redeemZCB, getZCBBalances, approveUtilizer, 
-canApproveUtilizer} = ContractCalls; 
+canApproveUtilizer, getERCBalance} = ContractCalls; 
 
 let timeoutId = null;
 
@@ -159,7 +159,7 @@ const MarketView = ({ defaultMarket = null }) => {
     showTradingForm,
     actions: { setShowTradingForm },
   } = useSimplifiedStore();
-  const { cashes, markets, ammExchanges, transactions } = useDataStore();
+  const { cashes, markets, ammExchanges, blocknumber,transactions } = useDataStore();
   useScrollToTopOnMount();
   const market: MarketInfo = !!defaultMarket ? defaultMarket : markets[marketId];
   const amm: AmmExchange = ammExchanges[marketId];
@@ -177,33 +177,52 @@ const MarketView = ({ defaultMarket = null }) => {
       actions: { addTransaction },
     } = useUserStore();
 
-  useEffect(async ()=> {
-    let stored ;
+  // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
+  useEffect(async() =>{
+    let stored; 
     let instrument;
+
+    try{stored = await getHedgePrice(account, loginAccount?.library, String(market?.amm?.turboId));
+    instrument = await getInstrumentData_(account, loginAccount?.library, String(market?.amm?.turboId))
+  }
+      catch (err){console.log("status error", err)}
+
+    setstoredCollateral(stored);
+    setPrincipal(instrument?.principal.toString());
+    setYield(instrument?.expectedYield.toString()); 
+    const dur = Number(instrument?.duration.toString()); 
+    setDuration(String(dur)); 
+
+
+  }, [])
+  useEffect(async ()=> {
     let tc; 
     let bal; 
+    let lbal; 
 
       try{
       //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
-      stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
-      instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
-      tc = await getTotalCollateral(account, loginAccount.library, String(market.amm.turboId)); 
-      bal = await getZCBBalances( account, loginAccount.library, String(market.amm.turboId)); 
+      //stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
+     // instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
+      tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
+      bal = await getZCBBalances( account, loginAccount?.library, String(market?.amm.turboId)); 
+      lbal = await getERCBalance(account, loginAccount?.library, "0x7C49b76207F71Ebd1D7E5a9661f82908E0055131" ); 
      // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))
   
      // console.log('instruments', instrument); 
     }
     catch (err){console.log("status error", err)
    return;}
-    setstoredCollateral(stored);
-    setPrincipal(instrument.principal.mul(300).toString());
-    setYield(instrument.expectedYield.mul(300).toString()); 
-    const dur = Number(instrument.duration.toString()); 
-    setDuration(String(dur)); 
+    // setstoredCollateral(stored);
+    // setPrincipal(instrument.principal.toString());
+    // setYield(instrument.expectedYield.toString()); 
+    // const dur = Number(instrument.duration.toString()); 
+    // setDuration(String(dur)); 
     setTotalCollateral(tc); 
-    setLongBalance(bal[0]); 
+    setLongBalance(Number(lbal.toString())/(10**18)); 
     setShortBalance(bal[1]); 
-  });
+    console.log('here')
+  }, [blocknumber, transactions]);
 
   useEffect(() => {
     if (!market) {
@@ -263,9 +282,10 @@ const MarketView = ({ defaultMarket = null }) => {
         console.log('Trading Error', error)
       }); 
   }
+
   const canbeApproved = true; 
-  const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. ";
-  const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "pool, with a linear bonding curve AMM." +
+  const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
+  const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
   return (
     <div className={Styles.MarketView}>
@@ -307,7 +327,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <ul className={Styles.StatsRow}>
 <li>
             <span>Net ZCB Bought / Required</span>
-            <span>{formatDai(totalCollateral/1000000 || "0.00").full}</span>
+            <span>{formatDai(totalCollateral/4.2/1000000  || "0.00").full}</span>
             <span>{formatDai(principal/5/1000000 || "0.00").full}</span>
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
@@ -319,7 +339,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Market Phase </span>
-            <span>{"Assessment/a"}</span>
+            <span>{"Resolved"}</span>
           </li>
 
           <li>
@@ -348,7 +368,9 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>Start Date</span>
-            <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+              <span>{"8/20/2022"}</span>
+
+           {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
           </li>
 
         </ul>
@@ -414,11 +436,11 @@ const MarketView = ({ defaultMarket = null }) => {
           action={redeem}
           customClass={ButtonStyles.BuySellButton}
         />}
-        { (!(isFinalized && winningOutcome ) && canbeApproved)&& <SecondaryThemeButton
+        { /*(!(isFinalized && winningOutcome ) && canbeApproved)&& <SecondaryThemeButton
           text="Approve Utilizer"
           action={approve_utilizer}
-          customClass={ButtonStyles.TinyTransparentButton}
-        />}
+          customClass={ButtonStyles.TinyTransparentButton} 
+        /> */}
         {/*<TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> */}
       </section>
     </div>

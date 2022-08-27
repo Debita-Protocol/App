@@ -492,7 +492,7 @@ export async function doOwnerSettings(
 export async function resolveZCBMarket(
   account:string, 
   library: Web3Provider, 
-  marketId: string = "3", 
+  marketId: string = "7", 
   atLoss: boolean = false, 
   extra_gain: string ="0", 
   principal_loss: string = "0"
@@ -505,9 +505,9 @@ export async function resolveZCBMarket(
 export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider,
-  faceValue: string = "11", 
-  principal: string= "10", 
-  expectedYield: string= "1", // this should be amount of collateral yield to be collected over the duration, not percentage
+  faceValue: string = "3300", 
+  principal: string= "3000", 
+  expectedYield: string= "300", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
   description: string= "Test Description", 
   Instrument_address: string = controller_address, //need to have been created before
@@ -768,10 +768,16 @@ export async function getZCBBalances(
   account :string, 
   library: Web3Provider, 
   marketId: string): Promise<string[]>{
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  //controller.getBalnaces(address addr, uint256 marketId); 
-
-  return ["1","1"]; 
+  // const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account));
+  // const zcb_ad = await controller.getZCB_ad( marketId) ;
+  // const szcb_ad = await controller.getshortZCB_ad(marketId)
+  // const zcb= ERC20__factory.connect(zcb_ad, getProviderOrSigner(library, account)); 
+  // const szcb = ERC20__factory.connect(szcb_ad, getProviderOrSigner(library, account)); 
+  // const zcb_balance = await zcb.balanceOf(account); 
+  // const szcb_balance = await szcb.balanceOf(account); 
+  // console.log("zb")
+  return ["0", "0"]; 
+  //return [zcb_balance.div(10**18).toString(),szcb_balance.div(10**18).toString() ]; 
 }
 
 

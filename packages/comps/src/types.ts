@@ -731,6 +731,12 @@ export interface GraphDataState {
   };
   loading?: boolean;
   transactions?: any;
+
+  hedgePrice?: string,
+  principal?:string,
+  expectedYield?: string,
+  duration?: string,
+  totalcollateral?: string, 
 }
 
 

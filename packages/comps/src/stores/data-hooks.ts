@@ -4,7 +4,7 @@ import { windowRef } from "../utils/window-ref";
 import { DATA_ACTIONS, DATA_KEYS, DEFAULT_DATA_STATE } from "./constants";
 import { calculateAmmTotalVolApy } from "../utils/contract-calls";
 
-const { UPDATE_DATA_HEARTBEAT, UPDATE_TRANSACTIONS } = DATA_ACTIONS;
+const { UPDATE_DATA_HEARTBEAT, UPDATE_TRANSACTIONS,UPDATE_INSTRUMENT_DATA_HEARTBEAT } = DATA_ACTIONS;
 const { AMM_EXCHANGES, BLOCKNUMBER, CASHES, ERRORS, MARKETS, TRANSACTIONS } = DATA_KEYS;
 
 export function DataReducer(state, action) {
@@ -76,6 +76,10 @@ export const useData = (cashes, defaultState = DEFAULT_DATA_STATE) => {
           errors,
           markets,
         }),
+      updateInstrumentDataHeartbeat: ({hedgePrice}) => dispatch({
+        type: UPDATE_INSTRUMENT_DATA_HEARTBEAT, 
+        hedgePrice, 
+      })
     },
   };
 };

@@ -12,6 +12,8 @@ import {ERC20} from "../tokens/ERC20.sol";
 import {Instrument} from "../instrument.sol";
 import {tVault} from "./tVault.sol"; 
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "hardhat/console.sol";
+
 
 
 
@@ -124,6 +126,8 @@ contract Splitter{
 	function redeem_after_maturity(tToken _tToken, uint256 amount) external {
 		require(underlying.isMatured(), "Vault not matured");
 		require(address(_tToken) == address(senior) || address(_tToken) == address(junior), "Wrong Tranche Token");
+		require( (s_r>=0 || j_r>=0), "redemption price not set"); 
+
 		bool isSenior = (address(_tToken) == address(senior)) ? true : false; 
 		uint redemption_price = isSenior? s_r: j_r; 
 		uint token_redeem_amount = (redemption_price * amount)/PRICE_PRECISION; 
@@ -136,16 +140,30 @@ contract Splitter{
 
 	/// @notice calculate and store redemption Price for post maturity 
 	/// @dev should be only called once right after tToken matures, as totalSupply changes when redeeming 
-	function calcRedemptionPrice() private {
-		uint promised_return = underlying.getPromisedReturn(); //in 1e6 decimals i.e 5000 is 0.05
-		uint real_return = underlying.getCurrentRealReturn(); 
-		uint _s_r = ((PRICE_PRECISION + promised_return)/(PRICE_PRECISION+real_return)) * PRICE_PRECISION; 
-		uint max_s_r = (PRICE_PRECISION/(PRICE_PRECISION - junior_weight)) *PRICE_PRECISION; 
-		
-		s_r = min(_s_r, max_s_r);
-		//total supply right after tVault matures 
-		j_r = (underlying.totalSupply() - (senior.totalSupply() * s_r/PRICE_PRECISION))/(junior.totalSupply()); 
+	/// also should be called by a keeper bot at maturity 
+	function calcRedemptionPrice() public {
+		require(underlying.isMatured(), "Vault not matured"); 
 
+		uint promised_return = underlying.getPromisedReturn(); //in 1e6 decimals i.e 5000 is 0.05
+		console.log('promised_return', promised_return); 
+		uint real_return = underlying.getCurrentRealReturn(); 
+		console.log('real_return', real_return); 
+		uint _s_r = ((PRICE_PRECISION + promised_return)* PRICE_PRECISION/(PRICE_PRECISION+real_return)); 
+		console.log('_sr', _s_r);
+		uint max_s_r = (PRICE_PRECISION*PRICE_PRECISION/(PRICE_PRECISION - junior_weight));  
+		console.log('maxsr', max_s_r);
+
+		s_r = min(_s_r, max_s_r);
+		console.log('sr', s_r);
+
+		//total supply right after tVault matures 
+		console.log('underlyingsupply', underlying.totalSupply()); 
+		console.log('serniorsupply', senior.totalSupply()); 
+		console.log('juniorsupply', junior.totalSupply()); 
+		uint num = underlying.totalSupply() - senior.totalSupply().mulDivDown(s_r, PRICE_PRECISION); 
+		console.log('num', num); 
+		j_r = num.mulDivDown(PRICE_PRECISION, junior.totalSupply()); 
+		console.log('jr', j_r); 
 	}
 
 	/// @dev need to return in list format to index it easily 
@@ -157,6 +175,9 @@ contract Splitter{
 		return addresses; 
 	}
 
+	function getRedemptionPrices() public view returns(uint, uint){
+		return (s_r, j_r); 
+	}
 
 	function max(uint256 a, uint256 b) internal pure returns (uint256) {
     	return a >= b ? a : b;

@@ -5,10 +5,11 @@ import {
   PARA_CONFIG,
   NETWORK_BLOCK_REFRESH_TIME,
   MULTICALL_MARKET_IGNORE_LIST,
+  DEFAULT_INSTRUMENT_STATE, 
 } from "./constants";
 import { useData } from "./data-hooks";
 import { useUserStore, UserStore } from "./user";
-import { getMarketInfos, getRewardsStatus } from "../utils/contract-calls";
+import { getMarketInfos, getRewardsStatus, getHedgePrice } from "../utils/contract-calls";
 import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
@@ -26,13 +27,20 @@ export const DataStore = {
   actions: STUBBED_DATA_ACTIONS,
 };
 
+// export const InstrumentDataStore = {
+//   actionSet : false, 
+//   get: () => ({ ...DEFAULT_INSTRUMENT_STATE }),
+//   actions : STUBBED_DATA_
+// };
+
+
 export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children }: any) => {
   const { account } = useUserStore();
   const configCashes = getCashesInfo();
   const state = useData(configCashes);
   const {
     cashes,
-    actions: { updateDataHeartbeat, updateTransactions },
+    actions: { updateDataHeartbeat, updateTransactions, updateInstrumentDataHeartbeat },
   } = state;
 
   if (!DataStore.actionsSet) {
@@ -64,7 +72,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
           loadType,
           dblock
         );
-        console.log('datainfos', infos)
+        // console.log('datainfos', infos)
         if (isRpcDown) {
           setIsRpcDown(false);
         }
@@ -105,6 +113,37 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
       clearInterval(intervalId);
     };
   }, []);
+
+  // const fetchMarketInfos = async()=> {
+  //   const { account: userAccount, loginAccount } = UserStore.get();
+  //   const { hedgePrice: dhedgePrice, principal: dprincipal, expectedYield: dexpectedYield, 
+  //     duration: dduration, totalcollateral: dtotalcollateral} = DataStore.get(); 
+
+  //   dhedgePrice =   await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
+  //   return dhedgePrice; 
+  // }; 
+  // useEffect(()=>{
+
+
+
+  //   fetchMarketInfos().then(({hedgePrice})=>{
+  //   updateInstrumentDataHeartbeat(hedgePrice); 
+
+  //   }); 
+
+  //     //const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
+
+
+
+  // // hedgePrice: "0",
+  // // principal: "0",
+  // // expectedYioeld: "0",
+  // // duration: "0",
+  // // totalcollateral: "0", 
+  //     //const { }
+  //   }; 
+
+  // }, []);
 
   useEffect(() => {
     let isMounted = true;

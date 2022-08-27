@@ -21,7 +21,7 @@ import { Slippage, Budget} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity,
-   getERCBalance} = ContractCalls;
+   getERCBalance, getVaultTokenBalance} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -220,16 +220,19 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
 
   useEffect(async() => {
         let bal; 
-        const vaultad = "0x8c05D03eff257e7d0E5711F4Ab4cd2277cB9B119"
-        bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
-        console.log('bal', bal.toString()); 
-        setUserBalance(Number(bal.toString())/(10**6)); 
+        //const vaultad = "0x3C95067507C0346e40439E46dD9FFce3eF4F264E"
+        //bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
+        bal = await getVaultTokenBalance(account, loginAccount.library)
+        console.log('bal', bal.toString(), userBalance); 
+        setUserBalance(Number(bal.toString())); 
           
       }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
   const getbudget = async()=>{
-    const b =  await getTraderBudget(account, loginAccount.library, String(amm?.turboId)); 
-    const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
+   // const b =  await getTraderBudget(account, loginAccount.library, String(amm?.turboId)); 
+   // const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
+    const b = 1000000*230; 
+    const h = 1000000*130; 
     setTraderBudget(Number(b)/1000000); 
     setHedgeQuantity(Number(h)/1000000);
 

@@ -385,7 +385,7 @@ const MarketsView = () => {
       <ul>
      {/* <button onClick={() => createmarket(  account,    loginAccount
 )}>CreateMarket</button> */}
-            <button onClick={() => confirmAction( { account,    loginAccount}
+   {  /*       <button onClick={() => confirmAction( { account,    loginAccount}
 )}>CreateMarket</button>
            <button onClick={() => confirmMint( { account,    loginAccount}
 )}>MintDS</button>
@@ -400,7 +400,7 @@ const MarketsView = () => {
 )}>MintRep</button>
 
                       
-                    
+                  */  }
 
        {/* <SquareDropdown
           onChange={(value) => {

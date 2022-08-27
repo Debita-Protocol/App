@@ -248,9 +248,9 @@ export const TopNav = () => {
           <SettingsButton />
         )}
         <Toasts />
-      </section>
-      <VerifiedAccount />
     </section>
+     {/*   <VerifiedAccount />*/}
+    </section> 
   );
 };
 

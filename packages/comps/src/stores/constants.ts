@@ -165,7 +165,17 @@ export const MOCK_APP_STATUS_STATE = {
 export const STUBBED_DATA_ACTIONS = {
   updateDataHeartbeat: (processed, blocknumber, errors) => {},
   updateTransactions: (transactions) => {},
+  updateInstrumentDataHeartbeat: (processed)=>{},
 };
+
+
+export const DEFAULT_INSTRUMENT_STATE = {
+  hedgePrice: "0",
+  principal: "0",
+  expectedYioeld: "0",
+  duration: "0",
+  totalcollateral: "0",  
+}
 
 export const DEFAULT_DATA_STATE: GraphDataState = {
   ammExchanges: {},
@@ -174,6 +184,12 @@ export const DEFAULT_DATA_STATE: GraphDataState = {
   errors: null,
   markets: {},
   transactions: {},
+
+  hedgePrice: "0",
+  principal: "0",
+  expectedYield: "0",
+  duration: "0",
+  totalcollateral: "0", 
 };
 
 export const DATA_KEYS = {
@@ -183,11 +199,19 @@ export const DATA_KEYS = {
   ERRORS: "errors",
   MARKETS: "markets",
   TRANSACTIONS: "transactions",
+
+  HEDGEPRICE: 'hedgePrice',
+  PRINCIPAL: 'principal', 
+  EXPECTEDYIELD:'expectedYield', 
+  DURATION:'duration', 
+  TOTALCOLLATERAL: 'totalcollateral',
+
 };
 
 export const DATA_ACTIONS = {
   UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
   UPDATE_TRANSACTIONS: "UPDATE_TRANSACTIONS",
+  UPDATE_INSTRUMENT_DATA_HEARTBEAT: "UPDATE_INSTRUMENT_DATA_HEARTBEAT"
 };
 
 export const MAINNET: string = "1";

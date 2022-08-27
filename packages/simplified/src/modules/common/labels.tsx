@@ -53,14 +53,14 @@ export const AppViewStats = ({ small = false, liquidity = false, trading = false
   ]);
 
 
-  const verified = false; 
+  const verified = true; 
   const reputation = 1;
   var isVerified = verified ? "True": "False"
   if (!verified){
     isVerified = isVerified + " --"
   }
   else{
-    isVerified = isVerified + " 1"
+    isVerified = isVerified + " /13.3"
   }
 
   return (
