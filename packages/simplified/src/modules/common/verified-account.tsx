@@ -31,12 +31,8 @@ export const VerifiedAccount = () => {
 
     const verifyAccount = useCallback(async () => {
         if (account && loginAccount) {
-            try {
-                let tx = await verifyAddress(account, loginAccount.library);
-                await tx.wait();
-            } catch (err) {
-                alert("error verifying account")
-            }
+            let tx = await verifyAddress(account, loginAccount.library);
+            await tx.wait();
         }
     }, [loginAccount, account])
 

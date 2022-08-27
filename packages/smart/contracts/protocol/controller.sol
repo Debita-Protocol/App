@@ -72,34 +72,35 @@ contract Controller {
   }
 
   constructor (
-      address _creator_address,
-      address _interep_address
+    address _creator_address,
+    address _interep_address
   ) {
-      creator_address = _creator_address;
-      interep = IInterep(_interep_address);
+    creator_address = _creator_address;
+    
+    interep = IInterep(_interep_address);
 
-      linearBCFactory = new LinearBondingCurveFactory(); 
+    linearBCFactory = new LinearBondingCurveFactory();
   }
 
   /*----Setup Functions----*/
 
   function setMarketManager(address _marketManager) public onlyOwner {
-      require(_marketManager != address(0));
-      marketManager = MarketManager(_marketManager);
+    require(_marketManager != address(0));
+    marketManager = MarketManager(_marketManager);
   }
 
   function setVault(address _vault) public onlyOwner {
-      require(_vault != address(0));
-      vault = Vault(_vault);
+    require(_vault != address(0));
+    vault = Vault(_vault);
   }
 
   function setMarketFactory(address _marketFactory) public onlyOwner {
-      require(_marketFactory != address(0));
-      marketFactory = TrustedMarketFactoryV3(_marketFactory);
+    require(_marketFactory != address(0));
+    marketFactory = TrustedMarketFactoryV3(_marketFactory);
   }
 
   function setReputationNFT(address NFT_address) public onlyOwner{
-      repNFT = ReputationNFT(NFT_address); 
+    repNFT = ReputationNFT(NFT_address); 
   }
 
 
@@ -119,16 +120,15 @@ contract Controller {
     uint256 a = (price_precision -b).divWadDown(principal_+interest_); 
 
     return (a,b);
+  }
 
-
-}
-
-
-
+  /**
+   @dev not working bc of old wasm-loader, should work when update everything.
+   */
   function verifyAddress(
-      uint256 nullifier_hash, 
-      uint256 external_nullifier,
-      uint256[8] calldata proof
+    uint256 nullifier_hash, 
+    uint256 external_nullifier,
+    uint256[8] calldata proof
   ) external  {
       require(!verified[msg.sender], "address already verified");
       interep.verifyProof(TWITTER_UNRATED_GROUP_ID, signal, nullifier_hash, external_nullifier, proof);
@@ -139,23 +139,20 @@ contract Controller {
     verified[msg.sender] = true;
   }
 
-
   function mintRepNFT(
     address NFT_address,
     address trader
     ) external  {
     ReputationNFT(NFT_address).mint(msg.sender);
   }
-  //Validator should be added for each borrower
+
   function addValidator(address validator_address) external  {
     require(validator_address != address(0), "Zero address detected");
     require(validators[validator_address] == false, "Address already exists");
 
     validators[validator_address] = true; 
     validators_array.push(validator_address);
-}
-
-
+  }
 
   function createZCBs(
     uint256 a,
@@ -183,67 +180,73 @@ contract Controller {
    @dev initiates market, called by frontend loan proposal or instrument form submit button.
    @param recipient is the 
    @dev a and b must be 60.18 format
-   */
+  */
 
   function initiateMarket(
-      address recipient,
-      Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
+    address recipient,
+    Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
   ) external  {
 
     (uint256 a, uint256 b) = getCurveParams(instrumentData.principal, instrumentData.expectedYield);
+
     uint256 marketId = marketFactory.marketCount(); 
 
     OwnedERC20[] memory zcb_tokens = createZCBs(a,b); 
 
     require(marketFactory.createZCBMarket(
-        address(this), // controller is the settlement address
-        instrumentData.description,
-        zcb_tokens) == marketId, "MarketID err"); 
+      address(this), // controller is the settlement address
+      instrumentData.description,
+      zcb_tokens) == marketId, "MarketID err"
+    ); 
 
+    ad_to_id[recipient] = marketId;
 
-    ad_to_id[recipient] = marketId; 
     instrumentData.marketId = marketId;
 
-    vault.addProposal(
-        instrumentData
-    );
+    vault.addProposal(instrumentData);
 
     market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-    // marketManager.setAssessmentPhase(marketId, true, true);  
-    marketManager.setMarketPhase(marketId, true, true, 0, 1000 * (10**6));  // need to set min rep score here as well.e
+    
+    marketManager.setMarketPhase(marketId, true, true, 0, 1000 * (10**6));  // TODO need to set min rep score here as well.e
+    
     marketManager.add_short_zcb( marketId, address(zcb_tokens[1])); 
   
     emit MarketInitiated(marketId, recipient);
-}
+  }
 
   
  
   /**
-  @notice main function called at maturity OR premature resolve of instrument(from early default)
-  @dev triggered by resolve Loan 
-  @param atLoss: when actual returns lower than expected 
-  @param principal_loss: if total returned less than principal, principal-total returned, this is total loss
+    @notice main function called at maturity OR premature resolve of instrument(from early default)
+    @dev triggered by resolve Loan 
+    @param atLoss: when actual returns lower than expected 
+    @param principal_loss: if total returned less than principal, principal-total returned, this is total loss
 
-  When market finishes at maturity, need to 
-  1. burn all vault tokens in bc 
-  2. mint all incoming redeeming vault tokens 
+    When market finishes at maturity, need to 
+    1. burn all vault tokens in bc 
+    2. mint all incoming redeeming vault tokens 
   */
-function resolveMarket(
+  function resolveMarket(
     uint256 marketId,
     bool atLoss,
     uint256 extra_gain,
     uint256 principal_loss
-) external  {
+  ) external  {
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
+    
     marketManager.handle_maturity(marketId, atLoss, principal_loss); 
+    
     marketManager.deactivateMarket(marketId, atLoss);
     
     //Burn all vault tokens in BC
     address bc_ad = getZCB_ad( marketId); 
+    
     uint256 bc_vault_balance = vault.balanceOf(bc_ad); 
+    
     vault.controller_burn(bc_vault_balance,bc_ad); 
 
-    uint256 winning_outcome = 0; //TODO  
+    uint256 winning_outcome = 0; //TODO
+
     marketFactory.trustedResolveMarket(marketId, winning_outcome);
   }
 
@@ -268,14 +271,14 @@ function resolveMarket(
     vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
     vault.onMarketApproval(marketId);
   }
+
   /*
   Market is denied by validator or automatically if conditions are not met 
   */
   function denyMarket(
-      uint256 marketId
+    uint256 marketId
   ) external  onlyValidator {
     marketManager.denyMarket(marketId);
-      //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
     
     uint256 winning_outcome = 0; //TODO  
     
@@ -283,8 +286,6 @@ function resolveMarket(
     
     vault.denyInstrument(marketId);
   }
- 
-
 
   function trustInstrument(uint256 marketId) private  {
     vault.trustInstrument(Instrument(market_data[marketId].instrument_address));

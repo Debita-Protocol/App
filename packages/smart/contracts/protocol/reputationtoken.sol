@@ -36,7 +36,6 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   constructor (
     address _controller
   ) ERC721("Debita Reputation Token", "DRT") {
-    console.log("here");
     controller = Controller(_controller);
   }
 
@@ -77,7 +76,6 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     if (data.n == 0) {
       data.score = score;
     } else {
-      //data.score = ((data.score / data.n) + score) / (data.n + 1);
       data.score = (data.score / data.n + score) / (data.n + 1);
     }
 
@@ -90,6 +88,5 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   function resetScore(address to) external {
     require(_ownerToId[to] != uint256(0), "No Id found");
     delete _reputation[_ownerToId[to]];
-
   }
 }

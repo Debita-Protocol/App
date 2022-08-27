@@ -118,13 +118,12 @@ abstract contract BondingCurve is OwnedERC20 {
 	/// @param quantity is the ratio amount(in colalteral) / total collateral budget for trader, in 18 decimals 
 	function calcImpliedProbability(uint256 collateral_amount, uint256 quantity) public view returns(uint256 prob){
 		uint256 zcb_amount = calculatePurchaseReturn(collateral_amount); 
-		console.log('zcb_amount', zcb_amount); 
-		//uint256 avg_price = collateral_amount/zcb_amount; 
+		console.log('zcb_amount', zcb_amount);
 		uint256 avg_price = calcAveragePrice(zcb_amount); //18 decimals 
 		console.log('avg_price', avg_price); 
 		uint256 b = avg_price.mulWadDown(math_precision - avg_price);
 		console.log('b', b);
-		uint256 prob = quantity.mulWadDown(b)+ avg_price; 
+		uint256 prob = quantity.mulWadDown(b)+ avg_price;
 		return prob; 
 	}
 
@@ -223,14 +222,6 @@ abstract contract BondingCurve is OwnedERC20 {
 		return _calculateProbability(amount);
 	 }
 
-	// function trustedBurn(address trader, uint256 amount) public onlyOwner{
-	// 	_burn(trader, amount);
-	//  }
-
-
-
-
-
 	function redeem(
 		address receiver, 
 		uint256 zcb_redeem_amount, 
@@ -240,8 +231,6 @@ abstract contract BondingCurve is OwnedERC20 {
 		collateral.safeTransfer(receiver, collateral_redeem_amount); 
 		reserves -= collateral_redeem_amount;
 	 }
-
-
 
 	function redeemPostAssessment(
 		address redeemer,
@@ -260,20 +249,16 @@ abstract contract BondingCurve is OwnedERC20 {
 		reserves -= burn_collateral_amount;
 	 }
 
-
 	 function _beforeTokenTransfer(
 		address from,
 		address to,
 		uint256 amount
-		) internal override virtual {
-			// on _mint
-			if (from == address(0) && price_upper_bound > 0) {
-				console.log("beforeTT: price_upper_bound", price_upper_bound);
-				require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
-				// if (balanceOf(to) == 0 && amount > 0) {
-				//     buyers.push(to);
-				// }
-			}
+	) internal override virtual {
+		// on _mint
+		if (from == address(0) && price_upper_bound > 0) {
+			console.log("beforeTT: price_upper_bound", price_upper_bound);
+			require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
+		}
 		// on _burn
 		else if (to == address(0) && price_lower_bound > 0) {
 			require(_calculateDecreasedPrice(amount) >= price_lower_bound, "below price lower bound");

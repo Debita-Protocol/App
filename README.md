@@ -1,6 +1,11 @@
 [![Packages CI](https://github.com/AugurProject/turbo/actions/workflows/node.js.yml/badge.svg)](https://github.com/AugurProject/turbo/actions/workflows/node.js.yml)
 
-# How Do I Use This?
+# Tulu Finance Monorepo
+We use  Augur for the base for our frontend, but have designed and implemented all the contracts. 
+Main readme file and whitepaper can be found in the packages/smart directory. 
+
+
+## How Do I Use This?
 
 First get dependencies and build everything.
 (Everything. Contracts, generated files, then finally the typescript itself.)
@@ -55,7 +60,7 @@ git pull
 git checkout dev
 yarn
 yarn build
-DEFAULT_NETWORK_ID=137 yarn simp start
+DEFAULT_NETWORK_ID=80001 yarn simp start
 ```
 
 - See the [Augur Simplified UI](packages/simplified/README.md), [Augur Sport UI](packages/sport/README.md), and [Augur Comps](packages/comps/README.md) for more information.
@@ -92,6 +97,4 @@ yarn lint
 # Documentation
 
 Documentation is available at https://turbo-docs.augur.sh/
-# debita-solidity
-# debita-solidity
-# debita-solidity
+

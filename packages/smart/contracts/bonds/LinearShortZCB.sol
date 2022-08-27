@@ -6,7 +6,7 @@ import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinearBondingCurve} from "./LinearBondingCurve.sol"; 
-import {MarketManager} from "../stablecoin/marketmanager.sol"; 
+import {MarketManager} from "../protocol/marketmanager.sol"; 
 
 /// @notice this contract allows tokenized short positions at a price 1-zcb
 /// 1 shortZCB is a representation of borrowing+ selling 1 longZCB  
@@ -34,17 +34,21 @@ contract LinearShortZCB is OwnedERC20{
     string memory name,
     string memory symbol,
     address owner, // market manager.
-    address _collateral, //vault tokens ,
-
+    address _collateral, //vault tokens
     address LongZCB_address, 
     uint256 _marketId
 )  OwnedERC20(name, symbol, owner) {
     collateral = ERC20(_collateral); 
-    math_precision = 1e18;
-    collateral_dec = collateral.decimals();
-    collateral.approve(owner, 10*(10**8)* collateral_dec); 
-    LongZCB = LinearBondingCurve(LongZCB_address); 
-    marketId = _marketId; 
+    
+	math_precision = 1e18;
+    
+	collateral_dec = collateral.decimals();
+    
+	collateral.approve(owner, 10*(10**8)* collateral_dec); 
+    
+	LongZCB = LinearBondingCurve(LongZCB_address); 
+    
+	marketId = _marketId; 
 
   }
 
@@ -56,7 +60,8 @@ contract LinearShortZCB is OwnedERC20{
   /// should be instead maximum possible borrow amount 
   function getMaxShortAmount() public view returns(uint256){
   	uint256 c = LongZCB.getTotalZCB(); 
-   	(uint256 a, uint256 b) = LongZCB.getParams(); 
+   	
+	(uint256 a, uint256 b) = LongZCB.getParams(); 
 
   	return c - (a/2).mulWadDown(c.mulWadDown(c)) - b.mulWadDown(c); 
 
@@ -67,30 +72,36 @@ contract LinearShortZCB is OwnedERC20{
   /// returns in 18 dec shortZCB amount 
   function calculateAmountGivenSell(uint256 amount) public view returns(uint256,uint256){
   	uint256 amount_ = amount * 10**(18-collateral_dec); 
-  	uint256 c = LongZCB.getTotalZCB(); 
+  	
+	uint256 c = LongZCB.getTotalZCB(); 
 
   	console.log('c', c);
 
   	(uint256 a, uint256 b) = LongZCB.getParams(); 
-  	uint256 x = (math_precision-b).mulWadDown(math_precision-b); 	
+  	
+	uint256 x = (math_precision-b).mulWadDown(math_precision-b); 	
 
   	uint256 q = 2*a.mulWadDown(c);
-  	uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c)); 
-  	uint256 e = q.mulWadDown(b); 
-  	uint256 t = 2*a.mulWadDown(amount_);
+  	
+	uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c)); 
+  	
+	uint256 e = q.mulWadDown(b); 
+  	
+	uint256 t = 2*a.mulWadDown(amount_);
   	// uint256 rhs = ((x - q+w+e+t)*math_precision).sqrt(); 
 
   	// console.log('rhs', rhs); 
   	uint256 numerator; 
-  	unchecked {numerator = (math_precision - b) - (((x - q+w+e+t)*math_precision).sqrt()) ;} 
-   	if (numerator >= 2**255 ) revert('Not enough liquidity'); 
+  	
+	unchecked {numerator = (math_precision - b) - (((x - q+w+e+t)*math_precision).sqrt()) ;} 
+   	
+	if (numerator >= 2**255 ) revert('Not enough liquidity'); 
 
    	uint256 cprime = numerator.divWadDown(a);
-   	console.log('cprime', cprime, c); 
+   	
+	console.log('cprime', cprime, c); 
 
-   	return ((c -cprime), cprime); 
-
-
+   	return ((c - cprime), cprime); 
   }
 
 	/// @notice called from the marketmanager 
@@ -115,14 +126,9 @@ contract LinearShortZCB is OwnedERC20{
 
 	}
 
-
  	/// @notice amount is in collateral 
 	function calculateAveragePrice(uint256 amount) public view returns(uint256, uint256){
 		(uint256 shortTokenAmount, uint256 k) = calculateAmountGivenSell(amount); 
 		return ((amount * 10**(18-collateral_dec)).divWadDown(shortTokenAmount),shortTokenAmount) ; 
 	}
-
-
- 
-
 }

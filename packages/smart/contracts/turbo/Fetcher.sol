@@ -11,9 +11,9 @@ import "./MMAMarketFactoryV3.sol";
 import "./AMMFactory.sol";
 import "./CryptoMarketFactoryV3.sol";
 import "./NBAMarketFactoryV3.sol";
-import "../rewards/MasterChef.sol";
 import "./CryptoCurrencyMarketFactoryV3.sol";
 import "./TrustedMarketFactoryV3.sol";
+import "../rewards/MasterChef.sol";
 
 // Helper contract for grabbing huge amounts of data without overloading multicall.
 abstract contract Fetcher {
