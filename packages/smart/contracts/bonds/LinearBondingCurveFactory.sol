@@ -16,16 +16,19 @@ contract LinearBondingCurveFactory{
     string memory symbol,
     address marketmanager_address,
     address vault_address, 
-    uint256 a, 
-    uint256 b) external returns(OwnedERC20){
+    uint256 P, 
+    uint256 I, 
+    uint256 sigma
+    ) external returns(OwnedERC20){
 
     OwnedERC20 zcb = new LinearBondingCurve(
     name,
     symbol,
     marketmanager_address, // owner
     vault_address,  
-    a,
-    b
+    P,
+    I,
+    sigma
   );
     return zcb; 
   }

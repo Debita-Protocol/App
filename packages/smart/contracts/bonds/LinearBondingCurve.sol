@@ -9,19 +9,40 @@ import "hardhat/console.sol";
 contract LinearBondingCurve is BondingCurve {
   // ASSUMES 18 TRAILING DECIMALS IN UINT256
   using FixedPointMathLib for uint256;
-  uint256 a;
-  uint256 b;
+  uint256  a;
+  uint256  b;
+  uint256  discount_cap; 
 
+  /// @param sigma is the proportion of P that is going to be bought at a discount  
   constructor (
       string memory name,
       string memory symbol,
       address owner,
-      address collateral,
-      uint256 _a,
-      uint256 _b
+      address collateral, 
+      uint256 P, 
+      uint256 I,
+      uint256 sigma
   ) BondingCurve(name, symbol, owner, collateral) {
-      a = _a;
-      b = _b;
+    _calculateInitCurveParams(P, I, sigma); 
+  }
+
+  /// @notice need to calculate initial curve params that takes into account
+  /// validator rewards(from discounted zcb). Just skew up the initial price. 
+  /// @param sigma is the proportion of P that is going to be bought at a discount  
+  function _calculateInitCurveParams(uint256 P, uint256 I, uint256 sigma) internal virtual returns(uint256) {
+    uint256 price_precision = 1e18; 
+    uint256 interest_ = I * (10**12); 
+    uint256 principal_ = P * (10**12); 
+    uint256 sigma_ = sigma * (10**12); 
+    uint256 initial_purchase = principal_.mulWadDown(sigma_); 
+
+    b = (2*principal_).divWadDown(principal_+interest_) - price_precision; 
+    a = (price_precision -b).divWadDown(principal_+interest_); 
+    discount_cap = _calculatePurchaseReturn(initial_purchase); 
+
+    //get new initial price after saving for discounts 
+    b = a.mulWadDown(discount_cap) + b; 
+
   }
   /**
    @dev tokens returned = [((a*s + b)^2 + 2*a*p)^(1/2) - (a*s + b)] / a
@@ -56,7 +77,7 @@ contract LinearBondingCurve is BondingCurve {
   /// result = a * amount / 2  * (2* supply + amount) + b * amount
   /// @dev amount is in 60.18.
   /// returned in collateral decimals
-  function _calcAreaUnderCurve(uint256 amount) internal view override virtual returns(uint256){
+  function _calcAreaUnderCurve(uint256 amount) public view override virtual returns(uint256){
     uint256 s = totalSupply(); 
 
     uint256 result = ( a.mulWadDown(amount) / 2 ).mulWadDown(2 * s + amount) + b.mulWadDown(amount); 
@@ -125,7 +146,15 @@ contract LinearBondingCurve is BondingCurve {
     }
   }
 
+  function _get_discount_cap() internal view virtual override returns(uint){
+    return discount_cap; 
+  }
+
   function getParams() public view returns(uint,uint){
     return (a,b); 
   }
+
+
+
+
 }

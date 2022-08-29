@@ -40,14 +40,10 @@ contract LinearShortZCB is OwnedERC20{
 )  OwnedERC20(name, symbol, owner) {
     collateral = ERC20(_collateral); 
     
-	math_precision = 1e18;
-    
-	collateral_dec = collateral.decimals();
-    
-	collateral.approve(owner, 10*(10**8)* collateral_dec); 
-    
-	LongZCB = LinearBondingCurve(LongZCB_address); 
-    
+	math_precision = 1e18;  
+	collateral_dec = collateral.decimals();    
+	collateral.approve(owner, 10*(10**8)* collateral_dec);     
+	LongZCB = LinearBondingCurve(LongZCB_address);    
 	marketId = _marketId; 
 
   }
@@ -73,33 +69,28 @@ contract LinearShortZCB is OwnedERC20{
   function calculateAmountGivenSell(uint256 amount) public view returns(uint256,uint256){
   	uint256 amount_ = amount * 10**(18-collateral_dec); 
   	
-	uint256 c = LongZCB.getTotalZCB(); 
-
+		uint256 c = LongZCB.getTotalZCB(); 
   	console.log('c', c);
 
   	(uint256 a, uint256 b) = LongZCB.getParams(); 
   	
-	uint256 x = (math_precision-b).mulWadDown(math_precision-b); 	
-
+		uint256 x = (math_precision-b).mulWadDown(math_precision-b); 	
   	uint256 q = 2*a.mulWadDown(c);
-  	
-	uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c)); 
-  	
-	uint256 e = q.mulWadDown(b); 
-  	
-	uint256 t = 2*a.mulWadDown(amount_);
+		uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c));  	
+		uint256 e = q.mulWadDown(b);   	
+		uint256 t = 2*a.mulWadDown(amount_);
   	// uint256 rhs = ((x - q+w+e+t)*math_precision).sqrt(); 
 
   	// console.log('rhs', rhs); 
   	uint256 numerator; 
   	
-	unchecked {numerator = (math_precision - b) - (((x - q+w+e+t)*math_precision).sqrt()) ;} 
+		unchecked {numerator = (math_precision - b) - (((x - q+w+e+t)*math_precision).sqrt()) ;} 
    	
-	if (numerator >= 2**255 ) revert('Not enough liquidity'); 
+		if (numerator >= 2**255 ) revert('Not enough liquidity'); 
 
-   	uint256 cprime = numerator.divWadDown(a);
+   		uint256 cprime = numerator.divWadDown(a);
    	
-	console.log('cprime', cprime, c); 
+		console.log('cprime', cprime, c); 
 
    	return ((c - cprime), cprime); 
   }
@@ -125,6 +116,42 @@ contract LinearShortZCB is OwnedERC20{
     return shortTokensToMint; 
 
 	}
+
+
+	/// @notice called from marketmanager, function for buying back and repaying debt 
+	/// @dev one shortZCB is tokenized debt+sell of one longZCB 
+	/// 1. burn shortZCB  
+	/// 2. buy longZCB 
+	/// 3. repay longZCB 
+	function trustedClose(
+		address trader, 
+		uint256 shortZCB_amount 
+		) public onlyOwner returns(uint256){
+
+		///burn first
+		_burn(trader, shortZCB_amount); 
+
+		uint256 needed_collateral = LongZCB._calcAreaUnderCurve(shortZCB_amount); 
+		uint256 returned_collateral = (shortZCB_amount/(10**(18-collateral_dec)) - needed_collateral);
+
+		// collateral.safeTransferFrom(trader, address(this), needed_collateral); 
+		MarketManager marketmanager = MarketManager(owner); 
+		uint256 amountOut = marketmanager.buy( marketId, needed_collateral); 
+   	console.log('amountout', amountOut, shortZCB_amount); 
+
+		marketmanager.repay_for_shortZCB(marketId, shortZCB_amount, trader);
+
+		collateral.safeTransfer(trader, returned_collateral); 
+
+		return returned_collateral; 
+	}
+
+
+	/// @notice returns estimated collateral required to repay debt, used for approvals 
+	function getEstimatedCollateralNeeded(uint256 debt) public view returns(uint256){
+		return  LongZCB._calcAreaUnderCurve(debt); 
+	}
+
 
  	/// @notice amount is in collateral 
 	function calculateAveragePrice(uint256 amount) public view returns(uint256, uint256){

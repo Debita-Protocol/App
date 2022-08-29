@@ -189,6 +189,10 @@ contract Vault is ERC4626, Auth{
         return UNDERLYING.balanceOf(address(this));
     }
 
+    function fetchInstrument(uint256 marketId) public view returns(Instrument){
+      return Instruments[marketId]; 
+    }
+
     function fetchInstrumentData(uint256 marketId) public view returns(InstrumentData memory){
         return getInstrumentData[Instruments[marketId]];
     }
@@ -240,24 +244,6 @@ contract Vault is ERC4626, Auth{
         Instruments[data.marketId] = Instrument(data.Instrument_address);
     }
 
-    /**
-     @notice checks status of instrument
-     returns true if resolution, false if not.
-     */
-    function checkInstrument(
-        uint256 marketId
-    ) external returns (bool) {
-        InstrumentData storage data = getInstrumentData[Instruments[marketId]];
-        
-        require(data.marketId > 0 && data.trusted, "instrument must be active");
-        require(data.maturityDate > 0, "instrument hasn't been approved yet" );
-
-        if (block.timestamp >= data.maturityDate) {
-            resolveInstrument(Instruments[marketId]);
-            return true;
-        }
-        return false;
-    }
 
     /**
      @notice called by controller on approveMarket.
@@ -272,7 +258,8 @@ contract Vault is ERC4626, Auth{
      */
     function resolveInstrument(
         Instrument _instrument
-    ) internal {
+    ) external onlyController
+    returns(bool, uint256, uint256) {
         harvest(address(_instrument));
 
         InstrumentData storage data = getInstrumentData[_instrument];
@@ -284,9 +271,11 @@ contract Vault is ERC4626, Auth{
 
         withdrawAllFromInstrument(_instrument);
         
-        controller.resolveMarket(data.marketId, atLoss, extra_gain, total_loss);
+        // controller.resolveMarket(data.marketId, atLoss, extra_gain, total_loss);
         
         removeInstrument(data.marketId);
+
+        return(atLoss, extra_gain, total_loss); 
     }
 
     /**
