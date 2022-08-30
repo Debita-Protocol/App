@@ -493,9 +493,12 @@ describe("Cycle", ()=>{
 
     const bal_before = await collateral.balanceOf(creditline.address);
     expect(bal_before).to.equal(instrumentdata.principal); 
-    await creditline.drawdown(instrumentdata.principal.div(10));
+    // await creditline.drawdown(instrumentdata.principal.div(10));
+    await collateral.approve(creditline.address,instrumentdata.principal );
+    await creditline.repay(0, instrumentdata.principal.div(5));
+
     const bal = await collateral.balanceOf(creditline.address);  
-    expect(bal).to.equal(instrumentdata.principal.mul(9).div(10)); 
+   // expect(bal).to.equal(instrumentdata.principal.mul(9).div(10)); 
 
   }); 
 
@@ -513,7 +516,7 @@ describe("Cycle", ()=>{
     const redemption_price = await marketmanager.get_redemption_price( marketId); 
     const longzcb_balance_before = await bc.balanceOf(owner.address);
     const shortzcb_balance_before = await sbc.balanceOf(owner.address); 
-    await marketmanager.redeemShortZCB(marketId,owner.address); 
+
     await marketmanager.redeem(marketId, owner.address); 
     console.log('redemptionpriece', redemption_price.toString()); 
 
@@ -521,12 +524,22 @@ describe("Cycle", ()=>{
     const shortzcb_balance = await sbc.balanceOf(owner.address); 
     const vaultBalanceAfterShort = await vault.balanceOf(owner.address);
     const sbc_vaultBalance = await vault.balanceOf(shortzcb_ad); 
-    expect(shortzcb_balance).to.equal(longzcb_balance); 
+    // expect(shortzcb_balance).to.equal(longzcb_balance); 
     expect(longzcb_balance).to.equal(0); 
+    expect(sbc_vaultBalance).to.equal(0);
+
     console.log('should equal roughly ',vaultBalanceAfterShort.sub(vaultbalancebeforeredemption).toString(),
       (shortzcb_balance_before.add(longzcb_balance_before)).div(10**12).toString()  );
 
     console.log(' balances after redemption', longzcb_balance.toString(), shortzcb_balance.toString(),vaultBalanceAfterShort.toString(), sbc_vaultBalance.toString()); 
+
+    const vaultBalancebefore = await vault.balanceOf(owner.address);
+    await marketmanager.redeemShortZCB(marketId,owner.address); 
+    const vaultBalanceafter = await vault.balanceOf(owner.address); 
+    console.log('before and after redeem', vaultBalancebefore.toString(), vaultBalanceafter.toString()); 
+    console.log('shortredemption_price and zcb balnace times redemption price',pp_.sub(redemption_price).toString(),
+      ((pp_.sub(redemption_price)).mul(shortzcb_balance)).div(10**12).div(10**6).toString() ); 
+
   });
 
   //TODO do redemption solidity first 

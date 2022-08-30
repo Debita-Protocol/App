@@ -1,19 +1,20 @@
 pragma solidity ^0.8.4;
 
 import "./owned.sol";
-import "../turbo/AMMFactory.sol"; 
 import "./reputationtoken.sol"; 
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import {Controller} from "./controller.sol";
 import {OwnedERC20} from "../turbo/OwnedShareToken.sol";
-import "./IMarketManager.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../prb/PRBMathUD60x18.sol";
 import {LinearShortZCB} from "../bonds/LinearShortZCB.sol"; 
+import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 
 
 contract MarketManager is Owned {
+	using FixedPointMathLib for uint256;
+
 	/*Wrapper contract for bondingcurve markets, trades are restricted/funneled through here
 		Types of restrictions are 
 		1) Being verified 
@@ -24,7 +25,6 @@ contract MarketManager is Owned {
 	Misc. 
 		a) To avoid securitization, enforce selling Fee  
 	*/
-	using PRBMathUD60x18 for uint256;
 
     uint256 private constant PRICE_PRECISION = 1e6; 
 
@@ -620,9 +620,12 @@ contract MarketManager is Owned {
 		uint256 shortZCB_redeem_amount = shortZCB.balanceOf(msg.sender); 
 		shortZCB.trustedBurn(msg.sender, shortZCB_redeem_amount); 
 
-		uint256 redemption_price = PRICE_PRECISION - get_redemption_price(marketId); 
+
+		uint256 long_redemption_price = get_redemption_price(marketId);
+		uint256 redemption_price = long_redemption_price >= PRICE_PRECISION? 0 : 
+					PRICE_PRECISION - long_redemption_price; 
 		uint256 zcb_redeem_amount_prec = shortZCB_redeem_amount/(10**12); 
-		uint256 collateral_redeem_amount = (redemption_price * zcb_redeem_amount_prec)/PRICE_PRECISION; 
+		uint256 collateral_redeem_amount = redemption_price.mulDivDown(zcb_redeem_amount_prec,PRICE_PRECISION);
 
 		controller.redeem_mint(collateral_redeem_amount, msg.sender); 
 		return collateral_redeem_amount; 
@@ -701,40 +704,36 @@ contract MarketManager is Owned {
 	depends on total_repayed/(principal + predetermined yield)
 	If total_repayed = 0, redemption price is 0
 	@param atLoss: defines circumstances where expected returns are higher than actual
-	@param principal_loss: principal - returned amount => non-negative always?
+	@param loss: facevalue - returned amount => non-negative always?
 	@param extra_gain: any extra yield not factored during assessment. Is 0 yield is as expected
 	 */
 	function update_redemption_price(
 		uint256 marketId,
 		bool atLoss, 
 		uint256 extra_gain, 
-		uint256 principal_loss
+		uint256 loss
 	) external  onlyController {	
 		require(debt_pools[marketId].total_debt == LinearShortZCB(shortZCBs[marketId]).totalSupply(), "Accounting Error"); 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
 
-		uint256 total_bought_collateral = zcb.getTotalCollateral();
-		uint256 total_supply = zcb.getTotalZCB();
-		uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt :0;  //TODO abstract shortZCB 
+		uint256 total_supply = zcb.getTotalZCB()/(10**12);
+		uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt/(10**12) :0;  
 		console.log("total_bought_bonds", total_supply, atLoss);
-		console.log("principal_loss", principal_loss, extra_gain);
+		console.log("principal_loss", loss, extra_gain);
 		console.log('totalshorts', total_shorts); 
 
-		redemption_prices[marketId] = max(PRICE_PRECISION + ((extra_gain)*PRICE_PRECISION)/(total_supply+total_shorts),0); 
 
-			// if (atLoss){
-		// 	if (total_bought_collateral - principal_loss > 0){
-		// 		redemption_prices[marketId] = PRICE_PRECISION - (principal_loss*PRICE_PRECISION/total_bought_bonds);
-		// 	}
-		// 	else{
-		// 		redemption_prices[marketId] = 0; 
-		// 	}
-		// }
-		// else{
-		// 	require(extra_gain >= 0 && principal_loss ==0,  "loss err"); 
-		// 	uint256 num_shorts = debt_pools[marketId].total_debt; //For now assume that every zcb borrowed is used to short
-		// 	redemption_prices[marketId] = PRICE_PRECISION + (extra_gain*PRICE_PRECISION/(total_bought_bonds+num_shorts)); 
-		// }	
+		if(!atLoss){
+			redemption_prices[marketId] = PRICE_PRECISION + (extra_gain.mulDivDown(PRICE_PRECISION, total_supply+total_shorts)); 
+		}
+		else{
+			if (PRICE_PRECISION <  loss.mulDivDown(PRICE_PRECISION, total_supply) ){
+				redemption_prices[marketId] = 0; 
+			}
+			else{
+				redemption_prices[marketId] = PRICE_PRECISION - loss.mulDivDown(PRICE_PRECISION, total_supply); 
+			}
+		}
 
 		console.log('redemption_price', redemption_prices[marketId]); 
 	}

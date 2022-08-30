@@ -11,6 +11,7 @@ import {ERC20} from "./tokens/ERC20.sol";
 import {Instrument} from "./instrument.sol";
 import {Controller} from "../protocol/controller.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "hardhat/console.sol";
 
 
 contract Vault is ERC4626, Auth{
@@ -54,7 +55,7 @@ contract Vault is ERC4626, Auth{
         uint248 balance; // in underlying
         uint256 faceValue; // in underlying
         uint256 marketId;
-    	uint256 principal; //this is total available allowance in underlying
+    	  uint256 principal; //this is total available allowance in underlying
         uint256 expectedYield; // total interest paid over duration in underlying
         uint256 duration;
         string description;
@@ -261,7 +262,7 @@ contract Vault is ERC4626, Auth{
     ) external onlyController
     returns(bool, uint256, uint256) {
         Instrument _instrument = Instruments[marketId]; 
-        
+
         harvest(address(_instrument));
 
         InstrumentData storage data = getInstrumentData[_instrument];

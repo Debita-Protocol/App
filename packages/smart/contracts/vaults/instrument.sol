@@ -171,8 +171,8 @@ contract CreditLine is Instrument {
     /// @notice allows a borrower to repay their loan
     function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        require(repay_principal <= principalOwed, "overpaid principal");
-        require(repay_interest <= interestOwed, "overpaid interest");
+        // require(repay_principal <= principalOwed, "overpaid principal");
+        // require(repay_interest <= interestOwed, "overpaid interest");
         underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
         handleRepay(repay_principal, repay_interest); 
     }   
