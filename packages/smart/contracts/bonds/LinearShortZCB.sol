@@ -73,7 +73,7 @@ contract LinearShortZCB is OwnedERC20{
   	console.log('c', c);
 
   	(uint256 a, uint256 b) = LongZCB.getParams(); 
-  	
+  	console.log('a,b', a,b); 
 		uint256 x = (math_precision-b).mulWadDown(math_precision-b); 	
   	uint256 q = 2*a.mulWadDown(c);
 		uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c));  	
@@ -107,7 +107,7 @@ contract LinearShortZCB is OwnedERC20{
 		marketmanager.borrow_for_shortZCB(marketId, shortTokensToMint);  
 		uint256 amountOut = marketmanager.sell(marketId, shortTokensToMint); 
 		console.log('amountout', amountOut, collateral_amount);
-		console.log('supply_after_sell', supply_after_sell); 
+		console.log('supply_after_sell', supply_after_sell, shortTokensToMint); 
 
     //amountOut + collateral_amount should equal shortTokensToMint 
     _mint(trader, shortTokensToMint); 
@@ -133,13 +133,14 @@ contract LinearShortZCB is OwnedERC20{
 
 		uint256 needed_collateral = LongZCB._calcAreaUnderCurve(shortZCB_amount); 
 		uint256 returned_collateral = (shortZCB_amount/(10**(18-collateral_dec)) - needed_collateral);
-
+		console.log('needed_collateral', needed_collateral, returned_collateral); 
 		// collateral.safeTransferFrom(trader, address(this), needed_collateral); 
 		MarketManager marketmanager = MarketManager(owner); 
+		collateral.approve(address(LongZCB), needed_collateral); 
 		uint256 amountOut = marketmanager.buy( marketId, needed_collateral); 
    	console.log('amountout', amountOut, shortZCB_amount); 
 
-		marketmanager.repay_for_shortZCB(marketId, shortZCB_amount, trader);
+		marketmanager.repay_for_shortZCB(marketId, amountOut, trader);
 
 		collateral.safeTransfer(trader, returned_collateral); 
 

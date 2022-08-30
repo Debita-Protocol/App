@@ -405,7 +405,7 @@ contract MarketManager is Owned {
 		uint256 validator_collateral_cap  = (parameters[marketId].sigma * principal)/PRICE_PRECISION; 
 
     uint256 discount_cap = zcb.get_discount_cap(); 
-		uint256 _average_price = (validator_collateral_cap*PRICE_PRECISION)/discount_cap; 
+		uint256 _average_price = (validator_collateral_cap*PRICE_PRECISION)/(discount_cap/(10**12)); 
 
 		val_data[marketId].val_cap = discount_cap; 
 		val_data[marketId].avg_price = _average_price; 
@@ -421,13 +421,13 @@ contract MarketManager is Owned {
 		require(marketCondition(marketId), "Market can't be approved"); 
 		uint256 val_cap =  val_data[marketId].val_cap; 
 		uint256 zcb_for_sale = val_cap/parameters[marketId].N; 
-		uint256 collateral_required = (zcb_for_sale * val_data[marketId].avg_price)/PRICE_PRECISION;
+		uint256 collateral_required = (zcb_for_sale/(10**12) * val_data[marketId].avg_price)/PRICE_PRECISION;
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
 		sale_data[validator] += zcb_for_sale; 
 		total_validator_bought += zcb_for_sale; 
 
-		ERC20(zcb.getCollateral()).transferFrom(validator, address(this), collateral_required); 
+		ERC20(zcb.getCollateral()).transferFrom(validator, address(zcb), collateral_required); 
 
 		zcb.trustedMint(validator, zcb_for_sale);	
 
@@ -515,10 +515,12 @@ contract MarketManager is Owned {
 	mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
 	mapping(uint256=>address) shortZCBs; 
 	mapping(uint256=>mapping(address=>uint256) )assessment_shorts; 
+
 	function add_short_zcb(
 		uint256 marketId,
 		address shortZCB_address
 		) external onlyController{
+		console.log('adding', marketId); 
 		isShortZCB[marketId][shortZCB_address] = true;
 		shortZCBs[marketId] = shortZCB_address;
 
@@ -532,6 +534,7 @@ contract MarketManager is Owned {
 		) external {
 		require(isShortZCB[marketId][msg.sender], "Can't trustedmint");
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+		console.log('borrwoing', marketId); 
 
 		CDP storage cdp = debt_pools[marketId];
 		cdp.collateral_amount[msg.sender] += requested_zcb; //the collateral should be stored in the shortZCB
@@ -571,7 +574,6 @@ contract MarketManager is Owned {
 
 		) external {
 		//TODO do can sell 
-		require(isShortZCB[marketId][msg.sender], "Can't trustedmint"); 
 		LinearShortZCB(shortZCBs[marketId]).trustedShort(msg.sender, collateralIn); 
 		if (duringMarketAssessment(marketId)){
 			log_assessment_shorts(marketId, msg.sender, collateralIn); 
@@ -585,10 +587,10 @@ contract MarketManager is Owned {
 		uint256 close_amount
 		) external{
 
-		LinearShortZCB(shortZCBs[marketId]).trustedClose(msg.sender, close_amount);
+		uint256 returned_collateral = LinearShortZCB(shortZCBs[marketId]).trustedClose(msg.sender, close_amount);
 
 		if(duringMarketAssessment(marketId)){
-			assessment_shorts[marketId][msg.sender] = 0;  //TODO do this for closeamount less then full shortzcb balance 
+			assessment_shorts[marketId][msg.sender] -= returned_collateral;  
 		}
 
 	}
@@ -614,7 +616,7 @@ contract MarketManager is Owned {
 
 	function redeemShortZCB(uint256 marketId, address receiver) external returns(uint256){
 		require(!marketActive(marketId), "Market Active"); 
-		LinearShortZCB shortZCB = LinearShortZCB(address(controller.getZCB(marketId)));
+		LinearShortZCB shortZCB = LinearShortZCB(shortZCBs[marketId]);
 		uint256 shortZCB_redeem_amount = shortZCB.balanceOf(msg.sender); 
 		shortZCB.trustedBurn(msg.sender, shortZCB_redeem_amount); 
 
@@ -695,7 +697,7 @@ contract MarketManager is Owned {
 	}
 
 	/**
-	@dev Redemption price, as calculated at maturity,
+	@dev Redemption price, as calculated (only once) at maturity,
 	depends on total_repayed/(principal + predetermined yield)
 	If total_repayed = 0, redemption price is 0
 	@param atLoss: defines circumstances where expected returns are higher than actual
@@ -708,28 +710,33 @@ contract MarketManager is Owned {
 		uint256 extra_gain, 
 		uint256 principal_loss
 	) external  onlyController {	
-
+		require(debt_pools[marketId].total_debt == LinearShortZCB(shortZCBs[marketId]).totalSupply(), "Accounting Error"); 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+
 		uint256 total_bought_collateral = zcb.getTotalCollateral();
-		uint256 total_bought_bonds = zcb.getTotalZCB();
-		console.log("total_bought_bonds", total_bought_bonds);
-		console.log("principal_loss", principal_loss);
+		uint256 total_supply = zcb.getTotalZCB();
+		uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt :0;  //TODO abstract shortZCB 
+		console.log("total_bought_bonds", total_supply, atLoss);
+		console.log("principal_loss", principal_loss, extra_gain);
+		console.log('totalshorts', total_shorts); 
 
-		if (atLoss){
-			if (total_bought_collateral - principal_loss > 0){
-				redemption_prices[marketId] = PRICE_PRECISION - (principal_loss*PRICE_PRECISION/total_bought_bonds);
-			}
-			else{
-				redemption_prices[marketId] = 0; 
-			}
-		}
-		else{
-			require(extra_gain >= 0 && principal_loss ==0,  "loss err"); 
-			uint256 num_shorts = debt_pools[marketId].total_debt; //For now assume that every zcb borrowed is used to short
-			redemption_prices[marketId] = PRICE_PRECISION + (extra_gain*PRICE_PRECISION/(total_bought_bonds+num_shorts)); 
-		}	
+		redemption_prices[marketId] = max(PRICE_PRECISION + ((extra_gain)*PRICE_PRECISION)/(total_supply+total_shorts),0); 
 
-			console.log('redemption_price', redemption_prices[marketId]); 
+			// if (atLoss){
+		// 	if (total_bought_collateral - principal_loss > 0){
+		// 		redemption_prices[marketId] = PRICE_PRECISION - (principal_loss*PRICE_PRECISION/total_bought_bonds);
+		// 	}
+		// 	else{
+		// 		redemption_prices[marketId] = 0; 
+		// 	}
+		// }
+		// else{
+		// 	require(extra_gain >= 0 && principal_loss ==0,  "loss err"); 
+		// 	uint256 num_shorts = debt_pools[marketId].total_debt; //For now assume that every zcb borrowed is used to short
+		// 	redemption_prices[marketId] = PRICE_PRECISION + (extra_gain*PRICE_PRECISION/(total_bought_bonds+num_shorts)); 
+		// }	
+
+		console.log('redemption_price', redemption_prices[marketId]); 
 	}
 
 
@@ -746,7 +753,6 @@ contract MarketManager is Owned {
 	) external  onlyController {
 
 		BondingCurve zcb =  BondingCurve(address(controller.getZCB(marketId)));
-
 		uint256 redemption_price = get_redemption_price(marketId); 
 		require(redemption_price > 0, "Need to set redemption price"); // what if redemption price is set to zero?
 		uint256 total_bought_bonds = zcb.getTotalZCB();

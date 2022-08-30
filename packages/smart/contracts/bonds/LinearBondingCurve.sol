@@ -35,11 +35,11 @@ contract LinearBondingCurve is BondingCurve {
     uint256 principal_ = P * (10**12); 
     uint256 sigma_ = sigma * (10**12); 
     uint256 initial_purchase = principal_.mulWadDown(sigma_); 
-
+    console.log('initial purchase', initial_purchase); 
     b = (2*principal_).divWadDown(principal_+interest_) - price_precision; 
     a = (price_precision -b).divWadDown(principal_+interest_); 
-    discount_cap = _calculatePurchaseReturn(initial_purchase); 
-
+    discount_cap = _calculatePurchaseReturn(initial_purchase/(10**12)); 
+    console.log('discount cap', discount_cap); 
     //get new initial price after saving for discounts 
     b = a.mulWadDown(discount_cap) + b; 
 

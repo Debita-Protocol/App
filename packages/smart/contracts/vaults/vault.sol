@@ -257,9 +257,11 @@ contract Vault is ERC4626, Auth{
      @dev no checks, checks performed by checkInstrument()
      */
     function resolveInstrument(
-        Instrument _instrument
+        uint256 marketId
     ) external onlyController
     returns(bool, uint256, uint256) {
+        Instrument _instrument = Instruments[marketId]; 
+        
         harvest(address(_instrument));
 
         InstrumentData storage data = getInstrumentData[_instrument];
@@ -290,4 +292,45 @@ contract Vault is ERC4626, Auth{
         
         removeInstrument(marketId);
     }
+
+
+
+
+    ///// For Factory
+    bool onlyVerified; 
+    uint256 r; //reputation percentile 
+
+    /// @notice a minting restrictor is set for different vaults 
+    function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
+        if (!receiver_conditions(receiver)) revert("Minting Restricted"); 
+        assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
+
+        // Need to transfer before minting or ERC777s could reenter.
+        asset.safeTransferFrom(msg.sender, address(this), assets);
+   
+        _mint(receiver, shares);
+
+        emit Deposit(msg.sender, receiver, assets, shares);
+
+        afterDeposit(assets, shares);
+    }
+
+
+    /// @notice types of restrictions are: 
+    /// a) verified address b) reputation scores 
+    function receiver_conditions(address receiver) public view returns(bool){
+        return true; 
+    }
+
+    /// @notice called when constructed, params set by the creater of the vault 
+    function set_minting_conditions(bool _onlyVerified, uint256 _r) internal{
+        onlyVerified = _onlyVerified; 
+        r = _r; 
+    } 
+
+
+
+
+
+
 }

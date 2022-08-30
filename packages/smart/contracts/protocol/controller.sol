@@ -161,7 +161,8 @@ contract Controller {
   function createZCBs(
     uint256 P,
     uint256 I, 
-    uint256 sigma
+    uint256 sigma, 
+    uint256 marketId
     ) internal returns(OwnedERC20[] memory) {
 
     string memory name = string(abi.encodePacked(baseName, "-", Strings.toString(nonce)));
@@ -170,7 +171,6 @@ contract Controller {
     string memory s_symbol = string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce)));
     nonce++;
 
-    uint256 marketId = marketFactory.marketCount(); 
     OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), address(vault), P,I, sigma); 
     OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), address(vault), address(longzcb), marketId); 
 
@@ -214,7 +214,8 @@ contract Controller {
     OwnedERC20[] memory zcb_tokens = createZCBs(
       instrumentData.principal, 
       instrumentData.expectedYield, 
-      marketManager.getParameters(marketId).sigma); 
+      marketManager.getParameters(marketId).sigma, 
+      marketId); 
 
     require(marketFactory.createZCBMarket(
         address(this), // controller is the settlement address
@@ -253,30 +254,21 @@ contract Controller {
   ) external  
   {
 
+    {uint256 bc_vault_balance = vault.balanceOf(getZCB_ad(marketId));
+    uint256 sbc_vault_balance = vault.balanceOf(getshortZCB_ad(marketId)); 
+    vault.controller_burn(bc_vault_balance,getZCB_ad(marketId)); 
+    vault.controller_burn(sbc_vault_balance, getshortZCB_ad(marketId));}
+
     (bool atLoss,
     uint256 extra_gain,
-    uint256 principal_loss) = handle_vault_resolve(marketId); 
+    uint256 principal_loss) = vault.resolveInstrument(marketId); 
 
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
-    // marketManager.handle_maturity(marketId, atLoss, principal_loss); 
     marketManager.deactivateMarket(marketId, atLoss);
     
-
-    uint256 winning_outcome = 0; //TODO  
-    marketFactory.trustedResolveMarket(marketId, winning_outcome);
+    marketFactory.trustedResolveMarket(marketId, 0);//Winning Outcome TODO
   }
 
-/// @notice Burn all vault tokens in BC, and withdraw from instrument to vault 
-  function handle_vault_resolve(uint256 marketId) private returns(bool, uint256, uint256)
-  {
-    address bc_ad = getZCB_ad( marketId); 
-    uint256 bc_vault_balance = vault.balanceOf(bc_ad);
-    address sbc_ad = getshortZCB_ad(marketId); 
-    uint256 sbc_vault_balance = vault.balanceOf(sbc_ad); 
-    vault.controller_burn(bc_vault_balance,bc_ad); 
-    vault.controller_burn(sbc_vault_balance, sbc_ad); 
-    return vault.resolveInstrument(vault.fetchInstrument(marketId)); 
-  }
 
   /// @notice called when market is resolved 
   function redeem_mint(uint256 amount, address to) external onlyManager{
@@ -313,10 +305,13 @@ contract Controller {
   /// @notice called by the validator when market conditions are met
   function approveMarket(
       uint256 marketId
-  ) external onlyValidator {
-    require(marketManager.duringMarketAssessment(marketId), "Not during assessment"); 
-    if (!marketManager.marketCondition(marketId)) revert("Market Condition Not met");    
+  ) external 
+  //onlyValidator 
+  {
+    require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
+    require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
+    
     marketManager.validator_buy(marketId, msg.sender); 
     if (!marketManager.validator_can_approve(marketId)) return; 
 
@@ -333,6 +328,12 @@ contract Controller {
     vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
     vault.onMarketApproval(marketId);
   }
+
+  // /// @notice computes 
+  // function getUpperLowerBound(uint256 marketId) internal returns(uint256, uint256){
+  //   marketManager.getParameters(marketId).delta
+  //   return 
+  // }
 
   /*
   Market is denied by validator or automatically if conditions are not met 
