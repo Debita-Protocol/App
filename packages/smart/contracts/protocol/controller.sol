@@ -122,9 +122,6 @@ contract Controller {
 
 }
 
-
-
-
   function verifyAddress(
       uint256 nullifier_hash, 
       uint256 external_nullifier,
