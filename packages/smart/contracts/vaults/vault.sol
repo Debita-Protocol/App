@@ -10,12 +10,13 @@ import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import {Instrument} from "./instrument.sol";
 import {Controller} from "../protocol/controller.sol";
+import {MarketManager} from "../protocol/marketmanager.sol"; 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "hardhat/console.sol";
 
 
 contract Vault is ERC4626, Auth{
-	using SafeCastLib for uint256; 
+	  using SafeCastLib for uint256; 
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -34,6 +35,7 @@ contract Vault is ERC4626, Auth{
     uint256 totalInstrumentHoldings; //total holdings deposited into all Instruments collateral
     ERC20 public immutable UNDERLYING;
     Controller private controller;
+    MarketManager.MarketParameters default_params; 
 
     mapping(Instrument => InstrumentData) public getInstrumentData;
     mapping(address => uint256) public  num_proposals;
@@ -66,19 +68,29 @@ contract Vault is ERC4626, Auth{
 
     constructor(
         address _UNDERLYING,
-        address _controller
+        address _controller, 
+        address owner, 
+
+        bool _onlyVerified, //
+        uint256 _r, //reputation ranking
+        uint256 _mint_limit, 
+        uint256 _total_mint_limit,
+
+        MarketManager.MarketParameters memory _default_params
+
     )
         ERC4626(
             ERC20(_UNDERLYING),
             string(abi.encodePacked("debita ", ERC20(_UNDERLYING).name(), " Vault")),
             string(abi.encodePacked("db", ERC20(_UNDERLYING).symbol()))
-        )  Auth(msg.sender)
+        )  Auth(owner)
 
     {
         UNDERLYING = ERC20(_UNDERLYING);
         BASE_UNIT = 10**ERC20(_UNDERLYING).decimals();
         controller = Controller(_controller);
-
+        set_minting_conditions( _onlyVerified,  _r, _mint_limit, _total_mint_limit); 
+        default_params = _default_params; 
         //totalSupply = type(uint256).max;
     }
     
@@ -299,8 +311,9 @@ contract Vault is ERC4626, Auth{
 
     ///// For Factory
     bool onlyVerified; 
-    uint256 r; //reputation percentile 
-
+    uint256 r; //reputation ranking  
+    uint256 mint_limit; 
+    uint256 total_mint_limit; 
     /// @notice a minting restrictor is set for different vaults 
     function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {
         if (!receiver_conditions(receiver)) revert("Minting Restricted"); 
@@ -324,10 +337,21 @@ contract Vault is ERC4626, Auth{
     }
 
     /// @notice called when constructed, params set by the creater of the vault 
-    function set_minting_conditions(bool _onlyVerified, uint256 _r) internal{
+    function set_minting_conditions(
+      bool _onlyVerified, 
+      uint256 _r, 
+      uint256 _mint_limit,
+      uint256 _total_mint_limit) internal{
         onlyVerified = _onlyVerified; 
         r = _r; 
+        mint_limit = _mint_limit; 
+        total_mint_limit = _total_mint_limit; 
     } 
+
+
+    function get_default_params() public view returns(MarketManager.MarketParameters memory){
+      return default_params; 
+    }
 
 
 

@@ -10,7 +10,7 @@ import {Vault} from "../vaults/vault.sol";
 import {Instrument} from "../vaults/instrument.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
-
+import {VaultFactory} from "./factories.sol"; 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
 
@@ -32,6 +32,8 @@ contract Controller {
   mapping(address => bool) public  verified;
   mapping(uint256 => MarketData) public market_data; // id => recipient
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
+  mapping(uint256=> Vault) public vaults; 
+  mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
 
   address[] validators_array;
 
@@ -43,6 +45,7 @@ contract Controller {
   Vault public vault;
   ReputationNFT repNFT; 
   LinearBondingCurveFactory linearBCFactory; 
+  VaultFactory vaultFactory; 
 
   uint256 constant TWITTER_UNRATED_GROUP_ID = 16106950158033643226105886729341667676405340206102109927577753383156646348711;
   bytes32 constant private signal = bytes32("twitter-unrated");
@@ -102,25 +105,10 @@ contract Controller {
       repNFT = ReputationNFT(NFT_address); 
   }
 
+  function setVaultFactory(address _vaultFactory) public onlyOwner {
+    vaultFactory = VaultFactory(_vaultFactory); 
+  }
 
-  /// @notice curveparams for linear bonds 
-  /// b is a initial price parameter we choose i.e 0.9, a is a function of b
-  /// a = (1-b) **2 / 2* interest 
-  /// @dev both principal/interest should be in price precision
-  /// @param interest is amount of interest in dollars, not percentage,
-  /// returns a,b is both in 18 price_precision
-  function getCurveParams(uint256 principal, uint256 interest) internal view returns (uint256, uint256){
-
-    uint256 price_precision = 1e18; 
-    uint256 interest_ = interest * (10**12); 
-    uint256 principal_ = principal * (10**12); 
-
-    uint256 b = (2*principal_).divWadDown(principal_+interest_) - price_precision; 
-    uint256 a = (price_precision -b).divWadDown(principal_+interest_); 
-
-    return (a,b);
-
-}
 
   function verifyAddress(
       uint256 nullifier_hash, 
@@ -153,6 +141,41 @@ contract Controller {
   }
 
 
+  //////VAULT CREATORS//////
+  function createVault(
+    address underlying, 
+    address controller, 
+
+    bool _onlyVerified, 
+    uint256 _r, 
+    uint256 _mint_limit, 
+    uint256 _total_mint_limit, 
+
+    MarketManager.MarketParameters memory default_params 
+    ) public {
+    (Vault newVault, uint256 vaultId) = vaultFactory.newVault(
+     underlying, 
+     controller, 
+
+     _onlyVerified, 
+     _r, 
+     _mint_limit,
+     _total_mint_limit, 
+
+     default_params
+    ); 
+
+    vaults[vaultId] = newVault; 
+
+  }
+
+  function marketId_to_vaultId(uint256 marketId) public view returns(uint256){
+    return id_parent[marketId]; 
+  }
+
+
+
+
   /////INITIATORS/////
 
   function createZCBs(
@@ -167,7 +190,7 @@ contract Controller {
     string memory s_name = string(abi.encodePacked(s_baseName, "-", Strings.toString(nonce)));
     string memory s_symbol = string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce)));
     nonce++;
-
+    //TODO abstractFactory 
     OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), address(vault), P,I, sigma); 
     OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), address(vault), address(longzcb), marketId); 
 
@@ -186,10 +209,10 @@ contract Controller {
     uint256  VALIDATOR_CONSTANT = 3 * 10**4; 
     uint256  NUM_VALIDATOR = 1; 
     uint256  DELTA = 1* 10**5; 
-    uint256  REP_PERCENTILE = 9*10**5; 
-
-    MarketManager.MarketParameters memory param =  MarketManager.MarketParameters(
-      NUM_VALIDATOR, VALIDATOR_CONSTANT, INSURANCE_CONSTANT, REPUTATION_CONSTANT, DELTA, REP_PERCENTILE);
+    uint256  REP = 10; //number of top reputations allowed during onlyReputation phase 
+    MarketManager.MarketParameters memory param = vaults[id_parent[marketId]].get_default_params(); 
+    // MarketManager.MarketParameters memory param =  MarketManager.MarketParameters(
+    //   NUM_VALIDATOR, VALIDATOR_CONSTANT, INSURANCE_CONSTANT, REPUTATION_CONSTANT, DELTA, REP);
 
     marketManager.set_parameters(param, marketId); 
   }
@@ -202,10 +225,12 @@ contract Controller {
 
   function initiateMarket(
     address recipient,
-    Vault.InstrumentData memory instrumentData // marketId should be set to zero, no way of knowing.
+    Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
+    uint256 vaultId
   ) external  {
 
-    uint256 marketId = marketFactory.marketCount(); 
+    uint256 marketId = marketFactory.marketCount();
+    id_parent[marketId] = vaultId;  
     setMarketParameters(marketId); 
 
     OwnedERC20[] memory zcb_tokens = createZCBs(
@@ -223,7 +248,7 @@ contract Controller {
     ad_to_id[recipient] = marketId; 
     instrumentData.marketId = marketId;
 
-    vault.addProposal(
+    vaults[vaultId].addProposal(
         instrumentData
     );
 
@@ -232,6 +257,9 @@ contract Controller {
     marketManager.setMarketPhase(marketId, true, true, 1000 * (10**6));  // need to set min rep score here as well.e
     marketManager.add_short_zcb( marketId, address(zcb_tokens[1])); 
     marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
+
+    repNFT.storeTopReputation(marketManager.getParameters(marketId).r,  marketId); 
+
     emit MarketInitiated(marketId, recipient);
   }
 
@@ -250,15 +278,15 @@ contract Controller {
     uint256 marketId
   ) external  
   {
-
-    {uint256 bc_vault_balance = vault.balanceOf(getZCB_ad(marketId));
-    uint256 sbc_vault_balance = vault.balanceOf(getshortZCB_ad(marketId)); 
-    vault.controller_burn(bc_vault_balance,getZCB_ad(marketId)); 
-    vault.controller_burn(sbc_vault_balance, getshortZCB_ad(marketId));}
+    uint256 vaultId = id_parent[marketId]; 
+    {uint256 bc_vault_balance = vaults[vaultId].balanceOf(getZCB_ad(marketId));
+    uint256 sbc_vault_balance = vaults[vaultId].balanceOf(getshortZCB_ad(marketId)); 
+    vaults[vaultId].controller_burn(bc_vault_balance,getZCB_ad(marketId)); 
+    vaults[vaultId].controller_burn(sbc_vault_balance, getshortZCB_ad(marketId));}
 
     (bool atLoss,
     uint256 extra_gain,
-    uint256 principal_loss) = vault.resolveInstrument(marketId); 
+    uint256 principal_loss) = vaults[vaultId].resolveInstrument(marketId); 
 
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
     marketManager.deactivateMarket(marketId, atLoss);
@@ -268,8 +296,8 @@ contract Controller {
 
 
   /// @notice called when market is resolved 
-  function redeem_mint(uint256 amount, address to) external onlyManager{
-    vault.controller_mint(amount,to); 
+  function redeem_mint(uint256 amount, address to, uint256 marketId) external onlyManager{
+    vaults[id_parent[marketId]].controller_mint(amount,to); 
   }
 
 
@@ -279,7 +307,7 @@ contract Controller {
   ) external
   ///onlyKeepers 
    returns (bool) {
-    Vault.InstrumentData memory data = vault.fetchInstrumentData( marketId);
+    Vault.InstrumentData memory data = vaults[id_parent[marketId]].fetchInstrumentData( marketId);
       
     require(data.marketId > 0 && data.trusted, "instrument must be active");
     require(data.maturityDate > 0, "instrument hasn't been approved yet" );
@@ -289,6 +317,19 @@ contract Controller {
         return true;
     }
     return false;
+  }
+
+
+  /// @notice when market is resolved(maturity/early default), calculates score
+  /// and update each assessment phase trader's reputation, called by individual traders when redeeming 
+  function updateReputation(uint256 marketId, address trader) external onlyManager {
+    uint256 implied_probs = marketManager.assessment_probs(marketId, trader);
+    console.log("implied probs", implied_probs); 
+
+    uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, 10**18); //Experiment
+    repNFT.addScore(trader, scoreToAdd); 
+
+
   }
 
 
@@ -308,7 +349,7 @@ contract Controller {
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-    
+
     marketManager.validator_buy(marketId, msg.sender); 
     if (!marketManager.validator_can_approve(marketId)) return; 
 
@@ -320,10 +361,10 @@ contract Controller {
     // Deposit to the instrument contract
     uint256 principal = vault.fetchInstrumentData(marketId).principal; 
     //maybe this should be separated to prevent attacks 
-    
-    vault.depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
-    vault.setMaturityDate(Instrument(market_data[marketId].instrument_address));
-    vault.onMarketApproval(marketId);
+    uint256 vaultId = id_parent[marketId];
+    vaults[vaultId].depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
+    vaults[vaultId].setMaturityDate(Instrument(market_data[marketId].instrument_address));
+    vaults[vaultId].onMarketApproval(marketId);
   }
 
   // /// @notice computes 
@@ -345,12 +386,12 @@ contract Controller {
     
     marketFactory.trustedResolveMarket(marketId, winning_outcome);
     
-    vault.denyInstrument(marketId);
+    vaults[id_parent[marketId]].denyInstrument(marketId);
   }
  
 
   function trustInstrument(uint256 marketId) private  {
-    vault.trustInstrument(Instrument(market_data[marketId].instrument_address));
+    vaults[id_parent[marketId]].trustInstrument(Instrument(market_data[marketId].instrument_address));
   }
 
 
@@ -383,6 +424,10 @@ contract Controller {
   function canBeApproved(uint256 marketId) public view returns (bool) {
       //TODO
     return true;
+  }
+
+  function getVault(uint256 marketId) public view returns(Vault){
+    return vaults[id_parent[marketId]]; 
   }
 
   function isVerified(address addr) view public returns (bool) {
