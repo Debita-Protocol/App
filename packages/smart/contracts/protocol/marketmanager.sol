@@ -35,6 +35,7 @@ contract MarketManager is Owned {
   mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
   mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
   mapping(uint256=>mapping(address=>bool)) private assessment_trader; 
+  mapping(uint256=>mapping(address=>uint256) )public assessment_probs; 
 	mapping(uint256=> MarketPhaseData) public restriction_data; // market ID => restriction data
 	mapping(uint256=> uint256) collateral_pot; // marketID => total collateral recieved (? isn't this redundant bc bonding curves fundsperBonds)
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
@@ -58,6 +59,13 @@ contract MarketManager is Owned {
 		uint256 base_budget;
 	}
 
+	/// param N: number of validators
+	/// param sigma: validators' stake
+	/// param alpha: managers' stake
+	/// param omega: high reputation's stake 
+	/// param delta: Upper and lower bound for price which is added/subtracted from alpha 
+	/// param r:  reputation ranking for onlyRep phase
+	/// @dev omega always <= alpha
 	struct MarketParameters{
 		uint256 N; 
 		uint256 sigma; 
@@ -89,12 +97,6 @@ contract MarketManager is Owned {
 	/*----Phase Functions----*/
 
 	/// @notice list of parameters in this system for each market, should vary for each instrument 
-	/// param N: number of validators
-	/// param sigma: validators' stake
-	/// param alpha: managers' stake
-	/// param omega: high reputation's stake 
-	/// param delta: Upper and lower bound for price which is added/subtracted from alpha 
-	/// param r: reputation percentile for picking high reputation 
 	function set_parameters(
 		MarketParameters memory param, 
 		uint256 marketId 
@@ -104,7 +106,7 @@ contract MarketManager is Owned {
 
 	/// @notice gets the top percentile reputation score threshold 
 	function calcMinRepScore(uint256 marketId) internal view returns(uint256){
-		return 0; 
+		return rep.getMinRepScore(parameters[marketId].r, marketId); 
 	}
 
 	/*
@@ -161,9 +163,10 @@ contract MarketManager is Owned {
 	Returns Minimal reputation score to participate in the onlyReputation phase
 	TODO
 	*/
-	function getMinRepScore(uint256 marketId) internal view returns(uint256){
+	function getMinRepScore(uint256 marketId) public view returns(uint256){
 		return restriction_data[marketId].min_rep_score;
 	}
+
 
 	/* Conditions */
  	
@@ -214,7 +217,7 @@ contract MarketManager is Owned {
 
 	/// @notice returns true if amount bought is greater than the insurance threshold
 	function marketCondition(uint256 marketId) public view returns(bool){
-		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal;
+		uint256 principal = controller.getVault(marketId).fetchInstrumentData(marketId).principal;
 		uint256 total_bought = BondingCurve(address(controller.getZCB(marketId))).getTotalCollateral();
 		return (total_bought >= (principal * parameters[marketId].alpha)/PRICE_PRECISION); 
 	}
@@ -229,14 +232,14 @@ contract MarketManager is Owned {
 	/// sqrt for now 
 	function getTraderBudget(uint256 marketId, address trader) public view returns(uint256){
 		uint256 repscore = rep.getReputationScore(trader);	
-		return restriction_data[marketId].base_budget; // sqrt(repscore * 10**6), since w/ decimals.
+		return restriction_data[marketId].base_budget+ sqrt(repscore * 10**PRICE_PRECISION);//, since w/ decimals.
 	}
  	
  	/// @notice computes the price for ZCB one needs to short at to completely
  	/// hedge for the case of maximal loss, function of principal and interest
 	function getHedgePrice(uint256 marketId) public view returns(uint256){
-		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
-		uint256 yield = controller.vault().fetchInstrumentData(marketId).expectedYield; 
+		uint256 principal = controller.getVault(marketId).fetchInstrumentData(marketId).principal; 
+		uint256 yield = controller.getVault(marketId).fetchInstrumentData(marketId).expectedYield; 
 
 		uint256 den = (principal * (PRICE_PRECISION - parameters[marketId].alpha))/PRICE_PRECISION; 
 		return PRICE_PRECISION -  (yield*PRICE_PRECISION)/den;
@@ -250,9 +253,9 @@ contract MarketManager is Owned {
 	/// @notice computes maximum amount of quantity that trader can short while being hedged
 	/// such that when he loses his loss will be offset by his gains  
 	function getHedgeQuantity(address trader, uint256 marketId) public view returns(uint256){
-		uint256 principal = controller.vault().fetchInstrumentData(marketId).principal; 
-		uint256 holdings =  controller.vault().balanceOf(trader);
-		uint256 marketCap = controller.vault().totalSupply(); 
+		uint256 principal = controller.getVault(marketId).fetchInstrumentData(marketId).principal; 
+		uint256 holdings =  controller.getVault(marketId).balanceOf(trader);
+		uint256 marketCap = controller.getVault(marketId).totalSupply(); 
 		uint num = (principal * (PRICE_PRECISION - parameters[marketId].alpha)/PRICE_PRECISION) * holdings; 
 		return num/marketCap; 
 	}	
@@ -294,19 +297,8 @@ contract MarketManager is Owned {
 			}
 		}
 
-		// if (!_duringMarketAssessment){
-		
-		// 	BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-		// 	uint256 tokens_bought = zcb.calculatePurchaseReturn(amount);
-		// 	uint256 price_after_trade = zcb.calculateExpectedPrice(tokens_bought);
-		// 	uint256 price_upper_bound = zcb.getUpperBound();
-		// 	require(price_upper_bound > 0, "Restrictions need to be set"); 
-		// 	if (price_upper_bound > price_after_trade) return (false, 2); 
-		// }
 
 		return (true, 0); 
-		// require(_duringMarketAssessment, "Sells not allowed during assessments");
-		// require(exposureset(trader, ammFactoryAddress, marketId), "Not enough liquidity");
 
 	}
 
@@ -346,19 +338,18 @@ contract MarketManager is Owned {
 	/// @notice During assessment phase, need to log the trader's 
 	/// total collateral when he bought zcb. Trader can only redeem collateral in 
 	/// when market is not approved 
-	/// @param priceOut is the price of the zcb after the trader made his trade
 	function log_assessment_trade(
 		uint256 marketId, 
 		address trader, 
 		uint256 amountOut, 
 		uint256 collateralIn,
-		uint256 priceOut)
+		uint256 probability
+		)
 		internal 
 	{	
 		assessment_trader[marketId][trader] = true; 
 		assessment_collaterals[marketId][trader] = collateralIn;
-		assessment_prices[marketId][trader] = priceOut; 
-
+		assessment_probs[marketId][trader] = probability; 
 	}
 
 	/* 
@@ -448,7 +439,7 @@ contract MarketManager is Owned {
 
 		uint256 redemption_price = get_redemption_price(marketId); 
 		uint256 collateral_redeem_amount = (redemption_price * redeem_amount)/PRICE_PRECISION;
-		controller.redeem_mint(collateral_redeem_amount, msg.sender); 
+		controller.redeem_mint(collateral_redeem_amount, msg.sender, marketId); 
 		return collateral_redeem_amount; 
 
 	}
@@ -464,28 +455,32 @@ contract MarketManager is Owned {
 		require(canbuy,"Trade Restricted");
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
+		uint256 implied_probability = zcb.calcImpliedProbability(_collateralIn, getTraderBudget(_marketId, msg.sender) ); 
 		uint256 amountOut = zcb.trustedBuy(msg.sender, _collateralIn);
  
  		//Need to log assessment trades for updating reputation scores or returning collateral
  		//when market denied 
 		if (duringMarketAssessment(_marketId)){
-			uint256 priceOut = zcb.calculateExpectedPrice(0); // 60.18 for some reason
-			log_assessment_trade(_marketId, msg.sender, amountOut, _collateralIn, priceOut);
+			log_assessment_trade(
+				_marketId,
+			  msg.sender, 
+				amountOut,
+				_collateralIn, 
+				implied_probability
+				);
 
-			//  keeps track of amount bought during reputation phase
+			
+			// keep track of amount bought during reputation phase
 			// and make transitions from onlyReputation true->false
-			uint256 principal = controller.vault().fetchInstrumentData(_marketId).principal;
-			uint256 total_bought = zcb.getTotalCollateral();
-			console.log("total_bought", total_bought);
+			if(onlyReputable(_marketId)){
+				uint256 principal = controller.getVault(_marketId).fetchInstrumentData(_marketId).principal;
+				uint256 total_bought = zcb.getTotalCollateral();
 
-			if (onlyReputable(_marketId)){
-
-				if (total_bought > (parameters[_marketId].omega * principal)/PRICE_PRECISION){
-					setReputationPhase(_marketId, false); 
-				}
-
+				if (total_bought > (parameters[_marketId].omega.mulDivDown(principal, PRICE_PRECISION))) {
+					setReputationPhase(_marketId, false);} 
 			}
-
+			
+			
 		}
 
 		return amountOut; 
@@ -627,7 +622,7 @@ contract MarketManager is Owned {
 		uint256 zcb_redeem_amount_prec = shortZCB_redeem_amount/(10**12); 
 		uint256 collateral_redeem_amount = redemption_price.mulDivDown(zcb_redeem_amount_prec,PRICE_PRECISION);
 
-		controller.redeem_mint(collateral_redeem_amount, msg.sender); 
+		controller.redeem_mint(collateral_redeem_amount, msg.sender, marketId); 
 		return collateral_redeem_amount; 
 
 	}
@@ -781,46 +776,26 @@ contract MarketManager is Owned {
 	 	address receiver 
 	) public returns(uint256){
 		require(!marketActive(marketId), "Market Active"); 
+		require(restriction_data[marketId].resolved, "Market not resolved"); 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-		uint256 zcb_redeem_amount = zcb.balanceOf(msg.sender); 
-		zcb.trustedBurn(msg.sender, zcb_redeem_amount); 
+		uint256 zcb_redeem_amount = zcb.balanceOf(receiver); 
+		zcb.trustedBurn(receiver, zcb_redeem_amount); 
 
 		uint256 redemption_price = get_redemption_price(marketId); 
 		require(redemption_price > 0, "Redeem price is 0");
 		uint256 zcb_redeem_amount_prec = zcb_redeem_amount/(10**12); 
 		uint256 collateral_redeem_amount = (redemption_price * zcb_redeem_amount_prec)/PRICE_PRECISION; 
 
-		controller.redeem_mint(collateral_redeem_amount, msg.sender); 
-
+		controller.redeem_mint(collateral_redeem_amount, receiver, marketId); 
+		controller.updateReputation(marketId, receiver); 
 		return collateral_redeem_amount; 
 
 	}
 
 
-	/// @notice when market is resolved(maturity/early default), calculates score
-	/// and update each assessment phase trader's reputation, called by individual traders
-	function updateReputation(uint256 marketId) external  {
-		require(restriction_data[marketId].resolved, "Market not resolved"); 	
-		require(assessment_trader[marketId][msg.sender], "Not manager"); 
+	////REPUTATION LOGIC 
 
-		bool atLoss = restriction_data[marketId].atLoss; 
-		uint256 priceOut = assessment_prices[marketId][msg.sender]/(10**12); 
-		uint256 collateralIn = assessment_collaterals[marketId][msg.sender]; 
-		uint256 traderBudget = getTraderBudget(marketId, msg.sender);
-		uint256 num_bonds_bought = (collateralIn * priceOut)/PRICE_PRECISION;
-		console.log("collateralIn: ", collateralIn);
-		console.log("traderBudget: ", traderBudget);
-		console.log("num_bonds bought: ", num_bonds_bought); 
-		console.log("Price Out: ", priceOut);
 
-		uint256 scoreToAdd; 
-		// if (!atLoss) scoreToAdd = (((num_bonds_bought*PRICE_PRECISION/traderBudget) * (PRICE_PRECISION - priceOut))/PRICE_PRECISION)*(num_bonds_bought)/PRICE_PRECISION;
-		// console.log('num_bonds_bought'); 
-		if(!atLoss) scoreToAdd = num_bonds_bought; 
-		else scoreToAdd = (num_bonds_bought/traderBudget) * priceOut * num_bonds_bought; 
-
-		rep.addScore(msg.sender, scoreToAdd, !atLoss); 
-	}
 
 
 

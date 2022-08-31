@@ -119,14 +119,15 @@ abstract contract BondingCurve is OwnedERC20 {
 
 
 	/// @notice calculates implied probability of the trader 
-	/// @param quantity is the ratio amount(in colalteral) / total collateral budget for trader, in 18 decimals 
-	function calcImpliedProbability(uint256 collateral_amount, uint256 quantity) public view returns(uint256 prob){
+	/// @param budget of trader in collateral decimals 
+	function calcImpliedProbability(uint256 collateral_amount, uint256 budget) public view returns(uint256 prob){
+		uint256 _budget = budget *(10**18-collateral_dec); 
 		uint256 zcb_amount = calculatePurchaseReturn(collateral_amount); 
 		uint256 avg_price = calcAveragePrice(zcb_amount); //18 decimals 
 		uint256 b = avg_price.mulWadDown(math_precision - avg_price);
-		uint256 prob = quantity.mulWadDown(b)+ avg_price;
+		uint256 ratio = zcb_amount.divWadDown(_budget); 
 
-		return prob; 
+		return ratio.mulWadDown(b)+ avg_price;
 	}
 
 	/// @notice caluclates average price for the user to buy amount tokens 
@@ -267,23 +268,6 @@ abstract contract BondingCurve is OwnedERC20 {
 		}
 	}
 
-	// /// @notice computes delta supply for any area 
- //  function calculateArbitraryPurchaseReturn(uint256 amount, uint256 s, uint256 a_, uint256 b_) view internal override virtual returns(uint256) {
-
- //    uint256 _amount = amount * 10 ** (18 - collateral_dec);
-
- //    uint256 x = ((a_.mulWadDown(s) + b_) ** 2)/math_precision; 
-
- //    uint256 y = 2*( a_.mulWadDown(_amount)); 
-
- //    uint256 x_y_sqrt = ((x+y)*math_precision).sqrt();
-
- //    uint256 z = (a_.mulWadDown(s) + b_); 
-
- //    uint256 result = (x_y_sqrt-z).divWadDown(a_);
-
- //    return result;
- //  }
 
   function get_discount_cap() public view returns(uint256){
   	return _get_discount_cap();  
