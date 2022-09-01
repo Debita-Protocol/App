@@ -28,14 +28,11 @@ contract Controller {
 
   event MarketInitiated(uint256 marketId, address recipient);
 
-  mapping(address => bool) public  validators; 
   mapping(address => bool) public  verified;
   mapping(uint256 => MarketData) public market_data; // id => recipient
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
   mapping(uint256=> Vault) public vaults; 
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
-
-  address[] validators_array;
 
   address creator_address;
 
@@ -60,8 +57,8 @@ contract Controller {
   uint256 nonce = 0;
 
   /* ========== MODIFIERS ========== */
-  modifier onlyValidator() {
-      require(validators[msg.sender] == true || msg.sender == creator_address, "Only Validators can call this function");
+  modifier onlyValidator(uint256 marketId) {
+      require(marketManager.isValidator(marketId, msg.sender));
       _;
   }
 
@@ -109,7 +106,6 @@ contract Controller {
     vaultFactory = VaultFactory(_vaultFactory); 
   }
 
-
   function verifyAddress(
       uint256 nullifier_hash, 
       uint256 external_nullifier,
@@ -131,15 +127,6 @@ contract Controller {
     ) external  {
     ReputationNFT(NFT_address).mint(msg.sender);
   }
-  //Validator should be added for each borrower
-  function addValidator(address validator_address) external  {
-    require(validator_address != address(0), "Zero address detected");
-    require(validators[validator_address] == false, "Address already exists");
-
-    validators[validator_address] = true; 
-    validators_array.push(validator_address);
-  }
-
 
   //////VAULT CREATORS//////
   function createVault(
@@ -223,6 +210,9 @@ contract Controller {
    @dev a and b must be 60.18 format
    */
 
+  /**
+   @notice 
+   */
   function initiateMarket(
     address recipient,
     Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
@@ -240,9 +230,9 @@ contract Controller {
       marketId); 
 
     require(marketFactory.createZCBMarket(
-        address(this), // controller is the settlement address
-        instrumentData.description,
-        zcb_tokens) == marketId, "MarketID err"); 
+      address(this), // controller is the settlement address
+      instrumentData.description,
+      zcb_tokens) == marketId, "MarketID err"); 
 
 
     ad_to_id[recipient] = marketId; 
@@ -254,7 +244,7 @@ contract Controller {
 
     market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
     // marketManager.setAssessmentPhase(marketId, true, true);  
-    marketManager.setMarketPhase(marketId, true, true, 1000 * (10**6));  // need to set min rep score here as well.e
+    marketManager.setMarketPhase(marketId, true, true, 1000 * (10**6));  // need to set min rep score here as well
     marketManager.add_short_zcb( marketId, address(zcb_tokens[1])); 
     marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
 
@@ -263,8 +253,6 @@ contract Controller {
     emit MarketInitiated(marketId, recipient);
   }
 
-
-  
   /////RESOLVERS//////
 
   /**
@@ -339,6 +327,12 @@ contract Controller {
 
   /////APPROVERS/DENIERS///////
 
+  /**
+   @notice
+   */
+  function confirmMarket(uint256 marketId) onlyValidator(marketId) {
+    marketManager.confirmMarket(marketId, msg.sender);
+  }
 
   /// @notice called by the validator when market conditions are met
   function approveMarket(

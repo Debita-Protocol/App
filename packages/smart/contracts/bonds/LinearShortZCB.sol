@@ -98,23 +98,23 @@ contract LinearShortZCB is OwnedERC20{
 	/// @notice called from the marketmanager 
 	function trustedShort(
 		address trader, 
-		uint256 collateral_amount) public onlyOwner returns (uint256) {
+		uint256 collateral_amount
+	) public onlyOwner returns (uint256) {
 
 		(uint256 shortTokensToMint, uint256 supply_after_sell)  = calculateAmountGivenSell(collateral_amount); 
 		collateral.safeTransferFrom(trader, address(this), collateral_amount); 
 
 		MarketManager marketmanager = MarketManager(owner); 
-		marketmanager.borrow_for_shortZCB(marketId, shortTokensToMint);  
+		marketmanager.borrow_for_shortZCB(marketId, shortTokensToMint); // mints shortTokensToMint amount of longZCB.
 		uint256 amountOut = marketmanager.sell(marketId, shortTokensToMint); 
 		console.log('amountout', amountOut, collateral_amount);
 		console.log('supply_after_sell', supply_after_sell, shortTokensToMint); 
 
-    //amountOut + collateral_amount should equal shortTokensToMint 
-    _mint(trader, shortTokensToMint); 
+		//amountOut + collateral_amount should equal shortTokensToMint 
+		_mint(trader, shortTokensToMint); 
 
-    reserves += (collateral_amount + amountOut); 
-    return shortTokensToMint; 
-
+		reserves += (collateral_amount + amountOut); 
+		return shortTokensToMint;
 	}
 
 
