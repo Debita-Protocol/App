@@ -221,10 +221,7 @@ contract MarketManager is Owned {
 		
 	}
 
-	//TODO Need to find out if the given market has enough (liquidity-required liq)
-	function exposureSet(address trader, address ammFactoryAddress, address marketId) internal view returns(bool){
-		return true; 
-	}
+
 
 	function marketActive(uint256 marketId) public view returns(bool){
 		return restriction_data[marketId].alive; 
@@ -235,6 +232,31 @@ contract MarketManager is Owned {
 		uint256 principal = controller.getVault(marketId).fetchInstrumentData(marketId).principal;
 		uint256 total_bought = BondingCurve(address(controller.getZCB(marketId))).getTotalCollateral();
 		return (total_bought >= (principal * parameters[marketId].alpha)/PRICE_PRECISION); 
+	}
+
+	/// @notice returns whether current market is in phase 
+	/// 1: onlyReputable, which also means market is in assessment
+	/// 2: not onlyReputable but in asseessment 
+	/// 3: in assessment but canbeapproved 
+	/// 4: post assessment(accepted or denied )
+	function getCurrentMarketPhase(uint256 marketId) public view returns(uint256){
+		if (onlyReputable(marketId)){
+			assert(!marketCondition(marketId) && !isMarketApproved(marketId) && duringMarketAssessment(marketId) ); 
+			return 1; 
+		}
+
+		else if (duringMarketAssessment(marketId) && !onlyReputable(marketId)){
+			assert(!isMarketApproved(marketId)); 
+			if (marketCondition(marketId)) return 3; 
+			return 2; 
+		}
+
+		else if (isMarketApproved( marketId)){
+			assert (!duringMarketAssessment(marketId) && marketCondition(marketId)); 
+			return 4; 
+		}
+
+
 	}
 
 
@@ -511,6 +533,7 @@ contract MarketManager is Owned {
     ) external  returns (uint256){
 		require(!restriction_data[_marketId].resolved, "must not be resolved");
 		(bool canbuy, uint256 error) = canBuy(msg.sender, _collateralIn, _marketId); 
+		if(!canbuy) console.log('error', error); 
 		require(canbuy,"Trade Restricted");
 
 		BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
