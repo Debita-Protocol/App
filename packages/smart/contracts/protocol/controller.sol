@@ -58,7 +58,7 @@ contract Controller {
 
   /* ========== MODIFIERS ========== */
   modifier onlyValidator(uint256 marketId) {
-      require(marketManager.isValidator(marketId, msg.sender));
+      require(marketManager.isValidator(marketId, msg.sender)|| msg.sender == creator_address);
       _;
   }
 
@@ -142,7 +142,7 @@ contract Controller {
     ) public {
     (Vault newVault, uint256 vaultId) = vaultFactory.newVault(
      underlying, 
-     controller, 
+     address(this), 
 
      _onlyVerified, 
      _r, 
@@ -154,6 +154,10 @@ contract Controller {
 
     vaults[vaultId] = newVault; 
 
+  }
+
+  function getVaultfromId(uint256 vaultId) public view returns(address){
+    return address(vaults[vaultId]); 
   }
 
   function marketId_to_vaultId(uint256 marketId) public view returns(uint256){
@@ -178,8 +182,8 @@ contract Controller {
     string memory s_symbol = string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce)));
     nonce++;
     //TODO abstractFactory 
-    OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), address(vault), P,I, sigma); 
-    OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), address(vault), address(longzcb), marketId); 
+    OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), getVaultAd( marketId), P,I, sigma); 
+    OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), getVaultAd( marketId), address(longzcb), marketId); 
 
     OwnedERC20[] memory zcb_tokens = new OwnedERC20[](2);
     zcb_tokens[0] = longzcb;
@@ -330,7 +334,9 @@ contract Controller {
   /**
    @notice
    */
-  function confirmMarket(uint256 marketId) onlyValidator(marketId) {
+  function confirmMarket(uint256 marketId) public 
+  //onlyValidator(marketId) 
+  {
     marketManager.confirmMarket(marketId, msg.sender);
     marketManager.validator_buy(marketId, msg.sender); 
   }
@@ -355,9 +361,9 @@ contract Controller {
     trustInstrument(marketId); 
 
     // Deposit to the instrument contract
-    uint256 principal = vault.fetchInstrumentData(marketId).principal; 
-    //maybe this should be separated to prevent attacks 
     uint256 vaultId = id_parent[marketId];
+    uint256 principal = vaults[vaultId].fetchInstrumentData(marketId).principal; 
+    //maybe this should be separated to prevent attacks 
     vaults[vaultId].depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
     vaults[vaultId].setMaturityDate(Instrument(market_data[marketId].instrument_address));
     vaults[vaultId].onMarketApproval(marketId);
@@ -374,7 +380,7 @@ contract Controller {
   */
   function denyMarket(
       uint256 marketId
-  ) external  onlyValidator {
+  ) external  onlyValidator(marketId) {
     marketManager.denyMarket(marketId);
       //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
     
@@ -424,6 +430,9 @@ contract Controller {
 
   function getVault(uint256 marketId) public view returns(Vault){
     return vaults[id_parent[marketId]]; 
+  }
+  function getVaultAd(uint256 marketId) public view returns(address){
+    return address(vaults[id_parent[marketId]]); 
   }
 
   function isVerified(address addr) view public returns (bool) {

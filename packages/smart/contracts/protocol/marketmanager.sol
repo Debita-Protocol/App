@@ -69,6 +69,7 @@ contract MarketManager is Owned {
 		bool atLoss;
 		uint256 base_budget;
 		uint8 confirmations;
+		address validator; 
 	}
 
 
@@ -246,7 +247,7 @@ contract MarketManager is Owned {
 	/// sqrt for now 
 	function getTraderBudget(uint256 marketId, address trader) public view returns(uint256){
 		uint256 repscore = rep.getReputationScore(trader);	
-		return restriction_data[marketId].base_budget+ sqrt(repscore * 10**PRICE_PRECISION);//, since w/ decimals.
+		return restriction_data[marketId].base_budget+ sqrt(repscore * PRICE_PRECISION);//, since w/ decimals.
 	}
  	
  	/// @notice computes the price for ZCB one needs to short at to completely
@@ -410,7 +411,7 @@ contract MarketManager is Owned {
 		validator_data[marketId].avg_price = _average_price; 
 	}
 
-	function isValidator(uint256 marketId, address user) public {
+	function isValidator(uint256 marketId, address user) public returns(bool){
 		address[] storage _validators = validator_data[marketId].validators;
 		for (uint i = 0; i < _validators.length; i++) {
 			if (_validators[i] == user) {
@@ -420,15 +421,15 @@ contract MarketManager is Owned {
 		return false;
 	}
 
-	function confirmMarket(uint256 marketId, address user) onlyController {
-		require(isValidator(marketId, user), "must be validator");
-		require(validator_data[marketId].confirmations < parameters.N, "confirmations exceeds number of required validators");
+	function confirmMarket(uint256 marketId, address user) public onlyController {
+		// require(isValidator(marketId, user), "must be validator");
+		// require(validator_data[marketId].confirmations < parameters.N, "confirmations exceeds number of required validators");
 
-		_removeValidator(user);
+		_removeValidator(marketId, user);
 		validator_data[marketId].confirmations++;
 	}
 
-	function isConfirmed(uint256 marketId) returns (bool) {
+	function isConfirmed(uint256 marketId) public returns (bool) {
 		return parameters[marketId].N == validator_data[marketId].confirmations;
 	}
 
@@ -446,21 +447,21 @@ contract MarketManager is Owned {
 	}
 
 	function setValidators(uint256 marketId) public {
-		require(restriction_data[marketId].alive, "market must be alive");
-		require(restriction_data[marketId].duringAssessment, "market must be during assessment");
-		uint256[] random_numbers = getRandomNumbers(parameters[marketId].N, validator_data[marketId].possible.length);
+		// require(restriction_data[marketId].alive, "market must be alive");
+		// require(restriction_data[marketId].duringAssessment, "market must be during assessment");
+		// uint256[] memory random_numbers = getRandomNumbers(parameters[marketId].N, validator_data[marketId].possible.length);
 
-		for (uint i = 0; i < random_numbers.length; i++) {
-			validator_data[marketId].push(validator_data[marketId].possible[random_numbers[i]]);
-		}
+		// for (uint i = 0; i < random_numbers.length; i++) {
+		// 	validator_data[marketId].push(validator_data[marketId].possible[random_numbers[i]]);
+		// }
 	}
 
 
 
-	function getRandomNumbers(uint256 N, uint256 length) internal returns (uint256[] memory) {
-		// chainlink vrf v2
-		return [1];
-	}
+	// function getRandomNumbers(uint256 N, uint256 length) internal returns (uint256[] memory) {
+	// 	// chainlink vrf v2
+	// 	return [1];
+	// }
 
 	/// @notice allows validators to buy at a discount 
 	/// @dev get val_cap, the total amount of zcb for sale and each validators should buy 
