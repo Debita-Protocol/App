@@ -332,6 +332,7 @@ contract Controller {
    */
   function confirmMarket(uint256 marketId) onlyValidator(marketId) {
     marketManager.confirmMarket(marketId, msg.sender);
+    marketManager.validator_buy(marketId, msg.sender); 
   }
 
   /// @notice called by the validator when market conditions are met
@@ -344,8 +345,9 @@ contract Controller {
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
 
-    marketManager.validator_buy(marketId, msg.sender); 
-    if (!marketManager.validator_can_approve(marketId)) return; 
+    require(marketManager.isConfirmed(marketId), "market not confirmed");
+    // marketManager.validator_buy(marketId, msg.sender); 
+    // if (!marketManager.validator_can_approve(marketId)) return; 
 
     marketManager.approveMarket(marketId);
     marketManager.setUpperBound(marketId, 1000000*10**6); // need to get upper bound 
