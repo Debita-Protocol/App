@@ -10,6 +10,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {LinearShortZCB} from "../bonds/LinearShortZCB.sol"; 
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
+import {ChainlinkClient} from "./VRFConsumer.sol";
 
 
 contract MarketManager is Owned {
@@ -41,6 +42,8 @@ contract MarketManager is Owned {
 	mapping(uint256=> CDP) private debt_pools; // marketID => debt info
 	mapping(uint256=> MarketParameters) private parameters; //marketId-> params
 
+
+
 	struct ValidatorData{
 		uint256 val_cap;// total zcb validators can buy at a discount
 		uint256 avg_price; //price the validators can buy zcb at a discount 
@@ -51,6 +54,7 @@ contract MarketManager is Owned {
 	mapping(uint256 => ValidatorData) validator_data; //marketId-> total amount of zcb validators can buy 
 	mapping(address=> uint256) sale_data; //marketId-> total amount of zcb bought
 	uint256 total_validator_bought; 
+	ChainlinkClient VRFConsumer;
 
 	struct CDP{
 		mapping(address=>address) collateral_address; 
@@ -81,7 +85,7 @@ contract MarketManager is Owned {
 	/// @param r:  reputation ranking for onlyRep phase
 	/// @dev omega always <= alpha
 	struct MarketParameters{
-		uint256 N;
+		uint32 N;
 		uint256 sigma; 
 		uint256 alpha; 
 		uint256 omega;
@@ -220,8 +224,6 @@ contract MarketManager is Owned {
 		return(!restriction_data[marketId].duringAssessment && restriction_data[marketId].alive); 
 		
 	}
-
-
 
 	function marketActive(uint256 marketId) public view returns(bool){
 		return restriction_data[marketId].alive; 
@@ -414,7 +416,7 @@ contract MarketManager is Owned {
 	}
 
 
-	/////VALIDATOR FUNCTIONS 
+	///VALIDATOR FUNCTIONS 
 
 
 	/// @notice called when market initialized, calculates the average price and quantities of zcb
@@ -433,6 +435,10 @@ contract MarketManager is Owned {
 		validator_data[marketId].avg_price = _average_price; 
 	}
 
+	function setVRFConsumer(address consumer) external onlyOwner {
+		VRFConsumer = ChainlinkClient(consumer);
+	}
+
 	function isValidator(uint256 marketId, address user) public returns(bool){
 		address[] storage _validators = validator_data[marketId].validators;
 		for (uint i = 0; i < _validators.length; i++) {
@@ -444,8 +450,8 @@ contract MarketManager is Owned {
 	}
 
 	function confirmMarket(uint256 marketId, address user) public onlyController {
-		// require(isValidator(marketId, user), "must be validator");
-		// require(validator_data[marketId].confirmations < parameters.N, "confirmations exceeds number of required validators");
+		require(isValidator(marketId, user), "must be validator");
+		require(validator_data[marketId].confirmations < parameters[marketId].N, "confirmations exceeds number of required validators");
 
 		_removeValidator(marketId, user);
 		validator_data[marketId].confirmations++;
@@ -468,22 +474,37 @@ contract MarketManager is Owned {
 		}
 	}
 
-	function setValidators(uint256 marketId) public {
-		// require(restriction_data[marketId].alive, "market must be alive");
-		// require(restriction_data[marketId].duringAssessment, "market must be during assessment");
-		// uint256[] memory random_numbers = getRandomNumbers(parameters[marketId].N, validator_data[marketId].possible.length);
-
-		// for (uint i = 0; i < random_numbers.length; i++) {
-		// 	validator_data[marketId].push(validator_data[marketId].possible[random_numbers[i]]);
-		// }
+	// 2 parts to setting the validators, getting random numbers + using those numbers
+	
+	function initializeValidatorRandomness(uint256 marketId) public {
+		require(restriction_data[marketId].alive, "market must be alive");
+		require(restriction_data[marketId].duringAssessment, "market must be during assessment");
+		VRFConsumer.requestRandomWords(parameters[marketId].N);
 	}
 
+	function setValidators(uint256 marketId) public {
+		require(restriction_data[marketId].alive, "market must be alive");
+		require(restriction_data[marketId].duringAssessment, "market must be during assessment");
+		require(VRFConsumer.wordLength() == parameters[marketId].N, "retrieve numbers");
+		
+		if (validator_data[marketId].possible.length < parameters[marketId].N) {
+			validator_data[marketId].validators = validator_data[marketId].possible;
+			return;
+		}
 
+		uint256[] memory randomNums = VRFConsumer.getNums();
+		address[] memory temp = validator_data[marketId].possible;
+		uint256 _N = parameters[marketId].N;
+		uint256 length = _N;
 
-	// function getRandomNumbers(uint256 N, uint256 length) internal returns (uint256[] memory) {
-	// 	// chainlink vrf v2
-	// 	return [1];
-	// }
+		for (uint8 i = 0; i < _N; i++) {
+			uint j = randomNums[i] % length;
+			address selected = temp[j];
+			validator_data[marketId].validators.push(selected);
+			temp[j] = temp[length - 1];
+			length--;
+		}
+	}
 
 	/// @notice allows validators to buy at a discount 
 	/// @dev get val_cap, the total amount of zcb for sale and each validators should buy 
