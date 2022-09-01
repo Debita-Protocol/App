@@ -182,5 +182,11 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     topReputations[i].trader = trader;
   }
 
+  function testStore() public view {
+    for (uint i=0; i<10; i++){
+      console.log('score', topReputations[i].score); 
+    }
+  }
+
   
 }

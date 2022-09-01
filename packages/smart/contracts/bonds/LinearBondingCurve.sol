@@ -50,7 +50,7 @@ contract LinearBondingCurve is BondingCurve {
    tokens returned in 60.18
    */
   function _calculatePurchaseReturn(uint256 amount) view internal override virtual returns(uint256) {
-    uint256 s = totalSupply() ;
+    uint256 s = totalSupplyAdjusted() ;
     uint256 _amount = amount * 10 ** (18 - collateral_dec);
     console.log('s', s, a); 
     console.log('b', b); 
@@ -78,7 +78,7 @@ contract LinearBondingCurve is BondingCurve {
   /// @dev amount is in 60.18.
   /// returned in collateral decimals
   function _calcAreaUnderCurve(uint256 amount) public view override virtual returns(uint256){
-    uint256 s = totalSupply(); 
+    uint256 s = totalSupplyAdjusted(); 
 
     uint256 result = ( a.mulWadDown(amount) / 2 ).mulWadDown(2 * s + amount) + b.mulWadDown(amount); 
     
@@ -95,7 +95,7 @@ contract LinearBondingCurve is BondingCurve {
    @dev returns amount of collateral tokens with collateral decimals
    */
   function _calculateSaleReturn(uint256 amount) view internal override virtual returns (uint256) {
-    uint s = totalSupply();
+    uint s = totalSupplyAdjusted();
 
     console.log('amount', amount, s); 
 
@@ -121,13 +121,13 @@ contract LinearBondingCurve is BondingCurve {
    @dev returns price in 60.18
    */
   function _calculateExpectedPrice(uint256 amount) view internal override virtual returns (uint256 result) {
-    uint256 s = totalSupply();
+    uint256 s = totalSupplyAdjusted();
 
     result = (s + amount).mulWadDown(a) + b;
   }
 
   function _calculateDecreasedPrice(uint256 amount) view internal override virtual returns (uint256 result) {
-    result = (totalSupply() - amount).mulWadDown(a) + b;
+    result = (totalSupplyAdjusted() - amount).mulWadDown(a) + b;
   }
 
   /**

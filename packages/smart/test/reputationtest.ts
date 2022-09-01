@@ -199,19 +199,6 @@ describe("Cycle", ()=>{
 
   }); 
 
-  // it("can deposit", async()=>{
-  //   const vaultBalance = await vault.balanceOf(trader.address); 
-
-  //   await collateral.connect(trader).faucet(principal); 
-  //   await collateral.approve(vault.address, principal); 
-  //   await vault.deposit(principal.toString(), trader.address);
-  //   const vaultBalanceAfter = await vault.balanceOf(trader.address); 
-
-  //   console.log('VaultBalances', vaultBalance.toString(), vaultBalanceAfter.toString()); 
-
-  //  // expect(await vault.totalAssets()).to.equal(principal); 
-
-  // }); 
 
   it("can add proposal and create market", async()=> {
     data.trusted = false; 
@@ -236,7 +223,20 @@ describe("Cycle", ()=>{
   });
 
   
+  // it("can drawdown/repay", async()=>{
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
 
+  //   const bal_before = await collateral.balanceOf(creditline.address);
+  //   expect(bal_before).to.equal(instrumentdata.principal); 
+  //   // await creditline.drawdown(instrumentdata.principal.div(10));
+  //   await collateral.approve(creditline.address,instrumentdata.principal );
+  //   await creditline.repay(0, instrumentdata.principal.div(10));
+
+  //   const bal = await collateral.balanceOf(creditline.address);  
+  //  // expect(bal).to.equal(instrumentdata.principal.mul(9).div(10)); 
+
+  // }); 
 
 
   // it("can approve", async()=>{
@@ -299,7 +299,7 @@ describe("Cycle", ()=>{
     let bc_col_bal; 
     console.log("price_before", price_before.toString()); 
     for (let i=0; i<managers.length; i++){
-      await collateral.connect(managers[i]).approve(vault.address, amount); 
+      await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
       await vault.connect(managers[i]).mint( amount, managers[i].address); 
       await vault.connect(managers[i]).approve(bc_address, amount); 
       await marketmanager.connect(managers[i]).buy(marketId, amount.div(10)); 
@@ -315,17 +315,54 @@ describe("Cycle", ()=>{
     const price_after = await bc.calculateExpectedPrice(0); 
     console.log("price_after", price_after.toString()); 
 
+
+    const vault_balance_before_approve = await collateral.balanceOf(vault.address); 
     //approve market 
     await validator_approve( trader, trader.address, controller, vault, collateral, marketmanager, marketId, amount);
     const price_after_approved = await bc.calculateExpectedPrice(0);  
     marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
-
+    expect(price_after_approved).to.equal(price_after); 
     console.log("approved, priceshouldn't change, marketphase", price_after_approved.toString(), marketphase.toString()); 
+
+    const vault_balance_after_approve = await collateral.balanceOf(vault.address); 
+
+    //Creditline repay 
+    const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    const bal_before = await collateral.balanceOf(creditline.address);
+    expect(bal_before).to.equal(instrumentdata.principal); 
+    // await creditline.drawdown(instrumentdata.principal.div(10));
+    await collateral.approve(creditline.address,instrumentdata.principal );
+    await creditline.repay(0, instrumentdata.principal.div(10));
+    expect(await collateral.balanceOf(creditline.address)).to.equal(instrumentdata.faceValue); 
+
     //close market 
-    // await 
+    await controller.resolveMarket(marketId); 
+    const redemption_price = await marketmanager.get_redemption_price( marketId)
+    console.log('redemption_price', redemption_price.toString())
+    let manager_vault_bal; 
+    let manager_reputation; 
+    const vault_balance_after_close = await collateral.balanceOf(vault.address); 
+
+    for (let i=0; i<managers.length; i++){
+      manager_reputation = await rep.getReputationScore(managers[i].address);
+      manager_vault_bal = await vault.balanceOf(managers[i].address); 
+      console.log('Before redeem vault_bal,reputation', manager_vault_bal.toString(), manager_reputation.toString());
+      await marketmanager.connect(managers[i]).redeem(marketId, managers[i].address); 
+
+      expect(await bc.balanceOf(managers[i].address)).to.equal(0);
+      manager_reputation = await rep.getReputationScore(managers[i].address);
+      manager_vault_bal = await vault.balanceOf(managers[i].address); 
+      console.log('After redeem vault_bal,reputation', manager_vault_bal.toString(), manager_reputation.toString());
+
+    }
+
+    await rep.testStore(); 
+    console.log('vaultbalances',vault_balance_before_approve.toString(),vault_balance_after_approve.toString(),vault_balance_after_close.toString());
 
 
   })
+
+  // it("can do accounting at maturity with vault")
 
 
 

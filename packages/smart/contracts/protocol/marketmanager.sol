@@ -875,7 +875,7 @@ contract MarketManager is Owned {
 		uint256 collateral_redeem_amount = (redemption_price * zcb_redeem_amount_prec)/PRICE_PRECISION; 
 
 		controller.redeem_mint(collateral_redeem_amount, receiver, marketId); 
-		controller.updateReputation(marketId, receiver); 
+		if (redemption_price>= PRICE_PRECISION) controller.updateReputation(marketId, receiver); 
 		return collateral_redeem_amount; 
 
 	}

@@ -20,7 +20,7 @@ abstract contract BondingCurve is OwnedERC20 {
 	uint256 internal collateral_dec;
 	ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
 	address[] private buyers; // keeps track for final reputation.
-
+	uint256 discounted_supply; 
 
 	constructor (
 		string memory name,
@@ -31,6 +31,11 @@ abstract contract BondingCurve is OwnedERC20 {
 		collateral = ERC20(_collateral);
 		math_precision = 1e18;
 		collateral_dec = collateral.decimals();
+	}
+
+	/// @notice doesn't account for discounted supply 
+	function totalSupplyAdjusted() public view returns(uint256) {
+		return totalSupply() - discounted_supply; 
 	}
 
 
@@ -51,11 +56,11 @@ abstract contract BondingCurve is OwnedERC20 {
 	 @param collateral_amount: amount of collateral in. => w/ collateral decimals
 	 */
 	 function trustedBuy(address trader, uint256 collateral_amount) public onlyOwner returns (uint256) {
+		require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
+
 		uint256 tokens = _calculatePurchaseReturn(collateral_amount);
-		console.log('TOKENS', tokens, collateral_amount); 
 		reserves += collateral_amount;
 
-		require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
 		collateral.safeTransferFrom(trader, address(this), collateral_amount);
 		_mint(trader, tokens);
 		return tokens;
@@ -79,13 +84,16 @@ abstract contract BondingCurve is OwnedERC20 {
 		return collateral_out;
 	 }
 
+	 /// @notice only called for selling discounted supplies 
 	 function trustedMint(address receiver, uint256 zcb_amount) external virtual override onlyOwner {
 	 	_mint(receiver, zcb_amount); 
+	 	discounted_supply += zcb_amount; 
 	 }
 
 	 function trustedApproveCollateralTransfer(address trader, uint256 amount) public onlyOwner {
 		collateral.approve(trader, amount);
 	 }
+
 
 	/**
 	 @notice calculates tokens returns from input collateral
@@ -136,7 +144,6 @@ abstract contract BondingCurve is OwnedERC20 {
 	function calcAveragePrice(uint256 amount) public view returns(uint256){
 
 		uint256 area = calcAreaUnderCurve(amount); //this takes in 18 
-		console.log("area", area); 
 
 		//area is in decimal 6, amount is in 18
 		uint256 area_in_precision = area*(10**12); 
@@ -149,36 +156,42 @@ abstract contract BondingCurve is OwnedERC20 {
 	 @notice calculates expected price given user buys X tokens
 	 @param amount: hypothetical amount of tokens bought
 	 */	
-	 function calculateExpectedPrice(uint256 amount) public view  returns (uint256 result) {
+	function calculateExpectedPrice(uint256 amount) public view  returns (uint256 result) {
 		result = _calculateExpectedPrice(amount);
 	 }
 
-	 function getTotalCollateral() public view returns (uint256 result) {
+	function getTotalCollateral() public view returns (uint256 result) {
 		result = collateral.balanceOf(address(this));
 	 }
 
-	 function getCollateral() public view returns (address) {
+	function getCollateral() public view returns (address) {
 		return address(collateral);
 	 } 
 
-	 function getTotalZCB() public view returns (uint256 result) {
+	function getTotalZCB() public view returns (uint256 result) {
 		result = totalSupply();
 	 }
 
-	 function getMaxQuantity() public view returns (uint256 result) {
+	function getMaxQuantity() public view returns (uint256 result) {
 		result = max_quantity;
 	 }
 
-	 function getUpperBound() public view returns (uint256 result) {
+	function getUpperBound() public view returns (uint256 result) {
 		result = price_upper_bound;
 	 }
 
-	 function getLowerBound() public view returns (uint256 result) {
+	function getLowerBound() public view returns (uint256 result) {
 		result = price_lower_bound;
 	 }
-	 function getReserves() public view returns(uint256){
+
+	function getReserves() public view returns(uint256){
 		return reserves; 
 	 }
+
+  function get_discount_cap() public view returns(uint256){
+  	return _get_discount_cap();  
+  }
+
 
 	/**
 	 @notice buy bond tokens with necessary checks and transfers of collateral.
@@ -187,7 +200,6 @@ abstract contract BondingCurve is OwnedERC20 {
 	 */
 	 function buy(uint256 amount) public {
 		uint256 tokens = _calculatePurchaseReturn(amount);
-		console.log("buy:tokens", tokens);
 		reserves += amount; // CAN REPLACE WITH collateral.balanceOf(this)
 		_mint(msg.sender, tokens);
 		collateral.safeTransferFrom(msg.sender, address(this), amount);
@@ -218,6 +230,54 @@ abstract contract BondingCurve is OwnedERC20 {
 		reserves -= amount;
 	 }
 
+
+
+	 function _beforeTokenTransfer(
+		address from,
+		address to,
+		uint256 amount
+	) internal override virtual {
+		// on _mint
+		if (from == address(0) && price_upper_bound > 0) {
+			console.log("beforeTT: price_upper_bound", price_upper_bound);
+			require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
+		}
+		// on _burn
+		else if (to == address(0) && price_lower_bound > 0) {
+			require(_calculateDecreasedPrice(amount) >= price_lower_bound, "below price lower bound");
+		}
+	}
+
+
+
+	/**
+	 @dev amount is tokens burned.
+	 */
+	 function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
+		uint256 result = _calculateDecreasedPrice(amount);
+		return result;
+	 }
+
+  function _get_discount_cap() internal view virtual returns(uint256); 
+
+	 function _calcAreaUnderCurve(uint256 amount) public view  virtual returns(uint256 result); 
+
+	 function _calculateScore(uint256 priceOut, bool atLoss) view internal virtual returns(uint256 score);
+
+	 function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);
+
+	 function _calculateSaleReturn(uint256 amount) view internal virtual returns (uint256 result);
+
+	 function _calculateExpectedPrice(uint256 amount) view internal virtual returns (uint256 result);
+
+	 function _calculateProbability(uint256 amount) view internal virtual returns (uint256 score);
+
+	 function _calculateDecreasedPrice(uint256 amount) view internal virtual returns (uint256 result);
+
+
+
+
+///DEPRECATED
 	/**
 	 @notice used for calculating reputation score on resolved market.
 	 */
@@ -252,50 +312,5 @@ abstract contract BondingCurve is OwnedERC20 {
 		reserves -= burn_collateral_amount;
 	 }
 
-	 function _beforeTokenTransfer(
-		address from,
-		address to,
-		uint256 amount
-	) internal override virtual {
-		// on _mint
-		if (from == address(0) && price_upper_bound > 0) {
-			console.log("beforeTT: price_upper_bound", price_upper_bound);
-			require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
-		}
-		// on _burn
-		else if (to == address(0) && price_lower_bound > 0) {
-			require(_calculateDecreasedPrice(amount) >= price_lower_bound, "below price lower bound");
-		}
-	}
 
-
-  function get_discount_cap() public view returns(uint256){
-  	return _get_discount_cap();  
-  }
-
-
-
-	/**
-	 @dev amount is tokens burned.
-	 */
-	 function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
-		uint256 result = _calculateDecreasedPrice(amount);
-		return result;
-	 }
-
-  function _get_discount_cap() internal view virtual returns(uint256); 
-
-	 function _calcAreaUnderCurve(uint256 amount) public view  virtual returns(uint256 result); 
-
-	 function _calculateScore(uint256 priceOut, bool atLoss) view internal virtual returns(uint256 score);
-
-	 function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);
-
-	 function _calculateSaleReturn(uint256 amount) view internal virtual returns (uint256 result);
-
-	 function _calculateExpectedPrice(uint256 amount) view internal virtual returns (uint256 result);
-
-	 function _calculateProbability(uint256 amount) view internal virtual returns (uint256 score);
-
-	 function _calculateDecreasedPrice(uint256 amount) view internal virtual returns (uint256 result);
 	}
