@@ -31,6 +31,7 @@ abstract contract BondingCurve is OwnedERC20 {
 		collateral = ERC20(_collateral);
 		math_precision = 1e18;
 		collateral_dec = collateral.decimals();
+
 	}
 
 	/// @notice doesn't account for discounted supply 
@@ -38,7 +39,7 @@ abstract contract BondingCurve is OwnedERC20 {
 		return totalSupply() - discounted_supply; 
 	}
 
-
+	/// @notice priceupperbound/lowerbound are not price, but instead percentage of max reserves(principal) like alpha 
 	function setUpperBound(uint256 upper_bound) public onlyOwner {
 		price_upper_bound = upper_bound;
 	}
@@ -57,7 +58,7 @@ abstract contract BondingCurve is OwnedERC20 {
 	 */
 	 function trustedBuy(address trader, uint256 collateral_amount) public onlyOwner returns (uint256) {
 		require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
-
+		require(reserves+collateral_amount <=  price_upper_bound, "exceeds trade boundary"); 
 		uint256 tokens = _calculatePurchaseReturn(collateral_amount);
 		reserves += collateral_amount;
 
@@ -71,15 +72,12 @@ abstract contract BondingCurve is OwnedERC20 {
 	 */
 	 function trustedSell(address trader, uint256 zcb_amount) public onlyOwner returns (uint256) {
 		uint256 collateral_out = _calculateSaleReturn(zcb_amount);
-		console.log("colalteralout", collateral_out); 
+		require(reserves-collateral_out >= price_lower_bound, "exceeds trade boundary"); 
+
 		_burn(trader, zcb_amount);
-		console.log('here', zcb_amount);
+		reserves -= collateral_out;
 
 		collateral.safeTransfer(trader, collateral_out);
-		console.log('here2', collateral_out);
-
-		reserves -= collateral_out;
-		console.log('here3');
 
 		return collateral_out;
 	 }
@@ -194,29 +192,6 @@ abstract contract BondingCurve is OwnedERC20 {
 
 
 	/**
-	 @notice buy bond tokens with necessary checks and transfers of collateral.
-	 @param amount: amount of collateral/ds paid in exchange for tokens
-	 @dev amount has number of collateral decimals
-	 */
-	 function buy(uint256 amount) public {
-		uint256 tokens = _calculatePurchaseReturn(amount);
-		reserves += amount; // CAN REPLACE WITH collateral.balanceOf(this)
-		_mint(msg.sender, tokens);
-		collateral.safeTransferFrom(msg.sender, address(this), amount);
-	}
-
-	/**
-	 @notice sell bond tokens with necessary checks and transfers of collateral
-	 @param amount: amount of tokens selling. 60.18.
-	 */
-	function sell(uint256 amount) public {
-		uint256 sale = _calculateSaleReturn(amount);
-		_burn(msg.sender, amount);
-		collateral.safeTransfer(msg.sender, sale);
-		reserves -= sale;
-	 }
-
-	/**
 	 @dev doesn't perform any checks, checks performed by caller
 	 */
 	function incrementReserves(uint256 amount) public onlyOwner{
@@ -232,6 +207,16 @@ abstract contract BondingCurve is OwnedERC20 {
 
 
 
+	/**
+	 @dev amount is tokens burned.
+	 */
+	 function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
+		uint256 result = _calculateDecreasedPrice(amount);
+		return result;
+	 }
+
+
+
 	 function _beforeTokenTransfer(
 		address from,
 		address to,
@@ -240,23 +225,15 @@ abstract contract BondingCurve is OwnedERC20 {
 		// on _mint
 		if (from == address(0) && price_upper_bound > 0) {
 			console.log("beforeTT: price_upper_bound", price_upper_bound);
-			require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
+			// require(_calculateExpectedPrice(amount) <= price_upper_bound, "above price upper bound");
 		}
 		// on _burn
 		else if (to == address(0) && price_lower_bound > 0) {
-			require(_calculateDecreasedPrice(amount) >= price_lower_bound, "below price lower bound");
+			// require(_calculateDecreasedPrice(amount) >= price_lower_bound, "below price lower bound");
 		}
 	}
 
 
-
-	/**
-	 @dev amount is tokens burned.
-	 */
-	 function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
-		uint256 result = _calculateDecreasedPrice(amount);
-		return result;
-	 }
 
   function _get_discount_cap() internal view virtual returns(uint256); 
 
@@ -310,6 +287,29 @@ abstract contract BondingCurve is OwnedERC20 {
 		) external onlyOwner{
 		collateral.safeTransfer(owner, burn_collateral_amount); 
 		reserves -= burn_collateral_amount;
+	 }
+
+	/**
+	 @notice buy bond tokens with necessary checks and transfers of collateral.
+	 @param amount: amount of collateral/ds paid in exchange for tokens
+	 @dev amount has number of collateral decimals
+	 */
+	 function buy(uint256 amount) public {
+		uint256 tokens = _calculatePurchaseReturn(amount);
+		reserves += amount; // CAN REPLACE WITH collateral.balanceOf(this)
+		_mint(msg.sender, tokens);
+		collateral.safeTransferFrom(msg.sender, address(this), amount);
+	}
+
+	/**
+	 @notice sell bond tokens with necessary checks and transfers of collateral
+	 @param amount: amount of tokens selling. 60.18.
+	 */
+	function sell(uint256 amount) public {
+		uint256 sale = _calculateSaleReturn(amount);
+		_burn(msg.sender, amount);
+		collateral.safeTransfer(msg.sender, sale);
+		reserves -= sale;
 	 }
 
 

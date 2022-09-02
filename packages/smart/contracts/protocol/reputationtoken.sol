@@ -119,7 +119,8 @@ contract ReputationNFT is IReputationNFT, ERC721 {
 
   mapping(uint256=>mapping(address=>bool)) canTrade; //marketID-> address-> cantrade
   mapping(uint256=>bool) allowAll; 
-
+  mapping(address=>bool) isUnique; 
+  address[] unique_traders; 
   /// @notice called by controller when initiating market,
   function storeTopReputation(uint256 topX, uint256 marketId) external onlyController{
     if (getAvailableTopX() < topX) {
@@ -145,13 +146,7 @@ contract ReputationNFT is IReputationNFT, ERC721 {
   }
 
   function getAvailableTopX() public view returns(uint256){
-    uint256 i;
-    for (i; i< topReputations.length; i++){
-      if(topReputations[i].trader == address(0)){
-        return i; 
-      }
-    return i; 
-    }
+    return unique_traders.length; 
   }
 
   function getAvailableTraderNum() public view returns(uint256){
@@ -180,7 +175,15 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     // update the new max element 
     topReputations[i].score = score;
     topReputations[i].trader = trader;
+
+    if (isUnique[trader]) return; 
+    isUnique[trader] = true; 
+    unique_traders.push(trader);
+
   }
+
+
+ 
 
   function testStore() public view {
     for (uint i=0; i<10; i++){

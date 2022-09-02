@@ -208,15 +208,26 @@ contract Controller {
     marketManager.set_parameters(param, marketId); 
   }
 
+  function initial_marketmanager_setups(
+    uint256 marketId, 
+    address shortZCB, 
+    Vault.InstrumentData memory instrumentData) internal {
+
+    uint256 base_budget = 1000 * (10**6); //TODO
+    uint256 alpha = marketManager.getParameters(marketId).alpha; 
+    uint256 delta = marketManager.getParameters(marketId).delta; 
+    marketManager.setMarketPhase(marketId, true, true, base_budget);  
+    marketManager.add_short_zcb( marketId, shortZCB); 
+    marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
+    marketManager.setUpperBound(marketId, 
+      instrumentData.principal.mulDivDown(alpha+delta, 1e6));  //Set initial upper bound 
+  }
+
   /**
    @dev initiates market, called by frontend loan proposal or instrument form submit button.
    @param recipient is the 
-   @dev a and b must be 60.18 format
    */
 
-  /**
-   @notice 
-   */
   function initiateMarket(
     address recipient,
     Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
@@ -247,15 +258,19 @@ contract Controller {
     );
 
     market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
-    // marketManager.setAssessmentPhase(marketId, true, true);  
-    marketManager.setMarketPhase(marketId, true, true, 1000 * (10**6));  // need to set min rep score here as well
-    marketManager.add_short_zcb( marketId, address(zcb_tokens[1])); 
-    marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
 
+    initial_marketmanager_setups(marketId, address(zcb_tokens[1]), instrumentData ); //TODO just get shortZCB from controller? gas dif
+ 
     repNFT.storeTopReputation(marketManager.getParameters(marketId).r,  marketId); 
 
     emit MarketInitiated(marketId, recipient);
   }
+
+
+
+
+
+
 
   /////RESOLVERS//////
 
@@ -350,30 +365,31 @@ contract Controller {
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-
     require(marketManager.isConfirmed(marketId), "market not confirmed");
     // marketManager.validator_buy(marketId, msg.sender); 
     // if (!marketManager.validator_can_approve(marketId)) return; 
+    uint256 vaultId = id_parent[marketId];
+    uint256 principal = vaults[vaultId].fetchInstrumentData(marketId).principal; 
 
     marketManager.approveMarket(marketId);
-    marketManager.setUpperBound(marketId, 1000000*10**6); // need to get upper bound 
+    marketManager.setLowerBound(marketId, getLowerBound(marketId, principal)); 
     
     trustInstrument(marketId); 
 
     // Deposit to the instrument contract
-    uint256 vaultId = id_parent[marketId];
-    uint256 principal = vaults[vaultId].fetchInstrumentData(marketId).principal; 
-    //maybe this should be separated to prevent attacks 
+    // maybe this should be separated to prevent attacks 
     vaults[vaultId].depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
     vaults[vaultId].setMaturityDate(Instrument(market_data[marketId].instrument_address));
     vaults[vaultId].onMarketApproval(marketId);
   }
 
-  // /// @notice computes 
-  // function getUpperLowerBound(uint256 marketId) internal returns(uint256, uint256){
-  //   marketManager.getParameters(marketId).delta
-  //   return 
-  // }
+  function getLowerBound(uint256 marketId, uint256 principal) internal view returns(uint256){
+    uint256 alpha = marketManager.getParameters(marketId).alpha; 
+    uint256 delta = marketManager.getParameters(marketId).delta; 
+
+    return (alpha-delta).mulDivDown(principal, 1e6); 
+
+  }
 
   /*
   Market is denied by validator or automatically if conditions are not met 
