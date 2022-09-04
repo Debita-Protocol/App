@@ -20,19 +20,19 @@ import {Controller} from "./controller.sol";
 
 contract VaultFactory{
 
-	address owner; 
-	mapping(address=>bool) private _isVault; 
+  address owner; 
+  mapping(address=>bool) private _isVault; 
 
-	uint256 public numVaults; 
-	Controller controller; 
+  uint256 public numVaults; 
+  Controller controller; 
 
   constructor(address _controller){
-  	owner = msg.sender; 
-  	controller = Controller(_controller); 
+    owner = msg.sender; 
+    controller = Controller(_controller); 
   }
 
   function isVault(address v) external view returns(bool){
-  	return _isVault[v]; 
+    return _isVault[v]; 
   }
 
   modifier onlyController(){
@@ -41,32 +41,32 @@ contract VaultFactory{
   }
 
   function newVault(
-  	address underlying, 
-  	address controller, 
+    address underlying, 
+    address controller, 
 
-  	//Vault mint conditions
-  	bool _onlyVerified, 
-  	uint256 _r, 
-  	uint256 _mint_limit,
-  	uint256 _total_mint_limit, 
+    //Vault mint conditions
+    bool _onlyVerified, 
+    uint256 _r, 
+    uint256 _mint_limit,
+    uint256 _total_mint_limit, 
 
-  	//Default Market Parameters
-  	MarketManager.MarketParameters memory default_params
+    //Default Market Parameters
+    MarketManager.MarketParameters memory default_params
 
-  	) external onlyController returns(Vault, uint256){
-  	Vault vault = new Vault(
-  		underlying,
-  		 controller, 
-  		 owner, 
-  		 //Params 
- 			 _onlyVerified,  _r, _mint_limit, _total_mint_limit,
- 			 default_params 
+    ) external onlyController returns(Vault, uint256){
+    Vault vault = new Vault(
+      underlying,
+       controller, 
+       owner, 
+       //Params 
+       _onlyVerified,  _r, _mint_limit, _total_mint_limit,
+       default_params 
 
-  		 ); 
-  	_isVault[address(vault)] = true; 
-  	numVaults++; 
+       ); 
+    _isVault[address(vault)] = true; 
+    numVaults++; 
 
-  	return (vault, numVaults); 
+    return (vault, numVaults); 
 
   }
 

@@ -16,7 +16,7 @@ import "hardhat/console.sol";
 
 
 contract Vault is ERC4626, Auth{
-	  using SafeCastLib for uint256; 
+    using SafeCastLib for uint256; 
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -57,7 +57,7 @@ contract Vault is ERC4626, Auth{
         uint248 balance; // in underlying
         uint256 faceValue; // in underlying
         uint256 marketId;
-    	  uint256 principal; //this is total available allowance in underlying
+        uint256 principal; //this is total available allowance in underlying
         uint256 expectedYield; // total interest paid over duration in underlying
         uint256 duration;
         string description;
@@ -138,14 +138,14 @@ contract Vault is ERC4626, Auth{
     }
 
     /// @notice Deposit a specific amount of float into a trusted Instrument.
-   	/// Called when market is approved. 
-   	/// Also has the role of granting a credit line to a credit-based Instrument like uncol.loans 
+    /// Called when market is approved. 
+    /// Also has the role of granting a credit line to a credit-based Instrument like uncol.loans 
     function depositIntoInstrument(uint256 marketId, uint256 underlyingAmount) external onlyController{
       Instrument instrument = fetchInstrument(marketId); 
-    	require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
+      require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
       require(enoughLiqudity(underlyingAmount), "Not enough liqudity in vault"); 
 
-    	totalInstrumentHoldings += underlyingAmount; 
+      totalInstrumentHoldings += underlyingAmount; 
 
         getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
 
@@ -156,7 +156,7 @@ contract Vault is ERC4626, Auth{
 
     /// @notice Withdraw a specific amount of underlying tokens from a Instrument.
     function withdrawFromInstrument(Instrument instrument, uint256 underlyingAmount) internal {
-    	require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
+      require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
         
         getInstrumentData[instrument].balance -= underlyingAmount.safeCastTo248();
         
@@ -170,7 +170,7 @@ contract Vault is ERC4626, Auth{
 
     /// @notice Stores a Instrument as trusted when its approved
     function trustInstrument(uint256 marketId) external onlyController{
-    	getInstrumentData[fetchInstrument(marketId)].trusted = true;
+      getInstrumentData[fetchInstrument(marketId)].trusted = true;
     }
 
     /// @notice Stores a Instrument as untrusted
@@ -181,15 +181,15 @@ contract Vault is ERC4626, Auth{
 
     /// @notice returns true if Instrument is approved
     function isTrusted(Instrument instrument) public view returns(bool){
-    	return getInstrumentData[instrument].trusted; 
+      return getInstrumentData[instrument].trusted; 
     }
 
     /// @notice Calculates the total amount of underlying tokens the Vault holds, excluding profit 
     function totalAssets() public view override returns(uint256){
-    	return totalInstrumentHoldings + totalFloat();
+      return totalInstrumentHoldings + totalFloat();
     }
 
-   	
+    
     function totalFloat() public view returns (uint256) {
         return UNDERLYING.balanceOf(address(this));
     }
@@ -231,8 +231,8 @@ contract Vault is ERC4626, Auth{
 
         num_proposals[msg.sender] ++; 
         getInstrumentData[Instrument(data.Instrument_address)] = (
-        	InstrumentData(
-        		false, 
+          InstrumentData(
+            false, 
                 0, 
                 data.faceValue, 
                 data.marketId, 
