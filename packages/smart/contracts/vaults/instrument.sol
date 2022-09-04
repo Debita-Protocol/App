@@ -26,6 +26,11 @@ abstract contract Instrument {
         _;
     }
 
+    modifier notLocked() {
+        require(!locked); 
+        _; 
+    }
+
     constructor (
         address _vault,
         address _Utilizer
@@ -39,8 +44,9 @@ abstract contract Instrument {
 
     ERC20 public underlying;
     Vault public vault; 
+    bool locked; 
     uint256 private constant MAX_UINT = 2**256 - 1;
-
+    uint256 private maturity_balance; 
     /// @notice address of user who submits the liquidity proposal 
     address Utilizer; 
 
@@ -79,9 +85,110 @@ abstract contract Instrument {
     /// @param user The user to get the underlying balance of.
     /// @return The user's Instrument balance in underlying tokens.
     /// @dev May mutate the state of the Instrument by accruing interest.
-    function balanceOfUnderlying(address user) external view returns (uint256){
+    function balanceOfUnderlying(address user) public view returns (uint256){
         return underlying.balanceOf(user); 
         }
+
+
+    /**
+     * @notice
+     *  Provide an accurate estimate for the total amount of assets
+     *  (principle + return) that this Instrument is currently managing,
+     *  denominated in terms of Underlying tokens.
+     *
+     *  This total should be "realizable" e.g. the total value that could
+     *  *actually* be obtained from this Instrument if it were to divest its
+     *  entire position based on current on-chain conditions.
+     * @dev
+     *  Care must be taken in using this function, since it relies on external
+     *  systems, which could be manipulated by the attacker to give an inflated
+     *  (or reduced) value produced by this function, based on current on-chain
+     *  conditions (e.g. this function is possible to influence through
+     *  flashloan attacks, oracle manipulations, or other DeFi attack
+     *  mechanisms).
+     *
+     *  It is up to governance to use this function to correctly order this
+     *  Instrument relative to its peers in the withdrawal queue to minimize
+     *  losses for the Vault based on sudden withdrawals. This value should be
+     *  higher than the total debt of the Instrument and higher than its expected
+     *  value to be "safe".
+     *  Estimated Total assets should be 
+
+     * @return The estimated total assets in this Strategy.
+     */
+    function estimatedTotalAssets() public view virtual returns (uint256);
+
+    /**
+     * Free up returns for vault to pull
+     * Perform any Instrument divesting + unwinding or other calls necessary to capture the
+     * "free return" this Instrument has generated since the last time its core
+     * position(s) were adjusted. Examples include unwrapping extra rewards.
+     * This call is only used during "normal operation" of a Instrument, and
+     * should be optimized to minimize losses as much as possible.
+     *
+     * This method returns any realized profits and/or realized losses
+     * incurred, and should return the total amounts of profits/losses/debt
+     * payments (in `underlying` tokens) for the Vault's accounting (e.g.
+     * `underlying.balanceOf(this) >= principal + profit`).
+     *
+     * param _debtPayment is the total amount expected to be returned to the vault
+     */
+    function prepareWithdraw()
+        internal
+        virtual
+        returns (
+            uint256 _profit,
+            uint256 _loss,
+            uint256 _debtPayment
+        );
+
+    /**
+     * Liquidate up to `_amountNeeded` of `underlying` of this strategy's positions,
+     * irregardless of slippage. Any excess will be re-invested with `adjustPosition()`.
+     * This function should return the amount of `underlying` tokens made available by the
+     * liquidation. If there is a difference between them, `_loss` indicates whether the
+     * difference is due to a realized loss, or if there is some other sitution at play
+     * (e.g. locked funds) where the amount made available is less than what is needed.
+     *
+     * NOTE: The invariant `_liquidatedAmount + _loss <= _amountNeeded` should always be maintained
+     */
+    function liquidatePosition(uint256 _amountNeeded) public  virtual returns (uint256 _liquidatedAmount, uint256 _loss);
+
+    /**
+     * Liquidate everything and returns the amount that got freed.
+     * This function is used during emergency exit instead of `prepareReturn()` to
+     * liquidate all of the instrument's positions back to the Vault.
+     */
+    function liquidateAllPositions() public  virtual returns (uint256 _amountFreed);
+
+    function lockLiquidityFlow() external onlyVault{
+        locked = true; 
+    }
+
+    function isLocked() public view returns(bool){
+        return locked; 
+    }
+
+    function transfer_liq(address to, uint256 amount) internal notLocked {
+        underlying.transfer(to, amount);
+    }
+
+    function transfer_liq_from(address from, address to, uint256 amount) internal notLocked {
+        underlying.transferFrom(from, to, amount);
+
+    }
+
+    /// @notice called before resolve, to avoid calculating redemption price based on manipulations 
+    function store_internal_balance() external onlyVault{
+        maturity_balance = balanceOfUnderlying(address(this)); 
+    }
+
+    function getMaturityBalance() public view returns(uint256){
+        return maturity_balance; 
+    }
+
+
+
 }
 
 
@@ -125,7 +232,7 @@ abstract contract Instrument {
 /// @notice Contract for unsecured loans, each instance will be associated to a borrower+marketId
 /// approved borrowers will interact with this contract to borrow, repay. 
 /// and vault will supply principal and harvest principal/interest 
-contract CreditLine is Instrument {
+abstract contract CreditLine is Instrument {
     using PRBMathUD60x18 for uint256;
 
     //  variables initiated at creation
@@ -146,7 +253,7 @@ contract CreditLine is Instrument {
         uint256 _interestAPR, 
         uint256 _duration,
         uint256 _faceValue
-    ) public Instrument(vault, borrower){
+    )  Instrument(vault, borrower){
         principal = _principal; 
         interestAPR = _interestAPR; 
         duration = _duration;   
@@ -165,7 +272,7 @@ contract CreditLine is Instrument {
         require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
         totalOwed += amount; 
         principalOwed += amount; 
-        underlying.transfer(msg.sender, amount);
+        transfer_liq(msg.sender, amount); 
     }
 
     /// @notice allows a borrower to repay their loan
@@ -173,7 +280,8 @@ contract CreditLine is Instrument {
         require(vault.isTrusted(this), "Not approved");
         // require(repay_principal <= principalOwed, "overpaid principal");
         // require(repay_interest <= interestOwed, "overpaid interest");
-        underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
+        transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
+        // underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
         handleRepay(repay_principal, repay_interest); 
     }   
 

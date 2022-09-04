@@ -95,7 +95,7 @@ contract Vault is ERC4626, Auth{
     }
     
     modifier onlyController(){
-        require(address(controller) == msg.sender || msg.sender == owner ,  "is not controller"); 
+        require(address(controller) == msg.sender || msg.sender == owner || address(this) == msg.sender ,  "is not controller"); 
         _;
     }
 
@@ -140,8 +140,11 @@ contract Vault is ERC4626, Auth{
     /// @notice Deposit a specific amount of float into a trusted Instrument.
    	/// Called when market is approved. 
    	/// Also has the role of granting a credit line to a credit-based Instrument like uncol.loans 
-    function depositIntoInstrument(Instrument instrument, uint256 underlyingAmount) external onlyController{
+    function depositIntoInstrument(uint256 marketId, uint256 underlyingAmount) external onlyController{
+      Instrument instrument = fetchInstrument(marketId); 
     	require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
+      require(enoughLiqudity(underlyingAmount), "Not enough liqudity in vault"); 
+
     	totalInstrumentHoldings += underlyingAmount; 
 
         getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
@@ -166,8 +169,8 @@ contract Vault is ERC4626, Auth{
     }
 
     /// @notice Stores a Instrument as trusted when its approved
-    function trustInstrument(Instrument instrument) external onlyController{
-    	getInstrumentData[instrument].trusted = true;
+    function trustInstrument(uint256 marketId) external onlyController{
+    	getInstrumentData[fetchInstrument(marketId)].trusted = true;
     }
 
     /// @notice Stores a Instrument as untrusted
@@ -246,32 +249,44 @@ contract Vault is ERC4626, Auth{
         Instruments[data.marketId] = Instrument(data.Instrument_address);
     }
 
-
     /**
      @notice called by controller on approveMarket.
      */
-    function setMaturityDate(Instrument _instrument) external onlyController {
-        getInstrumentData[_instrument].maturityDate = getInstrumentData[_instrument].duration + block.timestamp;
+    function setMaturityDate(uint256 marketId) external onlyController {
+
+        getInstrumentData[fetchInstrument(marketId)].maturityDate = getInstrumentData[fetchInstrument(marketId)].duration + block.timestamp;
     }
 
+    /// @notice called before resolve instrument from a separate transaction 
+    /// @dev need to store internal balance that is used to calculate the redemption price 
+    function beforeResolve(uint256 marketId) external onlyController{
+
+        Instrument _instrument = Instruments[marketId]; 
+        harvest(address(_instrument));
+        _instrument.lockLiquidityFlow();    
+        _instrument.store_internal_balance(); 
+      }
     /**
      @notice called on resolution => checkInstrument => called by anyone, withdraws all funds to vault, triggers resolveMarket for controller.
      @dev no checks, checks performed by checkInstrument()
+     to prevent flashloan attacks need to first lock the instrument from withdraw/redeeming and store the balance internally 
+     before the atLoss is computed 
      */
     function resolveInstrument(
         uint256 marketId
     ) external onlyController
     returns(bool, uint256, uint256) {
-        Instrument _instrument = Instruments[marketId]; 
-
-        harvest(address(_instrument));
+        Instrument _instrument = Instruments[marketId];
+        require(_instrument.isLocked(), "Not Locked");  
+        uint256 instrument_balance = _instrument.getMaturityBalance(); 
+        // harvest(address(_instrument));
 
         InstrumentData storage data = getInstrumentData[_instrument];
 
-        bool atLoss = data.balance < data.faceValue;
+        bool atLoss = instrument_balance < data.faceValue;
 
-        uint256 total_loss = atLoss ? data.faceValue - data.balance : 0;
-        uint256 extra_gain = !atLoss ? data.balance - data.faceValue : 0;
+        uint256 total_loss = atLoss ? data.faceValue - instrument_balance : 0;
+        uint256 extra_gain = !atLoss ?instrument_balance - data.faceValue : 0;
 
         withdrawFromInstrument(_instrument, _instrument.balanceOfUnderlying(address(_instrument)));
                 
@@ -292,7 +307,6 @@ contract Vault is ERC4626, Auth{
         
         removeInstrument(marketId);
     }
-
 
 
 
@@ -317,6 +331,38 @@ contract Vault is ERC4626, Auth{
     }
 
 
+    /// @notice apply fee before withdrawing to prevent just minting before maturities and withdrawing after 
+     function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) public virtual override returns (uint256 assets) {
+        if (msg.sender != owner) {
+            uint256 allowed = allowance[owner][msg.sender]; // Saves gas for limited approvals.
+
+            if (allowed != type(uint256).max) allowance[owner][msg.sender] = allowed - shares;
+        }
+
+        // Check for rounding error since we round down in previewRedeem.
+        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+
+        beforeWithdraw(assets, shares);
+
+        assets = deduct_withdrawal_fees(assets); 
+
+        _burn(owner, shares);
+
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
+
+        asset.safeTransfer(receiver, assets);
+    }
+
+    /// TODO 
+    function deduct_withdrawal_fees(uint256 amount) internal returns(uint256){
+      return amount; 
+    }
+
+
     /// @notice types of restrictions are: 
     /// a) verified address b) reputation scores 
     function receiver_conditions(address receiver) public view returns(bool){
@@ -338,6 +384,31 @@ contract Vault is ERC4626, Auth{
 
     function get_default_params() public view returns(MarketManager.MarketParameters memory){
       return default_params; 
+    }
+
+
+    function beforeWithdraw(uint256 assets, uint256 shares) internal virtual override {
+      require(enoughLiqudity(assets), "Not enough liqudity in vault"); 
+
+    }
+
+    /// @notice returns true if the vault has enough balance to withdraw or supply to new instrument
+    /// (excluding those supplied to existing instruments)
+    /// @dev for now this implies that the vault allows full utilization ratio, but the utilization ratio
+    /// should be (soft)maxed and tunable by a parameter 
+    function enoughLiqudity(uint256 amounts) public view returns(bool){
+        return (UNDERLYING.balanceOf(address(this)) >= amounts); 
+    }
+
+
+    /// @notice function that closes instrument prematurely 
+    function closeInstrument(uint256 marketId) external onlyController{
+      Instrument instrument = fetchInstrument( marketId); 
+
+      // If instrument has non-underlying tokens, liquidate them first. 
+      instrument.liquidateAllPositions(); 
+
+
     }
 
 

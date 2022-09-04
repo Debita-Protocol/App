@@ -150,7 +150,7 @@ contract LinearBondingCurve is BondingCurve {
     return discount_cap; 
   }
 
-  function getParams() public view returns(uint,uint){
+  function _getParams() public view override returns(uint,uint){
     return (a,b); 
   }
 

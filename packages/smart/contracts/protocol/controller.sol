@@ -57,10 +57,10 @@ contract Controller {
   uint256 nonce = 0;
 
   /* ========== MODIFIERS ========== */
-  modifier onlyValidator(uint256 marketId) {
-      require(marketManager.isValidator(marketId, msg.sender)|| msg.sender == creator_address);
-      _;
-  }
+  // modifier onlyValidator(uint256 marketId) {
+  //     require(marketManager.isValidator(marketId, msg.sender)|| msg.sender == creator_address);
+  //     _;
+  // }
 
   modifier onlyOwner() {
       require(msg.sender == creator_address, "Only Owner can call this function");
@@ -285,20 +285,33 @@ contract Controller {
     uint256 marketId
   ) external  
   {
-    uint256 vaultId = id_parent[marketId]; 
-    {uint256 bc_vault_balance = vaults[vaultId].balanceOf(getZCB_ad(marketId));
-    uint256 sbc_vault_balance = vaults[vaultId].balanceOf(getshortZCB_ad(marketId)); 
-    vaults[vaultId].controller_burn(bc_vault_balance,getZCB_ad(marketId)); 
-    vaults[vaultId].controller_burn(sbc_vault_balance, getshortZCB_ad(marketId));}
+    Vault vault = vaults[id_parent[marketId]]; 
+
+    //Firwst burn all vault balances in the bondingcurve contract 
+    vault.controller_burn(
+      vault.balanceOf(getZCB_ad(marketId)),
+      getZCB_ad(marketId)); 
+    vault.controller_burn(
+      vault.balanceOf(getshortZCB_ad(marketId)), 
+      getshortZCB_ad(marketId));
 
     (bool atLoss,
     uint256 extra_gain,
-    uint256 principal_loss) = vaults[vaultId].resolveInstrument(marketId); 
+    uint256 principal_loss) = vault.resolveInstrument(marketId); 
 
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
     marketManager.deactivateMarket(marketId, atLoss);
     
     marketFactory.trustedResolveMarket(marketId, 0);//Winning Outcome TODO
+  }
+
+  /// @notice Prepare market/instrument for closing, called separately before resolveMarket
+  /// exists to circumvent manipulations via  
+  function beforeResolve(uint256 marketId) 
+  external 
+  //onlyKeepers 
+  {
+    vaults[id_parent[marketId]].beforeResolve(marketId); 
   }
 
 
@@ -320,7 +333,8 @@ contract Controller {
     require(data.maturityDate > 0, "instrument hasn't been approved yet" );
 
     if (block.timestamp >= data.maturityDate) {
-        this.resolveMarket(marketId);
+        // this.resolveMarket(marketId);
+        this.beforeResolve(marketId); 
         return true;
     }
     return false;
@@ -336,8 +350,28 @@ contract Controller {
     uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, 10**18); //Experiment
     repNFT.addScore(trader, scoreToAdd); 
 
-
   }
+
+  /// @notice function that closes the instrument/market before maturity, maybe to realize gains/cut losses fast
+  /// or debt is prematurely fully repaid, or underlying strategy is deemed dangerous, etc.  
+  /// @dev withdraws all balance from the instrument. 
+  /// If assets in instrument is not in underlying, need all balances to be divested to underlying 
+  /// Ideally this should be called by several validators, maybe implement a voting scheme and have a keeper call it.
+  /// @param emergency ascribes cases where the instrument should be forcefully liquidated back to the vault
+  function forceCloseInstrument(uint256 marketId, bool emergency) external returns(bool){
+    Vault vault = vaults[id_parent[marketId]]; 
+
+    // Prepare for close 
+    vault.closeInstrument(marketId); 
+
+    // Harvests/records all profit & losses
+    vault.beforeResolve(marketId); 
+
+    return true;
+
+    //Now the resolveMarket function should be called in the next transaction 
+  }
+
 
 
 
@@ -368,26 +402,25 @@ contract Controller {
     require(marketManager.isConfirmed(marketId), "market not confirmed");
     // marketManager.validator_buy(marketId, msg.sender); 
     // if (!marketManager.validator_can_approve(marketId)) return; 
-    uint256 vaultId = id_parent[marketId];
-    uint256 principal = vaults[vaultId].fetchInstrumentData(marketId).principal; 
+    Vault vault = vaults[id_parent[marketId]]; 
 
     marketManager.approveMarket(marketId);
-    marketManager.setLowerBound(marketId, getLowerBound(marketId, principal)); 
+    marketManager.setLowerBound(marketId,
+                getLowerBound(marketId, vault.fetchInstrumentData(marketId).principal)); 
     
-    trustInstrument(marketId); 
 
     // Deposit to the instrument contract
     // maybe this should be separated to prevent attacks 
-    vaults[vaultId].depositIntoInstrument(Instrument(market_data[marketId].instrument_address), principal );
-    vaults[vaultId].setMaturityDate(Instrument(market_data[marketId].instrument_address));
-    vaults[vaultId].onMarketApproval(marketId);
+    vault.trustInstrument(marketId);
+    vault.depositIntoInstrument(marketId, vault.fetchInstrumentData(marketId).principal);
+    vault.setMaturityDate(marketId);
+    vault.onMarketApproval(marketId);
   }
 
   function getLowerBound(uint256 marketId, uint256 principal) internal view returns(uint256){
-    uint256 alpha = marketManager.getParameters(marketId).alpha; 
-    uint256 delta = marketManager.getParameters(marketId).delta; 
-
-    return (alpha-delta).mulDivDown(principal, 1e6); 
+ 
+    return ( marketManager.getParameters(marketId).alpha-marketManager.getParameters(marketId).delta)
+            .mulDivDown(principal, 1e6); 
 
   }
 
@@ -396,7 +429,9 @@ contract Controller {
   */
   function denyMarket(
       uint256 marketId
-  ) external  onlyValidator(marketId) {
+  ) external  
+  //onlyValidator(marketId) 
+  {
     marketManager.denyMarket(marketId);
       //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
     
@@ -408,9 +443,6 @@ contract Controller {
   }
  
 
-  function trustInstrument(uint256 marketId) private  {
-    vaults[id_parent[marketId]].trustInstrument(Instrument(market_data[marketId].instrument_address));
-  }
 
 
 
@@ -421,7 +453,7 @@ contract Controller {
 
 
 
-  /* --------VIEW FUNCTIONS---------  */
+  /* --------GETTER FUNCTIONS---------  */
   function getMarketId(address recipient) public view returns(uint256){
     return ad_to_id[recipient];
   }
