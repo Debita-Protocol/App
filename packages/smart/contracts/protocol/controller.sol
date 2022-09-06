@@ -13,6 +13,7 @@ import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {VaultFactory} from "./factories.sol"; 
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
+import {config} from "./helpers.sol"; 
 
 
 // Controller contract responsible for providing initial liquidity to the
@@ -176,34 +177,36 @@ contract Controller {
     uint256 marketId
     ) internal returns(OwnedERC20[] memory) {
 
-    string memory name = string(abi.encodePacked(baseName, "-", Strings.toString(nonce)));
-    string memory symbol = string(abi.encodePacked(baseSymbol, Strings.toString(nonce)));
-    string memory s_name = string(abi.encodePacked(s_baseName, "-", Strings.toString(nonce)));
-    string memory s_symbol = string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce)));
-    nonce++;
     //TODO abstractFactory 
-    OwnedERC20 longzcb = linearBCFactory.newLongZCB(name, symbol, address(marketManager), getVaultAd( marketId), P,I, sigma); 
-    OwnedERC20 shortzcb = linearBCFactory.newShortZCB(s_name, s_symbol, address(marketManager), getVaultAd( marketId), address(longzcb), marketId); 
-
     OwnedERC20[] memory zcb_tokens = new OwnedERC20[](2);
-    zcb_tokens[0] = longzcb;
-    zcb_tokens[1] = shortzcb; 
+
+    zcb_tokens[0] = linearBCFactory.newLongZCB(
+      string(abi.encodePacked(baseName, "-", Strings.toString(nonce))),
+     string(abi.encodePacked(baseSymbol, Strings.toString(nonce))), 
+     address(marketManager), 
+     getVaultAd( marketId), 
+     P,
+     I, 
+     sigma); 
+
+    zcb_tokens[1] = linearBCFactory.newShortZCB(
+      string(abi.encodePacked(s_baseName, "-", Strings.toString(nonce))), 
+      string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce))), 
+      address(marketManager), 
+      getVaultAd( marketId), 
+      address(zcb_tokens[0]), 
+      marketId); 
+
+    nonce++;
 
     return zcb_tokens;
   }
 
 
   function setMarketParameters(uint256 marketId) internal    {
-    //TODO determine how to determine parameters for each instrument, below is default params 
-    uint256  INSURANCE_CONSTANT = 5 * 10**5; 
-    uint256  REPUTATION_CONSTANT = 3 * 10**5;
-    uint256  VALIDATOR_CONSTANT = 3 * 10**4; 
-    uint256  NUM_VALIDATOR = 1; 
-    uint256  DELTA = 1* 10**5; 
-    uint256  REP = 10; //number of top reputations allowed during onlyReputation phase 
+
+    // TODO get parameters
     MarketManager.MarketParameters memory param = vaults[id_parent[marketId]].get_default_params(); 
-    // MarketManager.MarketParameters memory param =  MarketManager.MarketParameters(
-    //   NUM_VALIDATOR, VALIDATOR_CONSTANT, INSURANCE_CONSTANT, REPUTATION_CONSTANT, DELTA, REP);
 
     marketManager.set_parameters(param, marketId); 
   }
@@ -213,7 +216,7 @@ contract Controller {
     address shortZCB, 
     Vault.InstrumentData memory instrumentData) internal {
 
-    uint256 base_budget = 1000 * (10**6); //TODO
+    uint256 base_budget = 1000 * config.WAD; //TODO
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
     uint256 delta = marketManager.getParameters(marketId).delta; 
     marketManager.setMarketPhase(marketId, true, true, base_budget);  
@@ -233,6 +236,7 @@ contract Controller {
     Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
     uint256 vaultId
   ) external  {
+    require(instrumentData.principal >= config.WAD, "Precision err"); 
 
     uint256 marketId = marketFactory.marketCount();
     id_parent[marketId] = vaultId;  
@@ -257,7 +261,7 @@ contract Controller {
         instrumentData
     );
 
-    market_data[marketId] = MarketData(address(instrumentData.Instrument_address), recipient);
+    market_data[marketId] = MarketData(instrumentData.Instrument_address, recipient);
 
     initial_marketmanager_setups(marketId, address(zcb_tokens[1]), instrumentData ); //TODO just get shortZCB from controller? gas dif
  
@@ -347,7 +351,7 @@ contract Controller {
     uint256 implied_probs = marketManager.assessment_probs(marketId, trader);
     console.log("implied probs", implied_probs); 
 
-    uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, 10**18); //Experiment
+    uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, config.WAD); //Experiment
     repNFT.addScore(trader, scoreToAdd); 
 
   }

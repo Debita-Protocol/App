@@ -133,6 +133,12 @@ abstract contract Instrument {
      *
      * param _debtPayment is the total amount expected to be returned to the vault
      */
+
+    /// @notice checks whether the vault can withdraw and record profit from this instrument 
+    /// For creditlines, all debts should be repaid
+    /// for strategies, all assets should be divested + converted to Underlying
+    /// this function is important in preventing manipulations, 
+    /// @dev prepareWithdraw->vault.beforeResolve->vault.resolveInstrument in separate txs
     function prepareWithdraw()
         internal
         virtual
@@ -140,7 +146,9 @@ abstract contract Instrument {
             uint256 _profit,
             uint256 _loss,
             uint256 _debtPayment
-        );
+        ){
+            lockLiquidityFlow();    
+        }
 
     /**
      * Liquidate up to `_amountNeeded` of `underlying` of this strategy's positions,
@@ -161,7 +169,7 @@ abstract contract Instrument {
      */
     function liquidateAllPositions() public  virtual returns (uint256 _amountFreed);
 
-    function lockLiquidityFlow() external onlyVault{
+    function lockLiquidityFlow() internal{
         locked = true; 
     }
 
@@ -186,6 +194,14 @@ abstract contract Instrument {
     function getMaturityBalance() public view returns(uint256){
         return maturity_balance; 
     }
+
+
+    /// @notice Before supplying liquidity from the vault to this instrument,
+    /// need to check if certain conditions that are required to this specific 
+    /// instrument is met. For example, for a creditline with a collateral 
+    /// requirement need to check if this address has the specific amount of collateral
+    /// @dev called to be checked at the approve phase from controller  
+    function instrumentApprovalCondition() public virtual view returns(bool); 
 
 
 

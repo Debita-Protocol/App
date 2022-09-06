@@ -5,8 +5,9 @@ import "hardhat/console.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {config} from "../protocol/helpers.sol"; 
 
-//TODO need to actually review for security and shit.
+
 abstract contract BondingCurve is OwnedERC20 {
   // ASSUMES 18 TRAILING DECIMALS IN UINT256
   using SafeERC20 for ERC20;
@@ -14,27 +15,29 @@ abstract contract BondingCurve is OwnedERC20 {
 
   uint256 internal price_upper_bound;
   uint256 internal price_lower_bound;
-  uint256 internal reserves;
+  uint256 internal reserves; //in collateral_dec 
   uint256 internal max_quantity;
   uint256 internal math_precision; 
-  uint256 internal collateral_dec;
+  uint256 public collateral_dec;
   ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
   address[] private buyers; // keeps track for final reputation.
   uint256 discounted_supply; 
 
+  address shortZCB; 
   constructor (
     string memory name,
     string memory symbol,
-      address owner, // market manager.
-      address _collateral
-      ) OwnedERC20(name, symbol, owner) {
+    address owner, // market manager.
+    address _collateral
+    ) OwnedERC20(name, symbol, owner) {
     collateral = ERC20(_collateral);
-    math_precision = 1e18;
+
+    math_precision = config.WAD;
     collateral_dec = collateral.decimals();
 
   }
 
-  /// @notice account for discounted supply 
+  /// @notice account for discounted/shorted supply 
   function totalSupplyAdjusted() public view returns(uint256) {
     return totalSupply() - discounted_supply; 
   }
@@ -52,24 +55,29 @@ abstract contract BondingCurve is OwnedERC20 {
     max_quantity = _max_quantity;
   }
 
+  function setShortZCB(address shortZCB_ad) public onlyOwner{
+    shortZCB = shortZCB_ad; 
+  }
+
 
 
   /**
    @notice called by market manager, like trustedMint but returns amount out
    @param collateral_amount: amount of collateral in. => w/ collateral decimals
-   @param min_amount_out: reverts if actual output less
+   @param min_amount_out: reverts if actual tokens returned less
    */
   function trustedBuy(
     address trader, 
     uint256 collateral_amount,
     uint256 min_amount_out
-    ) public onlyOwner returns (uint256 tokensOut) {
+    ) public returns (uint256 tokensOut) {
+    require(msg.sender == owner || msg.sender == shortZCB); 
     require(collateral.balanceOf(trader)>= collateral_amount,"not enough balance"); 
     require(reserves+collateral_amount <=  price_upper_bound, "exceeds trade boundary"); 
 
-    tokensOut = _calculatePurchaseReturn(collateral_amount);
+    tokensOut = calculatePurchaseReturn(collateral_amount);
     require(tokensOut >= min_amount_out, "Slippage err"); 
-    reserves += collateral_amount;
+    unchecked{reserves += collateral_amount;}
 
     collateral.safeTransferFrom(trader, address(this), collateral_amount);
     _mint(trader, tokensOut);
@@ -77,18 +85,21 @@ abstract contract BondingCurve is OwnedERC20 {
    }
 
    /**
-   @param zcb_amount: amount of zcb tokens burned, needs to be in 18 decimals 
+   @param zcb_amount: amount of zcb tokens burned, needs to be in WAD 
    */
-   function trustedSell(
+  function trustedSell(
     address trader, 
     uint256 zcb_amount, 
     uint256 min_collateral_out
-    ) public onlyOwner returns (uint256 collateral_out) {
-    collateral_out = _calculateSaleReturn(zcb_amount);
+    ) public returns (uint256 collateral_out) {
+    require(msg.sender == owner || msg.sender == shortZCB); 
+
+    // in collateral_dec rounded down to nearest int
+    collateral_out = calculateSaleReturn(zcb_amount);
     require(reserves-collateral_out >= price_lower_bound, "exceeds trade boundary"); 
     require(collateral_out>=min_collateral_out, "Slippage Err"); 
 
-    reserves -= collateral_out;
+    unchecked{reserves -= collateral_out;}
 
     _burn(trader, zcb_amount);
 
@@ -96,13 +107,19 @@ abstract contract BondingCurve is OwnedERC20 {
 
    }
 
-   /// @notice only called for selling discounted supplies 
-   function trustedMint(address receiver, uint256 zcb_amount) external virtual override onlyOwner {
-    _mint(receiver, zcb_amount); 
+   /// @notice only called for selling discounted supplies or short supplies 
+  function trustedDiscountedMint(address receiver, uint256 zcb_amount) external virtual  onlyOwner {
     discounted_supply += zcb_amount; 
+    _mint(receiver, zcb_amount); 
    }
 
-   function trustedApproveCollateralTransfer(address trader, uint256 amount) public onlyOwner {
+  function trustedDiscountedBurn(address receiver, uint256 zcb_amount) external virtual onlyOwner{
+    discounted_supply -= zcb_amount; 
+    _burn(receiver, zcb_amount); 
+
+  }
+
+  function trustedApproveCollateralTransfer(address trader, uint256 amount) public onlyOwner {
     collateral.approve(trader, amount);
    }
 
@@ -112,8 +129,17 @@ abstract contract BondingCurve is OwnedERC20 {
    @dev shouldn't be calling this function, should be calculating amount from frontend.
    @param amount: input collateral (ds)
    */
-   function calculatePurchaseReturn(uint256 amount) public view  returns (uint256 result) {
-    result = _calculatePurchaseReturn(amount);
+  function calculatePurchaseReturn(uint256 amount) public view  returns (uint256) {
+    return _calculatePurchaseReturn(amount);
+   }
+
+  /**
+   @notice calculates collateral returns from selling tokens
+   @param amount: amount of tokens selling
+   returns in collateral dec 
+   */
+  function calculateSaleReturn(uint256 amount) public view  returns (uint256) {
+    return _calculateSaleReturn(amount);
    }
 
 
@@ -123,13 +149,6 @@ abstract contract BondingCurve is OwnedERC20 {
     return _calcAreaUnderCurve(amount); 
   }
 
-  /**
-   @notice calculates collateral returns from selling tokens
-   @param amount: amount of tokens selling
-   */
-   function calculateSaleReturn(uint256 amount) public view  returns (uint256 result) {
-    result = _calculateSaleReturn(amount);
-   }
 
 
 
@@ -177,6 +196,12 @@ abstract contract BondingCurve is OwnedERC20 {
     return _getParams(); 
   }
 
+  /**
+   @dev amount is tokens burned.
+   */
+  function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
+    return _calculateDecreasedPrice(amount);
+  }
 
   /**
    @dev doesn't perform any checks, checks performed by caller
@@ -194,17 +219,9 @@ abstract contract BondingCurve is OwnedERC20 {
 
 
 
-  /**
-   @dev amount is tokens burned.
-   */
-   function calculateDecreasedPrice(uint256 amount) public view  virtual returns (uint256) {
-    uint256 result = _calculateDecreasedPrice(amount);
-    return result;
-   }
 
 
-
-   function _beforeTokenTransfer(
+  function _beforeTokenTransfer(
     address from,
     address to,
     uint256 amount
@@ -224,11 +241,11 @@ abstract contract BondingCurve is OwnedERC20 {
   /// @notice calculates implied probability of the trader 
   /// @param budget of trader in collateral decimals 
   function calcImpliedProbability(uint256 collateral_amount, uint256 budget) public view returns(uint256 prob){
-    uint256 _budget = budget *(10**18-collateral_dec); 
+
     uint256 zcb_amount = calculatePurchaseReturn(collateral_amount); 
     uint256 avg_price = calcAveragePrice(zcb_amount); //18 decimals 
     uint256 b = avg_price.mulWadDown(math_precision - avg_price);
-    uint256 ratio = zcb_amount.divWadDown(_budget); 
+    uint256 ratio = zcb_amount.divWadDown(budget); 
 
     return ratio.mulWadDown(b)+ avg_price;
   }
@@ -241,25 +258,23 @@ abstract contract BondingCurve is OwnedERC20 {
     uint256 area = calcAreaUnderCurve(amount); //this takes in 18 
 
     //area is in decimal 6, amount is in 18
-    uint256 area_in_precision = area*(10**12); 
-    uint256 result = area_in_precision.divWadDown(amount); 
+    // uint256 area_in_precision = area*(10**12); 
+    uint256 result = area.divWadDown(amount); 
     //returns a 18 decimal avg price 
     return result; 
   }
 
   function _get_discount_cap() internal view virtual returns(uint256); 
 
-  function _calcAreaUnderCurve(uint256 amount) public view  virtual returns(uint256 result); 
+  function _calcAreaUnderCurve(uint256 amount) internal view  virtual returns(uint256 result); 
 
-  function _calculatePurchaseReturn(uint256 amount) view internal virtual returns(uint256 result);
+  function _calculatePurchaseReturn(uint256 amount)  internal view virtual returns(uint256 result);
 
-  function _calculateSaleReturn(uint256 amount) view internal virtual returns (uint256 result);
+  function _calculateSaleReturn(uint256 amount) internal view  virtual returns (uint256 result);
 
-  function _calculateExpectedPrice(uint256 amount) view internal virtual returns (uint256 result);
+  function _calculateExpectedPrice(uint256 amount) internal view  virtual returns (uint256 result);
 
-  function _calculateProbability(uint256 amount) view internal virtual returns (uint256 score);
-
-  function _calculateDecreasedPrice(uint256 amount) view internal virtual returns (uint256 result);
+  function _calculateDecreasedPrice(uint256 amount) internal view  virtual returns (uint256 result);
 
   function _getParams() public view virtual returns(uint,uint); 
 
@@ -273,9 +288,7 @@ abstract contract BondingCurve is OwnedERC20 {
   /**
    @notice used for calculating reputation score on resolved market.
    */
-  function calculateProbability(uint256 amount) view public returns (uint256 score) {
-    return _calculateProbability(amount);
-   }
+
 
   function redeem(
     address receiver, 
@@ -309,7 +322,7 @@ abstract contract BondingCurve is OwnedERC20 {
    @param amount: amount of collateral/ds paid in exchange for tokens
    @dev amount has number of collateral decimals
    */
-   function buy(uint256 amount) public {
+  function buy(uint256 amount) public {
     uint256 tokens = _calculatePurchaseReturn(amount);
     reserves += amount; // CAN REPLACE WITH collateral.balanceOf(this)
     _mint(msg.sender, tokens);

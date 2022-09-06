@@ -54,6 +54,8 @@ contract VaultFactory{
     MarketManager.MarketParameters memory default_params
 
     ) external onlyController returns(Vault, uint256){
+    require(default_params.alpha >= 1e16, "Alpha too small"); 
+    
     Vault vault = new Vault(
       underlying,
        controller, 
