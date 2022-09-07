@@ -33,12 +33,20 @@ abstract contract ERC4626 is ERC20 {
 
     ERC20 public immutable asset;
 
+    uint immutable underlying_decimals; 
+    uint8 constant default_decimals = 18; 
+    bool  decimal_mismatch; 
+
     constructor(
         ERC20 _asset,
         string memory _name,
         string memory _symbol
-    ) ERC20(_name, _symbol, _asset.decimals()) {
+    ) ERC20(_name, _symbol, default_decimals) {
         asset = _asset;
+
+        underlying_decimals = _asset.decimals(); 
+        decimal_mismatch = (_asset.decimals() != default_decimals);
+        if(decimal_mismatch) assert(_asset.decimals() < default_decimals);  
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -125,14 +133,16 @@ abstract contract ERC4626 is ERC20 {
 
     function convertToShares(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+        // if (decimal_mismatch) assets = decAssetsToShares(assets); 
+        return supply == 0 ? decimal_mismatch? decAssetsToShares(assets) : assets 
+                : assets.mulDivDown(supply, totalAssets());
     }
 
     function convertToAssets(uint256 shares) public view virtual returns (uint256) {
         uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        // if(decimal_mismatch) shares = decSharesToAssets(shares); 
+        return supply == 0 ? decimal_mismatch? decSharesToAssets(shares) : shares 
+                : shares.mulDivDown(totalAssets(), supply);
     }
 
     function previewDeposit(uint256 assets) public view virtual returns (uint256) {
@@ -142,13 +152,16 @@ abstract contract ERC4626 is ERC20 {
     function previewMint(uint256 shares) public view virtual returns (uint256) {
         uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
 
-        return supply == 0 ? shares : shares.mulDivUp(totalAssets(), supply);
+        return supply == 0 ? decimal_mismatch? decSharesToAssets(shares) : shares 
+                : shares.mulDivUp(totalAssets(), supply);
     }
 
     function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
         uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        // if (decimal_mismatch) assets = decAssetsToShares(assets); 
 
-        return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets());
+        return supply == 0 ? decimal_mismatch? decAssetsToShares(assets) : assets 
+                : assets.mulDivUp(supply, totalAssets());
     }
 
     function previewRedeem(uint256 shares) public view virtual returns (uint256) {
@@ -182,4 +195,12 @@ abstract contract ERC4626 is ERC20 {
     function beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
 
     function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+
+    function decAssetsToShares(uint256 assets) internal view virtual returns(uint256) {
+        return assets * (10 ** (default_decimals - underlying_decimals)); 
+    }
+
+    function decSharesToAssets(uint256 shares) internal view virtual returns(uint256){
+        return shares / (10**(default_decimals - underlying_decimals)); 
+    }
 }

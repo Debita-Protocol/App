@@ -87,7 +87,8 @@ contract Vault is ERC4626, Auth{
 
     {
         UNDERLYING = ERC20(_UNDERLYING);
-        BASE_UNIT = 10**ERC20(_UNDERLYING).decimals();
+        //BASE_UNIT = 10**ERC20(_UNDERLYING).decimals();
+        BASE_UNIT = 10**18; 
         controller = Controller(_controller);
         set_minting_conditions( _onlyVerified,  _r, _mint_limit, _total_mint_limit); 
         default_params = _default_params; 
@@ -144,27 +145,31 @@ contract Vault is ERC4626, Auth{
       Instrument instrument = fetchInstrument(marketId); 
       require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
       require(enoughLiqudity(underlyingAmount), "Not enough liqudity in vault"); 
+      if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
 
       totalInstrumentHoldings += underlyingAmount; 
 
-        getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
+      getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
 
-        UNDERLYING.transfer(address(instrument), underlyingAmount);
 
-        emit InstrumentDeposit(msg.sender, instrument, underlyingAmount);
+      UNDERLYING.transfer(address(instrument), underlyingAmount);
+
+      emit InstrumentDeposit(msg.sender, instrument, underlyingAmount);
     }
 
     /// @notice Withdraw a specific amount of underlying tokens from a Instrument.
     function withdrawFromInstrument(Instrument instrument, uint256 underlyingAmount) internal {
       require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
-        
-        getInstrumentData[instrument].balance -= underlyingAmount.safeCastTo248();
-        
-        totalInstrumentHoldings -= underlyingAmount;
-        
-        require(instrument.redeemUnderlying(underlyingAmount), "REDEEM_FAILED");
-        
-        emit InstrumentWithdrawal(msg.sender, instrument, underlyingAmount);
+      
+      if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
+
+      getInstrumentData[instrument].balance -= underlyingAmount.safeCastTo248();
+      
+      totalInstrumentHoldings -= underlyingAmount;
+      
+      require(instrument.redeemUnderlying(underlyingAmount), "REDEEM_FAILED");
+      
+      emit InstrumentWithdrawal(msg.sender, instrument, underlyingAmount);
 
     }
 
@@ -247,6 +252,7 @@ contract Vault is ERC4626, Auth{
         ); 
 
         Instruments[data.marketId] = Instrument(data.Instrument_address);
+        assert(data.marketId !=0); 
     }
 
     /**
@@ -263,7 +269,6 @@ contract Vault is ERC4626, Auth{
 
         Instrument _instrument = Instruments[marketId]; 
         harvest(address(_instrument));
-        _instrument.lockLiquidityFlow();    
         _instrument.store_internal_balance(); 
       }
     /**

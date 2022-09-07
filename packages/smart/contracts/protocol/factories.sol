@@ -59,21 +59,22 @@ contract VaultFactory{
     uint256 _total_asset_limit, 
     MarketManager.MarketParameters memory default_params
   ) external onlyController returns(Vault, uint256) {
+    require(default_params.alpha >= 1e16, "Alpha too small"); 
+    
+    Vault vault = new Vault(
+      underlying,
+       controller, 
+       owner, 
+       //Params 
+       _onlyVerified,  _r, _mint_limit, _total_mint_limit,
+       default_params 
 
-      Vault vault = new Vault(
-        underlying,
-        _controller, 
-        owner, 
-        //Params 
-        _onlyVerified,  _r, _asset_limit, _total_asset_limit,
-        default_params 
-      );
-      
-      _isVault[address(vault)] = true; 
-      
-      numVaults++;
-      
-      return (vault, numVaults);
+       ); 
+    _isVault[address(vault)] = true; 
+    numVaults++; 
+
+    return (vault, numVaults); 
+
   }
 
 
