@@ -43,7 +43,8 @@ contract LinearBondingCurveFactory{
     ) external returns (OwnedERC20){
 
     OwnedERC20 shortZCB = new LinearShortZCB(
-      name, symbol, marketmanager_address, vault_address, longZCBaddress, marketId); 
+      name, symbol, marketmanager_address, vault_address, longZCBaddress, marketId
+    ); 
     return shortZCB;
   }
 

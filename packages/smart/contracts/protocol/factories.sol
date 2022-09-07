@@ -40,34 +40,40 @@ contract VaultFactory{
       _;
   }
 
+  /**
+   @notice creates vault
+   @param underlying: underlying asset for vault
+   @param _controller: protocol controller
+   @param _onlyVerified: only verified users can mint shares
+   @param _r: minimum reputation score to mint shares
+   @param _asset_limit: max number of shares for a single address
+   @param _total_asset_limit: max number of shares for entire vault
+   @param default_params: default params for markets created by vault
+   */
   function newVault(
     address underlying, 
-    address controller, 
-
-    //Vault mint conditions
+    address _controller,
     bool _onlyVerified, 
     uint256 _r, 
-    uint256 _mint_limit,
-    uint256 _total_mint_limit, 
-
-    //Default Market Parameters
+    uint256 _asset_limit,
+    uint256 _total_asset_limit, 
     MarketManager.MarketParameters memory default_params
+  ) external onlyController returns(Vault, uint256) {
 
-    ) external onlyController returns(Vault, uint256){
-    Vault vault = new Vault(
-      underlying,
-       controller, 
-       owner, 
-       //Params 
-       _onlyVerified,  _r, _mint_limit, _total_mint_limit,
-       default_params 
-
-       ); 
-    _isVault[address(vault)] = true; 
-    numVaults++; 
-
-    return (vault, numVaults); 
-
+      Vault vault = new Vault(
+        underlying,
+        _controller, 
+        owner, 
+        //Params 
+        _onlyVerified,  _r, _asset_limit, _total_asset_limit,
+        default_params 
+      );
+      
+      _isVault[address(vault)] = true; 
+      
+      numVaults++;
+      
+      return (vault, numVaults);
   }
 
 

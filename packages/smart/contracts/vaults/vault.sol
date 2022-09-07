@@ -222,7 +222,7 @@ contract Vault is ERC4626, Auth{
     /// need to add authorization
     function addProposal(
         InstrumentData memory data
-    ) external {
+    ) external onlyController {
         require(data.principal > 0, "principal must be greater than 0");
         require(data.duration > 0, "duration must be greater than 0");
         require(data.faceValue > 0, "faceValue must be greater than 0");
@@ -382,7 +382,7 @@ contract Vault is ERC4626, Auth{
     } 
 
 
-    function get_default_params() public view returns(MarketManager.MarketParameters memory){
+    function getDefaultParams() public view returns(MarketManager.MarketParameters memory){
       return default_params; 
     }
 
