@@ -116,7 +116,7 @@ abstract contract Instrument {
 
      * @return The estimated total assets in this Strategy.
      */
-    function estimatedTotalAssets() public view virtual returns (uint256);
+    function estimatedTotalAssets() public view virtual returns (uint256){}
 
     /**
      * Free up returns for vault to pull
@@ -134,20 +134,32 @@ abstract contract Instrument {
      * param _debtPayment is the total amount expected to be returned to the vault
      */
 
+    /// @notice checks if the instrument is ready to be withdrawed, i.e all 
+    /// loans have been paid, all non-underlying have been liquidated, etc
+    function readyForWithdrawal() public view virtual returns(bool){
+        return true; 
+    }
+
     /// @notice checks whether the vault can withdraw and record profit from this instrument 
+    /// for this instrument to resolve 
     /// For creditlines, all debts should be repaid
     /// for strategies, all assets should be divested + converted to Underlying
     /// this function is important in preventing manipulations, 
     /// @dev prepareWithdraw->vault.beforeResolve->vault.resolveInstrument in separate txs
     function prepareWithdraw()
-        internal
+        external 
+        onlyVault 
         virtual
         returns (
             uint256 _profit,
             uint256 _loss,
             uint256 _debtPayment
         ){
+            require(readyForWithdrawal()); 
+
+            // Lock additional drawdowns or usage of instrument balance 
             lockLiquidityFlow();    
+
         }
 
     /**
@@ -160,14 +172,14 @@ abstract contract Instrument {
      *
      * NOTE: The invariant `_liquidatedAmount + _loss <= _amountNeeded` should always be maintained
      */
-    function liquidatePosition(uint256 _amountNeeded) public  virtual returns (uint256 _liquidatedAmount, uint256 _loss);
+    function liquidatePosition(uint256 _amountNeeded) public  virtual returns (uint256 _liquidatedAmount, uint256 _loss){}
 
     /**
      * Liquidate everything and returns the amount that got freed.
      * This function is used during emergency exit instead of `prepareReturn()` to
      * liquidate all of the instrument's positions back to the Vault.
      */
-    function liquidateAllPositions() public  virtual returns (uint256 _amountFreed);
+    function liquidateAllPositions() public  virtual returns (uint256 _amountFreed){}
 
     function lockLiquidityFlow() internal{
         locked = true; 
@@ -176,6 +188,7 @@ abstract contract Instrument {
     function isLocked() public view returns(bool){
         return locked; 
     }
+
 
     function transfer_liq(address to, uint256 amount) internal notLocked {
         underlying.transfer(to, amount);
@@ -201,7 +214,7 @@ abstract contract Instrument {
     /// instrument is met. For example, for a creditline with a collateral 
     /// requirement need to check if this address has the specific amount of collateral
     /// @dev called to be checked at the approve phase from controller  
-    function instrumentApprovalCondition() public virtual view returns(bool); 
+    function instrumentApprovalCondition() public virtual view returns(bool){} 
 
 
 
@@ -248,8 +261,7 @@ abstract contract Instrument {
 /// @notice Contract for unsecured loans, each instance will be associated to a borrower+marketId
 /// approved borrowers will interact with this contract to borrow, repay. 
 /// and vault will supply principal and harvest principal/interest 
-abstract contract CreditLine is Instrument {
-    using PRBMathUD60x18 for uint256;
+contract CreditLine is Instrument {
 
     //  variables initiated at creation
     uint256  principal;

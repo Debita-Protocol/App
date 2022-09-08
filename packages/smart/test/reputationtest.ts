@@ -136,10 +136,10 @@ describe("Cycle", ()=>{
   const params = {} as DefaultParams; 
 
   params.N = "1"; 
-  params.sigma = pp_.mul(5).div(100); 
-  params.alpha = pp_.mul(3).div(10); 
-  params.omega = pp_.mul(2).div(10);
-  params.delta = pp_.mul(1).div(10); 
+  params.sigma = pp.mul(5).div(100); 
+  params.alpha = pp.mul(3).div(10); 
+  params.omega = pp.mul(2).div(10);
+  params.delta = pp.mul(1).div(10); 
   params.r = "10"; 
 
 
@@ -202,12 +202,12 @@ describe("Cycle", ()=>{
 
   it("can add proposal and create market", async()=> {
     data.trusted = false; 
-    data.balance = pp_.mul(0).toString();
-    data.faceValue = pp_.mul(1100).toString();
-    data.marketId = pp_.mul(0).toString(); 
-    data.principal = pp_.mul(1000).toString();
-    data.expectedYield = pp_.mul(100).toString();
-    data.duration = pp_.mul(10).toString();
+    data.balance = pp.mul(0).toString();
+    data.faceValue = pp.mul(1100).toString();
+    data.marketId = pp.mul(0).toString(); 
+    data.principal = pp.mul(1000).toString();
+    data.expectedYield = pp.mul(100).toString();
+    data.duration = pp.mul(10).toString();
     data.description = "test";
     data.Instrument_address = creditline.address;
     data.instrument_type = String(0);
@@ -285,36 +285,138 @@ describe("Cycle", ()=>{
 
   //   });
 
+//    it("everyone can buy and sell", async()=>{
 
-  it("everyone can buy and all redeem with increased reputation based on winnings", async()=>{
+//     //Lets have winners who buys at assessment and market is approved
+//     const managers = [manager1, manager2, manager3, manager4]; 
+//     const marketId = await controller.getMarketId(trader.address);
+//     const bc_address = await controller.getZCB_ad(marketId);
+//     const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+//     const amount = pp.mul(1000); 
+//     const price_before = await bc.calculateExpectedPrice(0); 
+//     let marketphase; 
+//     let manager_bc_bal; 
+//     let bc_col_bal; 
+//     console.log("price_before", price_before.toString()); 
+//     for (let i=0; i<managers.length; i++){
+//       await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
+//       await vault.connect(managers[i]).mint( amount, managers[i].address); 
+//       await vault.connect(managers[i]).approve(bc_address, amount); 
+//       await marketmanager.connect(managers[i]).buy(marketId, amount.div(10), 0); 
 
-    // //Lets have winners who buys at assessment and market is approved
-    // const managers = [manager1, manager2, manager3, manager4]; 
-    // const marketId = await controller.getMarketId(trader.address);
-    // const bc_address = await controller.getZCB_ad(marketId);
-    // const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
-    // const amount = pp_.mul(1000); 
-    // const price_before = await bc.calculateExpectedPrice(0); 
-    // let marketphase; 
-    // let manager_bc_bal; 
-    // let bc_col_bal; 
-    // console.log("price_before", price_before.toString()); 
-    // for (let i=0; i<managers.length; i++){
-    //   await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
-    //   await vault.connect(managers[i]).mint( amount, managers[i].address); 
-    //   await vault.connect(managers[i]).approve(bc_address, amount); 
-    //   await marketmanager.connect(managers[i]).buy(marketId, amount.div(10)); 
+//       bc_col_bal = await bc.getTotalCollateral(); 
+//       marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+//       manager_bc_bal = await bc.balanceOf(managers[i].address); 
+//       console.log('marketphase/manager_bc_bal/bc_col_bal', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
 
-    //   bc_col_bal = await bc.getTotalCollateral(); 
-    //   marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
-    //   manager_bc_bal = await bc.balanceOf(managers[i].address); 
-    //   console.log('marketphase/manager_bc_bal/bc_col_bal', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
+//     }
 
-    // }
+//     expect(await vault.balanceOf(bc_address)).to.equal(amount.div(10).mul(managers.length)); 
+//     const price_after = await bc.calculateExpectedPrice(0); 
+//     console.log("price_after", price_after.toString()); 
 
-    // expect(await vault.balanceOf(bc_address)).to.equal(amount.div(10).mul(managers.length)); 
-    // const price_after = await bc.calculateExpectedPrice(0); 
-    // console.log("price_after", price_after.toString()); 
+//     for (let i=managers.length-1; i>=0; i--){
+//       await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
+//       await vault.connect(managers[i]).mint( amount, managers[i].address); 
+//       manager_bc_bal = await bc.balanceOf(managers[i].address); 
+//       await vault.connect(managers[i]).approve(bc_address, amount); 
+//       await marketmanager.connect(managers[i]).sell(marketId, manager_bc_bal, 0); 
+
+//       bc_col_bal = await bc.getTotalCollateral(); 
+//       marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+//       expect(await bc.balanceOf(managers[i].address)).to.equal(0); 
+//       console.log('marketphase/manager_bc_bal/bc_col_bal',
+//         marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
+
+//     }
+
+//     const price_after_sell = await bc.calculateExpectedPrice(0); 
+//     console.log("price_after_sell", price_after_sell.toString()); 
+
+// }); 
+
+
+//   it("everyone can buy and sell in a loop ", async()=>{
+
+//     //Lets have winners who buys at assessment and market is approved
+//     const managers = [manager1, manager2, manager3, manager4]; 
+//     const marketId = await controller.getMarketId(trader.address);
+//     const bc_address = await controller.getZCB_ad(marketId);
+//     const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+//     const amount = pp.mul(1000); 
+//     const price_before = await bc.calculateExpectedPrice(0); 
+//     let marketphase; 
+//     let manager_bc_bal; 
+//     let bc_col_bal; 
+//     let manager_vault_bal; 
+//     console.log("price_before", price_before.toString()); 
+
+//     await vault.connect(managers[0]).mint( amount, managers[0].address); 
+//     await vault.connect(managers[0]).approve(bc_address, amount); 
+
+//     for (let i=0; i<=10; i++){
+//       await collateral.connect(managers[0]).approve(vault.address, amount.mul(2)); 
+ 
+//       await marketmanager.connect(managers[0]).buy(marketId, amount.div(10), 0); 
+
+//       bc_col_bal = await bc.getTotalCollateral(); 
+//       marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+//       manager_bc_bal = await bc.balanceOf(managers[0].address); 
+//       console.log('marketphase/manager_bc_bal/bc_col_bal', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
+      
+//       // await collateral.connect(managers[0]).approve(vault.address, amount.mul(2)); 
+//       // await vault.connect(managers[0]).mint( amount, managers[0].address); 
+//       manager_bc_bal = await bc.balanceOf(managers[0].address); 
+//       await vault.connect(managers[0]).approve(bc_address, amount); 
+//       await marketmanager.connect(managers[0]).sell(marketId, manager_bc_bal, 0); 
+
+//       bc_col_bal = await bc.getTotalCollateral(); 
+//       marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+//       manager_vault_bal = await vault.balanceOf(managers[0].address); 
+
+//       expect(await bc.balanceOf(managers[0].address)).to.equal(0); 
+//       console.log('managervaultbal/manager_bc_bal/bc_col_bal',
+//         manager_vault_bal.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
+
+
+//     }
+
+//     const price_after_sell = await bc.calculateExpectedPrice(0); 
+//     console.log("price_after_sell", price_after_sell.toString()); 
+
+// }); 
+
+
+
+  // it("everyone can buy and all redeem with increased reputation based on winnings", async()=>{
+
+  //   //Lets have winners who buys at assessment and market is approved
+  //   const managers = [manager1, manager2, manager3, manager4]; 
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+  //   const amount = pp.mul(1000); 
+  //   const price_before = await bc.calculateExpectedPrice(0); 
+  //   let marketphase; 
+  //   let manager_bc_bal; 
+  //   let bc_col_bal; 
+  //   console.log("price_before", price_before.toString()); 
+  //   for (let i=0; i<managers.length; i++){
+  //     await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
+  //     await vault.connect(managers[i]).mint( amount, managers[i].address); 
+  //     await vault.connect(managers[i]).approve(bc_address, amount); 
+  //     await marketmanager.connect(managers[i]).buy(marketId, amount.div(10), 0); 
+
+  //     bc_col_bal = await bc.getTotalCollateral(); 
+  //     marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+  //     manager_bc_bal = await bc.balanceOf(managers[i].address); 
+  //     console.log('marketphase/manager_bc_bal/bc_col_bal', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString() ); 
+
+  //   }
+
+  //   //expect(await vault.balanceOf(bc_address)).to.equal(amount.div(10).mul(managers.length)); 
+  //   const price_after = await bc.calculateExpectedPrice(0); 
+  //   console.log("price_after", price_after.toString()); 
 
 
     // const vault_balance_before_approve = await collateral.balanceOf(vault.address); 
@@ -355,7 +457,7 @@ describe("Cycle", ()=>{
     //   manager_reputation = await rep.getReputationScore(managers[i].address);
     //   manager_vault_bal = await vault.balanceOf(managers[i].address); 
     //   console.log('Before redeem vault_bal,reputation', manager_vault_bal.toString(), manager_reputation.toString());
-    //   await marketmanager.connect(managers[i]).redeem(marketId, managers[i].address); 
+    //   await marketmanager.connect(managers[i]).redeem(marketId); 
 
     //   expect(await bc.balanceOf(managers[i].address)).to.equal(0);
     //   manager_reputation = await rep.getReputationScore(managers[i].address);
@@ -365,7 +467,7 @@ describe("Cycle", ()=>{
     // }
     // expect(await marketmanager._isValidator( marketId,  trader.address) ).to.be.true; 
     // const validator_redeem_before = await vault.balanceOf(trader.address);
-    // await marketmanager.connect(trader).redeem(marketId, trader.address); 
+    // await marketmanager.connect(trader).redeem(marketId); 
     // const validator_redeem_after = await vault.balanceOf(trader.address); 
     // total_profits.add(validator_redeem_after.sub(validator_redeem_before)); 
 
@@ -378,14 +480,80 @@ describe("Cycle", ()=>{
     // console.log('vaults totalAssets',vault_totalAsset_before_resolve.toString(),vault_totalAsset_after_resolve.toString(), vault_totalAsset_after_redeem.toString());
     // console.log('vaults totalsupply',vault_supply_before_resolve.toString(),vault_supply_after_resolve.toString(), vault_supply_after_redeem.toString());
     // console.log('total_profits', total_profits.toString(), )
-  })
+  // })
 
   // it("can do accounting at maturity with vault")
 
 
 
-  it("some people will long some will short, and market is denied  ", async()=>{
-      // doLong = (Math.random() > 0.5);
+  // it("some people will long some will short, and market is approved then redeemed   ", async()=>{
+
+  //   const managers = [manager1, manager2, manager3, manager4]; 
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const bc_address = await controller.getZCB_ad(marketId);
+  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+  //   const shortzcb_ad = await controller.getshortZCB_ad(marketId);
+  //   const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
+
+  //   const amount = pp.mul(1000); 
+  //   const price_before = await bc.calculateExpectedPrice(0); 
+  //   let marketphase; 
+  //   let manager_bc_bal; 
+  //   let bc_col_bal; 
+  //   let doLong; 
+  //   let price_now; 
+  //   let shortReserves; 
+  //   let longReserves; 
+  //   let totalSupply; 
+
+  //   console.log("price_before", price_before.toString()); 
+  //   for (let i=0; i<managers.length; i++){
+  //     await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
+  //     await vault.connect(managers[i]).mint( amount, managers[i].address); 
+  //     await vault.connect(managers[i]).approve(bc_address, amount); 
+  //     await vault.connect(managers[i]).approve(shortzcb_ad, amount); 
+  //     if (i==0){
+
+  //       await marketmanager.connect(managers[i]).buy(marketId, amount.div(7), 0); 
+  //     }
+  //     else if(i==1){
+  //       await marketmanager.connect(managers[i]).openShort(marketId, amount.div(100), 0);
+  //     }
+
+  //     else if(i==2){
+  //       await marketmanager.connect(managers[i]).buy(marketId, amount.div(7), 0); 
+
+  //     }
+
+  //     else if(i==3){
+  //       await marketmanager.connect(managers[i]).openShort(marketId, amount.div(50), 0);
+  //     }
+
+  //     else if(i==4){
+  //       await marketmanager.connect(managers[i]).buy(marketId, amount.div(6), 0); 
+
+  //     }
+
+  //     totalSupply = await bc.totalSupplyAdjusted(); 
+  //     shortReserves = await sbc.getReserves(); 
+  //     longReserves = await bc.getReserves(); 
+  //     console.log("i, totalSupply, longReserves and short Reserves", i, totalSupply.toString(), longReserves.toString(), 
+  //       shortReserves.toString()); 
+  //     price_now = await bc.calculateExpectedPrice(0); 
+  //     bc_col_bal = await bc.getTotalCollateral(); 
+  //     marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
+  //     manager_bc_bal = await bc.balanceOf(managers[i].address); 
+  //     console.log('marketphase/manager_bc_bal/bc_col_bal/pricenow', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString(), price_now.toString()); 
+  //     console.log("_____________________")
+  //   }
+    //get amount you need to short x amount(area under curve) and sell 
+
+
+
+
+  //})
+
+  it("long and short and close again and again ", async()=>{
 
     const managers = [manager1, manager2, manager3, manager4]; 
     const marketId = await controller.getMarketId(trader.address);
@@ -394,77 +562,95 @@ describe("Cycle", ()=>{
     const shortzcb_ad = await controller.getshortZCB_ad(marketId);
     const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
 
-    const amount = pp_.mul(1000); 
+    const amount = pp.mul(1000); 
     const price_before = await bc.calculateExpectedPrice(0); 
     let marketphase; 
     let manager_bc_bal; 
     let bc_col_bal; 
     let doLong; 
     let price_now; 
+    let shortReserves; 
+    let longReserves; 
+    let totalSupply; 
+    let previous_manager_balance; 
+    let manager_sbc_bal; 
+
     console.log("price_before", price_before.toString()); 
-    for (let i=0; i<managers.length; i++){
+    for (let i=0; i<3; i++){
       await collateral.connect(managers[i]).approve(vault.address, amount.mul(2)); 
       await vault.connect(managers[i]).mint( amount, managers[i].address); 
       await vault.connect(managers[i]).approve(bc_address, amount); 
       await vault.connect(managers[i]).approve(shortzcb_ad, amount); 
       if (i==0){
 
-        await marketmanager.connect(managers[i]).buy(marketId, amount.div(7)); 
+        await marketmanager.connect(managers[i]).buy(marketId, amount.div(7), 0); 
       }
       else if(i==1){
-        await marketmanager.connect(managers[i]).sellShort(marketId, amount.div(200));
+        manager_bc_bal = await bc.balanceOf(managers[i-1].address); 
+        previous_manager_balance = await bc.calculateSaleReturn(manager_bc_bal);
+        console.log('sub', manager_bc_bal.sub(previous_manager_balance).toString(), previous_manager_balance.toString(), manager_bc_bal.toString())
+        await marketmanager.connect(managers[i]).openShort(marketId, manager_bc_bal.sub(previous_manager_balance) , 0);
       }
-
       else if(i==2){
-        await marketmanager.connect(managers[i]).buy(marketId, amount.div(7)); 
+
+        await marketmanager.connect(managers[i-1]).closeShort(marketId,  await sbc.balanceOf(managers[i-1].address), 0);
 
       }
 
-      else if(i==3){
-        await marketmanager.connect(managers[i]).buy(marketId, amount.div(7));
-      }
+      // else if(i==2){
+      //   await marketmanager.connect(managers[i]).buy(marketId, amount.div(7), 0); 
 
-      else if(i==4){
-        await marketmanager.connect(managers[i]).buy(marketId, amount.div(6)); 
+      // }
 
+      // else if(i==3){
+      //   await marketmanager.connect(managers[i]).openShort(marketId, amount.div(50), 0);
+      // }
 
+      // else if(i==4){
+      //   await marketmanager.connect(managers[i]).buy(marketId, amount.div(6), 0); 
 
-      }
+      // }
 
+      totalSupply = await bc.totalSupplyAdjusted(); 
+      shortReserves = await sbc.getReserves(); 
+      longReserves = await bc.getReserves(); 
+      console.log("i, totalSupply, longReserves and short Reserves", i, totalSupply.toString(), longReserves.toString(), 
+        shortReserves.toString()); 
       price_now = await bc.calculateExpectedPrice(0); 
       bc_col_bal = await bc.getTotalCollateral(); 
       marketphase = await marketmanager.getCurrentMarketPhase( marketId); 
       manager_bc_bal = await bc.balanceOf(managers[i].address); 
+      manager_sbc_bal = await sbc.balanceOf(managers[i].address); 
       console.log('marketphase/manager_bc_bal/bc_col_bal/pricenow', marketphase.toString(), manager_bc_bal.toString(),bc_col_bal.toString(), price_now.toString()); 
-      
+      console.log("_____________________")
     }
 
 
 
-  })
 
+  })
   it("can do trade post assessment with boundaries", async()=> {
     //need to run above test, then approve 
-    const managers = [manager1, manager2, manager3, manager4]; 
-    const marketId = await controller.getMarketId(trader.address);
-    const bc_address = await controller.getZCB_ad(marketId);
-    const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
-    const shortzcb_ad = await controller.getshortZCB_ad(marketId);
-    const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
-    const amount = pp_.mul(1000); 
+    // const managers = [manager1, manager2, manager3, manager4]; 
+    // const marketId = await controller.getMarketId(trader.address);
+    // const bc_address = await controller.getZCB_ad(marketId);
+    // const bc = LinearBondingCurve__factory.connect(bc_address, owner); 
+    // const shortzcb_ad = await controller.getshortZCB_ad(marketId);
+    // const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
+    // const amount = pp_.mul(1000); 
 
-    await validator_approve( trader, trader.address, controller, vault, collateral, marketmanager, marketId, amount);
+    // await validator_approve( trader, trader.address, controller, vault, collateral, marketmanager, marketId, amount);
 
-    const upper = await bc.getUpperBound(); 
-    const lower = await bc.getLowerBound();
-    console.log('Upper/lower', upper.toString(), lower.toString());
+    // const upper = await bc.getUpperBound(); 
+    // const lower = await bc.getLowerBound();
+    // console.log('Upper/lower', upper.toString(), lower.toString());
 
-    await collateral.connect(owner).approve(vault.address, amount.mul(2)); 
-    await vault.connect(owner).mint( amount, owner.address); 
-    await vault.connect(owner).approve(bc_address, amount); 
+    // await collateral.connect(owner).approve(vault.address, amount.mul(2)); 
+    // await vault.connect(owner).mint( amount, owner.address); 
+    // await vault.connect(owner).approve(bc_address, amount); 
 
-    await marketmanager.connect(owner).buy(marketId, amount.div(1000)); 
-    await marketmanager.connect(owner).buy(marketId, amount.div(5)); 
+    // await marketmanager.connect(owner).buy(marketId, amount.div(1000)); 
+    // await marketmanager.connect(owner).buy(marketId, amount.div(5)); 
 
 
 

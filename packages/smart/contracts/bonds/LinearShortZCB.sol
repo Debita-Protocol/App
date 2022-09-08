@@ -81,7 +81,7 @@ abstract contract ShortBondingCurve is OwnedERC20{
     collateral.safeTransferFrom(trader, address(this), collateral_amount); 
 
     // min_amount_out will automatically take care of slippage
-    uint256 amountOut = LongZCB.trustedSell(trader, shortTokensToMint, 0);
+    uint256 amountOut = LongZCB.trustedSell(address(this), shortTokensToMint, 0);
     reserves += (collateral_amount + amountOut); 
 
     console.log('amountout', amountOut, collateral_amount);
@@ -108,7 +108,7 @@ abstract contract ShortBondingCurve is OwnedERC20{
     address trader, 
     uint256 shortZCB_amount, 
     uint256 min_collateral_out
-  ) public onlyOwner returns(uint256 returned_collateral){
+  ) public onlyOwner returns(uint256 returned_collateral, uint256 amountOut){
 
     uint256 balance_before = collateral.balanceOf(address(this)); 
 
@@ -124,14 +124,17 @@ abstract contract ShortBondingCurve is OwnedERC20{
 
     // Buy from the funds in this contract 
     collateral.approve(address(LongZCB), needed_collateral); 
-    LongZCB.trustedBuy(address(this), needed_collateral, 0); 
+    amountOut = LongZCB.trustedBuy(address(this), needed_collateral, 0); 
 
+    console.log('needed_collateral', needed_collateral, returned_collateral); 
+    console.log('shortZcbamount', shortZCB_amount); 
+    
     // Invariant #2: Value out from this contract after this trade 
     // should equal needed_collateral+returned_collateral = shortZCB_amount
     assert(balance_before - collateral.balanceOf(address(this)) 
           <= shortZCB_amount+config.roundLimit); 
+    assert(shortZCB_amount <= amountOut + config.roundLimit); 
     require(returned_collateral >= min_collateral_out, "Slippage Err"); 
-    console.log('needed_collateral', needed_collateral, returned_collateral); 
 
     collateral.safeTransfer(trader, returned_collateral);
 
@@ -202,17 +205,20 @@ contract LinearShortZCB is ShortBondingCurve{
     (uint256 a, uint256 b) = getPair().getParams(); 
 
     // Compute 
-    uint256 x = (math_precision-b).mulWadDown(math_precision-b);  
+    uint256 x = (math_precision-b).mulWadDown(math_precision-b); 
     uint256 q = 2*a.mulWadDown(c);
-    uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c));    
+    uint256 w = (a.mulWadDown(a)).mulWadDown(c.mulWadDown(c)); 
     uint256 e = q.mulWadDown(b);    
     uint256 t = 2*a.mulWadDown(amount);
-    uint256 rhs = (((x - q+w+e+t)*math_precision).sqrt()); 
+    uint256 f = x+e+w+t;
+    uint256 h = f - q; 
+    uint256 rhs = (h*math_precision).sqrt(); 
+    console.log('rhs',rhs); 
 
     // If rhs larger then means not enough total supply to sell 
+    uint256 numerator; 
     require(rhs < (math_precision-b), "Not enough liquidity"); 
-    
-    uint256 numerator = (math_precision-b) - rhs; 
+    unchecked{numerator = (math_precision-b) - rhs;}
 
     // New supply after sell, so c - cprime is the amount sold in ZCB  
     uint256 cprime = numerator.divWadDown(a);
@@ -221,6 +227,8 @@ contract LinearShortZCB is ShortBondingCurve{
 
     return ((c - cprime), cprime); 
   }
+
+
 
 
 }

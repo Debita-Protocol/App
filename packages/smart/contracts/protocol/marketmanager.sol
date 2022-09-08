@@ -686,15 +686,15 @@ contract MarketManager is Owned {
     repayForShort(marketId, close_amount);
 
     // This will buy close_amount worth of longZCB to the shortZCB contract 
-    uint256 returned_collateral = shortZCB.trustedClose(msg.sender, close_amount, min_collateral_out);  
+    (uint256 returned_collateral, uint256 tokenToBeBurned) = shortZCB.trustedClose(msg.sender, close_amount, min_collateral_out);  
  
     if(duringMarketAssessment(marketId)){
 
       assessment_shorts[marketId][msg.sender] -= returned_collateral;  
     }
-
+    console.log('roundings', tokenToBeBurned, close_amount);
     // Now burn the contract's bought longZCB imediately  
-    BondingCurve(controller.getZCB_ad(marketId)).trustedDiscountedBurn(shortZCBs[marketId], close_amount);
+    BondingCurve(controller.getZCB_ad(marketId)).trustedDiscountedBurn(shortZCBs[marketId], tokenToBeBurned);
 
 
   }
@@ -724,34 +724,29 @@ contract MarketManager is Owned {
   }
 
   /// @notice called by assessment traders when market is denied 
-  /// @dev be wary of room for reentrancy
   function redeemDeniedMarket(
     uint256 marketId, 
-    bool isLong) public _lock_{
+    bool isLong) 
+  public _lock_{
     require(!restriction_data[marketId].alive, "Market Still During Assessment");
     require(!redeemed[marketId][msg.sender], "Already Redeemed"); 
     redeemed[marketId][msg.sender] = true; 
-
+    uint256 collateral_amount;
     if(!isLong){
-      LinearShortZCB shortZCB = LinearShortZCB(shortZCBs[marketId]);
-      uint256 collateral_amount = assessment_shorts[marketId][msg.sender];
+      ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]);
+      collateral_amount = assessment_shorts[marketId][msg.sender];
       assessment_shorts[marketId][msg.sender] = 0; 
-
       shortZCB.trustedBurn( msg.sender,  shortZCB.balanceOf(msg.sender));
-      ERC20 collateral = ERC20(shortZCB.getCollateral()); 
-      collateral.transferFrom(shortZCBs[marketId], msg.sender,collateral_amount ); 
     }
 
     else{
       BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-      uint256 collateral_amount = assessment_collaterals[marketId][msg.sender]; 
+      collateral_amount = assessment_collaterals[marketId][msg.sender]; 
       assessment_collaterals[marketId][msg.sender] = 0; 
-
       zcb.trustedBurn(msg.sender, zcb.balanceOf(msg.sender)); 
-      ERC20 collateral = ERC20(zcb.getCollateral()); 
-      collateral.transferFrom(address(zcb), msg.sender, collateral_amount); 
     }
 
+    controller.redeem_mint(collateral_amount, msg.sender, marketId); 
 
   }
 
@@ -839,155 +834,6 @@ contract MarketManager is Owned {
 
 
 
-
-///DEPRECATED
-
-  /* 
-  Handles maturity. Includes default/no defaults
-  Called by controller after redemption price has been set 
-  
-  if default: need to burn the underlying tokens used as collateral to buy the zcb as first loss
-  */
-  function handle_maturity(
-    uint256 marketId, 
-    bool atLoss, 
-    uint256 principal_loss
-  ) external  onlyController {
-
-    BondingCurve zcb =  BondingCurve(address(controller.getZCB(marketId)));
-    uint256 redemption_price = get_redemption_price(marketId); 
-    require(redemption_price > 0, "Need to set redemption price"); // what if redemption price is set to zero?
-    uint256 total_bought_bonds = zcb.getTotalZCB();
-    uint256 total_bought_collateral = zcb.getTotalCollateral();
-
-    if (atLoss){
-
-      uint256 burnamount = total_bought_collateral - ((redemption_price * total_bought_bonds)/PRICE_PRECISION);
-      console.log('burnamounts', burnamount);
-
-      if(principal_loss >0){
-        require(burnamount>0,"burn amount err"); 
-        zcb.burnFirstLoss(burnamount);
-
-      }
-    
-    }
-
-  }
-
-  function max(uint256 a, uint256 b) internal pure returns (uint256) {
-      return a >= b ? a : b;
-  }
-
-  function sqrt(uint y) internal pure returns (uint z) {
-      if (y > 3) {
-          z = y;
-          uint x = y / 2 + 1;
-          while (x < z) {
-              z = x;
-              x = (y / x + x) / 2;
-          }
-      } else if (y != 0) {
-          z = 1;
-      }
-  }
-
-  /* 
-  For now only allow collateral to be ds
-  */
-  function borrow_with_collateral(
-    uint256 _marketId, 
-    uint256 requested_zcb, 
-    address trader
-    ) external {
-    //1.Use 100 ds as collateral to borrow 100zcb 1:1, only this for now 
-    //2.use 0.1eth(170) as collateral to borrow 100zcb =>100/170 collateral ratio
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId))); // SOMEHOW GET ZCB
-    address collateral_address = zcb.getCollateral();
-    SafeERC20.safeTransferFrom(IERC20(collateral_address), trader, address(zcb), requested_zcb);
-
-    // SafeERC20.safeTransferFrom(IERC20(collateral_address), trader, address(this), requested_zcb); 
-    uint256 _collateralIn = requested_zcb; 
-
-    CDP storage cdp = debt_pools[_marketId];
-    cdp.collateral_amount[trader] += _collateralIn; 
-    cdp.borrowed_amount[trader] += requested_zcb;  
-    cdp.total_debt += requested_zcb; 
-    cdp.total_collateral += _collateralIn; //only ds 
-    collateral_pot[_marketId] += _collateralIn; //Total ds collateral 
-
-    zcb.trustedMint(trader, requested_zcb);
-  }
-
-
-  /*
-  Trader provides zcb and receives back collateral 
-   */
-  function repay_for_collateral(
-    uint256 _marketId, 
-    uint256 repaying_zcb, 
-    address trader
-  ) external {
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(_marketId)));
-    address collateral_address = zcb.getCollateral();
-    zcb.trustedBurn(trader, repaying_zcb);
-
-
-    uint256 _collateralOut = repaying_zcb; 
-
-    CDP storage cdp = debt_pools[_marketId];
-    cdp.collateral_amount[trader] -= _collateralOut;
-    cdp.borrowed_amount[trader] -= repaying_zcb;
-    cdp.total_debt -= repaying_zcb;
-    cdp.total_collateral -= _collateralOut;
-    collateral_pot[_marketId] -= _collateralOut;
-
-    // SafeERC20.safeTransfer(IERC20(collateral_address), trader, _collateralOut);
-    // zcb needs to approve transfer from itself to trader.
-    zcb.trustedApproveCollateralTransfer(trader, _collateralOut);
-    SafeERC20.safeTransferFrom(IERC20(collateral_address), address(zcb), trader, _collateralOut);
-  }
-
-
-  /// @notice borrow for shorting from shortZCB, no collateral is posted here 
-  /// instead the collateral is stored in the shortZCB contract 
-  function borrow_for_shortZCB(
-    uint256 marketId, 
-    uint256 requested_zcb 
-    ) external {
-    require(isShortZCB[marketId][msg.sender], "Can't trustedmint");
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
-
-    CDP storage cdp = debt_pools[marketId];
-    cdp.collateral_amount[msg.sender] += requested_zcb; //the collateral should be stored in the shortZCB
-    cdp.borrowed_amount[msg.sender] += requested_zcb;  
-    cdp.total_debt += requested_zcb; 
-    cdp.total_collateral += requested_zcb; //only ds 
-    collateral_pot[marketId] += requested_zcb; //Total ds collateral 
-
-    zcb.trustedMint(msg.sender, requested_zcb); 
-
-  }
-
-
-  /**
-   @param collateralIn: amount of collateral for "borrowing" longZCB.
-   */
-  function sellShort(
-    uint256 marketId, 
-    uint256 collateralIn, 
-    uint256 _min_amount_out
-    ) external {
-    //TODO do can sell 
-    if (duringMarketAssessment(marketId)){
-      log_assessment_shorts(marketId, msg.sender, collateralIn); 
-    }
-
-    LinearShortZCB(shortZCBs[marketId]).trustedShort(msg.sender, collateralIn, _min_amount_out); 
-
-    if (duringMarketAssessment(marketId)) deduct_selling_fee(); 
-
-  }
 
 
 }

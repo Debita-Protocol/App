@@ -40,7 +40,6 @@ contract Controller {
   IInterep interep;
   TrustedMarketFactoryV3 marketFactory;
   MarketManager marketManager;
-  Vault public vault;
   ReputationNFT repNFT; 
   LinearBondingCurveFactory linearBCFactory; 
   VaultFactory vaultFactory; 
@@ -89,11 +88,6 @@ contract Controller {
       marketManager = MarketManager(_marketManager);
   }
 
-  function setVault(address _vault) public onlyOwner {
-      require(_vault != address(0));
-      vault = Vault(_vault);
-  }
-
   function setMarketFactory(address _marketFactory) public onlyOwner {
       require(_marketFactory != address(0));
       marketFactory = TrustedMarketFactoryV3(_marketFactory);
@@ -129,16 +123,14 @@ contract Controller {
     ReputationNFT(NFT_address).mint(msg.sender);
   }
 
-  //////VAULT CREATORS//////
+
   function createVault(
     address underlying, 
     address controller, 
-
     bool _onlyVerified, 
     uint256 _r, 
     uint256 _mint_limit, 
     uint256 _total_mint_limit, 
-
     MarketManager.MarketParameters memory default_params 
     ) public {
     (Vault newVault, uint256 vaultId) = vaultFactory.newVault(
@@ -157,18 +149,6 @@ contract Controller {
 
   }
 
-  function getVaultfromId(uint256 vaultId) public view returns(address){
-    return address(vaults[vaultId]); 
-  }
-
-  function marketId_to_vaultId(uint256 marketId) public view returns(uint256){
-    return id_parent[marketId]; 
-  }
-
-
-
-
-  /////INITIATORS/////
 
   function createZCBs(
     uint256 P,
@@ -203,14 +183,6 @@ contract Controller {
   }
 
 
-  function setMarketParameters(uint256 marketId) internal    {
-
-    // TODO get parameters
-    MarketManager.MarketParameters memory param = vaults[id_parent[marketId]].get_default_params(); 
-
-    marketManager.set_parameters(param, marketId); 
-  }
-
   function initial_marketmanager_setups(
     uint256 marketId, 
     address shortZCB, 
@@ -228,7 +200,7 @@ contract Controller {
 
   /**
    @dev initiates market, called by frontend loan proposal or instrument form submit button.
-   @param recipient is the 
+   @param recipient is the utilizer 
    */
 
   function initiateMarket(
@@ -237,10 +209,11 @@ contract Controller {
     uint256 vaultId
   ) external  {
     require(instrumentData.principal >= config.WAD, "Precision err"); 
+    require(address(vaults[vaultId]) != address(0), "Vault doesn't' exist");
 
     uint256 marketId = marketFactory.marketCount();
-    id_parent[marketId] = vaultId;  
-    setMarketParameters(marketId); 
+    id_parent[marketId] = vaultId; 
+    marketManager.set_parameters(vaults[vaultId].get_vault_params(), marketId); 
 
     OwnedERC20[] memory zcb_tokens = createZCBs(
       instrumentData.principal, 
@@ -254,7 +227,7 @@ contract Controller {
       zcb_tokens) == marketId, "MarketID err"); 
 
 
-    ad_to_id[recipient] = marketId; 
+    ad_to_id[recipient] = marketId; //only for testing purposes, one utilizer should be able to create multiple markets
     instrumentData.marketId = marketId;
 
     vaults[vaultId].addProposal(
@@ -273,42 +246,15 @@ contract Controller {
 
 
 
+  /// Resolve market functions separated to 3 txs to prevent attacks
+  /// @notice Resolve function 1
+  function prepareResolve(uint256 marketId) 
+  external {
+    vaults[id_parent[marketId]].prepareResolve(marketId); 
 
-
-
-  /////RESOLVERS//////
-
-  /**
-  @notice main function called at maturity OR premature resolve of instrument(from early default)
-
-  When market finishes at maturity, need to 
-  1. burn all vault tokens in bc 
-  2. mint all incoming redeeming vault tokens 
-  */
-  function resolveMarket(
-    uint256 marketId
-  ) external  
-  {
-    Vault vault = vaults[id_parent[marketId]]; 
-
-    //Firwst burn all vault balances in the bondingcurve contract 
-    vault.controller_burn(
-      vault.balanceOf(getZCB_ad(marketId)),
-      getZCB_ad(marketId)); 
-    vault.controller_burn(
-      vault.balanceOf(getshortZCB_ad(marketId)), 
-      getshortZCB_ad(marketId));
-
-    (bool atLoss,
-    uint256 extra_gain,
-    uint256 principal_loss) = vault.resolveInstrument(marketId); 
-
-    marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
-    marketManager.deactivateMarket(marketId, atLoss);
-    
-    marketFactory.trustedResolveMarket(marketId, 0);//Winning Outcome TODO
   }
 
+  /// @notice Resolve function 2
   /// @notice Prepare market/instrument for closing, called separately before resolveMarket
   /// exists to circumvent manipulations via  
   function beforeResolve(uint256 marketId) 
@@ -316,11 +262,45 @@ contract Controller {
   //onlyKeepers 
   {
     vaults[id_parent[marketId]].beforeResolve(marketId); 
+
+  }
+
+
+  /**
+  Resolve function 3
+  @notice main function called at maturity OR premature resolve of instrument(from early default)
+  
+  When market finishes at maturity, need to 
+  1. burn all vault tokens in bc 
+  2. mint all incoming redeeming vault tokens 
+
+  Validators can call this function as they are incentivized to redeem
+  any funds left for the instrument , irrespective of whether it is in profit or inloss. 
+  */
+  function resolveMarket(
+    uint256 marketId
+  ) external 
+  //onlyValidators
+  {
+
+    (bool atLoss,
+    uint256 extra_gain,
+    uint256 principal_loss) = vaults[id_parent[marketId]].resolveInstrument(marketId); 
+
+    marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
+    marketManager.deactivateMarket(marketId, atLoss);
+    
+    uint256 winning_outcome = atLoss? 0 : 1; 
+    marketFactory.trustedResolveMarket(marketId, winning_outcome);//Winning Outcome TODO
   }
 
 
   /// @notice called when market is resolved 
-  function redeem_mint(uint256 amount, address to, uint256 marketId) external onlyManager{
+  function redeem_mint(
+    uint256 amount, 
+    address to, 
+    uint256 marketId) 
+  external onlyManager{
     vaults[id_parent[marketId]].controller_mint(amount,to); 
   }
 
@@ -347,7 +327,10 @@ contract Controller {
 
   /// @notice when market is resolved(maturity/early default), calculates score
   /// and update each assessment phase trader's reputation, called by individual traders when redeeming 
-  function updateReputation(uint256 marketId, address trader) external onlyManager {
+  function updateReputation(
+    uint256 marketId, 
+    address trader) 
+  external onlyManager {
     uint256 implied_probs = marketManager.assessment_probs(marketId, trader);
     console.log("implied probs", implied_probs); 
 
@@ -379,11 +362,6 @@ contract Controller {
 
 
 
-
-
-
-  /////APPROVERS/DENIERS///////
-
   /**
    @notice
    */
@@ -400,14 +378,14 @@ contract Controller {
   ) external 
   //onlyValidator 
   {
+    Vault vault = vaults[id_parent[marketId]]; 
+
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
     require(marketManager.isConfirmed(marketId), "market not confirmed");
-    // marketManager.validator_buy(marketId, msg.sender); 
-    // if (!marketManager.validator_can_approve(marketId)) return; 
-    Vault vault = vaults[id_parent[marketId]]; 
-
+    require(vault.instrumentApprovalCondition(marketId), "Instrument approval condition met"); 
+ 
     marketManager.approveMarket(marketId);
     marketManager.setLowerBound(marketId,
                 getLowerBound(marketId, vault.fetchInstrumentData(marketId).principal)); 
@@ -437,13 +415,12 @@ contract Controller {
   //onlyValidator(marketId) 
   {
     marketManager.denyMarket(marketId);
-      //TrustedMarketFactoryV3 marketFactory = TrustedMarketFactoryV3(marketInfo.marketFactoryAddress);
     
     uint256 winning_outcome = 0; //TODO  
-    
     marketFactory.trustedResolveMarket(marketId, winning_outcome);
-    
+
     vaults[id_parent[marketId]].denyInstrument(marketId);
+
   }
  
 
@@ -475,11 +452,6 @@ contract Controller {
     return address(OwnedERC20(market.shareTokens[1]));
   }
 
-  function canBeApproved(uint256 marketId) public view returns (bool) {
-      //TODO
-    return true;
-  }
-
   function getVault(uint256 marketId) public view returns(Vault){
     return vaults[id_parent[marketId]]; 
   }
@@ -487,8 +459,26 @@ contract Controller {
     return address(vaults[id_parent[marketId]]); 
   }
 
-  function isVerified(address addr) view public returns (bool) {
+  function isVerified(address addr)  public view returns (bool) {
     return verified[addr];
+  }
+
+  function getVaultfromId(uint256 vaultId) public view returns(address){
+    return address(vaults[vaultId]); 
+  }
+
+  function marketId_to_vaultId(uint256 marketId) public view returns(uint256){
+    return id_parent[marketId]; 
+  }
+
+
+//DEPRECATED
+  function setMarketParameters(uint256 marketId) internal    {
+
+    // TODO get parameters 
+    MarketManager.MarketParameters memory param = vaults[id_parent[marketId]].get_vault_params(); 
+
+    marketManager.set_parameters(param, marketId); 
   }
 }
 

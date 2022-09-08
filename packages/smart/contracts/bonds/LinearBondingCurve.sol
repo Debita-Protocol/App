@@ -105,7 +105,7 @@ contract LinearBondingCurve is BondingCurve {
    @param amount: amount added in 60.18
    @dev returns price in 60.18
    */
-  function _calculateExpectedPrice(uint256 amount) internal view  override virtual _WAD_(amount) returns (uint256 result) {
+  function _calculateExpectedPrice(uint256 amount) internal view  override virtual returns (uint256 result) {
 
     uint256 s = totalSupplyAdjusted();
 
