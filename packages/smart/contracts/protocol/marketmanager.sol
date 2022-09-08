@@ -110,7 +110,7 @@ contract MarketManager is Owned {
   /*----Phase Functions----*/
 
   /// @notice list of parameters in this system for each market, should vary for each instrument 
-  function set_parameters(
+  function setParameters(
     MarketParameters memory param, 
     uint256 marketId 
     ) external onlyController{

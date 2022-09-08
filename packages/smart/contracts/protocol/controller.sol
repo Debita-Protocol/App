@@ -32,7 +32,7 @@ contract Controller {
   mapping(address => bool) public  verified;
   mapping(uint256 => MarketData) public market_data; // id => recipient
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
-  mapping(uint256=> Vault) public vaults; 
+  mapping(uint256=> Vault) public vaults; // vault id to Vault contract
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
 
   address creator_address;
@@ -124,32 +124,49 @@ contract Controller {
   }
 
 
+  /**
+   @notice creates vault
+   @param underlying: underlying asset for vault
+   @param _onlyVerified: only verified users can mint shares
+   @param _r: minimum reputation score to mint shares
+   @param _asset_limit: max number of shares for a single address
+   @param _total_asset_limit: max number of shares for entire vault
+   @param default_params: default params for markets created by vault
+   */
   function createVault(
-    address underlying, 
-    address controller, 
+    address underlying,
     bool _onlyVerified, 
     uint256 _r, 
-    uint256 _mint_limit, 
-    uint256 _total_mint_limit, 
+    uint256 _asset_limit, 
+    uint256 _total_asset_limit, 
     MarketManager.MarketParameters memory default_params 
-    ) public {
+  ) public {
     (Vault newVault, uint256 vaultId) = vaultFactory.newVault(
      underlying, 
-     address(this), 
-
+     address(this),
      _onlyVerified, 
      _r, 
-     _mint_limit,
-     _total_mint_limit, 
-
+     _asset_limit,
+     _total_asset_limit,
      default_params
-    ); 
+    );
 
-    vaults[vaultId] = newVault; 
-
+    vaults[vaultId] = newVault;
   }
 
 
+
+  function marketIdToVaultId(uint256 marketId) public view returns(uint256){
+    return id_parent[marketId]; 
+  }
+
+  /////INITIATORS/////
+
+  /**
+   @param P: principal
+   @param I: expected yield (total interest)
+   @param sigma is the proportion of P that is going to be bought at a discount 
+   */
   function createZCBs(
     uint256 P,
     uint256 I, 
@@ -183,10 +200,12 @@ contract Controller {
   }
 
 
-  function initial_marketmanager_setups(
+
+  function _initialMarketmanagerSetup(
     uint256 marketId, 
     address shortZCB, 
-    Vault.InstrumentData memory instrumentData) internal {
+    Vault.InstrumentData memory instrumentData
+  ) internal {
 
     uint256 base_budget = 1000 * config.WAD; //TODO
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
@@ -195,25 +214,28 @@ contract Controller {
     marketManager.add_short_zcb( marketId, shortZCB); 
     marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
     marketManager.setUpperBound(marketId, 
-      instrumentData.principal.mulDivDown(alpha+delta, 1e6));  //Set initial upper bound 
+    instrumentData.principal.mulDivDown(alpha+delta, 1e6));  //Set initial upper bound 
   }
 
   /**
    @dev initiates market, called by frontend loan proposal or instrument form submit button.
    @param recipient is the utilizer 
+   @param recipient: utilizer for the associated instrument
    */
-
   function initiateMarket(
     address recipient,
     Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
     uint256 vaultId
   ) external  {
+    // TODO checks for the instrument contract?
+    require(instrumentData.Instrument_address != address(0), "must not be zero address");
     require(instrumentData.principal >= config.WAD, "Precision err"); 
     require(address(vaults[vaultId]) != address(0), "Vault doesn't' exist");
 
     uint256 marketId = marketFactory.marketCount();
     id_parent[marketId] = vaultId; 
-    marketManager.set_parameters(vaults[vaultId].get_vault_params(), marketId); 
+    marketManager.setParameters(vaults[vaultId].get_vault_params(), marketId); 
+
 
     OwnedERC20[] memory zcb_tokens = createZCBs(
       instrumentData.principal, 
@@ -236,7 +258,7 @@ contract Controller {
 
     market_data[marketId] = MarketData(instrumentData.Instrument_address, recipient);
 
-    initial_marketmanager_setups(marketId, address(zcb_tokens[1]), instrumentData ); //TODO just get shortZCB from controller? gas dif
+    _initialMarketmanagerSetup(marketId, address(zcb_tokens[1]), instrumentData ); //TODO just get shortZCB from controller? gas dif
  
     repNFT.storeTopReputation(marketManager.getParameters(marketId).r,  marketId); 
 
@@ -422,17 +444,6 @@ contract Controller {
     vaults[id_parent[marketId]].denyInstrument(marketId);
 
   }
- 
-
-
-
-
-
-
-
-
-
-
 
   /* --------GETTER FUNCTIONS---------  */
   function getMarketId(address recipient) public view returns(uint256){
@@ -472,13 +483,6 @@ contract Controller {
   }
 
 
-//DEPRECATED
-  function setMarketParameters(uint256 marketId) internal    {
 
-    // TODO get parameters 
-    MarketManager.MarketParameters memory param = vaults[id_parent[marketId]].get_vault_params(); 
-
-    marketManager.set_parameters(param, marketId); 
-  }
 }
 

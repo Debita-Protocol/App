@@ -381,6 +381,7 @@ contract Vault is ERC4626, Auth{
 
 
     function get_vault_params() public view returns(MarketManager.MarketParameters memory){
+
       return default_params; 
     }
 
