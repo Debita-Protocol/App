@@ -210,11 +210,12 @@ abstract contract Instrument {
 
 
     /// @notice Before supplying liquidity from the vault to this instrument,
+    /// which is done automatically when instrument is trusted, 
     /// need to check if certain conditions that are required to this specific 
     /// instrument is met. For example, for a creditline with a collateral 
     /// requirement need to check if this address has the specific amount of collateral
     /// @dev called to be checked at the approve phase from controller  
-    function instrumentApprovalCondition() public virtual view returns(bool){} 
+    function instrumentApprovalCondition() public virtual view returns(bool); 
 
 
 
@@ -320,4 +321,9 @@ contract CreditLine is Instrument {
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
     }
+
+    function instrumentApprovalCondition() public virtual override view returns(bool){
+        return true; 
+    } 
+
 }

@@ -152,18 +152,17 @@ contract Vault is ERC4626, Auth{
     /// @notice Deposit a specific amount of float into a trusted Instrument.
     /// Called when market is approved. 
     /// Also has the role of granting a credit line to a credit-based Instrument like uncol.loans 
-    function depositIntoInstrument(uint256 marketId, uint256 underlyingAmount) external onlyController{
+    function depositIntoInstrument(uint256 marketId, uint256 underlyingAmount) internal{
       Instrument instrument = fetchInstrument(marketId); 
       require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
-      require(enoughLiqudity(underlyingAmount), "Not enough liqudity in vault"); 
-      if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
 
+      if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
+      console.log('underlying', underlyingAmount); 
       totalInstrumentHoldings += underlyingAmount; 
 
       getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
 
-
-      UNDERLYING.transfer(address(instrument), underlyingAmount);
+      require(UNDERLYING.transfer(address(instrument), underlyingAmount), "DEPOSIT_FAILED");
 
       emit InstrumentDeposit(msg.sender, instrument, underlyingAmount);
     }
@@ -187,6 +186,12 @@ contract Vault is ERC4626, Auth{
     /// @notice Stores a Instrument as trusted when its approved
     function trustInstrument(uint256 marketId) external onlyController{
       getInstrumentData[fetchInstrument(marketId)].trusted = true;
+
+      depositIntoInstrument(marketId, fetchInstrumentData(marketId).principal);
+    
+      setMaturityDate(marketId);
+      
+      onMarketApproval(marketId);
     }
 
     /// @notice Stores a Instrument as untrusted
@@ -229,7 +234,7 @@ contract Vault is ERC4626, Auth{
     }
 
 
-    function onMarketApproval(uint256 marketId) external onlyController {
+    function onMarketApproval(uint256 marketId) internal {
         Instruments[marketId].onMarketApproval();
     }
 
@@ -269,7 +274,7 @@ contract Vault is ERC4626, Auth{
     /**
      @notice called by controller on approveMarket.
      */
-    function setMaturityDate(uint256 marketId) external onlyController {
+    function setMaturityDate(uint256 marketId) internal {
 
         getInstrumentData[fetchInstrument(marketId)].maturityDate = getInstrumentData[fetchInstrument(marketId)].duration + block.timestamp;
     }

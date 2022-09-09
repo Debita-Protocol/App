@@ -213,8 +213,7 @@ contract Controller {
     marketManager.setMarketPhase(marketId, true, true, base_budget);  
     marketManager.add_short_zcb( marketId, shortZCB); 
     marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
-    marketManager.setUpperBound(marketId, 
-    instrumentData.principal.mulDivDown(alpha+delta, 1e6));  //Set initial upper bound 
+    marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
   }
 
   /**
@@ -234,8 +233,9 @@ contract Controller {
 
     uint256 marketId = marketFactory.marketCount();
     id_parent[marketId] = vaultId; 
-    marketManager.setParameters(vaults[vaultId].get_vault_params(), marketId); 
-
+    marketManager.setParameters(
+      vaults[vaultId].get_vault_params(), 
+      marketId); 
 
     OwnedERC20[] memory zcb_tokens = createZCBs(
       instrumentData.principal, 
@@ -382,51 +382,26 @@ contract Controller {
   }
 
 
-
-
-  /**
-   @notice
-   */
-  function confirmMarket(uint256 marketId) public 
-  //onlyValidator(marketId) 
-  {
-    marketManager.confirmMarket(marketId, msg.sender);
-    marketManager.validator_buy(marketId, msg.sender); 
-  }
-
   /// @notice called by the validator when market conditions are met
   function approveMarket(
       uint256 marketId
-  ) external 
-  //onlyValidator 
-  {
+  ) external onlyManager {
     Vault vault = vaults[id_parent[marketId]]; 
 
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-    require(marketManager.isConfirmed(marketId), "market not confirmed");
-    require(vault.instrumentApprovalCondition(marketId), "Instrument approval condition met"); 
- 
-    marketManager.approveMarket(marketId);
-    marketManager.setLowerBound(marketId,
-                getLowerBound(marketId, vault.fetchInstrumentData(marketId).principal)); 
-    
+    require(marketManager.validator_can_approve(marketId), "market not confirmed");
+    require(vault.instrumentApprovalCondition(marketId), "Instrument approval condition met");
 
-    // Deposit to the instrument contract
-    // maybe this should be separated to prevent attacks 
+    // For market to go to a post assessment stage there always needs to be a lower bound set  
+    marketManager.approveMarketAndSetLowerBound(marketId); 
+
+    // Trust and deposit to the instrument contract
     vault.trustInstrument(marketId);
-    vault.depositIntoInstrument(marketId, vault.fetchInstrumentData(marketId).principal);
-    vault.setMaturityDate(marketId);
-    vault.onMarketApproval(marketId);
-  }
-
-  function getLowerBound(uint256 marketId, uint256 principal) internal view returns(uint256){
- 
-    return ( marketManager.getParameters(marketId).alpha-marketManager.getParameters(marketId).delta)
-            .mulDivDown(principal, 1e6); 
 
   }
+
 
   /*
   Market is denied by validator or automatically if conditions are not met 
@@ -436,6 +411,8 @@ contract Controller {
   ) external  
   //onlyValidator(marketId) 
   {
+    require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
+    
     marketManager.denyMarket(marketId);
     
     uint256 winning_outcome = 0; //TODO  
