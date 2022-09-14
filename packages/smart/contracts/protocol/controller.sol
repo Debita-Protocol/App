@@ -206,13 +206,12 @@ contract Controller {
     address shortZCB, 
     Vault.InstrumentData memory instrumentData
   ) internal {
-
-    uint256 base_budget = 1000 * config.WAD; //TODO
+    uint256 base_budget = 1000 * config.WAD; //TODO, maybe can be function of balance of vt tokens?
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
-    uint256 delta = marketManager.getParameters(marketId).delta; 
-    marketManager.setMarketPhase(marketId, true, true, base_budget);  
+    uint256 delta = marketManager.getParameters(marketId).delta;
+    marketManager.setMarketPhase(marketId, true, true, base_budget); //TODO => marketManager.initializeMarket  
     marketManager.add_short_zcb( marketId, shortZCB); 
-    marketManager.set_validator_cap(marketId, instrumentData.principal, instrumentData.expectedYield); 
+    marketManager.setValidatorCap(marketId, instrumentData.principal, instrumentData.expectedYield); 
     marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
   }
 
@@ -238,7 +237,7 @@ contract Controller {
       marketId); 
 
     OwnedERC20[] memory zcb_tokens = createZCBs(
-      instrumentData.principal, 
+      instrumentData.principal,
       instrumentData.expectedYield, 
       marketManager.getParameters(marketId).sigma, 
       marketId); 
@@ -283,8 +282,7 @@ contract Controller {
   external 
   //onlyKeepers 
   {
-    vaults[id_parent[marketId]].beforeResolve(marketId); 
-
+    vaults[id_parent[marketId]].beforeResolve(marketId);
   }
 
 
@@ -304,7 +302,6 @@ contract Controller {
   ) external 
   //onlyValidators
   {
-
     (bool atLoss,
     uint256 extra_gain,
     uint256 principal_loss) = vaults[id_parent[marketId]].resolveInstrument(marketId); 
@@ -328,6 +325,7 @@ contract Controller {
 
 
   /// @notice checks for maturity, resolve at maturity
+  /// @param marketId: called for anyone.
   function checkInstrument(
       uint256 marketId
   ) external
@@ -357,7 +355,7 @@ contract Controller {
     console.log("implied probs", implied_probs); 
 
     uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, config.WAD); //Experiment
-    repNFT.addScore(trader, scoreToAdd); 
+    repNFT.addScore(trader, scoreToAdd);
 
   }
 
@@ -391,7 +389,7 @@ contract Controller {
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
     require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-    require(marketManager.validator_can_approve(marketId), "market not confirmed");
+    require(marketManager.validatorApprovalCondition(marketId), "market not confirmed");
     require(vault.instrumentApprovalCondition(marketId), "Instrument approval condition met");
 
     // For market to go to a post assessment stage there always needs to be a lower bound set  
@@ -458,8 +456,5 @@ contract Controller {
   function marketId_to_vaultId(uint256 marketId) public view returns(uint256){
     return id_parent[marketId]; 
   }
-
-
-
 }
 

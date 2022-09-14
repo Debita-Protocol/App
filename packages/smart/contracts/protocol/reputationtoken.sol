@@ -28,6 +28,20 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     uint256 tokensBought;
   }
 
+    struct TopReputation{
+    address trader; 
+    uint256 score; 
+  }
+
+  uint256 private constant topRep = 100; 
+  TopReputation[topRep] topReputations; 
+
+  mapping(uint256=>mapping(address=>bool)) canTrade; //marketID-> address-> cantrade
+  mapping(uint256=>bool) allowAll; 
+  mapping(address=>bool) isUnique; 
+  address[] unique_traders; 
+  mapping(uint256=>mapping(address=>uint256)) public balances; // marketId => market manager address => how much collateral already bought.
+
   modifier onlyController() {
     require(msg.sender == address(controller));
     _;
@@ -37,6 +51,20 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     address _controller
   ) ERC721("Debita Reputation Token", "DRT") {
     controller = Controller(_controller);
+  }
+
+  /**
+   @notice incrementBalance
+   */
+  function incrementBalance(uint256 marketId, address trader, uint256 amount) external onlyController {
+    balances[marketId][trader] += amount;
+  }
+
+  /**
+   @notice called post reputation update
+   */
+  function removeBalance(uint256 marketId, address trader) external onlyController {
+    delete balances[marketId][trader];
   }
 
   function _baseURI() internal pure returns (string memory baseURI) {
@@ -105,22 +133,6 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     delete _reputation[_ownerToId[to]];
   }
 
-
-
-
-
-  struct TopReputation{
-    address trader; 
-    uint256 score; 
-  }
-
-  uint256 private constant topRep = 100; 
-  TopReputation[topRep] topReputations; 
-
-  mapping(uint256=>mapping(address=>bool)) canTrade; //marketID-> address-> cantrade
-  mapping(uint256=>bool) allowAll; 
-  mapping(address=>bool) isUnique; 
-  address[] unique_traders; 
   /// @notice called by controller when initiating market,
   function storeTopReputation(uint256 topX, uint256 marketId) external onlyController{
     if (getAvailableTopX() < topX) {

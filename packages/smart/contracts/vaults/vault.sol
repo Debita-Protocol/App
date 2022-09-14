@@ -120,8 +120,6 @@ contract Vault is ERC4626, Auth{
       _burn(to, balanceOf[to]); 
     }
 
-
-
     /// @notice Harvest a trusted Instrument, records profit/loss 
     function harvest(address instrument) public {
         require(getInstrumentData[Instrument(instrument)].trusted, "UNTRUSTED_Instrument");

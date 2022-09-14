@@ -34,6 +34,9 @@ contract ChainlinkClient is VRFConsumerBaseV2 {
     uint256 public s_requestId;
     address s_owner;
 
+    mapping(uint256 => bool) used; // marketId => whether vrf has been called for a specific market
+    mapping(uint256 => address[]) candidates; // marketId => possible validators.
+
     constructor(
         bytes32 _keyHash,
         address _vrfCoordinator,
@@ -61,8 +64,14 @@ contract ChainlinkClient is VRFConsumerBaseV2 {
     }
 
     function requestRandomWords(
-        uint32 numWords
+        uint32 numWords,
+        uint256 marketId,
+        address[] memory _candidates
     ) external onlyOwner {
+        require(!used[marketId], "random words already requested for this marketId");
+        used[marketId] = true;
+        candidates[marketId] = _candidates;
+
         // Will revert if subscription is not set and funded.
         s_requestId = COORDINATOR.requestRandomWords(
             keyHash,

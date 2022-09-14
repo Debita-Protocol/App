@@ -13,7 +13,7 @@ contract LinearBondingCurve is BondingCurve {
   using FixedPointMathLib for uint256;
   uint256  a;
   uint256  b;
-  uint256  discount_cap; 
+  uint256  discount_cap; // maximum number of tokens for 
 
 
   modifier _WAD_(uint256 amount) {
@@ -44,11 +44,11 @@ contract LinearBondingCurve is BondingCurve {
     a = (math_precision-b).divWadDown(P+I); 
 
     // Calculate and store maximum tokens for discounts, 
-    discount_cap = _calculatePurchaseReturn(P.mulWadDown(sigma)); 
+    discount_cap = _calculatePurchaseReturn(P.mulWadDown(sigma));
     console.log('discount cap', discount_cap); 
 
     //get new initial price after saving for discounts 
-    b = a.mulWadDown(discount_cap) + b; 
+    b = a.mulWadDown(discount_cap) + b;
 
   }
   /**

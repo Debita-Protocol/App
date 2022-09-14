@@ -72,12 +72,12 @@ abstract contract ShortBondingCurve is OwnedERC20{
     address trader, 
     uint256 collateral_amount,
     uint256 min_amount_out
-  ) public onlyOwner returns (uint256 shortTokensToMint, uint256 supply_after_sell) {
+  ) external onlyOwner returns (uint256 shortTokensToMint, uint256 supply_after_sell) {
 
     uint256 balance_before = collateral.balanceOf(address(this)); 
 
     (shortTokensToMint,
-     supply_after_sell) = calculateAmountGivenSell(collateral_amount); 
+     supply_after_sell) = calculateAmountGivenSell(collateral_amount); // already calculated before
     collateral.safeTransferFrom(trader, address(this), collateral_amount); 
 
     // min_amount_out will automatically take care of slippage
