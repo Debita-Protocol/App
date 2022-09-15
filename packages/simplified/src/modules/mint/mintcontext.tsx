@@ -6,7 +6,7 @@ import { useSimplified } from "../stores/simplified-hooks";
 import { useUserStore, Stores, ContractCalls } from "@augurproject/comps";
 
 
-const {mintDS, mintVaultDS} = ContractCalls;
+const {mintVaultDS} = ContractCalls;
 
 
 export const MintContext = React.createContext()

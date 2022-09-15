@@ -262,7 +262,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   /// 1: onlyReputable, which also means market is in assessment
   /// 2: not onlyReputable but in asseessment 
   /// 3: in assessment but canbeapproved 
-  /// 4: post assessment(accepted or denied )
+  /// 4: post assessment(accepted or denied)
   function getCurrentMarketPhase(uint256 marketId) public view returns(uint256){
     if (onlyReputable(marketId)){
       assert(!marketCondition(marketId) && !isMarketApproved(marketId) && duringMarketAssessment(marketId) ); 

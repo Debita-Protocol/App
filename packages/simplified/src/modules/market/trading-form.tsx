@@ -19,7 +19,7 @@ import {
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
 import { Slippage, Budget} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
-const { doTrade, estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
+const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,estimateZCBBuyTrade, redeemZCB, getTraderBudget, getHedgeQuantity,
    getERCBalance, getVaultTokenBalance} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;

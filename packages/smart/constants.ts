@@ -42,6 +42,11 @@ export const MARKET_TYPES = [
   "Grouped",
   "CDS"
 ] as const;
+
+// export const MARKET_TYPES = [
+//   "Trusted"
+// ] as const;
+
 export type MarketFactoryType = typeof MARKET_TYPES[number];
 // V1 was the first
 // V2 includes initial odds
@@ -67,8 +72,8 @@ export type FetcherContractName =
   | "CryptoFetcher"
   | "GroupedFetcher"
   | "CryptoCurrencyFetcher"
-  |"TrustedFetcher"
-  | "";
+  |"TrustedFetcher";
+
 export const MARKET_FACTORY_TYPE_TO_CONTRACT_NAME: {
   [Property in MarketFactoryType]: MarketFactoryContractName;
 } = {
@@ -87,8 +92,8 @@ export const MARKET_FACTORY_TYPE_TO_CONTRACT_NAME: {
 export const marketFactoryTypeToFetcherName: {
   [Property in MarketFactoryType]: FetcherContractName;
 } = {
-  SportsLink: "",
-  MMALink: "",
+  SportsLink: "MMAFetcher",
+  MMALink: "MMAFetcher",
   MMA: "MMAFetcher",
   NFL: "NFLFetcher",
   MLB: "MLBFetcher",
@@ -96,7 +101,7 @@ export const marketFactoryTypeToFetcherName: {
   Crypto: "CryptoFetcher",
   Grouped: "GroupedFetcher",
   CryptoCurrency: "CryptoCurrencyFetcher",
-  Trusted: "",
+  Trusted: "TrustedFetcher",
   CDS: "TrustedFetcher",
 
 };

@@ -13,7 +13,7 @@ import { TinyThemeButton } from "../common/buttons";
 
 import { MarketCardContext } from './market-card-context'; 
 import {useUserStore} from "../../stores/user"; 
-import {isBorrowerApproved} from "../../utils/contract-calls"; 
+// import {isBorrowerApproved} from "../../utils/contract-calls"; 
 
 export const LoadingMarketCard = () => {
   return (
@@ -169,8 +169,8 @@ export const MarketCardView = ({
 
   useEffect(async() => {
     if (account && loginAccount.library) {
-      let approved 
-      approved = await isBorrowerApproved(account, loginAccount.library)
+      let approved = false;
+      // approved = await isBorrowerApproved(account, loginAccount.library)
       setIsApproved(approved); 
     }
   }, [account, loginAccount])
@@ -187,8 +187,6 @@ export const MarketCardView = ({
   );
   const extraOutcomes = amm?.ammOutcomes?.length - 3;
   const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
-
-  console.log('marketidhere', amm?.turboId); 
 
   //Example Types 
   const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation","Isolated Lending"]; 

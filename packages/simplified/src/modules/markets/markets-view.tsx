@@ -24,9 +24,8 @@ import type { MarketInfo } from "@augurproject/comps/build/types";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 
 
-const { newFunction, createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
-createMarket_, mintDS, resolveMarket, contractApprovals,
-doBulkTrade, addProposal, doOwnerSettings ,mintRepNFT, resolveZCBMarket} = ContractCalls;
+const { createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
+createMarket_, resolveMarket, contractApprovals, addProposal, doOwnerSettings ,mintRepNFT, resolveZCBMarket} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -80,7 +79,7 @@ const usdc =  "0x5799bFe361BEea69f808328FF4884DF92f1f66f0";
    //const tx = await approveERC20Contract(usdc, "text", lendingPooladdress, loginAccount);
    console.log('minting account',account)
   // await newFunction(account, loginAccount.library)
- await mintDS(settlementAddress, loginAccount.library)
+ //await mintDS(settlementAddress, loginAccount.library)
   // console.log(isdone)
 };
 
@@ -147,7 +146,7 @@ const confirmBulkTrade = async({
   account,  loginAccount, formData, 
   afterSigningAction = () => {}
 }) => {
-  await doBulkTrade( loginAccount.library,account, formData)
+  // await doBulkTrade( loginAccount.library,account, formData)
 }
 
 
@@ -348,7 +347,7 @@ const MarketsView = () => {
   Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
     if (marketsViewSettings[setting] !== DEFAULT_MARKET_VIEW_SETTINGS[setting]) changedFilters++;
   });
-  console.log('filteredMarketsfrontend', filteredMarkets)
+  //console.log('filteredMarketsfrontend', filteredMarkets)
 
   const {
       account,

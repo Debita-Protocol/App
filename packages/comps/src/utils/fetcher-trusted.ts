@@ -47,7 +47,7 @@ export const fetchContractData = async (config: MarketFactory, provider: Web3Pro
     offset,
     bundleSize
   );
-  console.log('factorybundle, markets, timestamp, ', factoryBundle, markets, timestamp)
+  // console.log('factorybundle, markets, timestamp, ', factoryBundle, markets, timestamp)
 
   if (isDataTooOld(timestamp.toNumber())) {
     console.error(

@@ -171,7 +171,6 @@ export function instantiateFetcher(
       CDS: TrustedFetcher__factory
     },
     V1: {
- 
       CDS: TrustedFetcher__factory
     },
   };

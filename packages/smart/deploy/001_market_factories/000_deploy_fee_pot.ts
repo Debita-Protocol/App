@@ -25,14 +25,13 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     });
   }
 
-   if (!(await deployments.getOrNull("BFactory"))) {
+  if (!(await deployments.getOrNull("BFactory"))) {
     await deployments.deploy("BFactory", {
       from: deployer,
       args: [],
       log: true,
     });
   }
-
 
   const collateral = (await deployments.get("Collateral")).address;
   const reputationToken = (await deployments.get("Reputation")).address;

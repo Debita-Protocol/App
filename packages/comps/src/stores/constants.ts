@@ -3,6 +3,7 @@ import { addresses } from "@augurproject/smart";
 
 
 export const DEFAULT_NETWORK_ID = (process.env.DEFAULT_NETWORK_ID || "80001").toString();
+
 export const PARA_CONFIG: ParaDeploys = {
   networkId: DEFAULT_NETWORK_ID,
   ...addresses[DEFAULT_NETWORK_ID],

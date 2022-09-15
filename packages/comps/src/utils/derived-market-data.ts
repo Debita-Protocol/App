@@ -111,36 +111,28 @@ export const fetcherMarketsPerConfig = async (
   const blocknumber = await provider.getBlockNumber();
   let markets = null;
   switch (config?.type) {
-   // case MARKET_FACTORY_TYPES.NFL:
-   // case MARKET_FACTORY_TYPES.MMA:
-   // case MARKET_FACTORY_TYPES.MLB:
-    case MARKET_FACTORY_TYPES.NBA: {
-      //markets = await SportFetcher.fetchContractData(config, provider, account);
-     markets=  null;
-      break;
-    }
-    case MARKET_FACTORY_TYPES.CRYPTO: {
-      markets = await CryptoFetcher.fetchContractData(config, provider, account);
-      console.log('cryptomarkets?', markets)
+  //  case MARKET_FACTORY_TYPES.NFL:
+  //  case MARKET_FACTORY_TYPES.MMA:
+  //  case MARKET_FACTORY_TYPES.MLB:
+    // case MARKET_FACTORY_TYPES.NBA: {
+    //   //markets = await SportFetcher.fetchContractData(config, provider, account);
+    //  markets=  null;
+    //   break;
+    // }
+    // case MARKET_FACTORY_TYPES.CRYPTO: {
+    //   markets = await CryptoFetcher.fetchContractData(config, provider, account);
+    //   console.log('cryptomarkets?', markets)
 
-      break;
-    }
-    case MARKET_FACTORY_TYPES.GROUPED: {
-      markets = await GroupedFetcher.fetchContractData(config, provider, account);
-      break;
-    }
+    //   break;
+    // }
+    // case MARKET_FACTORY_TYPES.GROUPED: {
+    //   markets = await GroupedFetcher.fetchContractData(config, provider, account);
+    //   break;
+    // }
     case MARKET_FACTORY_TYPES.TRUSTED: {
       markets = await TrustedFetcher.fetchContractData(config, provider, account)
-    //  console.log('Trusted lol', markets, config.type)
-      break; 
-
-    } 
-    // case MARKET_FACTORY_TYPES.CDS: {
-    //   markets = await TrustedFetcher.fetchContractData(config, provider, account)
-    //   console.log('CDS', markets, config.type)
-    //   break; 
-
-    // }
+      break;
+    }
     default: {
       console.log("Config type not found", config.type);
       markets = null

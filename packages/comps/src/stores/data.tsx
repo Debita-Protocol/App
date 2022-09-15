@@ -27,13 +27,6 @@ export const DataStore = {
   actions: STUBBED_DATA_ACTIONS,
 };
 
-// export const InstrumentDataStore = {
-//   actionSet : false, 
-//   get: () => ({ ...DEFAULT_INSTRUMENT_STATE }),
-//   actions : STUBBED_DATA_
-// };
-
-
 export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children }: any) => {
   const { account } = useUserStore();
   const configCashes = getCashesInfo();

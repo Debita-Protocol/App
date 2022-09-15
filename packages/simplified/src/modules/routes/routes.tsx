@@ -26,8 +26,6 @@ import MarketLiquidityView from '../liquidity/market-liquidity-view';
 import MintView from "../mint/mint";
 import RedeemView from "../redeem/redeem"
 import ProposalsView from '../proposals/proposals-view';
-import BorrowView from "../borrow/borrow-view";
-import LoanView from "../loan/loan-view";
 import ProfileView from "../profile/profile-view";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
 import CreditlineView from "../creditline/creditline-view";
@@ -48,7 +46,6 @@ const Routes = p => {
       <Route path={makePath([PROPOSAL, "other"])} component={InstrumentProposalView} />
       <Route path={makePath(PROPOSAL)} component={ProposalsView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
-      <Route path={makePath(LOAN)} component={LoanView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
       <Route path={makePath(CREDITLINE)} component={CreditlineView} />
       <Redirect to={makePath(MARKETS)} />

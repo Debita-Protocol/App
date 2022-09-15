@@ -28,11 +28,6 @@ export async function fetchInitialTrusted(
   let factoryBundle: MarketFactoryBundle | undefined;
   let markets: StaticTrustedMarketBundle[] = [];
   let timestamp: BigNumber | null = null;
-  console.log( 'contractcalls1',  marketFactory.address,
-      ammFactory.address,
-      masterChef.address,
-      
-      bundleSize)
 
   for (let offset = BigNumber.from(initialOffset); ; ) {
     const [rawFactoryBundle, rawMarketBundles, lowestMarketIndex, _timestamp] = await fetcher.fetchInitial(
@@ -42,7 +37,7 @@ export async function fetchInitialTrusted(
       offset,
       bundleSize
     );
-console.log('contract calls2',   rawFactoryBundle, rawMarketBundles, lowestMarketIndex.toString(), _timestamp)
+// console.log('contract calls2',   rawFactoryBundle, rawMarketBundles, lowestMarketIndex.toString(), _timestamp)
 
     if (timestamp === null || _timestamp < timestamp) timestamp = _timestamp;
 
