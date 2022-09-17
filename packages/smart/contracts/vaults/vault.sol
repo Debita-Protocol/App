@@ -115,6 +115,10 @@ contract Vault is ERC4626, Auth{
         _mint(to , amount); 
     }
 
+    function trusted_transfer(uint256 amount, address to) external onlyController{
+        UNDERLYING.transfer(to, amount); 
+    }
+
     /// @notice burns all balance of address 
     function burnAll(address to) private{
       _burn(to, balanceOf[to]); 
@@ -182,14 +186,19 @@ contract Vault is ERC4626, Auth{
     }
 
     /// @notice Stores a Instrument as trusted when its approved
-    function trustInstrument(uint256 marketId) external onlyController{
+    function trustInstrument(uint256 marketId, Controller.ApprovalData memory data) external onlyController{
       getInstrumentData[fetchInstrument(marketId)].trusted = true;
 
-      depositIntoInstrument(marketId, fetchInstrumentData(marketId).principal);
+      //Write to storage 
+      getInstrumentData[Instruments[marketId]].principal = data.approved_principal; 
+      getInstrumentData[Instruments[marketId]].expectedYield = data.approved_yield;
+      getInstrumentData[Instruments[marketId]].faceValue = data.approved_principal + data.approved_yield; 
+
+      depositIntoInstrument(marketId, data.approved_principal);
     
       setMaturityDate(marketId);
-      
-      onMarketApproval(marketId);
+
+      fetchInstrument(marketId).onMarketApproval(data.approved_principal, data.approved_yield); 
     }
 
     /// @notice Stores a Instrument as untrusted
@@ -208,7 +217,9 @@ contract Vault is ERC4626, Auth{
       return totalInstrumentHoldings + totalFloat();
     }
 
-    
+    function utilizationRate() public view returns(uint256){
+        return totalInstrumentHoldings.divWadDown(totalAssets()); 
+    }
     function totalFloat() public view returns (uint256) {
         return UNDERLYING.balanceOf(address(this));
     }
@@ -232,9 +243,6 @@ contract Vault is ERC4626, Auth{
     }
 
 
-    function onMarketApproval(uint256 marketId) internal {
-        Instruments[marketId].onMarketApproval();
-    }
 
     /// @notice add instrument proposal created by the Utilizer 
     /// @dev Instrument instance should be created before this is called
@@ -277,6 +285,11 @@ contract Vault is ERC4626, Auth{
         getInstrumentData[fetchInstrument(marketId)].maturityDate = getInstrumentData[fetchInstrument(marketId)].duration + block.timestamp;
     }
 
+    function pingMaturity(address instrument) external {
+        require(msg.sender == instrument); 
+       // prepareResolve()
+    }
+
     /// @notice RESOLVE FUNCTION #1
     /// checks if instrument is ready to be resolved
     /// and locks capital inside the instrument 
@@ -316,9 +329,9 @@ contract Vault is ERC4626, Auth{
         require(_instrument.isLocked(), "Not Locked");  
         uint256 instrument_balance = _instrument.getMaturityBalance(); 
 
-        //First burn all in market contracts
-        burnAll(controller.getZCB_ad(marketId)); 
-        burnAll(controller.getshortZCB_ad(marketId)); 
+        // //First burn all in market contracts
+        // burnAll(controller.getZCB_ad(marketId)); 
+        // burnAll(controller.getshortZCB_ad(marketId)); 
       
         InstrumentData storage data = getInstrumentData[_instrument];
 
@@ -327,11 +340,16 @@ contract Vault is ERC4626, Auth{
         uint256 total_loss = atLoss ? data.faceValue - instrument_balance : 0;
         uint256 extra_gain = !atLoss ?instrument_balance - data.faceValue : 0;
 
-        withdrawFromInstrument(_instrument, _instrument.balanceOfUnderlying(address(_instrument)));
+        withdrawFromInstrument(_instrument, instrument_balance);
                 
         removeInstrument(data.marketId);
 
         return(atLoss, extra_gain, total_loss); 
+    }
+
+    /// @notice when market resolves, send back pulled collateral from managers 
+    function repayDebt(address to, uint256 amount) external onlyController{
+        UNDERLYING.transfer(to, amount); 
     }
 
     /**

@@ -83,6 +83,9 @@ contract ReputationNFT is IReputationNFT, ERC721 {
     super._mint(to, nonce);
     _ownerToId[to] = nonce;
 
+    // Set default score, if this goes to 0 cannot trade
+    _reputation[_ownerToId[to]].score = 1e18; 
+
     nonce++;
   }
 
@@ -101,6 +104,17 @@ contract ReputationNFT is IReputationNFT, ERC721 {
 
     ReputationData storage data = _reputation[_ownerToId[to]];
     data.score = data.score + score; 
+
+    storeTopX(data.score, to); 
+  }
+
+  function decrementScore(address to, uint256 score) external onlyController
+   {
+    require(_ownerToId[to] != uint256(0), "No Id found");
+
+    ReputationData storage data = _reputation[_ownerToId[to]];
+    if (data.score <= score) data.score = 0; 
+    else data.score = data.score - score; 
 
     storeTopX(data.score, to); 
   }

@@ -117,6 +117,20 @@ contract LinearBondingCurve is BondingCurve {
   }
 
 
+  /// @notice computes from arbitrary supply
+  function _calculateArbitraryPurchaseReturn(uint256 amount, uint256 supply)  internal view override virtual _WAD_(amount) returns(uint256) {
+    uint256 s = supply; 
+
+    uint256 x = ((a.mulWadDown(s) + b) ** 2)/math_precision; 
+    uint256 y = 2*( a.mulWadDown(amount)); 
+    uint256 x_y_sqrt = ((x+y)*math_precision).sqrt();
+    uint256 z = (a.mulWadDown(s) + b); 
+    uint256 result = (x_y_sqrt-z).divWadDown(a);
+
+    return result;
+  }
+
+
   function _calculateScore(uint256 priceOut, bool atLoss)view internal override virtual returns (uint256 score) {
     if (atLoss) {
       score = ((priceOut - math_precision) ** 2) / math_precision;
@@ -132,6 +146,8 @@ contract LinearBondingCurve is BondingCurve {
   function _getParams() public view override returns(uint,uint){
     return (a,b); 
   }
+
+
 
 
 

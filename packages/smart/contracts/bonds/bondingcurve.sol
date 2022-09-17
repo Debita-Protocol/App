@@ -264,6 +264,10 @@ abstract contract BondingCurve is OwnedERC20 {
     return result; 
   }
 
+  function calculateArbitraryPurchaseReturn(uint256 amount, uint256 supply) public view returns(uint256) {
+    return _calculateArbitraryPurchaseReturn(amount, supply); 
+  }
+
   function _get_discount_cap() internal view virtual returns(uint256); 
 
   function _calcAreaUnderCurve(uint256 amount) internal view  virtual returns(uint256 result); 
@@ -275,6 +279,8 @@ abstract contract BondingCurve is OwnedERC20 {
   function _calculateExpectedPrice(uint256 amount) internal view  virtual returns (uint256 result);
 
   function _calculateDecreasedPrice(uint256 amount) internal view  virtual returns (uint256 result);
+
+  function _calculateArbitraryPurchaseReturn(uint256 amount, uint256 supply)  internal view  virtual returns(uint256); 
 
   function _getParams() public view virtual returns(uint,uint); 
 

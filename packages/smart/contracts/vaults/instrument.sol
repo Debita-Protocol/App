@@ -66,12 +66,14 @@ abstract contract Instrument {
     /**
      @notice hooks for approval logic that are specific to each instrument type, called by controller for approval/default logic
      */
-    function onMarketApproval() virtual external {}
+    function onMarketApproval(uint256 principal, uint256 yield) virtual external {}
 
     function setUtilizer(address _Utilizer) external onlyAuthorized {
         require(_Utilizer != address(0));
         Utilizer = _Utilizer;
     }
+
+
 
 
     /// @notice Withdraws a specific amount of underlying tokens from the Instrument.
@@ -222,41 +224,9 @@ abstract contract Instrument {
 }
 
 
-
-/// @notice Simple Instrument that provides USDC on stableswap 3pool 
-// contract Curve3pool_Instrument is Instrument{
-
-//     /// @notice invests amount into Instrument 
-//     function invest(uint256 amount ) external 
-//     //onlyGuardian 
-//     {   
-//         require(this.balanceOfUnderlying(address(this)) >= amount);
-//         _invest(amount);  
-
-//     }
-
-//     function _invest(uint256 _amount) internal {
-
-//     }
-
-
+// contract RevenueToken is ERC20{
 
 // }
-
-
-/// @notice Instrument that a) lends usdc fix rate at notional.finance and get zcb
-/// b) use that zcb as collateral to borrow fiat from fiatdao, c) swap fiat dao to usdc
-/// d) repeat
-// contract LeveragedFixedRate_Instrument is Instrument{
-
-// }
-
-// /// @notice Instrument that lends to risky collateral in fuse pools
-// contract RariLend_Instrument is Instrument{
-
-// }
-
-
 
  
 /// @notice Contract for unsecured loans, each instance will be associated to a borrower+marketId
@@ -266,7 +236,7 @@ contract CreditLine is Instrument {
 
     //  variables initiated at creation
     uint256  principal;
-    uint256  interestAPR; 
+    uint256  notionalInterest; 
     uint256  faceValue; //total amount due, i.e principal+interest
     uint256  duration; 
 
@@ -275,55 +245,174 @@ contract CreditLine is Instrument {
     uint256 principalOwed; 
     uint256 interestOwed;
 
+    // Collateral Info 
+    enum CollateralType{
+        liquidateAble, 
+        nonLiquid, 
+        tokenizedRevenue 
+    }
+    address public collateral; 
+    address public oracle; 
+    uint256 public collateral_balance; 
+    CollateralType public collateral_type; 
+
+    uint256 drawdown_block; 
+    bool didDrawdown; 
+
+    enum LoanStatus{
+        notDrawdowned,
+        drawdowned, 
+        partially_repayed,
+        prepayment_fulfilled, 
+        matured, 
+        grace_period, 
+        isDefault
+    }
+    LoanStatus public loanStatus; 
+
+    /// @notice both _collateral and _oracle could be 0
+    /// address if fully uncollateralized or does not have a price oracle 
+    /// param _notionalInterest and _principal is initialized as desired variables
     constructor(
         address vault,
         address borrower, 
         uint256 _principal,
-        uint256 _interestAPR, 
+        uint256 _notionalInterest, 
         uint256 _duration,
-        uint256 _faceValue
+        uint256 _faceValue,
+
+        address _collateral, //collateral for the dao, could be their own native token or some tokenized revenue 
+        address _oracle, // oracle for price of collateral 
+        uint256 _collateral_balance, //promised collateral balance
+        uint256 _collateral_type 
     )  Instrument(vault, borrower){
         principal = _principal; 
-        interestAPR = _interestAPR; 
+        notionalInterest = _notionalInterest; 
         duration = _duration;   
         faceValue = _faceValue;
-        interestOwed = faceValue - principal;
+        interestOwed = _notionalInterest;
+
+        collateral = _collateral; 
+        oracle = _oracle; 
+        collateral_balance = _collateral_balance; 
+        collateral_type = CollateralType(_collateral_type); 
     }
 
-    /// @notice use APR and duration to get total owed interest 
-    function getOwedInterest(uint256 APR, uint256 duration) internal pure returns(uint256 owed){
-        return APR; 
+    function setValidator(address _validator) external onlyVault{
+
     }
+
+    function getApprovedBorrowConditions() public view returns(uint256, uint256){
+        if (vault.isTrusted(this)) return(principal, notionalInterest) ;
+
+        return (0,0); 
+    }
+
+    /// @notice if possible, and borrower defaults, liquidates given collateral to underlying
+    /// and push back to vault. If not possible, push the collateral back to
+    function liquidateAndPushToVault() public virtual onlyVault{}
+
+    function escrowCollateral(uint256 amount, address to) public virtual onlyVault{
+        ERC20(collateral).transfer(to, amount); 
+    }
+
+    function isLiquidatable(address collateral) public view returns(bool){}
+
+    /// @notice if collateral is liquidateable and has oracle, fetch value of collateral 
+    /// and return ratio to principal 
+    function getCollateralRatio() public view returns(uint256){
+
+    }
+
+    function instrumentApprovalCondition() public override view returns(bool){
+        // check if borrower has correct identity 
+
+        // check if enough collateral has been added as agreed   
+        if (collateral != address(0)) require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, 
+                "Insufficient collateral"); 
+
+        return true; 
+    } 
+
+    /// @notice borrower deposit promised collateral  
+    function depositCollateral(uint256 amount) external onlyUtilizer {
+        require(collateral!= address(0)); 
+        ERC20(collateral).transferFrom(msg.sender, address(this), amount); 
+    }
+
+    /// @notice can only redeem collateral when debt is fully paid 
+    function releaseAllCollateral() external onlyUtilizer{
+        require(loanStatus == LoanStatus.matured); 
+        ERC20(collateral).transfer(msg.sender,collateral_balance); 
+    }
+
+    function onDefault() external onlyVault{
+        // If collateral is liquidateable, liquidate and push to vault
+        if (isLiquidatable(collateral)) {
+        liquidateAndPushToVault(); 
+        }
+        // If collateral is not, just escrow it to vault?
+
+        // If tokenizedRevenue, calculate revenue to be escrowed and transfer it to vault 
+    }
+
+    /// @notice starting from the moment the borrower drawdowns, compute
+    /// the interest for the returned principal 
+    function getAccruedInterest(uint256 repay_principal) public view returns(uint256){
+    }
+
+    function handle_prepayment() internal {}
+
+    function declareDefault() external {}
+    /// @param quoted_yield is in notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
+    /// where area under curve is max_principal 
+    function onMarketApproval(uint256 max_principal, uint256 quoted_yield)  external override onlyVault {
+        principal = max_principal; 
+        notionalInterest = quoted_yield; 
+    }
+
 
     /// @notice Allows a borrower to borrow on their creditline.
-    function drawdown(uint256 amount) external onlyUtilizer{
+    /// This creditline allows only lump sum drawdowns, all approved principal needs to be borrowed
+    /// which would start the interest timer 
+    function drawdown() external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
-        totalOwed += amount; 
-        principalOwed += amount; 
-        transfer_liq(msg.sender, amount); 
+        // require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
+        require(!didDrawdown, "Already borrowed"); 
+        didDrawdown = true; 
+
+        drawdown_block = block.timestamp; 
+        totalOwed = principal + notionalInterest; 
+        principalOwed = principal; 
+        transfer_liq(msg.sender, principal); 
     }
 
     /// @notice allows a borrower to repay their loan
     function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        // require(repay_principal <= principalOwed, "overpaid principal");
-        // require(repay_interest <= interestOwed, "overpaid interest");
+
+        if (block.timestamp <= drawdown_block + duration) handle_prepayment(); 
+
         transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
-        // underlying.transferFrom(msg.sender, address(this), repay_principal + repay_interest);
-        handleRepay(repay_principal, repay_interest); 
+
+        if(handleRepay(repay_principal, repay_interest)) vault.pingMaturity(address(this)); 
     }   
 
     /// @notice updates balances after repayment
     /// need to remove min.
-    function handleRepay(uint256 repay_principal, uint256 repay_interest) internal {
+    function handleRepay(uint256 repay_principal, uint256 repay_interest) internal returns(bool){
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
+
+        bool isMatured = totalOwed == 0 ? true : false; 
+        return isMatured; 
+         
     }
 
-    function instrumentApprovalCondition() public virtual override view returns(bool){
-        return true; 
-    } 
+
+
+
 
 }
+
