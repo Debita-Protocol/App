@@ -431,7 +431,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     internal 
   { 
     assessment_trader[marketId][trader] = true; 
-    assessment_collaterals[marketId][trader] = collateralIn;
+    assessment_collaterals[marketId][trader] += collateralIn;
     assessment_probs[marketId][trader] = probability; 
 
     // queuedRepUpdates[msg.sender] += 1; 
@@ -581,6 +581,29 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     return (validator_data[marketId].totalSales >= validator_data[marketId].val_cap); 
   }
 
+  mapping(uint256=> mapping(address=>uint256)) longTrades; 
+  mapping(uint256=> mapping(address=>uint256)) shortTrades; 
+
+  /// @notice log how much collateral trader has at stake, 
+  /// to be used for redeeming later 
+  function _logTrades(
+    uint256 marketId,
+    address trader, 
+    uint256 collateral, 
+    bool isBuy, 
+    bool isLong
+    ) internal {
+
+    if (isLong){
+      if (isBuy) longTrades[marketId][trader] += collateral; 
+      else longTrades[marketId][trader] -= collateral; 
+    }
+
+    else{
+      if (isBuy) shortTrades[marketId][trader] += collateral; 
+      else shortTrades[marketId][trader] -= collateral; 
+    }
+  }
 
   /// @notice main entry point for longZCB buys
   /// @param _collateralIn: amount of collateral tokens in.
@@ -606,6 +629,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     //Need to log assessment trades for updating reputation scores or returning collateral
     //when market denied 
+    _logTrades(_marketId, msg.sender, _collateralIn, true, true); 
+
     if (duringMarketAssessment(_marketId)){
 
       rep.incrementBalance(_marketId, msg.sender, _collateralIn);
@@ -625,7 +650,6 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
           setReputationPhase(_marketId, false);
         }
       }
-
       _logAssessmentTrade(
         _marketId,
         msg.sender, 
@@ -635,7 +659,6 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
           getTraderBudget(_marketId, msg.sender) 
         )
       );
-
     }
 
     zcb.transfer(msg.sender, amountOut); 
@@ -661,6 +684,9 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     // wCollateral to this address
     amountOut = zcb.trustedSell(address(this), _zcb_amount_in, _min_collateral_out);
 
+    _logTrades(_marketId, msg.sender, amountOut, false, true); 
+
+    //Send collateral to trader 
     WrappedCollateral(zcb.getCollateral()).redeem(address(this), msg.sender, amountOut); 
 
     if (!duringMarketAssessment(_marketId)) deduct_selling_fee(); 
@@ -712,6 +738,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     // lendAmount: amount of zcb to borrow w/ shortZCB pricing
     (uint lendAmount, uint c) = shortZCB.calculateAmountGivenSell(collateralIn);
+    _logTrades(marketId, msg.sender, collateralIn, true, false); 
 
     // zcb minted to shortzcb contract
     _lendForShort(msg.sender, marketId, lendAmount);
@@ -781,7 +808,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     // This will buy close_amount worth of longZCB to the shortZCB contract 
     (uint256 returned_collateral, uint256 tokenToBeBurned) = shortZCB.trustedClose(address(this), close_amount, min_collateral_out);  
- 
+     _logTrades(marketId, msg.sender, returned_collateral, false, false); 
+
     if(duringMarketAssessment(marketId)){
       assessment_shorts[marketId][msg.sender] -= returned_collateral;  
     }
@@ -791,6 +819,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     // Return collateral to trader 
     WrappedCollateral(shortZCB.getCollateral()).redeem(address(this), msg.sender, returned_collateral); 
+
 
   }
 
@@ -817,7 +846,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     return collateral_redeem_amount; 
   }
 
-  /// @notice called by assessment traders when market is denied => market still in assessment phase.
+  /// @notice called by traders when market is denied or resolve before maturity 
   function redeemDeniedMarket(
     uint256 marketId, 
     bool isLong
@@ -826,36 +855,47 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     uint256 collateral_amount;
 
+    // Get collateral at stake in shorts, which will be directly given back to traders
     if(!isLong){
       ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]);
       require(shortZCB.balanceOf(msg.sender) >= 0, "Empty Balance");
 
-      collateral_amount = assessment_shorts[marketId][msg.sender];
-      assessment_shorts[marketId][msg.sender] = 0; 
+      collateral_amount = shortTrades[marketId][msg.sender]; 
+      delete shortTrades[marketId][msg.sender]; 
+
+      //Burn all their balance
       shortZCB.trustedBurn( msg.sender,  shortZCB.balanceOf(msg.sender));
-    } else {
+    } 
+
+    // Get collateral at stake in longs, which will be directly given back to traders
+    else {
       BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
       require(zcb.balanceOf(msg.sender) >= 0, "Empty Balance");
 
       if (isValidator(marketId, msg.sender)) {
-        // collateral_amount = sale_data[marketId][msg.sender].mulWadDown(validator_data[marketId].avg_price); 
-        // sale_data[marketId][msg.sender] = 0;
+
         collateral_amount = validator_data[marketId].sales[msg.sender].mulWadDown(validator_data[marketId].avg_price);
         delete validator_data[marketId].sales[msg.sender];
       }
       else{
-        collateral_amount = assessment_collaterals[marketId][msg.sender]; 
-        assessment_collaterals[marketId][msg.sender] = 0; 
+        collateral_amount = longTrades[marketId][msg.sender]; 
+        delete longTrades[marketId][msg.sender]; 
       }
+
+      // Burn all their balance 
       zcb.trustedBurn(msg.sender, zcb.balanceOf(msg.sender)); 
     }
 
+    // Before redeem_transfer is called all funds for this instrument should be back in the vault
+    // including dust from wCollateral 
     controller.redeem_transfer(collateral_amount, msg.sender, marketId);
+
     // queuedRepUpdates[msg.sender] -= 1; 
 
     //TODO need to check if last redeemer, so can kill market.
 
   }
+
 
 
   function get_redemption_price(uint256 marketId) public view returns(uint256){

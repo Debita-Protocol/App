@@ -5,7 +5,7 @@ pragma solidity ^0.8.4;
 import "./vault.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "../prb/PRBMathUD60x18.sol";
+import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
 
 
 /// @notice Minimal interface for Vault compatible strategies.
@@ -17,7 +17,7 @@ abstract contract Instrument {
     }
 
     modifier onlyAuthorized() {
-        require(msg.sender == Utilizer || msg.sender == vault.owner(), "!authorized");
+        require(msg.sender == vault.owner() || isValidator[msg.sender], "!authorized");
         _;
     }
 
@@ -47,21 +47,11 @@ abstract contract Instrument {
     bool locked; 
     uint256 private constant MAX_UINT = 2**256 - 1;
     uint256 private maturity_balance; 
+
     /// @notice address of user who submits the liquidity proposal 
     address Utilizer; 
-
-    /// @notice initializes a new Instrument
-    /// DEPRECATED
-    function _initialize(
-        address _vault,
-        address _Utilizer
-    ) internal {
-        vault = Vault(_vault);
-        underlying = ERC20(vault.UNDERLYING());
-        underlying.approve(_vault, MAX_UINT); // Give Vault unlimited access 
-        Utilizer = _Utilizer;
-
-    }
+    address[] public validators; //set when deployed, but can't be ch
+    mapping(address=>bool) isValidator; 
 
     /**
      @notice hooks for approval logic that are specific to each instrument type, called by controller for approval/default logic
@@ -73,7 +63,10 @@ abstract contract Instrument {
         Utilizer = _Utilizer;
     }
 
-
+    function setValidator(address _validator) external onlyAuthorized{
+        validators.push(_validator); 
+        isValidator[_validator] = true;     
+    }
 
 
     /// @notice Withdraws a specific amount of underlying tokens from the Instrument.
@@ -233,12 +226,14 @@ abstract contract Instrument {
 /// approved borrowers will interact with this contract to borrow, repay. 
 /// and vault will supply principal and harvest principal/interest 
 contract CreditLine is Instrument {
+    using FixedPointMathLib for uint256;
 
     //  variables initiated at creation
     uint256  principal;
     uint256  notionalInterest; 
     uint256  faceValue; //total amount due, i.e principal+interest
-    uint256  duration; 
+    uint256  duration; // normalized to a year 1 means 1 year, 0.5 means 6 month 
+    uint256 interestAPR; 
 
     // Modify-able Variables during repayments, borrow
     uint256 totalOwed; 
@@ -259,16 +254,22 @@ contract CreditLine is Instrument {
     uint256 drawdown_block; 
     bool didDrawdown; 
 
+
     enum LoanStatus{
-        notDrawdowned,
+        notApproved,
+        approvedNotDrawdowned,
         drawdowned, 
         partially_repayed,
+
         prepayment_fulfilled, 
         matured, 
         grace_period, 
         isDefault
     }
+
     LoanStatus public loanStatus; 
+
+    uint256 lastRepaymentTime; 
 
     /// @notice both _collateral and _oracle could be 0
     /// address if fully uncollateralized or does not have a price oracle 
@@ -284,7 +285,9 @@ contract CreditLine is Instrument {
         address _collateral, //collateral for the dao, could be their own native token or some tokenized revenue 
         address _oracle, // oracle for price of collateral 
         uint256 _collateral_balance, //promised collateral balance
-        uint256 _collateral_type 
+        uint256 _collateral_type
+
+
     )  Instrument(vault, borrower){
         principal = _principal; 
         notionalInterest = _notionalInterest; 
@@ -296,10 +299,18 @@ contract CreditLine is Instrument {
         oracle = _oracle; 
         collateral_balance = _collateral_balance; 
         collateral_type = CollateralType(_collateral_type); 
+
+
+        loanStatus = LoanStatus.notApproved; 
     }
 
-    function setValidator(address _validator) external onlyVault{
-
+    /// @notice checks if the creditline is ready to be withdrawed, i.e all 
+    /// loans have been paid, all non-underlying have been liquidated, etc
+    function readyForWithdrawal() public view override returns(bool){
+        if (loanStatus == LoanStatus.matured || loanStatus == LoanStatus.isDefault
+            || loanStatus == LoanStatus.prepayment_fulfilled) return true; 
+        return true; 
+        //return false  
     }
 
     function getApprovedBorrowConditions() public view returns(uint256, uint256){
@@ -310,9 +321,11 @@ contract CreditLine is Instrument {
 
     /// @notice if possible, and borrower defaults, liquidates given collateral to underlying
     /// and push back to vault. If not possible, push the collateral back to
-    function liquidateAndPushToVault() public virtual onlyVault{}
+    function liquidateAndPushToVault() public virtual onlyAuthorized{}
 
-    function escrowCollateral(uint256 amount, address to) public virtual onlyVault{
+    /// @notice transfers collateral back to vault when default 
+    function pushCollateralToVault(uint256 amount, address to) public virtual onlyAuthorized{
+        require(loanStatus == LoanStatus.isDefault); 
         ERC20(collateral).transfer(to, amount); 
     }
 
@@ -328,8 +341,11 @@ contract CreditLine is Instrument {
         // check if borrower has correct identity 
 
         // check if enough collateral has been added as agreed   
-        if (collateral != address(0)) require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, 
-                "Insufficient collateral"); 
+        if (collateral != address(0)) {require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, 
+                "Insufficient collateral"); }
+
+        // check if validator(s) are set 
+        if (validators.length == 0) {revert("No validators"); }
 
         return true; 
     } 
@@ -346,11 +362,17 @@ contract CreditLine is Instrument {
         ERC20(collateral).transfer(msg.sender,collateral_balance); 
     }
 
-    function onDefault() external onlyVault{
+    /// @notice should be called  at default by validators
+    /// calling this function will go thorugh the necessary process
+    /// to recollateralize lent out principal. 
+    function onDefault() external onlyAuthorized{
+        require(loanStatus == LoanStatus.isDefault); 
+
         // If collateral is liquidateable, liquidate and push to vault
         if (isLiquidatable(collateral)) {
         liquidateAndPushToVault(); 
         }
+
         // If collateral is not, just escrow it to vault?
 
         // If tokenizedRevenue, calculate revenue to be escrowed and transfer it to vault 
@@ -361,14 +383,30 @@ contract CreditLine is Instrument {
     function getAccruedInterest(uint256 repay_principal) public view returns(uint256){
     }
 
-    function handle_prepayment() internal {}
+    function beginGracePeriod() external onlyAuthorized{
+        require(block.timestamp >= drawdown_block + toSeconds(duration)); 
+        loanStatus = LoanStatus.grace_period; 
+    }
+    function declareDefault() external onlyAuthorized {
+        require(loanStatus == LoanStatus.grace_period); 
 
-    function declareDefault() external {}
+        loanStatus = LoanStatus.isDefault; 
+    }
+
+    /// @notice should only be called when (portion of) principal is repayed
+    function adjustInterestOwed() internal {
+        uint256 remainingDuration = (drawdown_block + toSeconds(duration)) - block.timestamp; 
+        interestOwed = interestAPR.mulWadDown(remainingDuration.mulWadDown(principalOwed)); 
+    }
+
     /// @param quoted_yield is in notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
     /// where area under curve is max_principal 
     function onMarketApproval(uint256 max_principal, uint256 quoted_yield)  external override onlyVault {
         principal = max_principal; 
-        notionalInterest = quoted_yield; 
+        notionalInterest = quoted_yield; //this accounts for duration as well 
+        interestAPR = quoted_yield.divWadDown(duration.mulWadDown(principal)); 
+
+        loanStatus = LoanStatus.approvedNotDrawdowned;
     }
 
 
@@ -377,9 +415,8 @@ contract CreditLine is Instrument {
     /// which would start the interest timer 
     function drawdown() external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
-        // require(underlying.balanceOf(address(this)) > amount, "Exceeds Credit");
-        require(!didDrawdown, "Already borrowed"); 
-        didDrawdown = true; 
+        require(loanStatus == LoanStatus.approvedNotDrawdowned, "Already borrowed"); 
+        loanStatus = LoanStatus.drawdowned; 
 
         drawdown_block = block.timestamp; 
         totalOwed = principal + notionalInterest; 
@@ -387,15 +424,52 @@ contract CreditLine is Instrument {
         transfer_liq(msg.sender, principal); 
     }
 
+    /// @notice borrower can see how much to repay now 
+    function interestToRepay() public view returns(uint256){
+
+        // Normalized to year
+        uint256 elapsedTime = toYear(block.timestamp - lastRepaymentTime);
+
+        // Owed interest from last timestamp till now  
+        return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)); 
+    }
+     
     /// @notice allows a borrower to repay their loan
-    function repay(uint256 repay_principal, uint256 repay_interest) external onlyUtilizer{
+    /// Standard repayment structure is repaying interest for the owed principal periodically and
+    /// whenever principal is repayed interest owed is decreased proportionally 
+    function repay(uint256 _repay_principal, uint256 _repay_interest) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
 
-        if (block.timestamp <= drawdown_block + duration) handle_prepayment(); 
+        uint256 owedInterest = interestToRepay(); 
+        uint256 repay_principal = _repay_principal; 
+        uint256 repay_interest = _repay_interest; 
+
+        // Push any dust to repaying principal 
+        if (_repay_interest >= owedInterest){
+            repay_principal += (_repay_interest - owedInterest);  
+            repay_interest = owedInterest; 
+        }
+
+        if(handleRepay(repay_principal, repay_interest)){
+
+            // Prepayment 
+            if (block.timestamp <= drawdown_block + toSeconds(duration)) {
+                loanStatus = LoanStatus.prepayment_fulfilled; 
+                vault.pingMaturity(address(this), true); 
+            }
+
+            // Repayed at full maturity 
+            else {
+                loanStatus = LoanStatus.matured; 
+                vault.pingMaturity(address(this), false); 
+            }
+        }
+
+        lastRepaymentTime = block.timestamp; 
 
         transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
 
-        if(handleRepay(repay_principal, repay_interest)) vault.pingMaturity(address(this)); 
+
     }   
 
     /// @notice updates balances after repayment
@@ -404,11 +478,28 @@ contract CreditLine is Instrument {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
+        //50 - 10 = 40 -> //how does interest owed changes when principal is never repaid
+        adjustInterestOwed(); 
 
-        bool isMatured = totalOwed == 0 ? true : false; 
+        bool isMatured = (principalOwed == 0 && interestOwed == 0)? true : false; 
+        if (isMatured) loanStatus = LoanStatus.matured; 
         return isMatured; 
          
     }
+
+    function toYear(uint256 sec) internal pure returns(uint256){
+        return (sec*1e18).divWadDown(31536000 * 1e18); 
+    }
+
+    function toSeconds(uint256 y) internal pure returns(uint256){
+        return (uint(31536000 * 1e18)).mulWadDown(y)/1e18; 
+    }
+
+    function getRemainingOwed() public view returns(uint256, uint256){
+        return(principalOwed, interestOwed); 
+    }
+
+    function getCurrentLoanStatus() public view returns(uint256){}
 
 
 

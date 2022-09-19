@@ -46,6 +46,7 @@ contract Vault is ERC4626, Auth{
     mapping(Instrument => InstrumentData) public getInstrumentData;
     mapping(address => uint256) public  num_proposals;
     mapping(uint256=> Instrument) Instruments; //marketID-> Instrument
+    mapping(uint256 => bool) resolveBeforeMaturity;
 
     enum InstrumentType {
         CreditLine,
@@ -285,9 +286,14 @@ contract Vault is ERC4626, Auth{
         getInstrumentData[fetchInstrument(marketId)].maturityDate = getInstrumentData[fetchInstrument(marketId)].duration + block.timestamp;
     }
 
-    function pingMaturity(address instrument) external {
+
+    /// @notice function called when instrument prematurely resolves
+    function pingMaturity(address instrument, bool premature) external {
         require(msg.sender == instrument); 
-       // prepareResolve()
+        uint256 marketId = getInstrumentData[Instrument(instrument)].marketId; 
+        prepareResolve(marketId); 
+        resolveBeforeMaturity[marketId] = premature; 
+
     }
 
     /// @notice RESOLVE FUNCTION #1
@@ -295,8 +301,8 @@ contract Vault is ERC4626, Auth{
     /// and locks capital inside the instrument 
     /// @dev resolving is separated into three tx 
     /// prepareResolve->beforeResolve->resolveinstrument
-    function prepareResolve(uint256 marketId) external onlyController{
-
+    function prepareResolve(uint256 marketId) public {
+        require(msg.sender == address(this) || msg.sender == address(controller)); 
         Instrument _instrument = Instruments[marketId]; 
         require(isTrusted( _instrument)); 
 
@@ -335,10 +341,29 @@ contract Vault is ERC4626, Auth{
       
         InstrumentData storage data = getInstrumentData[_instrument];
 
-        bool atLoss = instrument_balance < data.faceValue;
+        bool prematureResolve = resolveBeforeMaturity[marketId]; 
+        bool atLoss; 
+        uint256 total_loss; 
+        uint256 extra_gain; 
 
-        uint256 total_loss = atLoss ? data.faceValue - instrument_balance : 0;
-        uint256 extra_gain = !atLoss ?instrument_balance - data.faceValue : 0;
+        // If resolved at predetermined maturity date, loss is defined by
+        // the event the instrument has paid out all its yield + principal 
+        if (!prematureResolve){
+            atLoss = instrument_balance < data.faceValue;
+
+            total_loss = atLoss ? data.faceValue - instrument_balance : 0;
+            extra_gain = !atLoss ? instrument_balance - data.faceValue : 0;
+        }
+
+        // If resolved before predetermined maturity date, loss is defined by 
+        // the event the instrument has balance less then principal 
+        else {
+            atLoss = instrument_balance < data.principal; 
+
+            total_loss = atLoss? data.principal - instrument_balance :0; 
+            extra_gain = 0; 
+
+        }
 
         withdrawFromInstrument(_instrument, instrument_balance);
                 
@@ -359,8 +384,8 @@ contract Vault is ERC4626, Auth{
         InstrumentData storage data = getInstrumentData[Instruments[marketId]];
 
         // Burn all so new can be minted  
-        burnAll(controller.getZCB_ad(marketId)); 
-        burnAll(controller.getshortZCB_ad(marketId)); 
+        // burnAll(controller.getZCB_ad(marketId)); 
+        // burnAll(controller.getshortZCB_ad(marketId)); 
 
         require(marketId > 0 && data.Instrument_address != address(0), "invalid instrument");
 

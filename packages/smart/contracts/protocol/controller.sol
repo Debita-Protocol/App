@@ -230,11 +230,10 @@ contract Controller {
     marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
   }
 
-  /**
-   @dev initiates market, called by frontend loan proposal or instrument form submit button.
-   @param recipient is the utilizer 
-   @param recipient: utilizer for the associated instrument
-   */
+  /// @notice initiates market, called by frontend loan proposal or instrument form submit button.
+  /// @dev Instrument should already be deployed 
+  /// @param recipient is the utilizer 
+  /// @param recipient: utilizer for the associated instrument
   function initiateMarket(
     address recipient,
     Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
