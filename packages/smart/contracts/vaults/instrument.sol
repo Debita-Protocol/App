@@ -49,7 +49,7 @@ abstract contract Instrument {
     uint256 private maturity_balance; 
 
     /// @notice address of user who submits the liquidity proposal 
-    address Utilizer; 
+    address public Utilizer; 
     address[] public validators; //set when deployed, but can't be ch
     mapping(address=>bool) isValidator; 
 
@@ -227,6 +227,7 @@ abstract contract Instrument {
 /// and vault will supply principal and harvest principal/interest 
 contract CreditLine is Instrument {
     using FixedPointMathLib for uint256;
+    address public immutable borrower; 
 
     //  variables initiated at creation
     uint256  principal;
@@ -244,7 +245,7 @@ contract CreditLine is Instrument {
     enum CollateralType{
         liquidateAble, 
         nonLiquid, 
-        tokenizedRevenue 
+        ownership 
     }
     address public collateral; 
     address public oracle; 
@@ -270,13 +271,15 @@ contract CreditLine is Instrument {
     LoanStatus public loanStatus; 
 
     uint256 lastRepaymentTime; 
+    uint256 gracePeriodStart; 
+    Proxy proxy; 
 
     /// @notice both _collateral and _oracle could be 0
     /// address if fully uncollateralized or does not have a price oracle 
     /// param _notionalInterest and _principal is initialized as desired variables
     constructor(
         address vault,
-        address borrower, 
+        address _borrower, 
         uint256 _principal,
         uint256 _notionalInterest, 
         uint256 _duration,
@@ -288,7 +291,8 @@ contract CreditLine is Instrument {
         uint256 _collateral_type
 
 
-    )  Instrument(vault, borrower){
+    )  Instrument(vault, _borrower){
+        borrower = _borrower; 
         principal = _principal; 
         notionalInterest = _notionalInterest; 
         duration = _duration;   
@@ -300,8 +304,13 @@ contract CreditLine is Instrument {
         collateral_balance = _collateral_balance; 
         collateral_type = CollateralType(_collateral_type); 
 
-
         loanStatus = LoanStatus.notApproved; 
+
+        proxy = new Proxy(_borrower); 
+    }
+
+    function getProxy() public view returns(address){
+        return address(proxy); 
     }
 
     /// @notice checks if the creditline is ready to be withdrawed, i.e all 
@@ -323,6 +332,13 @@ contract CreditLine is Instrument {
     /// and push back to vault. If not possible, push the collateral back to
     function liquidateAndPushToVault() public virtual onlyAuthorized{}
 
+    /// @notice After grace period auction off ownership to some other party and transfer the funds back to vault 
+    /// @dev assumes collateral has already been transferred to vault, needs to be checked by the caller 
+    function liquidateOwnership(address buyer) public virtual onlyAuthorized{
+        // TODO implement auction 
+        proxy.changeOwnership(buyer);
+    }
+
     /// @notice transfers collateral back to vault when default 
     function pushCollateralToVault(uint256 amount, address to) public virtual onlyAuthorized{
         require(loanStatus == LoanStatus.isDefault); 
@@ -337,6 +353,7 @@ contract CreditLine is Instrument {
 
     }
 
+    /// @notice validators have to check these conditions at a human level too before approving 
     function instrumentApprovalCondition() public override view returns(bool){
         // check if borrower has correct identity 
 
@@ -346,6 +363,9 @@ contract CreditLine is Instrument {
 
         // check if validator(s) are set 
         if (validators.length == 0) {revert("No validators"); }
+
+        // Check if proxy has been given ownership
+        if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert(); 
 
         return true; 
     } 
@@ -357,8 +377,9 @@ contract CreditLine is Instrument {
     }
 
     /// @notice can only redeem collateral when debt is fully paid 
-    function releaseAllCollateral() external onlyUtilizer{
-        require(loanStatus == LoanStatus.matured); 
+    function releaseAllCollateral() internal {
+        require(loanStatus == LoanStatus.matured || loanStatus == LoanStatus.prepayment_fulfilled); 
+
         ERC20(collateral).transfer(msg.sender,collateral_balance); 
     }
 
@@ -375,16 +396,13 @@ contract CreditLine is Instrument {
 
         // If collateral is not, just escrow it to vault?
 
-        // If tokenizedRevenue, calculate revenue to be escrowed and transfer it to vault 
+        // If ownership, calculate revenue to be escrowed and transfer it to vault 
     }
 
-    /// @notice starting from the moment the borrower drawdowns, compute
-    /// the interest for the returned principal 
-    function getAccruedInterest(uint256 repay_principal) public view returns(uint256){
-    }
 
     function beginGracePeriod() external onlyAuthorized{
         require(block.timestamp >= drawdown_block + toSeconds(duration)); 
+        gracePeriodStart = block.timestamp; 
         loanStatus = LoanStatus.grace_period; 
     }
     function declareDefault() external onlyAuthorized {
@@ -409,7 +427,26 @@ contract CreditLine is Instrument {
         loanStatus = LoanStatus.approvedNotDrawdowned;
     }
 
+    function onMaturity() internal {
 
+        if (collateral_type == CollateralType.liquidateAble || collateral_type == CollateralType.nonLiquid ){
+            releaseAllCollateral(); 
+        }
+
+        else proxy.changeOwnership(borrower);
+    
+    }
+
+    /// @notice borrower can see how much to repay now 
+    function interestToRepay() public view returns(uint256){
+
+        // Normalized to year
+        uint256 elapsedTime = toYear(block.timestamp - lastRepaymentTime);
+
+        // Owed interest from last timestamp till now  
+        return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)); 
+    }
+     
     /// @notice Allows a borrower to borrow on their creditline.
     /// This creditline allows only lump sum drawdowns, all approved principal needs to be borrowed
     /// which would start the interest timer 
@@ -424,16 +461,6 @@ contract CreditLine is Instrument {
         transfer_liq(msg.sender, principal); 
     }
 
-    /// @notice borrower can see how much to repay now 
-    function interestToRepay() public view returns(uint256){
-
-        // Normalized to year
-        uint256 elapsedTime = toYear(block.timestamp - lastRepaymentTime);
-
-        // Owed interest from last timestamp till now  
-        return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)); 
-    }
-     
     /// @notice allows a borrower to repay their loan
     /// Standard repayment structure is repaying interest for the owed principal periodically and
     /// whenever principal is repayed interest owed is decreased proportionally 
@@ -450,25 +477,26 @@ contract CreditLine is Instrument {
             repay_interest = owedInterest; 
         }
 
+        transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
+
         if(handleRepay(repay_principal, repay_interest)){
 
             // Prepayment 
             if (block.timestamp <= drawdown_block + toSeconds(duration)) {
                 loanStatus = LoanStatus.prepayment_fulfilled; 
+                onMaturity(); 
                 vault.pingMaturity(address(this), true); 
             }
 
             // Repayed at full maturity 
             else {
                 loanStatus = LoanStatus.matured; 
+                onMaturity(); 
                 vault.pingMaturity(address(this), false); 
             }
         }
 
         lastRepaymentTime = block.timestamp; 
-
-        transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
-
 
     }   
 
@@ -481,10 +509,8 @@ contract CreditLine is Instrument {
         //50 - 10 = 40 -> //how does interest owed changes when principal is never repaid
         adjustInterestOwed(); 
 
-        bool isMatured = (principalOwed == 0 && interestOwed == 0)? true : false; 
-        if (isMatured) loanStatus = LoanStatus.matured; 
-        return isMatured; 
-         
+        bool fullyRepayed = (principalOwed == 0 && interestOwed == 0)? true : false; 
+        return fullyRepayed; 
     }
 
     function toYear(uint256 sec) internal pure returns(uint256){
@@ -507,3 +533,89 @@ contract CreditLine is Instrument {
 
 }
 
+
+contract Proxy{
+    address owner; 
+    address delegator; 
+
+    address[] public ownedContracts;
+    mapping(address=>bytes4) public ownerTransferFunctions; 
+    mapping(address=>bool) public isValidContract; 
+
+    /// @notice owner is first set to be the instrument contract
+    /// and is meant to be changed back to the borrower or whoever is
+    /// buying the ownership 
+    constructor(address _delegator){
+        owner = msg.sender; 
+        delegator = _delegator; 
+
+    }
+
+    function changeOwnership(address newOwner) external {
+        require(msg.sender == owner); 
+        owner = newOwner; 
+    }
+
+    function numContracts() public view returns(uint256){
+        return ownedContracts.length; 
+    }
+
+    /// @notice temporarily delegate ownership of relevant contract 
+    /// to this address, and stores the ownership transfering function
+    /// called when initialized
+    /// @param ownershipFunction is selector of the functions that transfers
+    /// ownership 
+    /// @dev called by the borrower during assessment, after they had given ownership 
+    /// of the contract to this address first, 
+    /// but ownerTransferfunction/contract needs to be checked before approval by the validators
+    /// Validators are responsible for checking if there isn't any other ownership transferring functions 
+    /// and check that the contract is legit, and think ways that the borrower can game the system. 
+    function delegateOwnership(
+        address _contract, 
+        bytes4 ownershipFunction) external 
+    {
+        ownedContracts.push(_contract); 
+        isValidContract[_contract] = true; 
+        ownerTransferFunctions[_contract] = ownershipFunction; 
+
+    }
+
+    /// @notice transfers ownership to borrower or any other party if necessary
+    function grantOwnership(
+        address _contract, 
+        address newOwner,
+        bytes calldata data, 
+        bool isSingleArgument) external{   
+        require(msg.sender == owner);
+        require(isValidContract[_contract]);
+        if(newOwner != address(this)) isValidContract[_contract] = false; 
+
+        if(isSingleArgument){
+            (bool success, ) = _contract.call(
+                abi.encodeWithSelector(
+                    ownerTransferFunctions[_contract], 
+                    newOwner
+                )
+            );  
+            require(success, "!success"); 
+        }
+
+        else{
+           // require(bytes4(data) == ownerTransferFunctions[_contract], "Different Function"); 
+            (bool success, ) = _contract.call(data);
+            require(success, "!success"); 
+
+        }
+    }
+
+    /// @notice function that ownership delegators use to call functions 
+    /// in their contract other than the transferFunction contract 
+    function proxyFunc(address _contract, bytes calldata data) external{
+        require(msg.sender == delegator); 
+       // require(bytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
+
+        (bool success, ) = _contract.call(data); 
+        require(success, "!success"); 
+
+    }
+}
