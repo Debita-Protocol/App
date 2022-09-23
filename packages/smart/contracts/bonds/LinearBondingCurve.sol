@@ -14,7 +14,7 @@ contract LinearBondingCurve is BondingCurve {
   uint256  a;
   uint256  b;
   uint256  discount_cap; // maximum number of tokens for 
-
+  uint256  b_initial; // b without discount cap 
 
   modifier _WAD_(uint256 amount) {
       require(config.isInWad(amount), "Not in wad or below minimum amount"); 
@@ -48,6 +48,8 @@ contract LinearBondingCurve is BondingCurve {
 
     //get new initial price after saving for discounts 
     b = a.mulWadDown(discount_cap) + b;
+
+    b_initial = (2*P).divWadDown(P+I) - math_precision; 
 
   }
   /**
@@ -116,14 +118,14 @@ contract LinearBondingCurve is BondingCurve {
   }
 
 
-  /// @notice computes from arbitrary supply
+  /// @notice computes from arbitrary supply, from initial b
   function _calculateArbitraryPurchaseReturn(uint256 amount, uint256 supply)  internal view override virtual _WAD_(amount) returns(uint256) {
     uint256 s = supply; 
 
-    uint256 x = ((a.mulWadDown(s) + b) ** 2)/math_precision; 
+    uint256 x = ((a.mulWadDown(s) + b_initial) ** 2)/math_precision; 
     uint256 y = 2*( a.mulWadDown(amount)); 
     uint256 x_y_sqrt = ((x+y)*math_precision).sqrt();
-    uint256 z = (a.mulWadDown(s) + b); 
+    uint256 z = (a.mulWadDown(s) + b_initial); 
     uint256 result = (x_y_sqrt-z).divWadDown(a);
 
     return result;

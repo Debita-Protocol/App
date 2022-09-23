@@ -4,13 +4,10 @@ import { expect, use as chaiUse } from "chai";
 
 import chaiAsPromised from "chai-as-promised";
 import {
-  AMMFactory,
 
   Cash,
   OwnedERC20,
   OwnedERC20__factory,
-  TrustedMarketFactoryV3,
-  TrustedMarketFactoryV3__factory,
   Controller, 
   BondingCurve, 
   MarketManager, 
@@ -25,9 +22,11 @@ import {
   MarketManager__factory, 
   LinearShortZCB__factory, 
   LinearShortZCB,
-  VaultFactory 
+  VaultFactory ,
+  Proxy__factory, 
 
-
+  MockBorrowerContract, 
+MockBorrowerContract__factory
 } from "../typechain";
 
 import { BigNumber,BigNumberish  } from "ethers";
@@ -71,7 +70,7 @@ interface DefaultParams {
   omega: BigNumberish; 
   delta: BigNumberish; 
   r: string; 
-  s: string; 
+  s: BigNumberish; 
 
 }
 
@@ -111,7 +110,6 @@ describe("Cycle", ()=>{
 
 
   let collateral: Cash; 
-  let marketFactory: TrustedMarketFactoryV3; 
   let vault: Vault;
   let creditline: CreditLine; 
   let controller: Controller; 
@@ -119,8 +117,10 @@ describe("Cycle", ()=>{
   let bc: LinearBondingCurve; 
   let marketmanager: MarketManager; 
   let vaultFactory: VaultFactory; 
-
+  let borrowerContract: MockBorrowerContract; 
   let CreditLine__factory: CreditLine__factory; 
+  let MockBorrowerContract__factory: MockBorrowerContract__factory; 
+
   // let Vault__factory: Vault__factory; 
   let MarketManager__factory: MarketManager__factory; 
   //let LinearBondingCurve__factory: LinearBondingCurve__factory; 
@@ -143,25 +143,25 @@ describe("Cycle", ()=>{
   params.omega = pp.mul(2).div(10);
   params.delta = pp.mul(2).div(10); 
   params.r = "10"; 
-  params.s = "2"; 
+  params.s = pp.mul(2); 
 
 
   before(async() =>{
     [owner, trader, manager1, manager2, manager3, manager4, manager5] = await ethers.getSigners();
     controller = (await ethers.getContract("Controller")) as Controller; 
 
-    // marketmanager = (await ethers.getContract("MarketManager")) as MarketManager; 
+    marketmanager = (await ethers.getContract("MarketManager")) as MarketManager; 
     collateral = (await ethers.getContract("Collateral")) as Cash; 
     // vault = (await ethers.getContract("Vault")) as Vault;
-    marketFactory = (await ethers.getContract("TrustedMarketFactoryV3")) as TrustedMarketFactoryV3; 
     CreditLine__factory = (await ethers.getContractFactory("CreditLine")) as CreditLine__factory; 
-
+    MockBorrowerContract__factory = (await ethers.getContractFactory("MockBorrowerContract")) as MockBorrowerContract__factory; 
     rep = (await ethers.getContract("ReputationNFT")) as ReputationNFT; 
     vaultFactory = (await ethers.getContract("VaultFactory")) as VaultFactory; 
 
-    await controller.setMarketManager(vaultFactory.address);
+    // ControllerFactory = (await ethers.getContractFactory("Controller")) as Controller__factory; 
+
+    await controller.setMarketManager(marketmanager.address);
     await controller.setVaultFactory(vaultFactory.address)
-    await controller.setMarketFactory(marketFactory.address);
     await controller.setReputationNFT(rep.address); 
 
     await controller.createVault(
@@ -174,9 +174,9 @@ describe("Cycle", ()=>{
 
     creditline = await CreditLine__factory.deploy(
     vault.address, trader.address, principal, interestAPR, duration, faceValue, collateral.address, 
-    collateral.address, principal, 0) as CreditLine;
+    collateral.address, principal, 2) as CreditLine;
 
-
+    borrowerContract = await MockBorrowerContract__factory.deploy() as MockBorrowerContract; 
     ///SETTINGS
  
 
@@ -227,87 +227,101 @@ describe("Cycle", ()=>{
   });
 
 
+  it("can approve and lower and upper bound is set", async()=>{
+    const marketId = await controller.getMarketId(trader.address);
+    const bc_address = await marketmanager.getZCB(marketId);
+    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
+    const shortzcb_ad = await marketmanager.getShortZCB(marketId);
+    const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
+    const proxy_address = await creditline.getProxy(); 
+    const proxy = Proxy__factory.connect(proxy_address, owner); 
+    const wCollateral_ad = await bc.getCollateral(); 
 
-  // it("can approve and lower and upper bound is set", async()=>{
-  //   const marketId = await controller.getMarketId(trader.address);
-  //   const bc_address = await controller.getZCB_ad(marketId);
-  //   const bc = LinearBondingCurve__factory.connect(bc_address, owner);
-  //   const shortzcb_ad = await controller.getshortZCB_ad(marketId);
-  //   const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
-  //   //Check that the supply of the bondingcurve is 0, 
-  //   // await expect(bc.getTotalZCB()).to.equal(0); 
-  //   // await expect(bc.getTotalCollateral()).to.equal(0);
+    //Check that the supply of the bondingcurve is 0, 
+    // await expect(bc.getTotalZCB()).to.equal(0); 
+    // await expect(bc.getTotalCollateral()).to.equal(0);
 
+    //Do proxy SETTINGS
+    await borrowerContract.changeOwner(proxy.address); 
+    await borrowerContract.autoDelegate(proxy.address);
+    expect(await borrowerContract.owner()).to.equal(proxy.address); 
 
-  //   const upper_bound_before = await bc.getUpperBound(); 
-  //   const lower_bound_before = await bc.getLowerBound(); 
-  //   console.log('bounds_before', upper_bound_before.toString(), lower_bound_before.toString()); 
+    const upper_bound_before = await bc.getUpperBound(); 
+    const lower_bound_before = await bc.getLowerBound(); 
+    console.log('bounds_before', upper_bound_before.toString(), lower_bound_before.toString()); 
 
+    //first need to see if market reverts approving when not enough colalteral bought 
+    await expect(controller.approveMarket(marketId)).to.be.reverted; 
 
-  //   //first need to see if market reverts approving when not enough colalteral bought 
-  //   await expect(controller.approveMarket(marketId)).to.be.reverted; 
+    //then buy 0.6 * principal amount for the instrument 
+    const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    const amountToBuy = instrumentdata.principal.div(2); 
+    const amount = instrumentdata.principal.div(2); 
+    const preview = await vault.previewMint( amount); 
+    console.log('preview', preview.toString()); 
+    await collateral.connect(owner).faucet(amount); 
+    await collateral.approve(wCollateral_ad, amount.mul(20)); 
 
-  //   //then buy 0.6 * principal amount for the instrument 
-  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
-  //   const amountToBuy = instrumentdata.principal.div(2); 
-  //   const amount = instrumentdata.principal.div(2); 
-  //   const preview = await vault.previewMint( amount); 
-  //   console.log('preview', preview.toString()); 
-  //   await collateral.connect(owner).faucet(amount); 
-  //   await collateral.approve(vault.address, amount.mul(20)); 
-  //   await vault.mint(amount.mul(10).toString(), owner.address);
+    await marketmanager.buy(marketId, amount, 0); 
+    const canapprove = await marketmanager.validatorApprovalCondition( marketId ) ;
+    console.log('canapprove', canapprove)
+    const bal = await bc.balanceOf(owner.address); 
+    console.log('bal', bal.toString(),amount); 
 
-  //   await vault.approve(bc_address, amount); 
-  //   await marketmanager.buy(marketId, amount, 0); 
-  //   const canapprove = await marketmanager.validator_can_approve( marketId ) ;
-  //   console.log('canapprove', canapprove)
-  //   //Then approve this market again after chaning phase, now the instrument should be 
-  //   //credited with the proposed principal 
-  //   // await marketmanager.setAssessmentPhase(marketId, true, false); 
-  //   await collateral.connect(trader).approve(vault.address, amount.mul(20)); 
-  //   await vault.connect(trader).mint(amount.mul(10), trader.address);
-  //   await vault.connect(trader).approve(marketmanager.address, amount.mul(10)); 
-  //   const validator_vault_balance_before_approve = await vault.connect(trader).balanceOf(owner.address); 
-  //   console.log('validator_vault_balance_before_approve', validator_vault_balance_before_approve.toString()); 
+    //Then approve this market again after chaning phase, now the instrument should be 
+    //credited with the proposed principal 
+    // await marketmanager.setAssessmentPhase(marketId, true, false); 
+    await collateral.connect(trader).approve(wCollateral_ad, amount.mul(20)); 
 
-  //   //This will automatically approve the market 
-  //   await vault.approve(marketmanager.address, amount); 
-  //   await marketmanager.validator_buy(marketId); 
-    
-  //   const creditline_balance = await collateral.balanceOf(creditline.address); 
-  //   expect(creditline_balance).to.equal(instrumentdata.principal.div(pp__)); 
-  //   const validator_vault_balance_after_approve = await vault.connect(trader).balanceOf(owner.address); 
-  //   const validator_balance = await bc.balanceOf(trader.address); 
+    // //This will automatically approve the market 
+    await creditline.setValidator(owner.address); 
+    await marketmanager.validatorBuy(marketId); 
 
-  //   console.log('after_approve', validator_vault_balance_after_approve.toString(),validator_balance.toString() ); 
+    const creditline_balance = await collateral.balanceOf(creditline.address); 
+    expect(creditline_balance).to.equal(instrumentdata.principal.div(pp__)); 
+    // const validator_vault_balance_after_approve = await vault.connect(trader).balanceOf(owner.address); 
+    const validator_balance = await bc.balanceOf(trader.address); 
+    console.log('validatorbalance', validator_balance); 
 
-  //   const upper_bound = await bc.getUpperBound(); 
-  //   const lower_bound = await bc.getLowerBound(); 
-  //   console.log('bounds', upper_bound.toString(), lower_bound.toString()); 
-  //   await vault.approve(shortzcb_ad, amount); 
-  //   // await expect(marketmanager.buy(marketId, amount.div(2), 0)).to.be.reverted; 
+    // console.log('after_approve', validator_vault_balance_after_approve.toString(),validator_balance.toString() ); 
 
-  //   await marketmanager.openShort(marketId, amount.div(10), 0); 
+    const upper_bound = await bc.getUpperBound(); 
+    const lower_bound = await bc.getLowerBound(); 
+    console.log('bounds', upper_bound.toString(), lower_bound.toString()); 
+    // await vault.approve(shortzcb_ad, amount); 
+    // // await expect(marketmanager.buy(marketId, amount.div(2), 0)).to.be.reverted; 
+
+    // await marketmanager.openShort(marketId, amount.div(10), 0); 
 
 
 
-  //   });
+    });
 
 
-  // it("can drawdown/repay", async()=>{
-  //   const marketId = await controller.getMarketId(trader.address);
-  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
+  it("can drawdown/repay", async()=>{
+    const marketId = await controller.getMarketId(trader.address);
+    const instrumentdata = await vault.fetchInstrumentData(marketId); 
 
-  //   const bal_before = await collateral.balanceOf(creditline.address);
-  //   // expect(bal_before).to.equal(instrumentdata.principal); 
-  //   // await creditline.drawdown(instrumentdata.principal.div(10));
-  //   await collateral.approve(creditline.address,instrumentdata.principal );
-  //   // await creditline.repay(0, instrumentdata.principal.div(10));
+    const bal_before = await collateral.balanceOf(creditline.address);
+    console.log('balbefore', bal_before.toString()); 
+    // expect(bal_before).to.equal(instrumentdata.principal); 
+    await creditline.drawdown();
+    expect(await collateral.balanceOf(creditline.address)).to.equal(0); 
+    // expect(await collateral.balanceOf(owner.address)).to.equal(bal_before); 
 
-  //   const bal = await collateral.balanceOf(creditline.address);  
-  //  // expect(bal).to.equal(instrumentdata.principal.mul(9).div(10)); 
 
-  // }); 
+
+    await collateral.approve(creditline.address,instrumentdata.principal );
+    await creditline.repay(0, pp.mul(10));
+    const remaining = await creditline.getRemainingOwed(); 
+    console.log('remaining', remaining[0].toString(), remaining[1].toString()); 
+
+    // await creditline.repay(0, instrumentdata.principal.div(10));
+
+    // const bal = await collateral.balanceOf(creditline.address);  
+   // expect(bal).to.equal(instrumentdata.principal.mul(9).div(10)); 
+
+  }); 
 
 //    it("everyone can buy and sell", async()=>{
 

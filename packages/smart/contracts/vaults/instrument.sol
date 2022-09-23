@@ -6,6 +6,7 @@ import "./vault.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
+import "hardhat/console.sol";
 
 
 /// @notice Minimal interface for Vault compatible strategies.
@@ -63,7 +64,8 @@ abstract contract Instrument {
         Utilizer = _Utilizer;
     }
 
-    function setValidator(address _validator) external onlyAuthorized{
+    function setValidator(address _validator) external {
+        require(msg.sender == vault.owner(), "Not owner"); 
         validators.push(_validator); 
         isValidator[_validator] = true;     
     }
@@ -186,10 +188,12 @@ abstract contract Instrument {
 
 
     function transfer_liq(address to, uint256 amount) internal notLocked {
+        if (vault.decimal_mismatch()) amount = vault.decSharesToAssets(amount); 
         underlying.transfer(to, amount);
     }
 
     function transfer_liq_from(address from, address to, uint256 amount) internal notLocked {
+        if (vault.decimal_mismatch()) amount = vault.decSharesToAssets(amount); 
         underlying.transferFrom(from, to, amount);
 
     }
@@ -358,14 +362,15 @@ contract CreditLine is Instrument {
         // check if borrower has correct identity 
 
         // check if enough collateral has been added as agreed   
-        if (collateral != address(0)) {require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, 
-                "Insufficient collateral"); }
+        if (collateral_type == CollateralType.liquidateAble || collateral_type == CollateralType.nonLiquid){
+            require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, "Insufficient collateral"); 
+        }
 
         // check if validator(s) are set 
         if (validators.length == 0) {revert("No validators"); }
 
         // Check if proxy has been given ownership
-        if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert(); 
+        if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert("Ownership "); 
 
         return true; 
     } 
@@ -413,6 +418,8 @@ contract CreditLine is Instrument {
 
     /// @notice should only be called when (portion of) principal is repayed
     function adjustInterestOwed() internal {
+        console.log('dur', toSeconds(duration), drawdown_block);
+        console.log(block.timestamp); 
         uint256 remainingDuration = (drawdown_block + toSeconds(duration)) - block.timestamp; 
         interestOwed = interestAPR.mulWadDown(remainingDuration.mulWadDown(principalOwed)); 
     }
@@ -601,7 +608,7 @@ contract Proxy{
         }
 
         else{
-           // require(bytes4(data) == ownerTransferFunctions[_contract], "Different Function"); 
+            require(convertBytesToBytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
             (bool success, ) = _contract.call(data);
             require(success, "!success"); 
 
@@ -612,10 +619,47 @@ contract Proxy{
     /// in their contract other than the transferFunction contract 
     function proxyFunc(address _contract, bytes calldata data) external{
         require(msg.sender == delegator); 
-       // require(bytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
+        require(convertBytesToBytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
 
         (bool success, ) = _contract.call(data); 
         require(success, "!success"); 
 
+    }
+
+    function convertBytesToBytes4(bytes memory inBytes) internal pure returns (bytes4 outBytes4) {
+        if (inBytes.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            outBytes4 := mload(add(inBytes, 4))
+        }
+    }
+}
+
+
+contract MockBorrowerContract{
+
+    address public owner; 
+    constructor(){
+        owner = msg.sender;  
+    }
+
+    function changeOwner(address newOwner) public {
+        require(msg.sender == owner, "notowner"); 
+        owner = newOwner; 
+    } 
+
+    function onlyOwnerFunction(uint256 a) public {
+        console.log('msgsender', msg.sender, owner); 
+        require(msg.sender == owner, "notowner"); 
+        console.log('hello', a); 
+    }
+
+    function autoDelegate(address proxyad) public{
+        Proxy(proxyad).delegateOwnership(address(this), this.changeOwner.selector); 
+    }
+    fallback () external {
+        console.log('hi?'); 
     }
 }
