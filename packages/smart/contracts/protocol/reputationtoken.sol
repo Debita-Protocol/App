@@ -2,13 +2,12 @@ pragma solidity ^0.8.4;
 //https://github.com/poap-xyz/poap-contracts/tree/master/contracts
 import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
-import {IReputationNFT} from "./IReputationNFT.sol";
 import {BondingCurve} from "../bonds/bondingcurve.sol";
 import "hardhat/console.sol";
 
 
 
-contract ReputationNFT is IReputationNFT, ERC721 {
+contract ReputationNFT is ERC721 {
   mapping(uint256 => ReputationData) internal _reputation; // id to reputation
   mapping(address => uint256) internal _ownerToId;
   mapping(uint256 => TraderData[]) internal _marketData; // **MarketId to Market's data needed for calculating brier score.

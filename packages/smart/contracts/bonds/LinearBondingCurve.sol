@@ -45,7 +45,6 @@ contract LinearBondingCurve is BondingCurve {
 
     // Calculate and store maximum tokens for discounts, 
     discount_cap = _calculatePurchaseReturn(P.mulWadDown(sigma));
-    console.log('discount cap', discount_cap); 
 
     //get new initial price after saving for discounts 
     b = a.mulWadDown(discount_cap) + b;

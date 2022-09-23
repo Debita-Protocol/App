@@ -8,8 +8,24 @@ import "hardhat-gas-reporter";
 import "hardhat-typechain";
 
 
-import "./tasks";
-import { mapOverObject } from "./src/";
+// import "./tasks";
+function mapOverObject<V1, V2>(
+  o: { [k: string]: V1 },
+  fn: (k: string, v: V1) => [string, V2] | void
+): { [k: string]: V2 } {
+  const o2: { [k: string]: V2 } = {};
+  for (const key in o) {
+    const value = o[key];
+    const kv = fn(key, value);
+    if (kv === undefined) continue;
+    const [k, v] = kv;
+    if (k !== undefined) {
+      o2[k] = v;
+    }
+  }
+  return o2;
+}
+// import { mapOverObject } from "./src/";
 import { HardhatUserConfig, NetworkUserConfig } from "hardhat/types";
 
 const ETHERSCAN_API_KEY = process.env["ETHERSCAN_API_KEY"] || "CH7M2ATCZABP2GIHEF3FREWWQPDFQBSH8G";
@@ -19,6 +35,8 @@ export const NO_OWNER = "0x0000000000000000000000000000000000000001";
 
 export const config: HardhatUserConfig = {
   paths: {
+    sources: "./contracts",
+    tests: "./test",
     artifacts: "./dist/artifacts",
   },
   gasReporter: {
@@ -134,7 +152,7 @@ export const config: HardhatUserConfig = {
       live: true,
       url: "https://rpc-mumbai.maticvigil.com/v1/d955b11199dbfd5871c21bdc750c994edfa52abd",
       chainId: 80001,
-      confirmations: 2,
+     /// confirmations: 2,
       accounts: ['5505f9ddf81b3aa83661c849fe8d56ea7a02dd3ede636f47296d85a7fc4e3bd6',
       'f7c11910f42a6cab4436bffea7dca20fed310bd794b7c37a930cc013ae6392d2'],
    gas: 1000000000,

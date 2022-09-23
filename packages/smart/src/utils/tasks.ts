@@ -1,6 +1,6 @@
 import { CLIArgumentType } from "hardhat/types";
 import { BigNumber, ethers, BigNumberish } from "ethers";
-import { IERC20Full } from "../../typechain";
+// import { IERC20Full } from "../../typechain";
 import { MAX_UINT256 } from "./constants";
 import { isBytes, isHexString } from "@ethersproject/bytes";
 
