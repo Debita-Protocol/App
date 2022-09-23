@@ -2828,17 +2828,20 @@ export const getMarketInfos = async (
   blocknumber: number
 ): Promise<{ markets: MarketInfos; ammExchanges: AmmExchanges; blocknumber: number }> => {
   const factories = marketFactories(loadtype);
-  const addresses_ =   {...addresses["80001"]}
+  // const addresses_ =   {...addresses["80001"]}
   console.log("factories: ", factories)
 
-  // TODO: currently filtering out market factories that don't have rewards
+  // need to filter for the correct markets.
   const allMarkets = await Promise.all(
-    factories.filter((f) => f.hasRewards).map((config) => fetcherMarketsPerConfig(config, provider, account)) // *
+    factories.filter((f) => f.hasRewards).map((config) => fetcherMarketsPerConfig(config, provider, account))
   );
 
   // first market infos get all markets with liquidity
   const aMarkets = allMarkets.reduce((p, data) => ({ ...p, ...data.markets }), {});
+
+  // only updating the markets that were filtered above
   let filteredMarkets = { ...markets, ...aMarkets };
+
   const newBlocknumber = allMarkets.reduce((p, data) => (p > data.blocknumber ? p : data.blocknumber), 0);
 
   if (Object.keys(ignoreList).length === 0) {

@@ -20,8 +20,7 @@ abstract contract BondingCurve is OwnedERC20 {
   uint256 internal math_precision; 
   uint256 public collateral_dec;
   ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
-  address[] private buyers; // keeps track for final reputation.
-  uint256 discounted_supply; 
+  uint256 discounted_supply;
 
   address shortZCB; 
   constructor (
@@ -148,9 +147,6 @@ abstract contract BondingCurve is OwnedERC20 {
   function calcAreaUnderCurve(uint256 amount) public view  returns(uint){
     return _calcAreaUnderCurve(amount); 
   }
-
-
-
 
   /**
    @notice calculates expected price given user buys X tokens
