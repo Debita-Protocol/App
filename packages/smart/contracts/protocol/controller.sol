@@ -1,5 +1,4 @@
 pragma solidity ^0.8.4;
-import "../turbo/TrustedMarketFactoryV3.sol";
 import {MarketManager, WrappedCollateral} from "./marketmanager.sol";
 import {ReputationNFT} from "./reputationtoken.sol";
 import {OwnedERC20} from "../turbo/OwnedShareToken.sol";
@@ -14,6 +13,8 @@ import {VaultFactory} from "./factories.sol";
 import "hardhat/console.sol";
 import "@interep/contracts/IInterep.sol";
 import {config} from "./helpers.sol"; 
+import {ShortBondingCurve} from "../bonds/LinearShortZCB.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 // Controller contract responsible for providing initial liquidity to the
@@ -44,7 +45,7 @@ contract Controller {
   address creator_address;
 
   IInterep interep;
-  TrustedMarketFactoryV3 marketFactory;
+  // TrustedMarketFactoryV3 marketFactory;
   MarketManager marketManager;
   ReputationNFT repNFT; 
   LinearBondingCurveFactory linearBCFactory; 
@@ -94,10 +95,10 @@ contract Controller {
       marketManager = MarketManager(_marketManager);
   }
 
-  function setMarketFactory(address _marketFactory) public onlyOwner {
-      require(_marketFactory != address(0));
-      marketFactory = TrustedMarketFactoryV3(_marketFactory);
-  }
+  // function setMarketFactory(address _marketFactory) public onlyOwner {
+  //     require(_marketFactory != address(0));
+  //     marketFactory = TrustedMarketFactoryV3(_marketFactory);
+  // }
 
   function setReputationNFT(address NFT_address) public onlyOwner{
       repNFT = ReputationNFT(NFT_address); 
@@ -178,10 +179,10 @@ contract Controller {
     uint256 I, 
     uint256 sigma, 
     uint256 marketId
-    ) internal returns(OwnedERC20[] memory) {
+    ) internal returns (BondingCurve, ShortBondingCurve) {
 
     //TODO abstractFactory 
-    OwnedERC20[] memory zcb_tokens = new OwnedERC20[](2);
+    //OwnedERC20[] memory zcb_tokens = new OwnedERC20[](2);
     WrappedCollateral wCollateral = new WrappedCollateral(
       "name", 
       "symbol", 
@@ -189,43 +190,44 @@ contract Controller {
       address(getVault(marketId).UNDERLYING())
       ); 
 
-    zcb_tokens[0] = linearBCFactory.newLongZCB(
+    BondingCurve _long = linearBCFactory.newLongZCB(
       string(abi.encodePacked(baseName, "-", Strings.toString(nonce))),
      string(abi.encodePacked(baseSymbol, Strings.toString(nonce))), 
-     address(marketManager), 
+     address(marketManager),
      address(wCollateral),
     // getVaultAd( marketId), 
      P,
      I, 
-     sigma); 
+     sigma);
 
-    zcb_tokens[1] = linearBCFactory.newShortZCB(
+    ShortBondingCurve _short = linearBCFactory.newShortZCB(
       string(abi.encodePacked(s_baseName, "-", Strings.toString(nonce))), 
       string(abi.encodePacked(s_baseSymbol, Strings.toString(nonce))), 
       address(marketManager),
       address(wCollateral),  
 
       // getVaultAd( marketId), 
-      address(zcb_tokens[0]), 
+      address(_long), 
       marketId); 
 
     nonce++;
 
-    return zcb_tokens;
+    return (_long, _short);
   }
 
 
 
   function _initialMarketmanagerSetup(
-    uint256 marketId, 
-    address shortZCB, 
+    uint256 marketId,
     Vault.InstrumentData memory instrumentData
   ) internal {
     uint256 base_budget = 1000 * config.WAD; //TODO, maybe can be function of balance of vt tokens?
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
     uint256 delta = marketManager.getParameters(marketId).delta;
     marketManager.setMarketPhase(marketId, true, true, base_budget); //TODO => marketManager.initializeMarket  
-    marketManager.add_short_zcb( marketId, shortZCB); 
+    //marketManager.add_short_zcb( marketId, shortZCB);
+    marketManager.setCurves(marketId);
+    marketManager.setCurves(marketId);
     marketManager.setValidatorCap(marketId, instrumentData.principal, instrumentData.expectedYield); 
     marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
   }
@@ -245,7 +247,9 @@ contract Controller {
     require(address(vaults[vaultId]) != address(0), "Vault doesn't' exist");
     Vault vault = Vault(vaults[vaultId]); 
 
-    uint256 marketId = marketFactory.marketCount();
+    //uint256 marketId = marketFactory.marketCount();
+    uint256 marketId = marketManager.marketCount();
+    
     id_parent[marketId] = vaultId; 
 
     marketManager.setParameters(
@@ -253,16 +257,24 @@ contract Controller {
       vault.utilizationRate(), 
       marketId); 
 
-    OwnedERC20[] memory zcb_tokens = createZCBs(
+    (BondingCurve _long, ShortBondingCurve _short) = createZCBs(
       instrumentData.principal,
       instrumentData.expectedYield, 
       marketManager.getParameters(marketId).sigma, 
-      marketId); 
+      marketId
+    );
 
-    require(marketFactory.createZCBMarket(
-      address(this), // controller is the settlement address
+    // require(marketFactory.createZCBMarket(
+    //   address(this), // controller is the settlement address
+    //   instrumentData.description,
+    //   zcb_tokens) == marketId, "MarketID err"); 
+
+    marketManager.createMarket(
+      _long,
+      _short,
       instrumentData.description,
-      zcb_tokens) == marketId, "MarketID err"); 
+      block.timestamp
+    );
 
 
     ad_to_id[recipient] = marketId; //only for testing purposes, one utilizer should be able to create multiple markets
@@ -274,7 +286,7 @@ contract Controller {
 
     market_data[marketId] = MarketData(instrumentData.Instrument_address, recipient);
 
-    _initialMarketmanagerSetup(marketId, address(zcb_tokens[1]), instrumentData ); //TODO just get shortZCB from controller? gas dif
+    _initialMarketmanagerSetup(marketId, instrumentData ); //TODO just get shortZCB from controller? gas dif
  
     repNFT.storeTopReputation(marketManager.getParameters(marketId).r,  marketId); 
 
@@ -326,9 +338,9 @@ contract Controller {
 
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
     marketManager.deactivateMarket(marketId, atLoss);
-    
-    uint256 winning_outcome = atLoss? 0 : 1; 
-    marketFactory.trustedResolveMarket(marketId, winning_outcome);//Winning Outcome TODO
+  
+    // uint256 winning_outcome = atLoss? 0 : 1; 
+    // marketFactory.trustedResolveMarket(marketId, winning_outcome);//Winning Outcome TODO
 
     cleanUpDust(marketId); 
   }
@@ -340,10 +352,9 @@ contract Controller {
   function cleanUpDust(
     uint256 marketId
     ) internal {
-    WrappedCollateral(BondingCurve(getZCB_ad(marketId)).getCollateral()).flush(
+    WrappedCollateral(marketManager.getZCB(marketId).getCollateral()).flush(
       getVaultAd( marketId)
-      ); 
-
+      );
   }
 
   /// @notice called when market is resolved 
@@ -395,11 +406,10 @@ contract Controller {
   external onlyManager {
     uint256 implied_probs = marketManager.assessment_probs(marketId, trader);
 
-    if(increment){
+    if (increment) {
       uint256 scoreToAdd = implied_probs.mulDivDown(implied_probs, config.WAD); //Experiment
       repNFT.addScore(trader, scoreToAdd);
-    }
-    else{
+    } else{
       uint256 scoreToDeduct = implied_probs.mulDivDown(implied_probs, config.WAD); //Experiment
       repNFT.decrementScore(trader, scoreToDeduct); 
     }
@@ -433,7 +443,7 @@ contract Controller {
       uint256 marketId
   ) external onlyManager {
     Vault vault = vaults[id_parent[marketId]]; 
-    BondingCurve bc = BondingCurve(getZCB_ad(marketId)); 
+    BondingCurve bc = marketManager.getZCB(marketId); //BondingCurve(getZCB_ad(marketId)); 
 
     require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
     require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
@@ -461,9 +471,10 @@ contract Controller {
   /// @notice receives necessary market information. Only applicable for creditlines 
   /// required for market approval such as max principal, quoted interest rate
   function fetchMarketDataForApproval(uint256 marketId) internal view returns(ApprovalData memory){
-    BondingCurve bc = BondingCurve(getZCB_ad(marketId)); 
+    //BondingCurve bc = BondingCurve(getZCB_ad(marketId)); 
+    BondingCurve bc = marketManager.getZCB(marketId);
 
-    // get max_principal which is (s+1) * total bought for creditline, or just be
+    // get max_principal which is (s+1) * total long bought for creditline, or just be
     // proposed principal for other instruments 
     uint256 max_principal = (marketManager.getParameters(marketId).s + config.WAD).mulWadDown(
                             bc.getTotalCollateral()) ; 
@@ -485,8 +496,8 @@ contract Controller {
     
     marketManager.denyMarket(marketId);
     
-    uint256 winning_outcome = 0; //TODO  
-    marketFactory.trustedResolveMarket(marketId, winning_outcome);
+    // uint256 winning_outcome = 0; //TODO  
+    // marketFactory.trustedResolveMarket(marketId, winning_outcome);
 
     vaults[id_parent[marketId]].denyInstrument(marketId);
 
@@ -499,18 +510,18 @@ contract Controller {
     return ad_to_id[recipient];
   }
 
-  function getZCB(uint256 marketId) public view returns (OwnedERC20){
-    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-    return OwnedERC20(market.shareTokens[0]);
-  }
-  function getZCB_ad(uint256 marketId) public view returns (address){
-    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-    return address(OwnedERC20(market.shareTokens[0]));
-  }
-  function getshortZCB_ad(uint256 marketId) public view returns(address){
-    AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
-    return address(OwnedERC20(market.shareTokens[1]));
-  }
+  // function getZCB(uint256 marketId) public view returns (OwnedERC20){
+  //   AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+  //   return OwnedERC20(market.shareTokens[0]);
+  // }
+  // function getZCB_ad(uint256 marketId) public view returns (address){
+  //   AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+  //   return address(OwnedERC20(market.shareTokens[0]));
+  // }
+  // function getshortZCB_ad(uint256 marketId) public view returns(address){
+  //   AbstractMarketFactoryV3.Market memory market = marketFactory.getZCBMarket(marketId);
+  //   return address(OwnedERC20(market.shareTokens[1]));
+  // }
 
   function getVault(uint256 marketId) public view returns(Vault){
     return vaults[id_parent[marketId]]; 

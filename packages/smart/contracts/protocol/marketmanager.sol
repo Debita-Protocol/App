@@ -60,6 +60,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   uint32 private callbackGasLimit = 100000;
   uint16 private requestConfirmations = 3;
 
+
+
   struct ValidatorData{
     uint256 val_cap;// total zcb validators can buy at a discount
     uint256 avg_price; //price the validators can buy zcb at a discount 
@@ -82,6 +84,15 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   ReputationNFT rep;
   Controller controller;
 
+  struct CoreMarketData {
+    BondingCurve long;
+    ShortBondingCurve short;
+    string description; // instrument description
+    uint256 creationTimestamp;
+    uint256 resolutionTimestamp;
+  }
+
+  CoreMarketData[] markets;
   mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
   mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
   mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
@@ -110,6 +121,10 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 base_budget;
   }
 
+  ///// Shorting logic  /////
+  mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
+  // mapping(uint256=>address) shortZCBs; 
+  mapping(uint256=>mapping(address=>uint256) )assessment_shorts; // short collateral during assessment
 
   /// @param N: upper bound on number of validators chosen.
   /// @param sigma: validators' stake
@@ -150,9 +165,9 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     address _creator_address,
     address reputationNFTaddress,  
     address _controllerAddress,
-    address _vrfCoordinator,
-    bytes32 _keyHash,
-    uint64 _subscriptionId
+    address _vrfCoordinator, // 0x7a1bac17ccc5b313516c5e16fb24f7659aa5ebed
+    bytes32 _keyHash, // 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f
+    uint64 _subscriptionId // 1713
   ) Owned(_creator_address) VRFConsumerBaseV2(_vrfCoordinator) {
     rep = ReputationNFT(reputationNFTaddress);
     controller = Controller(_controllerAddress);
@@ -160,7 +175,38 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     subscriptionId = _subscriptionId;
     COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
     // BookKeeper bookkepper = f
+    
+    // push empty market
+    markets.push(
+      CoreMarketData(
+        BondingCurve(address(0)),
+        ShortBondingCurve(address(0)),
+        "",
+        0,
+        0
+      )
+    );
   }
+
+  function marketCount() public view returns (uint256) {
+    return markets.length;
+  }
+
+  function createMarket(
+    BondingCurve _long,
+    ShortBondingCurve _short,
+    string calldata _description,
+    uint256 _creationTimestamp
+  ) external onlyController returns (uint256 marketId) {
+    marketId = markets.length;
+    markets.push(CoreMarketData(
+      _long,
+      _short,
+      _description,
+      _creationTimestamp,
+      0
+    ));
+  } 
 
   /*----Phase Functions----*/
 
@@ -200,6 +246,24 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     data.alive = true;
   }
 
+  /**
+   @notice setup for long and short ZCBs.
+   */
+  function setCurves(
+    uint256 marketId
+  ) external onlyController {
+    isShortZCB[marketId][address(markets[marketId].short)] = true;
+    markets[marketId].long.setShortZCB(address(markets[marketId].short));
+  }
+
+  function getZCB(uint256 marketId) public view returns (BondingCurve) {
+    return markets[marketId].long;
+  } 
+
+  function getShortZCB(uint256 marketId) public view returns (ShortBondingCurve) {
+    return markets[marketId].short;
+  } 
+
   /// @notice used to transition from reputationphases 
   function setReputationPhase(
     uint256 marketId,
@@ -232,7 +296,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId, 
     uint256 new_upper_bound
     ) external onlyController  {
-    BondingCurve(controller.getZCB_ad(marketId)).setUpperBound(new_upper_bound);
+    //BondingCurve(controller.getZCB_ad(marketId)).setUpperBound(new_upper_bound);
+    markets[marketId].long.setUpperBound(new_upper_bound);
   }
     
   /// @notice called by controller when market is approved
@@ -240,7 +305,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId, 
     uint256 new_lower_bound
     ) private {
-    BondingCurve(controller.getZCB_ad(marketId)).setLowerBound(new_lower_bound);
+    // BondingCurve(controller.getZCB_ad(marketId)).setLowerBound(new_lower_bound);
+    markets[marketId].long.setLowerBound(new_lower_bound);
   }
 
   /* 
@@ -296,7 +362,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
   /// @notice returns true if amount bought is greater than the insurance threshold
   function marketCondition(uint256 marketId) public view returns(bool){
-    BondingCurve bc = BondingCurve(controller.getZCB_ad(marketId)); 
+    //BondingCurve bc = BondingCurve(controller.getZCB_ad(marketId)); 
+    BondingCurve bc = markets[marketId].long;
     uint256 principal = controller.getVault(marketId).fetchInstrumentData(marketId).principal;
     uint256 total_bought = bc.getTotalCollateral();
 
@@ -336,7 +403,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   /// sqrt for now
   function getTraderBudget(uint256 marketId, address trader) public view returns(uint256){
     uint256 repscore = rep.getReputationScore(trader); 
-    uint256 collateral_dec =  BondingCurve(controller.getZCB_ad(marketId)).collateral_dec(); 
+    //uint256 collateral_dec =  BondingCurve(controller.getZCB_ad(marketId)).collateral_dec(); 
+    uint256 collateral_dec = markets[marketId].long.collateral_dec();
     if (repscore==0) return 0; 
 
     return restriction_data[marketId].base_budget + (repscore*config.WAD).sqrt();
@@ -409,7 +477,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId
   ) internal view returns(bool) {
     require(marketActive(marketId), "Market Not Active");
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+    //BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+    BondingCurve zcb = markets[marketId].long;
 
     // For current onchain conditions, the estimated collateral 
     // trader would obtain should be less than budget  
@@ -460,7 +529,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 principal,
     uint256 interest
   ) external onlyController{
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+    //BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+    BondingCurve zcb = markets[marketId].long;
     assert(config.isInWad(parameters[marketId].sigma) && config.isInWad(principal));
 
     uint256 valColCap = (parameters[marketId].sigma.mulWadDown(principal)); 
@@ -500,12 +570,9 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
   /**
    @notice randomly choose validators for market approval, async operation => fulfillRandomness is the callback function.
+   @dev called when phase changes onlyRep => false
    */
-  function getValidators(uint256 marketId) public {
-    require(restriction_data[marketId].alive, "market doesn't exist");
-    require(restriction_data[marketId].duringAssessment, "market must be during assessment");
-    require(!validator_data[marketId].requested, "already requested validators");
-    require(!restriction_data[marketId].onlyReputable, "must not be called during reputation phase");
+  function _getValidators(uint256 marketId) internal {
 
     validator_data[marketId].requested = true;
 
@@ -527,7 +594,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   }
 
   /**
-   @notice chainlink callback function
+   @notice chainlink callback function, sets validators.
    */
   function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
     uint256 marketId = requestToMarketId[requestId];
@@ -554,7 +621,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId
   ) external  {
     require(marketCondition(marketId), "Market can't be approved"); 
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+    // BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+    BondingCurve zcb = markets[marketId].long;
 
     uint256 val_cap =  validator_data[marketId].val_cap; 
     uint256 zcb_for_sale = val_cap/parameters[marketId].N; 
@@ -616,7 +684,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     require(!restriction_data[_marketId].resolved, "must not be resolved");
     _canBuy(msg.sender, _collateralIn, _marketId);
 
-    BondingCurve zcb = BondingCurve(controller.getZCB_ad(_marketId)); // SOMEHOW GET ZCB
+    // BondingCurve zcb = BondingCurve(controller.getZCB_ad(_marketId)); // SOMEHOW GET ZCB
+    BondingCurve zcb = markets[_marketId].long;
     WrappedCollateral wCollateral = WrappedCollateral(zcb.getCollateral()); 
 
     // Mint wCollateral to this address
@@ -648,6 +717,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
         if (total_bought >= parameters[_marketId].omega.mulWadDown(principal)) {
           setReputationPhase(_marketId, false);
+          _getValidators(_marketId);
         }
       }
       _logAssessmentTrade(
@@ -677,7 +747,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
       _zcb_amount_in, 
       _marketId),"Trade Restricted");
 
-    BondingCurve zcb = BondingCurve(controller.getZCB_ad(_marketId)); // SOMEHOW GET ZCB
+    //BondingCurve zcb = BondingCurve(controller.getZCB_ad(_marketId)); // SOMEHOW GET ZCB
+    BondingCurve zcb = markets[_marketId].long;
 
     zcb.transferFrom(msg.sender, address(this), _zcb_amount_in); 
 
@@ -697,23 +768,14 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
   function deduct_selling_fee() internal {}
 
+  // function add_short_zcb(
+  //   uint256 marketId
+  // ) external onlyController{
+  //   isShortZCB[marketId][markets[marketId].short] = true;
+  //   shortZCBs[marketId] = shortZCB_address;
+  //   BondingCurve(markets[marketId].long).setShortZCB(shortZCB_address); 
 
-  ///// Shorting logic  /////
-  mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
-  mapping(uint256=>address) shortZCBs; 
-  mapping(uint256=>mapping(address=>uint256) )assessment_shorts; // short collateral during assessment
-
-
-  function add_short_zcb(
-    uint256 marketId,
-    address shortZCB_address
-  ) external onlyController{
-    isShortZCB[marketId][shortZCB_address] = true;
-    shortZCBs[marketId] = shortZCB_address;
-
-    BondingCurve(controller.getZCB_ad(marketId)).setShortZCB(shortZCB_address); 
-
-  }
+  // }
 
   /**
    @param collateralIn: amount of collateral (vt)
@@ -729,7 +791,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
       // queuedRepUpdates[msg.sender] += 1; 
 
     }
-    ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]); 
+    //ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]); 
+    ShortBondingCurve shortZCB = markets[marketId].short;
     WrappedCollateral wCollateral = WrappedCollateral(shortZCB.getCollateral()); 
 
     // Mint wCollateral to this address
@@ -763,7 +826,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId, 
     uint256 requested_zcb
     ) internal {
-    BondingCurve zcb = BondingCurve(controller.getZCB_ad(marketId));
+    // BondingCurve zcb = BondingCurve(controller.getZCB_ad(marketId));
+    BondingCurve zcb = markets[marketId].long;
 
     // Log debt data 
     CDP storage cdp = debt_pools[marketId];
@@ -773,7 +837,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     cdp.total_collateral += requested_zcb; //only ds 
     collateral_pot[marketId] += requested_zcb; //Total ds collateral 
 
-    zcb.trustedDiscountedMint(shortZCBs[marketId], requested_zcb); 
+    zcb.trustedDiscountedMint(address(markets[marketId].short), requested_zcb); 
   }
 
    function _repayForShort(
@@ -781,7 +845,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId, 
     uint256 repaying_zcb
     ) internal {
-    BondingCurve zcb = BondingCurve(controller.getZCB_ad(marketId));
+    // BondingCurve zcb = BondingCurve(controller.getZCB_ad(marketId));
+    BondingCurve zcb = markets[marketId].long;
 
     CDP storage cdp = debt_pools[marketId];
     cdp.collateral_amount[trader] -= repaying_zcb; 
@@ -800,7 +865,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     ) external _lock_ {
 
 
-    ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]);
+    
+    ShortBondingCurve shortZCB = markets[marketId].short; //ShortBondingCurve(shortZCBs[marketId]);
 
     _repayForShort(msg.sender, marketId, close_amount);
 
@@ -815,7 +881,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     }
 
     // Now burn the contract's bought longZCB imediately  
-    BondingCurve(controller.getZCB_ad(marketId)).trustedDiscountedBurn(shortZCBs[marketId], tokenToBeBurned);
+    markets[marketId].long.trustedDiscountedBurn(address(shortZCB), tokenToBeBurned);
 
     // Return collateral to trader 
     WrappedCollateral(shortZCB.getCollateral()).redeem(address(this), msg.sender, returned_collateral); 
@@ -833,7 +899,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId 
     ) external _lock_ returns(uint256){
     require(!marketActive(marketId), "Market Active"); 
-    LinearShortZCB shortZCB = LinearShortZCB(shortZCBs[marketId]);
+    // LinearShortZCB shortZCB = LinearShortZCB(shortZCBs[marketId]);
+    ShortBondingCurve shortZCB = markets[marketId].short;
     uint256 shortZCB_redeem_amount = shortZCB.balanceOf(msg.sender); 
     shortZCB.trustedBurn(msg.sender, shortZCB_redeem_amount); 
     assert(controller.getVault(marketId).balanceOf(address(shortZCB))==0);
@@ -857,7 +924,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     // Get collateral at stake in shorts, which will be directly given back to traders
     if(!isLong){
-      ShortBondingCurve shortZCB = ShortBondingCurve(shortZCBs[marketId]);
+      ShortBondingCurve shortZCB = markets[marketId].short;
       require(shortZCB.balanceOf(msg.sender) >= 0, "Empty Balance");
 
       collateral_amount = shortTrades[marketId][msg.sender]; 
@@ -869,7 +936,9 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     // Get collateral at stake in longs, which will be directly given back to traders
     else {
-      BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+      // BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+      BondingCurve zcb = markets[marketId].long;
+
       require(zcb.balanceOf(msg.sender) >= 0, "Empty Balance");
 
       if (isValidator(marketId, msg.sender)) {
@@ -917,9 +986,10 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 loss
   ) external  onlyController {  
     if (atLoss) assert(extra_gain == 0); 
-    assert(debt_pools[marketId].total_debt == ShortBondingCurve(shortZCBs[marketId]).totalSupply());
+    assert(debt_pools[marketId].total_debt == markets[marketId].short.totalSupply());
 
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+    // BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
+    BondingCurve zcb = markets[marketId].long;
 
     uint256 total_supply = zcb.getTotalZCB(); 
     uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt :0; 
@@ -951,7 +1021,9 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     if (isValidator(marketId, msg.sender)) delete validator_data[marketId].sales[msg.sender]; 
 
-    BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+    //BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
+    BondingCurve zcb = markets[marketId].long;
+
     assert(controller.getVault(marketId).balanceOf(address(zcb))==0);
 
     uint256 zcb_redeem_amount = zcb.balanceOf(msg.sender); 

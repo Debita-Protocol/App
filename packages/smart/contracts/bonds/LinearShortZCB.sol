@@ -68,6 +68,8 @@ abstract contract ShortBondingCurve is OwnedERC20{
   /// this contract then borrows longZCB +sell it from marketmanager, collateral from sell sent back here
   /// @dev at maturity funds here will be burned and redeemed amount will be minted just like longZCB 
   /// Function needs to follow the following
+  /// @param collateral_amount: amount (vt) used to mint shortzc
+  /// @dev trader is always market manager
   function trustedShort(
     address trader, 
     uint256 collateral_amount,
@@ -77,7 +79,7 @@ abstract contract ShortBondingCurve is OwnedERC20{
     uint256 balance_before = collateral.balanceOf(address(this)); 
 
     (shortTokensToMint,
-     supply_after_sell) = calculateAmountGivenSell(collateral_amount); // already calculated before
+     supply_after_sell) = calculateAmountGivenSell(collateral_amount);
     collateral.safeTransferFrom(trader, address(this), collateral_amount); 
 
     // min_amount_out will automatically take care of slippage

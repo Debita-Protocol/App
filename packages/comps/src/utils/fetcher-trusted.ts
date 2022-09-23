@@ -36,8 +36,6 @@ export const fetchContractData = async (config: MarketFactory, provider: Web3Pro
 
   const masterChef = MasterChef__factory.connect(config.masterChef, getProviderOrSigner(provider, account));
   const ammFactoryContract = AMMFactory__factory.connect(config.ammFactory, getProviderOrSigner(provider, account));
-  // console.log('contract', fetcherContract, 'marketFactoryContract',marketFactoryContract, 
-  //   'ammFactoryContract',ammFactoryContract, 'masterChef', masterChef, offset, bundleSize)
 
   const { factoryBundle, markets, timestamp } = await fetchInitialTrusted(
     fetcherContract,
@@ -58,8 +56,6 @@ export const fetchContractData = async (config: MarketFactory, provider: Web3Pro
     );
     throw new Error("contract data too old");
   }
-
-
 
   const raw_prices = (await Promise.all(
     markets.map(m=>{ return getBondingCurvePrice(account,provider, m.marketId.toString()) })

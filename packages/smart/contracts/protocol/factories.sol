@@ -56,7 +56,7 @@ contract VaultFactory{
     bool _onlyVerified, 
     uint256 _r, 
     uint256 _asset_limit,
-    uint256 _total_asset_limit, 
+    uint256 _total_asset_limit,
     MarketManager.MarketParameters memory default_params
   ) external onlyController returns(Vault, uint256) {
     require(default_params.alpha >= 1e16, "Alpha too small"); 
@@ -76,8 +76,4 @@ contract VaultFactory{
     return (vault, numVaults); 
 
   }
-
-
-
-
 }
