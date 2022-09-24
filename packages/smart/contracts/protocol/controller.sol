@@ -234,9 +234,8 @@ contract Controller {
     uint256 base_budget = 1000 * config.WAD; //TODO, maybe can be function of balance of vt tokens?
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
     uint256 delta = marketManager.getParameters(marketId).delta;
+    
     marketManager.setMarketPhase(marketId, true, true, base_budget); //TODO => marketManager.initializeMarket  
-    //marketManager.add_short_zcb( marketId, shortZCB);
-    marketManager.setCurves(marketId);
     marketManager.setCurves(marketId);
     marketManager.setValidatorCap(marketId, instrumentData.principal, instrumentData.expectedYield); 
     marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
@@ -436,7 +435,7 @@ contract Controller {
     // move liquidity from wCollateral to vault, which will be used to fund the instrument
     // this debt will be stored to later pull back to wCollateral  
     uint256 reserves = bc.getReserves(); 
-    vault.UNDERLYING().transferFrom(bc.getCollateral(), address(vault), reserves); //should have max approval 
+    WrappedCollateral(bc.getCollateral()).trustedTransfer(address(vault), reserves); 
     vault_debt[marketId] = reserves; 
 
     // Trust and deposit to the instrument contract
@@ -452,15 +451,14 @@ contract Controller {
 
     // get max_principal which is (s+1) * total long bought for creditline, or just be
     // proposed principal for other instruments 
-    console.log('?', marketManager.getParameters(marketId).s + config.WAD); 
     uint256 max_principal = (marketManager.getParameters(marketId).s + config.WAD).mulWadDown(
                             bc.getTotalCollateral()) ; 
+    console.log('maxprincipal', max_principal); 
     max_principal = min(max_principal, proposed_principal); 
 
     // Notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
     // where area under curve is max_principal 
     uint256 quoted_interest = bc.calculateArbitraryPurchaseReturn(max_principal, 0) - max_principal; 
-    console.log('maxmin', quoted_interest, proposed_yield);
 
     approvalDatas[marketId] = ApprovalData(max_principal, quoted_interest); 
   }

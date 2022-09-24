@@ -31,14 +31,13 @@ contract WrappedCollateral is OwnedERC20{
       // collateral_dec = collateral.decimals();
       collateral.approve(owner, type(uint256).max); 
 
-      uint256 dec_dif = decimals() - collateral.decimals(); //12 for USDC, 0 for 18
+      dec_dif = decimals() - collateral.decimals(); //12 for USDC, 0 for 18
     }
 
   /// @notice called when buying 
   /// @param _amount is always in 18 
   function mint(address _from, address _target, uint256 _amount) external {
     uint256 amount = _amount/(10**dec_dif); 
-
     collateral.transferFrom(_from, address(this), amount); 
     _mint(_target, _amount); 
   }
@@ -48,6 +47,12 @@ contract WrappedCollateral is OwnedERC20{
     uint256 amount = _amount/(10**dec_dif); 
 
     _burn(_from, _amount); 
+    collateral.transfer(_target, amount); 
+  }
+
+  function trustedTransfer(address _target, uint256 _amount) external {
+    require(msg.sender == owner, "Not owner"); 
+    uint256 amount = _amount/(10**dec_dif); 
     collateral.transfer(_target, amount); 
   }
 
@@ -234,9 +239,8 @@ contract MarketManager is Owned
     ) external onlyController{
 
     parameters[marketId] = param; 
-    parameters[marketId].s = parameters[marketId].s.mulWadDown(config.WAD - utilizationRate); // experiment 
+    parameters[marketId].s = param.s.mulWadDown(config.WAD - utilizationRate); // experiment 
   }
-
 
   /// @notice gets the top percentile reputation score threshold 
   function calcMinRepScore(uint256 marketId) internal view returns(uint256){

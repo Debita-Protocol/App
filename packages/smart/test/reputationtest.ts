@@ -127,11 +127,11 @@ describe("Cycle", ()=>{
   let vault_ad: string;
   let vaultId: string; 
 
-  const principal = 10000000;
+  const principal = 1000;
   const drawdown = 5000000; 
-  const interestAPR = 100000; 
-  const duration = 10000000; 
-  const faceValue = 12000000; 
+  const interestAPR = 100; 
+  const duration = 1; 
+  const faceValue = 1100; 
 
 
   const data = {} as InstrumentData_;
@@ -173,8 +173,9 @@ describe("Cycle", ()=>{
     vault = Vault__factory.connect(vault_ad, owner) as Vault; 
 
     creditline = await CreditLine__factory.deploy(
-    vault.address, trader.address, principal, interestAPR, duration, faceValue, collateral.address, 
-    collateral.address, principal, 2) as CreditLine;
+    vault.address, trader.address, pp.mul(principal), pp.mul(interestAPR), pp.mul(duration), 
+      pp.mul(faceValue), collateral.address, 
+    collateral.address, pp.mul(principal), 2) as CreditLine;
 
     borrowerContract = await MockBorrowerContract__factory.deploy() as MockBorrowerContract; 
     ///SETTINGS
@@ -206,11 +207,11 @@ describe("Cycle", ()=>{
   it("can add proposal and create market", async()=> {
     data.trusted = false; 
     data.balance = pp.mul(0).toString();
-    data.faceValue = pp.mul(1100).toString();
+    data.faceValue = pp.mul(faceValue).toString();
     data.marketId = pp.mul(0).toString(); 
-    data.principal = pp.mul(1000).toString();
-    data.expectedYield = pp.mul(100).toString();
-    data.duration = pp.mul(10).toString();
+    data.principal = pp.mul(principal).toString();
+    data.expectedYield = pp.mul(interestAPR).toString();
+    data.duration = pp.mul(duration).toString();
     data.description = "test";
     data.Instrument_address = creditline.address;
     data.instrument_type = String(0);
@@ -275,6 +276,8 @@ describe("Cycle", ()=>{
 
     // //This will automatically approve the market 
     await creditline.setValidator(owner.address); 
+    await collateral.approve(vault.address, amount.mul(2)); 
+    await vault.mint(amount.mul(2), owner.address); 
     await marketmanager.validatorBuy(marketId); 
 
     const creditline_balance = await collateral.balanceOf(creditline.address); 
@@ -309,11 +312,12 @@ describe("Cycle", ()=>{
     expect(await collateral.balanceOf(creditline.address)).to.equal(0); 
     // expect(await collateral.balanceOf(owner.address)).to.equal(bal_before); 
 
-
+    var remaining = await creditline.getRemainingOwed(); 
+    console.log('remaining before', remaining[0].toString(), remaining[1].toString()); 
 
     await collateral.approve(creditline.address,instrumentdata.principal );
-    await creditline.repay(0, pp.mul(10));
-    const remaining = await creditline.getRemainingOwed(); 
+    await creditline.repay(pp.mul(10));
+    remaining = await creditline.getRemainingOwed(); 
     console.log('remaining', remaining[0].toString(), remaining[1].toString()); 
 
     // await creditline.repay(0, instrumentdata.principal.div(10));

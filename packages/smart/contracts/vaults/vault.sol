@@ -160,6 +160,7 @@ contract Vault is ERC4626, Auth{
       require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
 
       if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
+      console.log('deposit amount and current balance', underlyingAmount, UNDERLYING.balanceOf(address(this)));
 
       totalInstrumentHoldings += underlyingAmount; 
 

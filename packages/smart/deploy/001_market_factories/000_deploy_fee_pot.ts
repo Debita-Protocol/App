@@ -14,33 +14,33 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     });
   }
 
-  if (!(await deployments.getOrNull("Reputation"))) {
-    await deployments.deploy("Reputation", {
-      // contract: "Cash",
-      contract: "PlaceholderReputationToken",
-      from: deployer,
-      args: ["PlaceholderReputationToken", "PlaceholderReputationToken", 18],
-      // args: ["REPv2", "REPv2", 18],
-      log: true,
-    });
-  }
+  // if (!(await deployments.getOrNull("Reputation"))) {
+  //   await deployments.deploy("Reputation", {
+  //     // contract: "Cash",
+  //     contract: "PlaceholderReputationToken",
+  //     from: deployer,
+  //     args: ["PlaceholderReputationToken", "PlaceholderReputationToken", 18],
+  //     // args: ["REPv2", "REPv2", 18],
+  //     log: true,
+  //   });
+  // }
 
-  if (!(await deployments.getOrNull("BFactory"))) {
-    await deployments.deploy("BFactory", {
-      from: deployer,
-      args: [],
-      log: true,
-    });
-  }
+  // if (!(await deployments.getOrNull("BFactory"))) {
+  //   await deployments.deploy("BFactory", {
+  //     from: deployer,
+  //     args: [],
+  //     log: true,
+  //   });
+  // }
 
-  const collateral = (await deployments.get("Collateral")).address;
-  const reputationToken = (await deployments.get("Reputation")).address;
-if (!(await deployments.getOrNull("FeePot"))){
-  await deployments.deploy("FeePot", {
-    from: deployer,
-    args: [collateral, reputationToken],
-    log: true,
-  });}
+//   const collateral = (await deployments.get("Collateral")).address;
+//   const reputationToken = (await deployments.get("Reputation")).address;
+// if (!(await deployments.getOrNull("FeePot"))){
+//   await deployments.deploy("FeePot", {
+//     from: deployer,
+//     args: [collateral, reputationToken],
+//     log: true,
+//   });}
 };
 
 func.tags = ["FeePot"];
