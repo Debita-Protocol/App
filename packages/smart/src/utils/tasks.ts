@@ -1,6 +1,6 @@
 import { CLIArgumentType } from "hardhat/types";
 import { BigNumber, ethers, BigNumberish } from "ethers";
-import { IERC20Full } from "../../typechain";
+import { IERC20Metadata } from "../../typechain";
 import { MAX_UINT256 } from "./constants";
 import { isBytes, isHexString } from "@ethersproject/bytes";
 
@@ -27,7 +27,7 @@ export const bignumber: CLIArgumentType<ethers.BigNumber> = {
   },
 };
 
-export async function getERC20Name(contract: IERC20Full): Promise<string | null> {
+export async function getERC20Name(contract: IERC20Metadata): Promise<string | null> {
   let name: string | null = null;
 
   name = await contract.name().catch(() => null);
@@ -39,7 +39,7 @@ export async function getERC20Name(contract: IERC20Full): Promise<string | null>
 }
 
 export async function calcWei(
-  contract: IERC20Full,
+  contract: IERC20Metadata,
   small: BigNumber,
   large: BigNumber,
   all: boolean

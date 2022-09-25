@@ -3,7 +3,7 @@ import { DeploymentsExtension } from "hardhat-deploy/dist/types";
 import { calcShareFactor } from "../calcShareFactor";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { MarketFactoryContractName } from "../../constants";
-import { NBAMarketFactoryV3__factory } from "../../typechain";
+// import { NBAMarketFactoryV3__factory } from "../../typechain";
 
 export async function getCollateral(
   deployments: DeploymentsExtension
@@ -21,31 +21,31 @@ export function getFees(): [BigNumberish, BigNumberish, BigNumberish] {
   return [stakerFee, settlementFee, protocolFee];
 }
 
-export async function deployMarketFactory(
-  hre: HardhatRuntimeEnvironment,
-  marketFactoryName: MarketFactoryContractName
-) {
-  const { deployments, getNamedAccounts } = hre;
-  const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
+// export async function deployMarketFactory(
+//   hre: HardhatRuntimeEnvironment,
+//   marketFactoryName: MarketFactoryContractName
+// ) {
+//   const { deployments, getNamedAccounts } = hre;
+//   const { deployer, linkNode, protocol, owner } = await getNamedAccounts();
 
-  const { collateralAddress, shareFactor } = await getCollateral(deployments);
-  const { address: feePotAddress } = await deployments.get("FeePot");
-  const fees = getFees();
+//   const { collateralAddress, shareFactor } = await getCollateral(deployments);
+//   const { address: feePotAddress } = await deployments.get("FeePot");
+//   const fees = getFees();
 
-  // all sports constructors have the same parameters
-  const args: Parameters<NBAMarketFactoryV3__factory["deploy"]> = [
-    owner,
-    collateralAddress,
-    shareFactor,
-    feePotAddress,
-    fees,
-    protocol,
-    linkNode,
-  ];
-  await deployments.deploy(marketFactoryName, {
-    from: deployer,
-    contract: marketFactoryName,
-    args,
-    log: true,
-  });
-}
+//   // all sports constructors have the same parameters
+//   const args: Parameters<NBAMarketFactoryV3__factory["deploy"]> = [
+//     owner,
+//     collateralAddress,
+//     shareFactor,
+//     feePotAddress,
+//     fees,
+//     protocol,
+//     linkNode,
+//   ];
+//   await deployments.deploy(marketFactoryName, {
+//     from: deployer,
+//     contract: marketFactoryName,
+//     args,
+//     log: true,
+//   });
+// }

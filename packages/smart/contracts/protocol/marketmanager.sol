@@ -12,11 +12,11 @@ import {LinearShortZCB, ShortBondingCurve} from "../bonds/LinearShortZCB.sol";
 import {FixedPointMathLib} from "solmate/src/utils/FixedPointMathLib.sol";
 import {VRFConsumerBaseV2} from "../chainlink/VRFConsumerBaseV2.sol";
 import {VRFCoordinatorV2Interface} from "../chainlink/VRFCoordinatorV2Interface.sol";
-import {config} from "./helpers.sol"; 
+import {config} from "./helpers.sol";
 
 /// @notice simple wrapped collateral to be used in markets instead of 
 /// collateral. Redeemable for collateral one to one 
-contract WrappedCollateral is OwnedERC20{
+contract WrappedCollateral is OwnedERC20 {
 
   ERC20 collateral; 
 
@@ -60,8 +60,6 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   uint32 private callbackGasLimit = 100000;
   uint16 private requestConfirmations = 3;
 
-
-
   struct ValidatorData{
     uint256 val_cap;// total zcb validators can buy at a discount
     uint256 avg_price; //price the validators can buy zcb at a discount 
@@ -72,6 +70,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     mapping(address => uint256) sales; // amount of zcb bought per validator
     uint256 totalSales; // total amount of zcb bought;
   }
+
   mapping(uint256 => uint256) requestToMarketId; // chainlink request id to marketId
   mapping(uint256 => ValidatorData) validator_data; //marketId-> total amount of zcb validators can buy 
   mapping(uint256=> mapping(address=> uint256)) sale_data; //marketId-> total amount of zcb bought
@@ -524,6 +523,8 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
   /// @notice called when market initialized, calculates the average price and quantities of zcb
   /// validators will buy at a discount when approving
+  /// valcap => sigma * princpal.
+  // 
   function setValidatorCap(
     uint256 marketId,
     uint256 principal,

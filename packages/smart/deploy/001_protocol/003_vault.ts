@@ -17,7 +17,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     args,
     log: true, 
-   });
+  });
   
   // const vault_addr = (await deployments.get("Vault")).address;
   // const cr_args = [vault_addr, deployer, 1000000, 100000, 1000000, 1100000]

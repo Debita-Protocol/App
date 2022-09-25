@@ -17,8 +17,7 @@ import {ShortBondingCurve} from "../bonds/LinearShortZCB.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
-// Controller contract responsible for providing initial liquidity to the
-// borrower cds market, collect winnings when default, and burn the corresponding DS
+
 contract Controller {
   using SafeMath for uint256;
   using FixedPointMathLib for uint256;
@@ -41,6 +40,7 @@ contract Controller {
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
   mapping(uint256=> Vault) public vaults; // vault id to Vault contract
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
+  mapping(uint256=> uint256) vault_debt; //vault debt for each marketId 
 
   address creator_address;
 
@@ -434,8 +434,6 @@ contract Controller {
 
     //Now the resolveMarket function should be called in the next transaction 
   }
-
-  mapping(uint256=> uint256) vault_debt; //vault debt for each marketId 
 
   /// @notice called by the validator when market conditions are met
   /// need to move the collateral in the wCollateral to 
