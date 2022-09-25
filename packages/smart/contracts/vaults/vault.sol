@@ -160,7 +160,8 @@ contract Vault is ERC4626, Auth{
       require(getInstrumentData[instrument].trusted, "UNTRUSTED Instrument");
 
       if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
-      console.log('underlying', underlyingAmount); 
+      console.log('deposit amount and current balance', underlyingAmount, UNDERLYING.balanceOf(address(this)));
+
       totalInstrumentHoldings += underlyingAmount; 
 
       getInstrumentData[instrument].balance += underlyingAmount.safeCastTo248();
@@ -219,7 +220,10 @@ contract Vault is ERC4626, Auth{
     }
 
     function utilizationRate() public view returns(uint256){
+
+        if (totalInstrumentHoldings==0) return 0;  
         return totalInstrumentHoldings.divWadDown(totalAssets()); 
+
     }
     function totalFloat() public view returns (uint256) {
         return UNDERLYING.balanceOf(address(this));
@@ -254,7 +258,7 @@ contract Vault is ERC4626, Auth{
         require(data.principal > 0, "principal must be greater than 0");
         require(data.duration > 0, "duration must be greater than 0");
         require(data.faceValue > 0, "faceValue must be greater than 0");
-        require(data.principal >= BASE_UNIT, "Needs to be in decimal format"); // should be collateral address, not DS. Can't be less than 1.0 X?
+        require(data.principal >= BASE_UNIT, "Needs to be in decimal format"); 
         require(data.marketId > 0, "must be valid instrument");
 
         num_proposals[msg.sender] ++; 
@@ -383,10 +387,6 @@ contract Vault is ERC4626, Auth{
     function denyInstrument(uint256 marketId) external onlyController {
         InstrumentData storage data = getInstrumentData[Instruments[marketId]];
 
-        // Burn all so new can be minted  
-        // burnAll(controller.getZCB_ad(marketId)); 
-        // burnAll(controller.getshortZCB_ad(marketId)); 
-
         require(marketId > 0 && data.Instrument_address != address(0), "invalid instrument");
 
         require(!data.trusted, "can't deny approved instrument");
@@ -398,7 +398,6 @@ contract Vault is ERC4626, Auth{
     function instrumentApprovalCondition(uint256 marketId) external view returns(bool){
       return Instruments[marketId].instrumentApprovalCondition(); 
     }
-
 
 
     /// TODO 
@@ -427,7 +426,6 @@ contract Vault is ERC4626, Auth{
 
 
     function get_vault_params() public view returns(MarketManager.MarketParameters memory){
-
       return default_params; 
     }
 
@@ -453,9 +451,12 @@ contract Vault is ERC4626, Auth{
       // If instrument has non-underlying tokens, liquidate them first. 
       instrument.liquidateAllPositions(); 
 
-
     }
 
+    function viewPrincipalAndYield(uint256 marketId) public view returns(uint256,uint256){
+        InstrumentData memory data = getInstrumentData[Instruments[marketId]];
+        return (data.principal, data.expectedYield); 
+    }
 
     /// @notice a minting restrictor is set for different vaults 
     function mint(uint256 shares, address receiver) public virtual override returns (uint256 assets) {

@@ -19,7 +19,7 @@ import {config} from "./helpers.sol";
 contract WrappedCollateral is OwnedERC20 {
 
   ERC20 collateral; 
-
+  uint256 dec_dif; 
   constructor (
       string memory name,
       string memory symbol,
@@ -31,27 +31,41 @@ contract WrappedCollateral is OwnedERC20 {
       // collateral_dec = collateral.decimals();
       collateral.approve(owner, type(uint256).max); 
 
+      dec_dif = decimals() - collateral.decimals(); //12 for USDC, 0 for 18
     }
 
   /// @notice called when buying 
+  /// @param _amount is always in 18 
   function mint(address _from, address _target, uint256 _amount) external {
-    collateral.transferFrom(_from, address(this), _amount); 
+    uint256 amount = _amount/(10**dec_dif); 
+    collateral.transferFrom(_from, address(this), amount); 
     _mint(_target, _amount); 
   }
 
   /// @notice called when selling 
   function redeem(address _from, address _target, uint256 _amount) external {
+    uint256 amount = _amount/(10**dec_dif); 
+
     _burn(_from, _amount); 
-    collateral.transfer(_target, _amount); 
+    collateral.transfer(_target, amount); 
+  }
+
+  function trustedTransfer(address _target, uint256 _amount) external {
+    require(msg.sender == owner, "Not owner"); 
+    uint256 amount = _amount/(10**dec_dif); 
+    collateral.transfer(_target, amount); 
   }
 
   function flush(address flushTo) external onlyOwner{
+
     collateral.transfer(flushTo, collateral.balanceOf(address(this))); 
   }
 
 }
 
-contract MarketManager is Owned, VRFConsumerBaseV2 {
+contract MarketManager is Owned
+ // VRFConsumerBaseV2 
+ {
 
   // Chainlink Validator state variables
   VRFCoordinatorV2Interface COORDINATOR;
@@ -69,6 +83,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     bool requested; // true if already requested random numbers from array.
     mapping(address => uint256) sales; // amount of zcb bought per validator
     uint256 totalSales; // total amount of zcb bought;
+    uint256 numApprovedValidators; 
   }
 
   mapping(uint256 => uint256) requestToMarketId; // chainlink request id to marketId
@@ -163,16 +178,18 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   constructor(
     address _creator_address,
     address reputationNFTaddress,  
-    address _controllerAddress,
-    address _vrfCoordinator, // 0x7a1bac17ccc5b313516c5e16fb24f7659aa5ebed
-    bytes32 _keyHash, // 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f
-    uint64 _subscriptionId // 1713
-  ) Owned(_creator_address) VRFConsumerBaseV2(_vrfCoordinator) {
+    address _controllerAddress
+    // address _vrfCoordinator, // 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed
+    // bytes32 _keyHash, // 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f
+    // uint64 _subscriptionId // 1713
+  ) Owned(_creator_address) 
+  //VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed) 
+  {
     rep = ReputationNFT(reputationNFTaddress);
     controller = Controller(_controllerAddress);
-    keyHash = _keyHash;
-    subscriptionId = _subscriptionId;
-    COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+    keyHash = bytes32(0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f);
+    subscriptionId = 1713;
+    COORDINATOR = VRFCoordinatorV2Interface(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed);
     // BookKeeper bookkepper = f
     
     // push empty market
@@ -218,10 +235,10 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 utilizationRate,
     uint256 marketId 
     ) external onlyController{
-    parameters[marketId] = param; 
-    parameters[marketId].s = parameters[marketId].s.mulWadDown(config.WAD - utilizationRate); // experiment 
-  }
 
+    parameters[marketId] = param; 
+    parameters[marketId].s = param.s.mulWadDown(config.WAD - utilizationRate); // experiment 
+  }
 
   /// @notice gets the top percentile reputation score threshold 
   function calcMinRepScore(uint256 marketId) internal view returns(uint256){
@@ -506,7 +523,6 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
   }
 
-
   /// @notice denies market from validator 
   function denyMarket(
     uint256 marketId
@@ -597,7 +613,10 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   /**
    @notice chainlink callback function, sets validators.
    */
-  function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override {
+  function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) 
+  internal 
+  //override 
+  {
     uint256 marketId = requestToMarketId[requestId];
     assert(randomWords.length == parameters[marketId].N);
 
@@ -614,6 +633,17 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     }
   }
 
+  function getValidatorRequiredCollateral(uint256 marketId) public view returns(uint256){
+
+    uint256 val_cap =  validator_data[marketId].val_cap; 
+    uint256 zcb_for_sale = val_cap/parameters[marketId].N; 
+    return zcb_for_sale.mulWadDown(validator_data[marketId].avg_price); 
+  } 
+
+  function numValidatorLeftToApproval(uint256 marketId) public view returns(uint256){
+    return parameters[marketId].N - validator_data[marketId].numApprovedValidators; 
+  }
+
   /// @notice allows validators to buy at a discount 
   /// They can only buy a fixed amount of ZCB, usually a at lot larger amount 
   /// @dev get val_cap, the total amount of zcb for sale and each validators should buy 
@@ -622,23 +652,22 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
     uint256 marketId
   ) external  {
     require(marketCondition(marketId), "Market can't be approved"); 
-    // BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId))); // SOMEHOW GET ZCB
     BondingCurve zcb = markets[marketId].long;
 
     uint256 val_cap =  validator_data[marketId].val_cap; 
     uint256 zcb_for_sale = val_cap/parameters[marketId].N; 
     uint256 collateral_required = zcb_for_sale.mulWadDown(validator_data[marketId].avg_price); 
 
-    //require(sale_data[marketId][msg.sender] <= zcb_for_sale, "Already approved"); 
     require(validator_data[marketId].sales[msg.sender] <= zcb_for_sale, "already approved");
 
-
-    //sale_data[marketId][msg.sender] += zcb_for_sale; 
     validator_data[marketId].sales[msg.sender] += zcb_for_sale;
-    //total_validator_bought += (zcb_for_sale +1);  //since division rounds down 
     validator_data[marketId].totalSales += (zcb_for_sale +1);  //since division rounds down 
+    validator_data[marketId].numApprovedValidators += 1; 
 
-    ERC20(zcb.getCollateral()).transferFrom(msg.sender, address(zcb), collateral_required); 
+    WrappedCollateral wCollateral = WrappedCollateral(zcb.getCollateral()); 
+    wCollateral.mint(msg.sender, address(this), collateral_required); 
+    wCollateral.transfer(address(zcb), collateral_required);
+
     zcb.trustedDiscountedMint(msg.sender, zcb_for_sale);
 
     // Last validator pays more gas, is fair because earlier validators are more uncertain 
@@ -675,7 +704,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
   }
 
   /// @notice main entry point for longZCB buys
-  /// @param _collateralIn: amount of collateral tokens in.
+  /// @param _collateralIn: amount of collateral tokens in WAD
   /// @param _min_amount_out is min quantity of ZCB returned
   function buy(
       uint256 _marketId,
@@ -703,7 +732,7 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
 
     if (duringMarketAssessment(_marketId)){
 
-      rep.incrementBalance(_marketId, msg.sender, _collateralIn);
+      // rep.incrementBalance(_marketId, msg.sender, _collateralIn);
 
       // keep track of amount bought during reputation phase
       // and make transitions from onlyReputation true->false
@@ -721,16 +750,13 @@ contract MarketManager is Owned, VRFConsumerBaseV2 {
           _getValidators(_marketId);
         }
       }
-      _logAssessmentTrade(
-        _marketId,
-        msg.sender, 
-        _collateralIn, 
-        zcb.calcImpliedProbability(
+      
+      assessment_probs[_marketId][msg.sender] =  zcb.calcImpliedProbability(
           _collateralIn, 
           getTraderBudget(_marketId, msg.sender) 
-        )
-      );
-    }
+      ); 
+  
+      }
 
     zcb.transfer(msg.sender, amountOut); 
 

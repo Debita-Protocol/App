@@ -35,7 +35,7 @@ abstract contract ERC4626 is ERC20 {
 
     uint immutable underlying_decimals; 
     uint8 constant default_decimals = 18; 
-    bool  decimal_mismatch; 
+    bool public decimal_mismatch; 
 
     constructor(
         ERC20 _asset,
@@ -200,7 +200,7 @@ abstract contract ERC4626 is ERC20 {
         return assets * (10 ** (default_decimals - underlying_decimals)); 
     }
 
-    function decSharesToAssets(uint256 shares) internal view virtual returns(uint256){
+    function decSharesToAssets(uint256 shares) public view virtual returns(uint256){
         return shares / (10**(default_decimals - underlying_decimals)); 
     }
 }

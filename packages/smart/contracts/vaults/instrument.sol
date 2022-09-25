@@ -6,6 +6,7 @@ import "./vault.sol";
 import {ERC20} from "./tokens/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import {FixedPointMathLib} from "./utils/FixedPointMathLib.sol";
+import "hardhat/console.sol";
 
 
 /// @notice Minimal interface for Vault compatible strategies.
@@ -63,7 +64,8 @@ abstract contract Instrument {
         Utilizer = _Utilizer;
     }
 
-    function setValidator(address _validator) external onlyAuthorized{
+    function setValidator(address _validator) external {
+        require(msg.sender == vault.owner(), "Not owner"); 
         validators.push(_validator); 
         isValidator[_validator] = true;     
     }
@@ -186,10 +188,12 @@ abstract contract Instrument {
 
 
     function transfer_liq(address to, uint256 amount) internal notLocked {
+        if (vault.decimal_mismatch()) amount = vault.decSharesToAssets(amount); 
         underlying.transfer(to, amount);
     }
 
     function transfer_liq_from(address from, address to, uint256 amount) internal notLocked {
+        if (vault.decimal_mismatch()) amount = vault.decSharesToAssets(amount); 
         underlying.transferFrom(from, to, amount);
 
     }
@@ -230,16 +234,19 @@ contract CreditLine is Instrument {
     address public immutable borrower; 
 
     //  variables initiated at creation
-    uint256  principal;
-    uint256  notionalInterest; 
-    uint256  faceValue; //total amount due, i.e principal+interest
-    uint256  duration; // normalized to a year 1 means 1 year, 0.5 means 6 month 
+    uint256 principal;
+    uint256 notionalInterest; 
+    uint256 faceValue; //total amount due, i.e principal+interest
+    uint256 duration; // normalized to a year 1 means 1 year, 0.5 means 6 month 
     uint256 interestAPR; 
 
-    // Modify-able Variables during repayments, borrow
+    // Modify-able Global Variables during repayments, borrow
     uint256 totalOwed; 
     uint256 principalOwed; 
     uint256 interestOwed;
+    uint256 accumulated_interest; 
+    uint256 principalRepayed;
+    uint256 interestRepayed; 
 
     // Collateral Info 
     enum CollateralType{
@@ -297,7 +304,6 @@ contract CreditLine is Instrument {
         notionalInterest = _notionalInterest; 
         duration = _duration;   
         faceValue = _faceValue;
-        interestOwed = _notionalInterest;
 
         collateral = _collateral; 
         oracle = _oracle; 
@@ -309,6 +315,9 @@ contract CreditLine is Instrument {
         proxy = new Proxy(_borrower); 
     }
 
+    function getCurrentTime() internal view returns(uint256){
+        return block.timestamp + 31536000/2; 
+    }
     function getProxy() public view returns(address){
         return address(proxy); 
     }
@@ -358,14 +367,15 @@ contract CreditLine is Instrument {
         // check if borrower has correct identity 
 
         // check if enough collateral has been added as agreed   
-        if (collateral != address(0)) {require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, 
-                "Insufficient collateral"); }
+        if (collateral_type == CollateralType.liquidateAble || collateral_type == CollateralType.nonLiquid){
+            require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, "Insufficient collateral"); 
+        }
 
         // check if validator(s) are set 
         if (validators.length == 0) {revert("No validators"); }
 
         // Check if proxy has been given ownership
-        if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert(); 
+        if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert("Ownership "); 
 
         return true; 
     } 
@@ -413,15 +423,18 @@ contract CreditLine is Instrument {
 
     /// @notice should only be called when (portion of) principal is repayed
     function adjustInterestOwed() internal {
-        uint256 remainingDuration = (drawdown_block + toSeconds(duration)) - block.timestamp; 
-        interestOwed = interestAPR.mulWadDown(remainingDuration.mulWadDown(principalOwed)); 
+
+        uint256 remainingDuration = (drawdown_block + toSeconds(duration)) - getCurrentTime();
+        console.log('remainingDuration', remainingDuration);
+        interestOwed = interestAPR.mulWadDown(toYear(remainingDuration).mulWadDown(principalOwed)); 
+        console.log('interestOwed should be same', interestOwed); 
     }
 
     /// @param quoted_yield is in notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
     /// where area under curve is max_principal 
     function onMarketApproval(uint256 max_principal, uint256 quoted_yield)  external override onlyVault {
         principal = max_principal; 
-        notionalInterest = quoted_yield; //this accounts for duration as well 
+        notionalInterest = quoted_yield; //this accounts for duration as well
         interestAPR = quoted_yield.divWadDown(duration.mulWadDown(principal)); 
 
         loanStatus = LoanStatus.approvedNotDrawdowned;
@@ -437,14 +450,15 @@ contract CreditLine is Instrument {
     
     }
 
-    /// @notice borrower can see how much to repay now 
+    /// @notice borrower can see how much to repay now starting from last repayment time, also used to calculated
+    /// how much interest to repay for the current principalOwed, which can be changed 
     function interestToRepay() public view returns(uint256){
 
         // Normalized to year
-        uint256 elapsedTime = toYear(block.timestamp - lastRepaymentTime);
+        uint256 elapsedTime = toYear(getCurrentTime() - lastRepaymentTime);
 
-        // Owed interest from last timestamp till now  
-        return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)); 
+        // Owed interest from last timestamp till now  + any unpaid interest that has accumulated
+        return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)) + accumulated_interest ; 
     }
      
     /// @notice Allows a borrower to borrow on their creditline.
@@ -456,32 +470,40 @@ contract CreditLine is Instrument {
         loanStatus = LoanStatus.drawdowned; 
 
         drawdown_block = block.timestamp; 
+        lastRepaymentTime = block.timestamp;//-31536000/2; 
+
         totalOwed = principal + notionalInterest; 
         principalOwed = principal; 
+        interestOwed = notionalInterest;
+
         transfer_liq(msg.sender, principal); 
     }
 
     /// @notice allows a borrower to repay their loan
     /// Standard repayment structure is repaying interest for the owed principal periodically and
     /// whenever principal is repayed interest owed is decreased proportionally 
-    function repay(uint256 _repay_principal, uint256 _repay_interest) external onlyUtilizer{
+    function repay( uint256 _repay_amount) external onlyUtilizer{
         require(vault.isTrusted(this), "Not approved");
 
         uint256 owedInterest = interestToRepay(); 
-        uint256 repay_principal = _repay_principal; 
-        uint256 repay_interest = _repay_interest; 
-
-        // Push any dust to repaying principal 
-        if (_repay_interest >= owedInterest){
-            repay_principal += (_repay_interest - owedInterest);  
+        uint256 repay_principal; 
+        uint256 repay_interest = _repay_amount; 
+        console.log('owedinterest', owedInterest);
+        // Push remaineder to repaying principal 
+        if (_repay_amount >= owedInterest){
+            repay_principal += (_repay_amount - owedInterest);  
             repay_interest = owedInterest; 
+            accumulated_interest = 0; 
         }
 
-        transfer_liq_from(msg.sender, address(this), repay_principal + repay_interest);
+        //else repay_amount is less than owed interest, accumulate the debt 
+        else accumulated_interest = owedInterest - repay_interest;
+
+        transfer_liq_from(msg.sender, address(this), _repay_amount);
 
         if(handleRepay(repay_principal, repay_interest)){
 
-            // Prepayment 
+            // Prepayment //TODO cases where repayed a significant portion at the start
             if (block.timestamp <= drawdown_block + toSeconds(duration)) {
                 loanStatus = LoanStatus.prepayment_fulfilled; 
                 onMaturity(); 
@@ -506,19 +528,21 @@ contract CreditLine is Instrument {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
-        //50 - 10 = 40 -> //how does interest owed changes when principal is never repaid
-        adjustInterestOwed(); 
+        console.log('interestOwed should be same here', interestOwed, principalOwed); 
+        principalRepayed += repay_principal;
+        interestRepayed += repay_interest; 
+        if (repay_principal > 0) adjustInterestOwed(); 
 
         bool fullyRepayed = (principalOwed == 0 && interestOwed == 0)? true : false; 
         return fullyRepayed; 
     }
 
     function toYear(uint256 sec) internal pure returns(uint256){
-        return (sec*1e18).divWadDown(31536000 * 1e18); 
+        return (sec*1e18)/uint256(31536000); 
     }
 
     function toSeconds(uint256 y) internal pure returns(uint256){
-        return (uint(31536000 * 1e18)).mulWadDown(y)/1e18; 
+        return uint256(31536000).mulWadDown(y); 
     }
 
     function getRemainingOwed() public view returns(uint256, uint256){
@@ -601,7 +625,7 @@ contract Proxy{
         }
 
         else{
-           // require(bytes4(data) == ownerTransferFunctions[_contract], "Different Function"); 
+            require(convertBytesToBytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
             (bool success, ) = _contract.call(data);
             require(success, "!success"); 
 
@@ -612,10 +636,47 @@ contract Proxy{
     /// in their contract other than the transferFunction contract 
     function proxyFunc(address _contract, bytes calldata data) external{
         require(msg.sender == delegator); 
-       // require(bytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
+        require(convertBytesToBytes4(data) != ownerTransferFunctions[_contract], "func not allowed"); 
 
         (bool success, ) = _contract.call(data); 
         require(success, "!success"); 
 
+    }
+
+    function convertBytesToBytes4(bytes memory inBytes) internal pure returns (bytes4 outBytes4) {
+        if (inBytes.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            outBytes4 := mload(add(inBytes, 4))
+        }
+    }
+}
+
+
+contract MockBorrowerContract{
+
+    address public owner; 
+    constructor(){
+        owner = msg.sender;  
+    }
+
+    function changeOwner(address newOwner) public {
+        require(msg.sender == owner, "notowner"); 
+        owner = newOwner; 
+    } 
+
+    function onlyOwnerFunction(uint256 a) public {
+        console.log('msgsender', msg.sender, owner); 
+        require(msg.sender == owner, "notowner"); 
+        console.log('hello', a); 
+    }
+
+    function autoDelegate(address proxyad) public{
+        Proxy(proxyad).delegateOwnership(address(this), this.changeOwner.selector); 
+    }
+    fallback () external {
+        console.log('hi?'); 
     }
 }
