@@ -312,7 +312,7 @@ contract CreditLine is Instrument {
 
         loanStatus = LoanStatus.notApproved; 
 
-        proxy = new Proxy(_borrower); 
+        proxy = new Proxy(address(this), _borrower); 
     }
 
     function getCurrentTime() internal view returns(uint256){
@@ -388,7 +388,7 @@ contract CreditLine is Instrument {
 
     /// @notice can only redeem collateral when debt is fully paid 
     function releaseAllCollateral() internal {
-        require(loanStatus == LoanStatus.matured || loanStatus == LoanStatus.prepayment_fulfilled); 
+        require(loanStatus == LoanStatus.matured || loanStatus == LoanStatus.prepayment_fulfilled, "Loan status err"); 
 
         ERC20(collateral).transfer(msg.sender,collateral_balance); 
     }
@@ -447,7 +447,7 @@ contract CreditLine is Instrument {
         }
 
         else proxy.changeOwnership(borrower);
-    
+
     }
 
     /// @notice borrower can see how much to repay now starting from last repayment time, also used to calculated
@@ -456,7 +456,7 @@ contract CreditLine is Instrument {
 
         // Normalized to year
         uint256 elapsedTime = toYear(getCurrentTime() - lastRepaymentTime);
-
+        console.log('elapsedTime', elapsedTime); 
         // Owed interest from last timestamp till now  + any unpaid interest that has accumulated
         return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)) + accumulated_interest ; 
     }
@@ -488,7 +488,7 @@ contract CreditLine is Instrument {
         uint256 owedInterest = interestToRepay(); 
         uint256 repay_principal; 
         uint256 repay_interest = _repay_amount; 
-        console.log('owedinterest', owedInterest);
+        console.log('owedinterest', owedInterest, accumulated_interest);
         // Push remaineder to repaying principal 
         if (_repay_amount >= owedInterest){
             repay_principal += (_repay_amount - owedInterest);  
@@ -504,7 +504,7 @@ contract CreditLine is Instrument {
         if(handleRepay(repay_principal, repay_interest)){
 
             // Prepayment //TODO cases where repayed a significant portion at the start
-            if (block.timestamp <= drawdown_block + toSeconds(duration)) {
+            if (getCurrentTime() <= drawdown_block + toSeconds(duration)) {
                 loanStatus = LoanStatus.prepayment_fulfilled; 
                 onMaturity(); 
                 vault.pingMaturity(address(this), true); 
@@ -518,7 +518,7 @@ contract CreditLine is Instrument {
             }
         }
 
-        lastRepaymentTime = block.timestamp; 
+        lastRepaymentTime = getCurrentTime();  
 
     }   
 
@@ -528,6 +528,7 @@ contract CreditLine is Instrument {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
+        console.log('repayment', repay_principal, repay_interest); 
         console.log('interestOwed should be same here', interestOwed, principalOwed); 
         principalRepayed += repay_principal;
         interestRepayed += repay_interest; 
@@ -569,14 +570,14 @@ contract Proxy{
     /// @notice owner is first set to be the instrument contract
     /// and is meant to be changed back to the borrower or whoever is
     /// buying the ownership 
-    constructor(address _delegator){
-        owner = msg.sender; 
+    constructor(address _owner, address _delegator){
+        owner = _owner; 
         delegator = _delegator; 
 
     }
 
     function changeOwnership(address newOwner) external {
-        require(msg.sender == owner); 
+        require(msg.sender == owner, "Not owner"); 
         owner = newOwner; 
     }
 
@@ -651,6 +652,10 @@ contract Proxy{
         assembly {
             outBytes4 := mload(add(inBytes, 4))
         }
+    }
+
+    function getOwner() public view returns(address){
+        return owner; 
     }
 }
 

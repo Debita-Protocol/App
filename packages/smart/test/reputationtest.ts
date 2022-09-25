@@ -327,6 +327,24 @@ describe("Cycle", ()=>{
 
   }); 
 
+
+  it ("can restrict by proxy and handle default", async()=>{
+    const marketId = await controller.getMarketId(trader.address);
+    const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    const proxy_address = await creditline.getProxy(); 
+    const proxy = Proxy__factory.connect(proxy_address, owner); 
+    const t = await proxy.getOwner(); 
+    console.log('owner now', t, creditline.address); 
+    await expect(borrowerContract.changeOwner(owner.address)).to.be.reverted; 
+
+    await collateral.approve(creditline.address,instrumentdata.principal );
+    await creditline.repay(pp.mul(1100));
+
+    //const owner = await proxy.getOwner(); 
+
+
+  });
+
 //    it("everyone can buy and sell", async()=>{
 
 //     //Lets have winners who buys at assessment and market is approved

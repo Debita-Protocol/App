@@ -47,6 +47,7 @@ contract Vault is ERC4626, Auth{
     mapping(address => uint256) public  num_proposals;
     mapping(uint256=> Instrument) Instruments; //marketID-> Instrument
     mapping(uint256 => bool) resolveBeforeMaturity;
+    mapping(uint256=>ResolveVar) prepareResolveBlock; 
 
     enum InstrumentType {
         CreditLine,
@@ -71,6 +72,11 @@ contract Vault is ERC4626, Auth{
         address Instrument_address;
         InstrumentType instrument_type;
         uint256 maturityDate;
+    }
+
+    struct ResolveVar{
+        uint256 endBlock; 
+        bool isPrepared; 
     }
 
     constructor(
@@ -118,6 +124,10 @@ contract Vault is ERC4626, Auth{
 
     function trusted_transfer(uint256 amount, address to) external onlyController{
         UNDERLYING.transfer(to, amount); 
+    }
+
+    function balanceInUnderlying(address ad) external view returns(uint256){
+        return previewRedeem(balanceOf[ad]); 
     }
 
     /// @notice burns all balance of address 
@@ -290,59 +300,49 @@ contract Vault is ERC4626, Auth{
         getInstrumentData[fetchInstrument(marketId)].maturityDate = getInstrumentData[fetchInstrument(marketId)].duration + block.timestamp;
     }
 
-
-    /// @notice function called when instrument prematurely resolves
+    /// @notice function called when instrument resolves from within
     function pingMaturity(address instrument, bool premature) external {
-        require(msg.sender == instrument); 
+        require(msg.sender == instrument || isTrusted(Instrument(instrument)), "Not trusted"); 
         uint256 marketId = getInstrumentData[Instrument(instrument)].marketId; 
-        prepareResolve(marketId); 
+        beforeResolve(marketId); 
         resolveBeforeMaturity[marketId] = premature; 
-
     }
+
 
     /// @notice RESOLVE FUNCTION #1
-    /// checks if instrument is ready to be resolved
-    /// and locks capital inside the instrument 
-    /// @dev resolving is separated into three tx 
-    /// prepareResolve->beforeResolve->resolveinstrument
-    function prepareResolve(uint256 marketId) public {
-        require(msg.sender == address(this) || msg.sender == address(controller)); 
-        Instrument _instrument = Instruments[marketId]; 
-        require(isTrusted( _instrument)); 
-
-        // This will check if instrument is ready to be resolved (i.e all debts payed, investments liquidated, etc)
-        // and lock further drawdowns or usage of capital 
-        _instrument.prepareWithdraw(); 
-    }
-
-    /// @notice RESOLVE FUNCTION #2
+    /// Checks if instrument is ready to be resolved and locks capital.
+    /// records blocknumber such that resolveInstrument is called after this function 
     /// records balances+PnL of instrument
     /// @dev need to store internal balance that is used to calculate the redemption price 
-    function beforeResolve(uint256 marketId) external onlyController{
+    function beforeResolve(uint256 marketId) public {
 
         Instrument _instrument = Instruments[marketId]; 
-        require(isTrusted( _instrument)); 
+
+        require(msg.sender == address(_instrument) || msg.sender == address(controller), "Not allowed"); 
+        require(isTrusted( _instrument), "Not trusted"); 
+
+        _instrument.prepareWithdraw(); 
 
         // Record profit/loss used for calculation of redemption price 
         harvest(address(_instrument));
-        _instrument.store_internal_balance(); 
 
+        _instrument.store_internal_balance(); 
+        console.log('maturitybal', _instrument.getMaturityBalance()); 
+        prepareResolveBlock[marketId] = ResolveVar(block.number,true) ;  
       }
 
-    /// @notice RESOLVE FUNCTION #3
+    /// @notice RESOLVE FUNCTION #2
     function resolveInstrument(
         uint256 marketId
     ) external onlyController
-    returns(bool, uint256, uint256) {
-
+    returns(bool, uint256, uint256, bool) {
         Instrument _instrument = Instruments[marketId];
-        require(_instrument.isLocked(), "Not Locked");  
+        require(_instrument.isLocked(), "Not Locked");
+        require( prepareResolveBlock[marketId].isPrepared && prepareResolveBlock[marketId].endBlock < block.number,
+         "Wait before resolve"); 
+
         uint256 instrument_balance = _instrument.getMaturityBalance(); 
 
-        // //First burn all in market contracts
-        // burnAll(controller.getZCB_ad(marketId)); 
-        // burnAll(controller.getshortZCB_ad(marketId)); 
-      
         InstrumentData storage data = getInstrumentData[_instrument];
 
         bool prematureResolve = resolveBeforeMaturity[marketId]; 
@@ -373,7 +373,7 @@ contract Vault is ERC4626, Auth{
                 
         removeInstrument(data.marketId);
 
-        return(atLoss, extra_gain, total_loss); 
+        return(atLoss, extra_gain, total_loss, prematureResolve); 
     }
 
     /// @notice when market resolves, send back pulled collateral from managers 
@@ -502,5 +502,21 @@ contract Vault is ERC4626, Auth{
 
 
 
+//deprecated
+    /// @notice RESOLVE FUNCTION #1
+    /// checks if instrument is ready to be resolved
+    /// and locks capital inside the instrument 
+    /// @dev resolving is separated into three tx 
+    /// prepareResolve->beforeResolve->resolveinstrument
+    function prepareResolve(uint256 marketId) public {
+        Instrument _instrument = Instruments[marketId]; 
+
+        require(msg.sender == address(_instrument) || msg.sender == address(controller), "Not allowed"); 
+        require(isTrusted( _instrument), "Not trusted"); 
+
+        // This will check if instrument is ready to be resolved (i.e all debts payed, investments liquidated, etc)
+        // and lock further drawdowns or usage of capital 
+        _instrument.prepareWithdraw(); 
+    }
 
 }

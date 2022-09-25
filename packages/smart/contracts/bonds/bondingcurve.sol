@@ -19,6 +19,7 @@ abstract contract BondingCurve is OwnedERC20 {
   uint256 internal max_quantity;
   uint256 internal math_precision; 
   uint256 public collateral_dec;
+  uint256 internal discounted_reserves; 
   ERC20 collateral; // NEED TO CHANGE ONCE VAULT IS DONE
   uint256 discounted_supply;
 
@@ -183,6 +184,9 @@ abstract contract BondingCurve is OwnedERC20 {
   function getReserves() public view returns(uint256){
     return reserves; 
    }
+  function getDiscountedReserves() public view returns(uint256){
+    return discounted_reserves; 
+  }
 
   function get_discount_cap() public view returns(uint256){
     return _get_discount_cap();  
@@ -212,6 +216,10 @@ abstract contract BondingCurve is OwnedERC20 {
   function decrementReserves(uint256 amount) public onlyOwner {
     reserves -= amount;
    }
+
+  function incrementDiscountedReserves(uint256 amount) public onlyOwner{
+    discounted_reserves += amount; 
+  }
 
 
 

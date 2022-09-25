@@ -327,11 +327,11 @@ contract MarketManager is Owned
     markets[marketId].long.setLowerBound(new_lower_bound);
   }
 
-  /* 
-  Called when market should end, a) when denied b) when maturity 
-  */
-  function deactivateMarket(uint256 marketId, bool atLoss) external  onlyController{
-    restriction_data[marketId].resolved = true; 
+  
+  /// @notice Called when market should end, a) when denied b) when maturity 
+  /// @param resolve is true when instrument does not resolve prematurely
+  function deactivateMarket(uint256 marketId, bool atLoss, bool resolve) external  onlyController{
+    restriction_data[marketId].resolved = resolve; 
     restriction_data[marketId].atLoss = atLoss; 
     restriction_data[marketId].alive = false; //TODO alive should be true, => alive is false when everyone has redeemed.
   }
@@ -532,7 +532,7 @@ contract MarketManager is Owned
     require(marketActive(marketId), "Market Not Active"); 
     require(restriction_data[marketId].duringAssessment, "Not in assessment"); 
     MarketPhaseData storage data = restriction_data[marketId]; 
-    data.resolved = true; 
+    // data.resolved = true; 
     data.duringAssessment = false;
   }
 
@@ -648,6 +648,9 @@ contract MarketManager is Owned
   /// They can only buy a fixed amount of ZCB, usually a at lot larger amount 
   /// @dev get val_cap, the total amount of zcb for sale and each validators should buy 
   /// val_cap/num validators zcb 
+  /// They also need to hold the corresponding vault, so they are incentivized to assess at a systemic level and avoid highly 
+  /// correlated instruments 
+  /// TODO change this to staking system 
   function validatorBuy(
     uint256 marketId
   ) external  {
@@ -659,6 +662,7 @@ contract MarketManager is Owned
     uint256 collateral_required = zcb_for_sale.mulWadDown(validator_data[marketId].avg_price); 
 
     require(validator_data[marketId].sales[msg.sender] <= zcb_for_sale, "already approved");
+   // require(controller.getVault().balanceInUnderlying(msg.sender) >= collateral_required, "Not enough vault exposure"); 
 
     validator_data[marketId].sales[msg.sender] += zcb_for_sale;
     validator_data[marketId].totalSales += (zcb_for_sale +1);  //since division rounds down 
@@ -669,6 +673,7 @@ contract MarketManager is Owned
     wCollateral.transfer(address(zcb), collateral_required);
 
     zcb.trustedDiscountedMint(msg.sender, zcb_for_sale);
+    zcb.incrementDiscountedReserves(collateral_required); 
 
     // Last validator pays more gas, is fair because earlier validators are more uncertain 
     if (validatorApprovalCondition(marketId)) controller.approveMarket(marketId);
