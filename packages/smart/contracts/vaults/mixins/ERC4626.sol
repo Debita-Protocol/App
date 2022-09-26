@@ -196,7 +196,7 @@ abstract contract ERC4626 is ERC20 {
 
     function afterDeposit(uint256 assets, uint256 shares) internal virtual {}
 
-    function decAssetsToShares(uint256 assets) internal view virtual returns(uint256) {
+    function decAssetsToShares(uint256 assets) public view virtual returns(uint256) {
         return assets * (10 ** (default_decimals - underlying_decimals)); 
     }
 

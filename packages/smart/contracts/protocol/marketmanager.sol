@@ -237,7 +237,8 @@ contract MarketManager is Owned
     ) external onlyController{
 
     parameters[marketId] = param; 
-    parameters[marketId].s = param.s.mulWadDown(config.WAD - utilizationRate); // experiment 
+    parameters[marketId].s = param.s.mulWadDown(config.WAD - utilizationRate); // experiment
+    console.log('utilization rate/s', utilizationRate, parameters[marketId].s);  
   }
 
   /// @notice gets the top percentile reputation score threshold 
@@ -1025,9 +1026,11 @@ contract MarketManager is Owned
 
     uint256 total_supply = zcb.getTotalZCB(); 
     uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt :0; 
-
+    console.log('redemptiondata', atLoss, extra_gain);
+    console.log(loss, total_shorts); 
     if(!atLoss){
       redemption_prices[marketId] = config.WAD + extra_gain.divWadDown(total_supply + total_shorts); 
+      console.log('redemtionprice', redemption_prices[marketId]); 
     } 
     else {
       if (config.WAD <= loss.divWadDown(total_supply)){

@@ -200,7 +200,10 @@ abstract contract Instrument {
 
     /// @notice called before resolve, to avoid calculating redemption price based on manipulations 
     function store_internal_balance() external onlyVault{
+
         maturity_balance = balanceOfUnderlying(address(this)); 
+        if (vault.decimal_mismatch()) maturity_balance = vault.decAssetsToShares(maturity_balance); 
+
     }
 
     function getMaturityBalance() public view returns(uint256){
@@ -430,7 +433,7 @@ contract CreditLine is Instrument {
         else proxy.changeOwnership(borrower);
         
         bool isPrepaid = loanStatus == LoanStatus.prepayment_fulfilled? true:false;
-
+        console.log('isprepaid', isPrepaid); 
         // Write to storage resolve details (principal+interest repaid, is prepaid, etc) 
         vault.pingMaturity(address(this), isPrepaid); 
 
@@ -499,7 +502,7 @@ contract CreditLine is Instrument {
         }
 
         lastRepaymentTime = getCurrentTime();  
-        
+
         transfer_liq_from(msg.sender, address(this), _repay_amount);
 
     }   

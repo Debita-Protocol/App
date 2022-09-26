@@ -279,7 +279,8 @@ describe("Cycle", ()=>{
     await collateral.approve(vault.address, amount.mul(2)); 
     // console.log(' vault preview shares to assets', (await vault.previewMint(pp)).toString(), 
     //   (await collateral.balanceOf(owner.address)).toString()); 
-    await vault.mint(amount, owner.address); 
+    await vault.deposit(pp_.mul(1500), owner.address); 
+    console.log('vaultbalance', (await collateral.balanceOf(vault.address)).toString(), (await vault.previewMint(pp)).toString()); 
     await marketmanager.validatorBuy(marketId); 
 
     const creditline_balance = await collateral.balanceOf(creditline.address); 
@@ -346,35 +347,68 @@ describe("Cycle", ()=>{
 
   // });
 
-  it( "can handle default and redeem", async()=>{
+  // it( "can handle default and redeem", async()=>{
 
+  //   const marketId = await controller.getMarketId(trader.address);
+  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
+
+  //   await collateral.approve(creditline.address, instrumentdata.principal); 
+  //   await creditline.beginGracePeriod();
+  //   await creditline.declareDefault(); 
+  //   await creditline.onDefault(); 
+
+  //   await controller.beforeResolve(marketId); 
+  //   await controller.resolveMarket(marketId);  
+
+  //   const redemptionPrice = await marketmanager.get_redemption_price(marketId); 
+  //   console.log('redemption_price', redemptionPrice.toString()); 
+
+
+  //   const beforeRedemptionBal = (await collateral.balanceOf(owner.address)); 
+  //   const beforeRedemptionVault = (await collateral.balanceOf(vault.address));
+
+  //   await marketmanager.redeem(marketId); 
+  //   expect((await collateral.balanceOf(owner.address)).sub(beforeRedemptionBal)).to.equal(
+  //     beforeRedemptionVault.sub(await collateral.balanceOf(vault.address))); 
+  //   console.log("after redemption", (await collateral.balanceOf(owner.address)).sub(beforeRedemptionBal).toString(), 
+  //    beforeRedemptionVault.sub(await collateral.balanceOf(vault.address)).toString() )
+
+
+
+  // }); 
+
+  it( "can pay back full and close market", async()=>{
     const marketId = await controller.getMarketId(trader.address);
     const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    const bc_address = await marketmanager.getZCB(marketId);
+    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
 
-    await collateral.approve(creditline.address, instrumentdata.principal); 
-    await creditline.beginGracePeriod();
-    await creditline.declareDefault(); 
-    await creditline.onDefault(); 
+    await collateral.approve(creditline.address,instrumentdata.principal );
+    await creditline.repay(pp.mul(1100));
 
-    await controller.beforeResolve(marketId); 
+    await creditline.onMaturity();
+
     await controller.resolveMarket(marketId);  
 
-    const redemptionPrice = await marketmanager.get_redemption_price(marketId); 
-    console.log('redemption_price', redemptionPrice.toString()); 
-
-
-    const beforeRedemptionBal = (await collateral.balanceOf(owner.address)); 
-    const beforeRedemptionVault = (await collateral.balanceOf(vault.address));
-
+    console.log('redemption_price', (await marketmanager.get_redemption_price(marketId)).toString()); 
+    console.log('myBCbal', (await bc.balanceOf(owner.address)).toString()); 
+    const collateralBalBefore = await collateral.balanceOf(owner.address); 
+    const collateralBalVault = await collateral.balanceOf(vault.address); 
     await marketmanager.redeem(marketId); 
-    console.log("after redemption", (await collateral.balanceOf(owner.address)).sub(beforeRedemptionBal).toString(), 
-     beforeRedemptionVault.sub(await collateral.balanceOf(vault.address)).toString() )
+
+    expect(await bc.balanceOf(owner.address)).to.equal(0);
+    console.log("dif", 
+((await collateral.balanceOf(owner.address)).sub(collateralBalBefore)).toString(), 
+(collateralBalVault.sub(await collateral.balanceOf(vault.address))).toString()
+      )
+
+    // expect((await marketmanager.get_redemption_price(marketId)).mul(bc.balanceOf(owner.address)).div(pp))
+
+  }); 
 
 
-
-  })
   it( "can redeem from denied")
-  it( "can redeem from non-premature")
+  it( "can redeem from prepayment")
 
 //    it("everyone can buy and sell", async()=>{
 

@@ -344,6 +344,7 @@ contract Vault is ERC4626, Auth{
         require( prepareResolveBlock[marketId].isPrepared && prepareResolveBlock[marketId].endBlock < block.number,
          "Wait before resolve"); 
 
+        uint256 bal = UNDERLYING.balanceOf(address(this)); 
         uint256 instrument_balance = _instrument.getMaturityBalance(); 
 
         InstrumentData storage data = getInstrumentData[_instrument];
@@ -369,11 +370,10 @@ contract Vault is ERC4626, Auth{
 
             total_loss = atLoss? data.principal - instrument_balance :0; 
             extra_gain = 0; 
-
         }
 
         withdrawFromInstrument(_instrument, instrument_balance);
-                
+        console.log('balance increase', bal, UNDERLYING.balanceOf(address(this))); 
         removeInstrument(data.marketId);
 
         return(atLoss, extra_gain, total_loss, prematureResolve); 

@@ -428,6 +428,8 @@ contract Controller {
     // move liquidity from wCollateral to vault, which will be used to fund the instrument
     // this debt will be stored to later pull back to wCollateral  
     uint256 reserves_to_push = bc.getReserves() + bc.getDiscountedReserves(); 
+    console.log('bc reserves', bc.getReserves(), bc.getDiscountedReserves()); 
+    console.log('wcollateral balance before',vault.UNDERLYING().balanceOf(bc.getCollateral()));  
     WrappedCollateral(bc.getCollateral()).trustedTransfer(address(vault), reserves_to_push); 
     vault_debt[marketId] = reserves_to_push;
     console.log('wcollateral balance',vault.UNDERLYING().balanceOf(bc.getCollateral()));  
@@ -453,6 +455,7 @@ contract Controller {
     // Notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
     // where area under curve is max_principal 
     uint256 quoted_interest = bc.calculateArbitraryPurchaseReturn(max_principal, 0) - max_principal; 
+    console.log('quoted', quoted_interest); 
 
     approvalDatas[marketId] = ApprovalData(max_principal, quoted_interest); 
   }
