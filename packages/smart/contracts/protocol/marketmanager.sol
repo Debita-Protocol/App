@@ -106,7 +106,8 @@ contract MarketManager is Owned
     uint256 resolutionTimestamp;
   }
 
-  CoreMarketData[] markets;
+  CoreMarketData[] public markets;
+  //mapping(uint256=>CoreMarketData[]) markets; // vaultId => all markets.
   mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
   mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
   mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
@@ -194,18 +195,30 @@ contract MarketManager is Owned
     
     // push empty market
     markets.push(
-      CoreMarketData(
+      makeEmptyMarketData()
+    );
+  }
+
+  function makeEmptyMarketData() public pure returns (CoreMarketData memory) {
+    return CoreMarketData(
         BondingCurve(address(0)),
         ShortBondingCurve(address(0)),
         "",
         0,
         0
-      )
-    );
+      );
   }
 
   function marketCount() public view returns (uint256) {
     return markets.length;
+  }
+
+  function getMarket(uint256 _id) public view returns (CoreMarketData memory) {
+        if (_id >= markets.length) {
+            return makeEmptyMarketData();
+        } else {
+            return markets[_id];
+        }
   }
 
   function createMarket(
@@ -273,14 +286,6 @@ contract MarketManager is Owned
     markets[marketId].long.setShortZCB(address(markets[marketId].short));
   }
 
-  function getZCB(uint256 marketId) public view returns (BondingCurve) {
-    return markets[marketId].long;
-  } 
-
-  function getShortZCB(uint256 marketId) public view returns (ShortBondingCurve) {
-    return markets[marketId].short;
-  } 
-
   /// @notice used to transition from reputationphases 
   function setReputationPhase(
     uint256 marketId,
@@ -290,6 +295,11 @@ contract MarketManager is Owned
     restriction_data[marketId].onlyReputable = _onlyReputable;
   }
 
+  function getPhaseData(
+    uint256 marketId
+  ) public view returns (MarketPhaseData memory)  {
+    return restriction_data[marketId];
+  }
   
   /// @notice main approval function called by controller
   /// @dev if market is alive and market is not during assessment, it is approved. 
@@ -441,6 +451,14 @@ contract MarketManager is Owned
 
   function getParameters(uint256 marketId) public view returns(MarketParameters memory){
     return parameters[marketId]; 
+  }
+
+  function getZCB(uint256 marketId) public view returns (BondingCurve) {
+    return markets[marketId].long;
+  }
+
+  function getShortZCB(uint256 marketId) public view returns (ShortBondingCurve) {
+    return markets[marketId].short;
   }
 
   /// @notice computes maximum amount of quantity that trader can short while being hedged
@@ -686,7 +704,7 @@ contract MarketManager is Owned
   }
 
   mapping(uint256=> mapping(address=>uint256)) longTrades; 
-  mapping(uint256=> mapping(address=>uint256)) shortTrades; 
+  mapping(uint256=> mapping(address=>uint256)) shortTrades;
 
   /// @notice log how much collateral trader has at stake, 
   /// to be used for redeeming later 

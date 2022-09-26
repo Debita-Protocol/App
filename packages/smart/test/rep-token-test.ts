@@ -10,7 +10,7 @@ import {
     ReputationNFT,
     CreditLine,
     Cash,
-    TrustedMarketFactoryV3,
+    // TrustedMarketFactoryV3,
     CreditLine__factory
 } from "../typechain";
 
