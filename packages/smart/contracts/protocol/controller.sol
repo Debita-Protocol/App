@@ -35,12 +35,18 @@ contract Controller {
   event MarketInitiated(uint256 marketId, address recipient);
 
   mapping(uint256=>ApprovalData) approvalDatas; 
+
+  function getApprovalData(uint256 marketId) public view returns (ApprovalData memory) {
+    approvalDatas[marketId];
+  }
+
   mapping(address => bool) public  verified;
   mapping(uint256 => MarketData) public market_data; // id => recipient
-  mapping(address=> uint256) public ad_to_id; //utilizer address to marketId, only one market ID per address at given moment, can generalize later
+  mapping(address=> uint256) public ad_to_id; //utilizer address to marketId
   mapping(uint256=> Vault) public vaults; // vault id to Vault contract
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
-  mapping(uint256=> uint256) vault_debt; //vault debt for each marketId 
+  mapping(uint256=> uint256) vault_debt; //vault debt for each marketId
+  mapping(uint256=>uint256[]) public vault_to_marketIds;
 
   address creator_address;
 
@@ -179,6 +185,10 @@ contract Controller {
     return id_parent[marketId]; 
   }
 
+  function getMarketIds(uint256 vaultId) public view returns (uint256[] memory) {
+    return vault_to_marketIds[vaultId];
+  }
+
   /////INITIATORS/////
 
   /**
@@ -258,7 +268,8 @@ contract Controller {
 
     uint256 marketId = marketManager.marketCount();
     
-    id_parent[marketId] = vaultId; 
+    id_parent[marketId] = vaultId;
+    vault_to_marketIds[vaultId].push(marketId);
 
     marketManager.setParameters(
       vault.get_vault_params(), 

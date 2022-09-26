@@ -291,14 +291,11 @@ contract CreditLine is Instrument {
         uint256 _notionalInterest, 
         uint256 _duration,
         uint256 _faceValue,
-
         address _collateral, //collateral for the dao, could be their own native token or some tokenized revenue 
         address _oracle, // oracle for price of collateral 
         uint256 _collateral_balance, //promised collateral balance
         uint256 _collateral_type
-
-
-    )  Instrument(vault, _borrower){
+    )  Instrument(vault, _borrower) {
         borrower = _borrower; 
         principal = _principal; 
         notionalInterest = _notionalInterest; 
