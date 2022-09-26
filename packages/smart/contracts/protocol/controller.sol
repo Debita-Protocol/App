@@ -244,7 +244,7 @@ contract Controller {
     uint256 base_budget = 1000 * config.WAD; //TODO, maybe can be function of balance of vt tokens?
     uint256 alpha = marketManager.getParameters(marketId).alpha; 
     uint256 delta = marketManager.getParameters(marketId).delta;
-    
+
     marketManager.setMarketPhase(marketId, true, true, base_budget); //TODO => marketManager.initializeMarket  
     marketManager.setCurves(marketId);
     marketManager.setValidatorCap(marketId, instrumentData.principal, instrumentData.expectedYield); 
@@ -305,17 +305,11 @@ contract Controller {
   }
 
 
-  /// Resolve market functions separated to 3 txs to prevent attacks
+
+
   /// @notice Resolve function 1
-  function prepareResolve(uint256 marketId) 
-  external {
-    vaults[id_parent[marketId]].prepareResolve(marketId); 
-
-  }
-
-  /// @notice Resolve function 2
   /// @notice Prepare market/instrument for closing, called separately before resolveMarket
-  /// exists to circumvent manipulations via  
+  /// exists to circumvent manipulations   
   function beforeResolve(uint256 marketId) 
   external 
   //onlyKeepers 
@@ -325,7 +319,7 @@ contract Controller {
 
 
   /**
-  Resolve function 3
+  Resolve function 2
   @notice main function called at maturity OR premature resolve of instrument(from early default)
   
   When market finishes at maturity, need to 
@@ -342,10 +336,11 @@ contract Controller {
   {
     (bool atLoss,
     uint256 extra_gain,
-    uint256 principal_loss) = vaults[id_parent[marketId]].resolveInstrument(marketId); 
+    uint256 principal_loss, 
+    bool premature) = vaults[id_parent[marketId]].resolveInstrument(marketId); 
 
     marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
-    marketManager.deactivateMarket(marketId, atLoss);
+    marketManager.deactivateMarket(marketId, atLoss, !premature);
 
     cleanUpDust(marketId); 
   }
@@ -443,9 +438,10 @@ contract Controller {
 
     // move liquidity from wCollateral to vault, which will be used to fund the instrument
     // this debt will be stored to later pull back to wCollateral  
-    uint256 reserves = bc.getReserves(); 
-    WrappedCollateral(bc.getCollateral()).trustedTransfer(address(vault), reserves); 
-    vault_debt[marketId] = reserves; 
+    uint256 reserves_to_push = bc.getReserves() + bc.getDiscountedReserves(); 
+    WrappedCollateral(bc.getCollateral()).trustedTransfer(address(vault), reserves_to_push); 
+    vault_debt[marketId] = reserves_to_push;
+    console.log('wcollateral balance',vault.UNDERLYING().balanceOf(bc.getCollateral()));  
 
     // Trust and deposit to the instrument contract
     vault.trustInstrument(marketId, approvalDatas[marketId]);
@@ -462,7 +458,7 @@ contract Controller {
     // proposed principal for other instruments 
     uint256 max_principal = (marketManager.getParameters(marketId).s + config.WAD).mulWadDown(
                             bc.getTotalCollateral()) ; 
-    console.log('maxprincipal', max_principal); 
+    console.log('maxprincipal', max_principal, bc.getTotalCollateral()); 
     max_principal = min(max_principal, proposed_principal); 
 
     // Notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
