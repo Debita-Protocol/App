@@ -121,8 +121,9 @@ contract Vault is ERC4626, Auth{
     function controller_mint(uint256 amount, address to) external onlyController {
         _mint(to , amount); 
     }
-
+    /// @notice amount is always in WAD, so need to convert if decimals mismatch
     function trusted_transfer(uint256 amount, address to) external onlyController{
+        if (decimal_mismatch) amount = decSharesToAssets(amount); 
         UNDERLYING.transfer(to, amount); 
     }
 
@@ -332,6 +333,8 @@ contract Vault is ERC4626, Auth{
       }
 
     /// @notice RESOLVE FUNCTION #2
+    /// @dev In cases of default, needs to be called AFTER the principal recouperation attempts 
+    /// like liquidations, auctions, etc such that the redemption price takes into account the maturity balance
     function resolveInstrument(
         uint256 marketId
     ) external onlyController
