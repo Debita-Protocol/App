@@ -1,4 +1,4 @@
-import { deployments, ethers } from "hardhat";
+import { network, deployments, ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect, use as chaiUse } from "chai";
 
@@ -287,7 +287,7 @@ describe("Cycle", ()=>{
     expect(creditline_balance).to.equal(instrumentdata.principal.div(pp__)); 
     // const validator_vault_balance_after_approve = await vault.connect(trader).balanceOf(owner.address); 
     const validator_balance = await bc.balanceOf(trader.address); 
-    console.log('validatorbalance', validator_balance); 
+    // console.log('validatorbalance', validator_balance); 
 
     // console.log('after_approve', validator_vault_balance_after_approve.toString(),validator_balance.toString() ); 
 
@@ -314,6 +314,7 @@ describe("Cycle", ()=>{
     await creditline.drawdown();
     expect(await collateral.balanceOf(creditline.address)).to.equal(0); 
     // expect(await collateral.balanceOf(owner.address)).to.equal(bal_before); 
+    console.log('vault bal after drawdown',(await collateral.balanceOf(vault.address)).toString()); 
 
     var remaining = await creditline.getRemainingOwed(); 
     console.log('remaining before', remaining[0].toString(), remaining[1].toString()); 
@@ -387,7 +388,9 @@ describe("Cycle", ()=>{
     await creditline.repay(pp.mul(1100));
 
     await creditline.onMaturity();
+    await collateral.approve(creditline.address,instrumentdata.principal );
 
+    await collateral.approve(creditline.address,instrumentdata.principal );
     await controller.resolveMarket(marketId);  
 
     console.log('redemption_price', (await marketmanager.get_redemption_price(marketId)).toString()); 
@@ -397,6 +400,7 @@ describe("Cycle", ()=>{
     await marketmanager.redeem(marketId); 
 
     expect(await bc.balanceOf(owner.address)).to.equal(0);
+    console.log('vault bal before and after rdeem', collateralBalVault.toString(), (await collateral.balanceOf(vault.address)).toString()); 
     console.log("dif", 
 ((await collateral.balanceOf(owner.address)).sub(collateralBalBefore)).toString(), 
 (collateralBalVault.sub(await collateral.balanceOf(vault.address))).toString()
@@ -406,7 +410,10 @@ describe("Cycle", ()=>{
 
   }); 
 
+  it("can handle vault accounting and split profit properly", async()=>{
 
+  })
+  it("can handle vault accounting after paying shorts as well")
   it( "can redeem from denied")
   it( "can redeem from prepayment")
 

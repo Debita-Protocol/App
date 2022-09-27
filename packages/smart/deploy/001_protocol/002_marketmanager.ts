@@ -10,9 +10,9 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     deployer, 
     rep_addr,  
     controller_addr,
-    // "0x7a1bac17ccc5b313516c5e16fb24f7659aa5ebed",
-    // "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f",
-    // "1713"
+    "0x7a1bac17ccc5b313516c5e16fb24f7659aa5ebed",
+    "0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f",
+    "1713"
   ];
 
   await deployments.deploy("MarketManager", {

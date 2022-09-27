@@ -45,7 +45,7 @@ contract Controller {
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId
   mapping(uint256=> Vault) public vaults; // vault id to Vault contract
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
-  mapping(uint256=> uint256) vault_debt; //vault debt for each marketId
+  mapping(uint256=> uint256) public vault_debt; //vault debt for each marketId
   mapping(uint256=>uint256[]) public vault_to_marketIds;
 
   address creator_address;
@@ -146,6 +146,10 @@ contract Controller {
     address to, 
     uint256 marketId) 
   external onlyManager{
+    console.log('vault debt', vault_debt[marketId], amount); 
+    // require(vault_debt[marketId] >= amount, "No funds left for redemption"); 
+    // unchecked{ vault_debt[marketId] -= amount;} 
+
     vaults[id_parent[marketId]].trusted_transfer(amount,to); 
   }
 
@@ -343,6 +347,9 @@ contract Controller {
     marketManager.deactivateMarket(marketId, atLoss, !premature);
 
     cleanUpDust(marketId); 
+
+    // Update amount that should be returned to managers 
+    vault_debt[marketId] = vault_debt[marketId].mulWadDown(marketManager.get_redemption_price(marketId)); 
   }
 
   /// @notice When market resolves, should collect 

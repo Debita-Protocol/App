@@ -62,7 +62,7 @@ contract Vault is ERC4626, Auth{
         // Balance of the contract denominated in Underlying, 
         // used to determine profit and loss during harvests of the Instrument.  
         // represents the amount of debt the Instrument has incurred from this vault   
-        uint248 balance; // in underlying
+        uint256 balance; // in underlying
         uint256 faceValue; // in underlying
         uint256 marketId;
         uint256 principal; //this is total available allowance in underlying
@@ -143,10 +143,11 @@ contract Vault is ERC4626, Auth{
     /// @notice Harvest a trusted Instrument, records profit/loss 
     function harvest(address instrument) public {
         require(instrument_data[Instrument(instrument)].trusted, "UNTRUSTED_Instrument");
-        
+        InstrumentData storage data = instrument_data[Instrument(instrument)]; 
+
         uint256 oldTotalInstrumentHoldings = totalInstrumentHoldings; 
         
-        uint256 balanceLastHarvest = instrument_data[Instrument(instrument)].balance;
+        uint256 balanceLastHarvest = data.balance;
         
         uint256 balanceThisHarvest = Instrument(instrument).balanceOfUnderlying(address(instrument));
         
@@ -154,7 +155,7 @@ contract Vault is ERC4626, Auth{
             return;
         }
         
-        instrument_data[Instrument(instrument)].balance = balanceThisHarvest.safeCastTo248();
+        data.balance = balanceThisHarvest;
 
         uint256 delta;
        
@@ -179,7 +180,7 @@ contract Vault is ERC4626, Auth{
 
       totalInstrumentHoldings += underlyingAmount; 
 
-      instrument_data[instrument].balance += underlyingAmount.safeCastTo248();
+      instrument_data[instrument].balance += underlyingAmount;
 
       require(UNDERLYING.transfer(address(instrument), underlyingAmount), "DEPOSIT_FAILED");
 
@@ -192,7 +193,7 @@ contract Vault is ERC4626, Auth{
       
       if (decimal_mismatch) underlyingAmount = decSharesToAssets(underlyingAmount); 
 
-      instrument_data[instrument].balance -= underlyingAmount.safeCastTo248();
+      instrument_data[instrument].balance -= underlyingAmount;
       
       totalInstrumentHoldings -= underlyingAmount;
       
@@ -309,7 +310,7 @@ contract Vault is ERC4626, Auth{
     function pingMaturity(address instrument, bool premature) external {
         require(msg.sender == instrument); 
         uint256 marketId = instrument_data[Instrument(instrument)].marketId; 
-        prepareResolve(marketId); 
+        beforeResolve(marketId); 
         resolveBeforeMaturity[marketId] = premature; 
     }
 
@@ -345,8 +346,8 @@ contract Vault is ERC4626, Auth{
     returns(bool, uint256, uint256, bool) {
         Instrument _instrument = Instruments[marketId];
         require(_instrument.isLocked(), "Not Locked");
-        require( prepareResolveBlock[marketId].isPrepared && prepareResolveBlock[marketId].endBlock < block.number,
-         "Wait before resolve"); 
+        // require( prepareResolveBlock[marketId].isPrepared && prepareResolveBlock[marketId].endBlock < block.number,
+        //  "Wait before resolve"); 
 
         uint256 bal = UNDERLYING.balanceOf(address(this)); 
         uint256 instrument_balance = _instrument.getMaturityBalance(); 
@@ -377,7 +378,9 @@ contract Vault is ERC4626, Auth{
         }
 
         withdrawFromInstrument(_instrument, instrument_balance);
+
         console.log('balance increase', bal, UNDERLYING.balanceOf(address(this))); 
+        console.log('balance increase', data.balance, data.principal); 
         removeInstrument(data.marketId);
 
         return(atLoss, extra_gain, total_loss, prematureResolve); 
