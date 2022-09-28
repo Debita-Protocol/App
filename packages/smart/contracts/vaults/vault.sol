@@ -308,7 +308,7 @@ contract Vault is ERC4626, Auth{
 
     /// @notice function called when instrument resolves from within
     function pingMaturity(address instrument, bool premature) external {
-        require(msg.sender == instrument); 
+        require(msg.sender == instrument || isTrusted(Instrument(instrument))); 
         uint256 marketId = instrument_data[Instrument(instrument)].marketId; 
         beforeResolve(marketId); 
         resolveBeforeMaturity[marketId] = premature; 

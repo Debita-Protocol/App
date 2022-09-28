@@ -131,15 +131,6 @@ contract Controller {
     ReputationNFT(NFT_address).mint(msg.sender);
   }
 
-  /// @notice called when market is resolved 
-  function redeem_mint(
-    uint256 amount, 
-    address to, 
-    uint256 marketId) 
-  external onlyManager{
-    vaults[id_parent[marketId]].controller_mint(amount,to); 
-  }
-
   /// @notice called only when redeeming, transfer funds from vault 
   function redeem_transfer(
     uint256 amount, 
@@ -241,33 +232,19 @@ contract Controller {
 
 
 
-  function _initialMarketmanagerSetup(
-    uint256 marketId,
-    Vault.InstrumentData memory instrumentData
-  ) internal {
-    uint256 base_budget = 1000 * config.WAD; //TODO, maybe can be function of balance of vt tokens?
-    uint256 alpha = marketManager.getParameters(marketId).alpha; 
-    uint256 delta = marketManager.getParameters(marketId).delta;
-
-    marketManager.setMarketPhase(marketId, true, true, base_budget); //TODO => marketManager.initializeMarket  
-    marketManager.setCurves(marketId);
-    marketManager.setValidatorCap(marketId, instrumentData.principal, instrumentData.expectedYield); 
-    marketManager.setUpperBound(marketId, instrumentData.principal.mulWadDown(alpha+delta));  //Set initial upper bound 
-  }
-
   /// @notice initiates market, called by frontend loan proposal or instrument form submit button.
   /// @dev Instrument should already be deployed 
   /// @param recipient is the utilizer 
   /// @param recipient: utilizer for the associated instrument
   function initiateMarket(
     address recipient,
-    Vault.InstrumentData memory instrumentData, // marketId should be set to zero, no way of knowing.
+    Vault.InstrumentData memory instrumentData, 
     uint256 vaultId
   ) external  {
-    // TODO checks for the instrument contract?
     require(instrumentData.Instrument_address != address(0), "must not be zero address");
     require(instrumentData.principal >= config.WAD, "Precision err"); 
     require(address(vaults[vaultId]) != address(0), "Vault doesn't' exist");
+
     Vault vault = Vault(vaults[vaultId]); 
 
     uint256 marketId = marketManager.marketCount();
@@ -278,7 +255,8 @@ contract Controller {
     marketManager.setParameters(
       vault.get_vault_params(), 
       vault.utilizationRate(), 
-      marketId); 
+      marketId
+    ); 
 
     (BondingCurve _long, ShortBondingCurve _short) = createZCBs(
       instrumentData.principal,
@@ -287,12 +265,15 @@ contract Controller {
       marketId
     );
 
-    marketManager.createMarket(
+    marketManager.newMarket(
+      marketId, 
+      instrumentData.principal, 
+      instrumentData.expectedYield,      
       _long,
       _short,
       instrumentData.description,
       block.timestamp
-    );
+    ); 
 
     ad_to_id[recipient] = marketId; //only for testing purposes, one utilizer should be able to create multiple markets
     instrumentData.marketId = marketId;
@@ -301,8 +282,6 @@ contract Controller {
 
     market_data[marketId] = MarketData(instrumentData.Instrument_address, recipient);
 
-    _initialMarketmanagerSetup(marketId, instrumentData ); //TODO just get shortZCB from controller? gas dif
- 
     repNFT.storeTopReputation(marketManager.getParameters(marketId).r,  marketId); 
 
     emit MarketInitiated(marketId, recipient);
@@ -343,13 +322,9 @@ contract Controller {
     uint256 principal_loss, 
     bool premature) = vaults[id_parent[marketId]].resolveInstrument(marketId); 
 
-    marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss); 
-    marketManager.deactivateMarket(marketId, atLoss, !premature);
+    marketManager.update_redemption_price(marketId, atLoss, extra_gain, principal_loss, premature); 
 
     cleanUpDust(marketId); 
-
-    // Update amount that should be returned to managers 
-    vault_debt[marketId] = vault_debt[marketId].mulWadDown(marketManager.get_redemption_price(marketId)); 
   }
 
   /// @notice When market resolves, should collect 
@@ -359,11 +334,8 @@ contract Controller {
   function cleanUpDust(
     uint256 marketId
     ) internal {
-    WrappedCollateral(marketManager.getZCB(marketId).getCollateral()).flush(
-      getVaultAd( marketId)
-      );
+    WrappedCollateral(marketManager.getZCB(marketId).getCollateral()).flush(getVaultAd( marketId));
   }
-
 
   /// @notice checks for maturity, resolve at maturity
   /// @param marketId: called for anyone.
@@ -430,12 +402,9 @@ contract Controller {
       uint256 marketId
   ) external onlyManager {
     Vault vault = vaults[id_parent[marketId]]; 
-    BondingCurve bc = marketManager.getZCB(marketId); //BondingCurve(getZCB_ad(marketId)); 
+    BondingCurve bc = marketManager.getZCB(marketId); 
 
-    require(marketManager.duringMarketAssessment(marketId), "Not during assessment");
-    require(marketManager.marketCondition(marketId), "Market Condition Not met"); 
-    require(!marketManager.onlyReputable(marketId), "Market Phase err"); 
-    require(marketManager.validatorApprovalCondition(marketId), "market not confirmed");
+    require(marketManager.getCurrentMarketPhase(marketId) == 3,"Market Condition Not met");
     require(vault.instrumentApprovalCondition(marketId), "Instrument approval condition met");
 
     fetchAndStoreMarketDataForApproval(marketId, bc); 
@@ -524,6 +493,18 @@ contract Controller {
   }
   function min(uint256 a, uint256 b) internal pure returns (uint256) {
       return a <= b ? a : b;
+  }
+
+
+
+///  deprecated
+/// @notice called when market is resolved 
+  function redeem_mint(
+    uint256 amount, 
+    address to, 
+    uint256 marketId) 
+  external onlyManager{
+    vaults[id_parent[marketId]].controller_mint(amount,to); 
   }
 
 }

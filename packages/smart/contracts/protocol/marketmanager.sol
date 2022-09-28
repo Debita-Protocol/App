@@ -191,7 +191,6 @@ contract MarketManager is Owned
     keyHash = bytes32(0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f);
     subscriptionId = 1713;
     COORDINATOR = VRFCoordinatorV2Interface(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed);
-    // BookKeeper bookkepper = f
     
     // push empty market
     markets.push(
@@ -221,13 +220,18 @@ contract MarketManager is Owned
         }
   }
 
-  function createMarket(
-    BondingCurve _long,
-    ShortBondingCurve _short,
-    string calldata _description,
+
+  /// @notice parameters have to be set prior 
+  function newMarket(
+    uint256 marketId, 
+    uint256 principal, 
+    uint256 expectedYield, 
+    BondingCurve _long, 
+    ShortBondingCurve _short, 
+    string calldata _description, 
     uint256 _creationTimestamp
-  ) external onlyController returns (uint256 marketId) {
-    marketId = markets.length;
+    ) external onlyController{
+
     markets.push(CoreMarketData(
       _long,
       _short,
@@ -235,7 +239,18 @@ contract MarketManager is Owned
       _creationTimestamp,
       0
     ));
-  } 
+
+    uint256 base_budget = 1000 * config.WAD; //TODO 
+
+    setMarketPhase(marketId, true, true, base_budget);  
+    
+    setCurves(marketId);
+    
+    setValidatorCap(marketId, principal, expectedYield); 
+    
+    setUpperBound(marketId, principal.mulWadDown(parameters[marketId].alpha+ parameters[marketId].delta));  
+
+  }
 
   /*----Phase Functions----*/
 
@@ -267,7 +282,7 @@ contract MarketManager is Owned
     bool duringAssessment,
     bool _onlyReputable,
     uint256 base_budget
-  ) external  onlyController {
+  ) internal {
     MarketPhaseData storage data = restriction_data[marketId]; 
     data.onlyReputable = _onlyReputable; 
     data.duringAssessment = duringAssessment;
@@ -276,12 +291,12 @@ contract MarketManager is Owned
     data.alive = true;
   }
 
-  /**
-   @notice setup for long and short ZCBs.
-   */
+  
+  /// @notice setup for long and short ZCBs.
+   
   function setCurves(
     uint256 marketId
-  ) external onlyController {
+  ) internal {
     isShortZCB[marketId][address(markets[marketId].short)] = true;
     markets[marketId].long.setShortZCB(address(markets[marketId].short));
   }
@@ -322,8 +337,7 @@ contract MarketManager is Owned
   function setUpperBound(
     uint256 marketId, 
     uint256 new_upper_bound
-    ) external onlyController  {
-    //BondingCurve(controller.getZCB_ad(marketId)).setUpperBound(new_upper_bound);
+    ) internal  {
     markets[marketId].long.setUpperBound(new_upper_bound);
   }
     
@@ -339,7 +353,7 @@ contract MarketManager is Owned
   
   /// @notice Called when market should end, a) when denied b) when maturity 
   /// @param resolve is true when instrument does not resolve prematurely
-  function deactivateMarket(uint256 marketId, bool atLoss, bool resolve) external  onlyController{
+  function deactivateMarket(uint256 marketId, bool atLoss, bool resolve) internal{
     restriction_data[marketId].resolved = resolve; 
     restriction_data[marketId].atLoss = atLoss; 
     restriction_data[marketId].alive = false; //TODO alive should be true, => alive is false when everyone has redeemed.
@@ -564,7 +578,7 @@ contract MarketManager is Owned
     uint256 marketId,
     uint256 principal,
     uint256 interest
-  ) external onlyController{
+  ) internal {
     //BondingCurve zcb = BondingCurve(address(controller.getZCB(marketId)));
     BondingCurve zcb = markets[marketId].long;
     assert(config.isInWad(parameters[marketId].sigma) && config.isInWad(principal));
@@ -1034,7 +1048,8 @@ contract MarketManager is Owned
     uint256 marketId,
     bool atLoss, 
     uint256 extra_gain, 
-    uint256 loss
+    uint256 loss, 
+    bool premature
   ) external  onlyController {  
     if (atLoss) assert(extra_gain == 0); 
     assert(debt_pools[marketId].total_debt == markets[marketId].short.totalSupply());
@@ -1044,8 +1059,7 @@ contract MarketManager is Owned
 
     uint256 total_supply = zcb.getTotalZCB(); 
     uint256 total_shorts = (extra_gain >0) ? debt_pools[marketId].total_debt :0; 
-    console.log('redemptiondata', atLoss, extra_gain);
-    console.log(loss, total_shorts); 
+
     if(!atLoss){
       redemption_prices[marketId] = config.WAD + extra_gain.divWadDown(total_supply + total_shorts); 
       console.log('redemtionprice', redemption_prices[marketId]); 
@@ -1058,6 +1072,8 @@ contract MarketManager is Owned
         redemption_prices[marketId] = config.WAD - loss.divWadDown(total_supply);
       }
     }
+
+    deactivateMarket(marketId, atLoss, !premature); 
   }
 
   mapping(address=> uint8) queuedRepUpdates; 
