@@ -43,6 +43,7 @@ contract Controller {
   mapping(address => bool) public  verified;
   mapping(uint256 => MarketData) public market_data; // id => recipient
   mapping(address=> uint256) public ad_to_id; //utilizer address to marketId
+  // mapping(address=>uint256[]) public utilizer_marketIds; //utilizer address to multiple marketIds
   mapping(uint256=> Vault) public vaults; // vault id to Vault contract
   mapping(uint256=> uint256) public id_parent; //marketId-> vaultId 
   mapping(uint256=> uint256) public vault_debt; //vault debt for each marketId
@@ -234,8 +235,9 @@ contract Controller {
 
   /// @notice initiates market, called by frontend loan proposal or instrument form submit button.
   /// @dev Instrument should already be deployed 
-  /// @param recipient is the utilizer 
   /// @param recipient: utilizer for the associated instrument
+  /// @param instrumentData: instrument arguments
+  /// @param vaultId: vault identifier
   function initiateMarket(
     address recipient,
     Vault.InstrumentData memory instrumentData, 

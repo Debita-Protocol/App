@@ -66,48 +66,24 @@ contract WrappedCollateral is OwnedERC20 {
 contract MarketManager is Owned
  // VRFConsumerBaseV2 
  {
+  using FixedPointMathLib for uint256;
 
-  // Chainlink Validator state variables
+  // Chainlink state variables
   VRFCoordinatorV2Interface COORDINATOR;
   uint64 private immutable subscriptionId;
   bytes32 private keyHash;
   uint32 private callbackGasLimit = 100000;
   uint16 private requestConfirmations = 3;
+  uint256 total_validator_bought; // should be a mapping no?
+  bool private _mutex;
 
-  struct ValidatorData{
-    uint256 val_cap;// total zcb validators can buy at a discount
-    uint256 avg_price; //price the validators can buy zcb at a discount 
-    address[] candidates; // possible validators
-    address[] validators;
-    uint8 confirmations;
-    bool requested; // true if already requested random numbers from array.
-    mapping(address => uint256) sales; // amount of zcb bought per validator
-    uint256 totalSales; // total amount of zcb bought;
-    uint256 numApprovedValidators; 
-  }
+  ReputationNFT rep;
+  Controller controller;
+  CoreMarketData[] public markets;
 
   mapping(uint256 => uint256) requestToMarketId; // chainlink request id to marketId
   mapping(uint256 => ValidatorData) validator_data; //marketId-> total amount of zcb validators can buy 
   mapping(uint256=> mapping(address=> uint256)) sale_data; //marketId-> total amount of zcb bought
-  uint256 total_validator_bought; // should be a mapping no?
-
-  using FixedPointMathLib for uint256;
-
-  uint256 private constant PRICE_PRECISION = 1e6; 
-
-  ReputationNFT rep;
-  Controller controller;
-
-  struct CoreMarketData {
-    BondingCurve long;
-    ShortBondingCurve short;
-    string description; // instrument description
-    uint256 creationTimestamp;
-    uint256 resolutionTimestamp;
-  }
-
-  CoreMarketData[] public markets;
-  //mapping(uint256=>CoreMarketData[]) markets; // vaultId => all markets.
   mapping(uint256=>uint256) private redemption_prices; //redemption price for each market, set when market resolves 
   mapping(uint256=>mapping(address=>uint256)) private assessment_collaterals;  //marketId-> trader->collateralIn
   mapping(uint256=>mapping(address=>uint256)) private assessment_prices; 
@@ -118,6 +94,16 @@ contract MarketManager is Owned
   mapping(uint256=> CDP) private debt_pools; // marketID => debt info
   mapping(uint256=> MarketParameters) private parameters; //marketId-> params
   mapping(uint256=> mapping(address=>bool)) private redeemed; 
+  mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
+  mapping(uint256=>mapping(address=>uint256) )assessment_shorts; // short collateral during assessment
+
+  struct CoreMarketData {
+    BondingCurve long;
+    ShortBondingCurve short;
+    string description; // instrument description
+    uint256 creationTimestamp;
+    uint256 resolutionTimestamp;
+  }
 
   struct CDP{
     mapping(address=>uint256) collateral_amount;
@@ -136,10 +122,17 @@ contract MarketManager is Owned
     uint256 base_budget;
   }
 
-  ///// Shorting logic  /////
-  mapping(uint256=>mapping(address=>bool)) isShortZCB; //marketId-> address-> isshortZCB
-  // mapping(uint256=>address) shortZCBs; 
-  mapping(uint256=>mapping(address=>uint256) )assessment_shorts; // short collateral during assessment
+  struct ValidatorData{
+    uint256 val_cap;// total zcb validators can buy at a discount
+    uint256 avg_price; //price the validators can buy zcb at a discount 
+    address[] candidates; // possible validators
+    address[] validators;
+    uint8 confirmations;
+    bool requested; // true if already requested random numbers from array.
+    mapping(address => uint256) sales; // amount of zcb bought per validator
+    uint256 totalSales; // total amount of zcb bought;
+    uint256 numApprovedValidators; 
+  }
 
   /// @param N: upper bound on number of validators chosen.
   /// @param sigma: validators' stake
@@ -168,7 +161,7 @@ contract MarketManager is Owned
     _;
   }
 
-  bool private _mutex;
+
   modifier _lock_() {
     require(!_mutex, "ERR_REENTRY");
     _mutex = true;
@@ -183,8 +176,9 @@ contract MarketManager is Owned
     address _vrfCoordinator, // 0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed
      bytes32 _keyHash, // 0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f
     uint64 _subscriptionId // 1713
-  ) Owned(_creator_address) 
-  //VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed) 
+  ) 
+    Owned(_creator_address) 
+    //VRFConsumerBaseV2(0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed) 
   {
     rep = ReputationNFT(reputationNFTaddress);
     controller = Controller(_controllerAddress);

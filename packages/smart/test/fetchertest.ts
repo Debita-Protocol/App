@@ -197,7 +197,6 @@ describe.only("Fetcher Tests", ()=>{
 
         await rep.connect(manager[i]).mint(manager[i].address); 
       }
-
     }
 
   }); 
@@ -266,7 +265,7 @@ describe.only("Fetcher Tests", ()=>{
     const canapprove = await marketmanager.validatorApprovalCondition( marketId ) ;
     console.log('canapprove', canapprove)
     const bal = await bc.balanceOf(owner.address); 
-    console.log('bal', bal.toString(),amount); 
+    console.log('bal', bal.toString(),amount);
 
     //Then approve this market again after chaning phase, now the instrument should be 
     //credited with the proposed principal 
