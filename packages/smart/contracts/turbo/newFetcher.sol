@@ -15,7 +15,7 @@ contract Fetcher {
 
     struct StaticVaultBundle {
         uint256 vaultId;
-        uint256[] markets;
+        uint256[] marketIds;
         MarketManager.MarketParameters default_params;
         bool onlyVerified; 
         uint256 r; //reputation ranking  
@@ -83,9 +83,13 @@ contract Fetcher {
     )
     {
         // vault bundle
-        _vaultBundle.markets = _controller.getMarketIds(_vaultId);
+        _vaultBundle.marketIds = _controller.getMarketIds(_vaultId);
 
         Vault _vault = _controller.vaults(_vaultId);
+
+        if (address(_vault) == address(0)) {
+            return (makeEmptyVaultBundle(), [], 0);
+        }
 
         _vaultBundle.collateral = buildCollateralBundle(_vault.asset());
 
@@ -107,6 +111,10 @@ contract Fetcher {
 
         _timestamp = block.timestamp;
     }
+
+    // function makeEmptyVaultBundle() internal returns (StaticVaultBundle memory bundle) {
+    //     bundle.
+    // }
 
     function buildStaticMarketBundle(
         uint256 _marketId,

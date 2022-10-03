@@ -1,5 +1,7 @@
-import type { AppStatusState, GraphDataState, UserState, ParaDeploys } from "../types";
+import type { AppStatusState, GraphDataState, UserState, ParaDeploys, VaultInfos } from "../types";
 import { addresses } from "@augurproject/smart";
+import { BigNumberish } from "ethers";
+
 
 
 export const DEFAULT_NETWORK_ID = (process.env.DEFAULT_NETWORK_ID || "80001").toString();
@@ -163,57 +165,96 @@ export const MOCK_APP_STATUS_STATE = {
   ...DEFAULT_APP_STATUS_STATE,
 };
 
+// export const STUBBED_DATA_ACTIONS = {
+//   updateDataHeartbeat: (processed, blocknumber, errors) => {},
+//   updateTransactions: (transactions) => {},
+//   updateInstrumentDataHeartbeat: (processed)=>{},
+// };
+
 export const STUBBED_DATA_ACTIONS = {
-  updateDataHeartbeat: (processed, blocknumber, errors) => {},
-  updateTransactions: (transactions) => {},
-  updateInstrumentDataHeartbeat: (processed)=>{},
+  updateDataHeartBeat: (vaults, blocknumber, errors) => {}
 };
 
 
 export const DEFAULT_INSTRUMENT_STATE = {
   hedgePrice: "0",
   principal: "0",
-  expectedYioeld: "0",
+  expectedYield: "0",
   duration: "0",
   totalcollateral: "0",  
 }
 
-export const DEFAULT_DATA_STATE: GraphDataState = {
-  ammExchanges: {},
-  blocknumber: null,
-  cashes: {},
-  errors: null,
-  markets: {},
-  transactions: {},
+// export const DEFAULT_DATA_STATE: GraphDataState = {
+//   ammExchanges: {},
+//   blocknumber: null,
+//   cashes: {},
+//   errors: null,
+//   markets: {},
+//   transactions: {},
 
-  hedgePrice: "0",
-  principal: "0",
-  expectedYield: "0",
-  duration: "0",
-  totalcollateral: "0", 
+//   hedgePrice: "0",
+//   principal: "0",
+//   expectedYield: "0",
+//   duration: "0",
+//   totalcollateral: "0", 
+// };
+
+export interface NewCash {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  usdPrice?: string;
+  displayDecimals: number;
 };
+
+export interface CoreDataState {
+  vaults: VaultInfos,
+  blocknumber: number,
+  errors: any,
+  cashes: {
+    [address: string]: NewCash;
+  };
+}
+
+export const DEFAULT_DATA_STATE: CoreDataState = {
+  vaults: {},
+  blocknumber: null,
+  errors: null,
+  cashes: {}
+}
+
+// export const DATA_KEYS = {
+//   AMM_EXCHANGES: "ammExchanges",
+//   BLOCKNUMBER: "blocknumber",
+//   CASHES: "cashes",
+//   ERRORS: "errors",
+//   MARKETS: "markets",
+//   TRANSACTIONS: "transactions",
+
+//   HEDGEPRICE: 'hedgePrice',
+//   PRINCIPAL: 'principal', 
+//   EXPECTEDYIELD:'expectedYield', 
+//   DURATION:'duration', 
+//   TOTALCOLLATERAL: 'totalcollateral',
+// };
 
 export const DATA_KEYS = {
-  AMM_EXCHANGES: "ammExchanges",
+  VAULTS: "vaults",
   BLOCKNUMBER: "blocknumber",
-  CASHES: "cashes",
   ERRORS: "errors",
-  MARKETS: "markets",
-  TRANSACTIONS: "transactions",
+  CASHES: "cashes"
+}
 
-  HEDGEPRICE: 'hedgePrice',
-  PRINCIPAL: 'principal', 
-  EXPECTEDYIELD:'expectedYield', 
-  DURATION:'duration', 
-  TOTALCOLLATERAL: 'totalcollateral',
-
-};
+// export const DATA_ACTIONS = {
+//   UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
+//   UPDATE_TRANSACTIONS: "UPDATE_TRANSACTIONS",
+//   UPDATE_INSTRUMENT_DATA_HEARTBEAT: "UPDATE_INSTRUMENT_DATA_HEARTBEAT"
+// };
 
 export const DATA_ACTIONS = {
-  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
-  UPDATE_TRANSACTIONS: "UPDATE_TRANSACTIONS",
-  UPDATE_INSTRUMENT_DATA_HEARTBEAT: "UPDATE_INSTRUMENT_DATA_HEARTBEAT"
-};
+  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT"
+}
 
 export const MAINNET: string = "1";
 export const KOVAN: string = "42";

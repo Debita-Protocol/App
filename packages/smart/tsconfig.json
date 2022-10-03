@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["./scripts", "./typechain",  "./deploy",  "./circomlibtypes/**/*"],
+  "include": ["./scripts", "./typechain",  "./deploy",  "./circomlibtypes/**/*", "./src", "./test", "./tasks"],
 
   "files": ["./addresses.ts","./constants.ts","./index.ts","./hardhat.config.ts", "./hardhat.typechain.config.ts"],
   "compilerOptions": {

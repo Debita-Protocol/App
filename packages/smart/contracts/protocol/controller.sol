@@ -246,6 +246,7 @@ contract Controller {
     require(instrumentData.Instrument_address != address(0), "must not be zero address");
     require(instrumentData.principal >= config.WAD, "Precision err"); 
     require(address(vaults[vaultId]) != address(0), "Vault doesn't' exist");
+    require(recipient != address(0), "recipient must not be zero address");
 
     Vault vault = Vault(vaults[vaultId]); 
 
@@ -275,7 +276,7 @@ contract Controller {
       _short,
       instrumentData.description,
       block.timestamp
-    ); 
+    );
 
     ad_to_id[recipient] = marketId; //only for testing purposes, one utilizer should be able to create multiple markets
     instrumentData.marketId = marketId;

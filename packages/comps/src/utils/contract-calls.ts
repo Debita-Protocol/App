@@ -27,10 +27,13 @@ import {
   UserBalances,
   UserClaimTransactions,
   UserMarketTransactions,
+  VaultInfo,
+  VaultInfos,
+  CoreMarketInfo
 } from "../types";
 import { ethers, Transaction } from "ethers";
 import { Contract } from "@ethersproject/contracts";
-import { AbstractMarketFactoryV3__factory, addresses, LinearBondingCurve__factory } from "@augurproject/smart";
+import {addresses, LinearBondingCurve__factory } from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -76,25 +79,12 @@ import PriceFeedABI from "./PriceFeedABI.json";
 //import { addresses } from "@augurproject/smart";
 
 import {
-  AbstractMarketFactoryV2,
-  AbstractMarketFactoryV2__factory,
-  AMMFactory,
-  AMMFactory__factory,
-  BPool,
-  BPool__factory,
   Controller__factory, 
-  calcSellCompleteSets,
   Cash__factory,
-  estimateBuy,
-  instantiateMarketFactory,
   MarketFactory,
-  MarketFactoryContract,
-  MasterChef,
-  MasterChef__factory,
-  EvenTheOdds__factory,
   ERC20__factory,
-  IndexCDS__factory,
-  Vault__factory, 
+  Vault__factory,
+  VaultFactory__factory,
   Instrument__factory, 
   Instrument, 
   MarketManager__factory,
@@ -102,34 +92,28 @@ import {
   CreditLine__factory,
   BondingCurve, 
   BondingCurve__factory, 
-  //LinearShortZCB__factory, 
+  Fetcher__factory
 
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
 import { getDefaultPrice } from "./get-default-price";
 import {approveERC20Contract} from "../stores/use-approval-callback";
 import {
-  TrustedMarketFactoryV3ABI,
   TrustedMarketFactoryV3Address,
   
   settlementAddress, 
   dsAddress, 
-  lendingPooladdress, 
-  usdc,
   controller_address,
   ammFactoryAddress,
   indexCDSAddress, 
-  PRICE_PRECISION,
   collateral_address,
-  deployer_pk,
-  zeke_test_account,
-
+  vault_factory_address,
 
   Vault_address, 
-  MM_address,
-  RepNFT_address, 
-  sample_instument_address,
-marketFactoryAddress
+  market_manager_address,
+  RepNFT_address,
+  marketFactoryAddress,
+  fetcher_address
 } from "../data/constants";
 
 
@@ -148,73 +132,6 @@ export async function setupContracts (account: string, library: Web3Provider) {
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account));
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
-  // let tx = await controller.setMarketManager(MM_address);
-  // tx.wait()
-  // tx = await controller.setVault(Vault_address);
-  // tx.wait()
-  // tx = await controller.setMarketFactory(marketFactoryAddress);
-  // tx.wait()
-  // tx = await controller.setReputationNFT(RepNFT_address);
-  // tx.wait()
-  
-  // let data = {} as InstrumentData_; 
-  // data.balance = String(0);
-  // data.Instrument_address = sample_instument_address;
-  // data.principal = "1000000"; //new BN(1000000).toString()
-  // data.expectedYield = "100000"; //new BN(100000).toString()
-  // data.duration = "1000000"; //new BN(1000000).toString()
-  // data.description = "a description of the instrument"
-  // data.faceValue = "1100000"; //new BN(1100000).toString()
-  // data.instrument_type = String(0)
-  // data.maturityDate = String(0)
-  // data.balance = String(0)
-  // data.trusted = false;
-  // data.marketId = "0";
-  // console.log(data);
-
-  // const tx2 = await controller.initiateMarket(account, data).catch((e) => {
-  //   console.error(e);
-  //   throw e;
-  // }); 
-  
-  // let tx = await controller.getZCB_ad(1);
-  // console.log("ZCB address: ", tx);
-
-  // console.log("setup success")
-  const marketManager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
-  let id = 4;
-  let data = await marketManager.restriction_data(id);
-  
-  console.log("data", data);
-  
-  const marketFactory = AbstractMarketFactoryV3__factory.connect(marketFactoryAddress, getProviderOrSigner(library,account));
-
-  let zcb_addr = await controller.getZCB_ad(id);
-  // await controller.verifyAddress(1, 1, [1,1,1,1,1,1,1,1]);
-  
-  let market_data = await marketFactory.getZCBMarket(id);
-
-
-  console.log("verified: ", await controller.isVerified(account));
-  
-  console.log("market data: ", market_data);
-  let amount = "9000000";
-
-  // let tx = await controller.approveMarket(id);
-  // tx.wait(3);
-
-  data = await marketManager.restriction_data(id);
-  console.log("data2", data);
-  // await vault.approve(zcb_addr, amount);
- 
-  // let tx = await marketManager.buy(id, amount).catch((e) => {
-  //   console.error(e);
-  //   throw e;
-  // });
-  // tx.wait(3);
-  console.log("setup success")
-
-  // let MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
 }
 
 // NEW STUFF BELOW
@@ -352,28 +269,29 @@ export async function createCreditLine(
   const _faceValue = new BN(faceValue).shiftedBy(decimals).toFixed()
 
   console.log(account)
-  let creditLine = await creditLineF.deploy(
-    Vault_address,
-    account,
-    _principal,
-    _interestAPR,
-    duration,
-    _faceValue
-  ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
-  creditLine = await creditLine.deployed();
-  console.log("here");
+  // let creditLine = await creditLineF.deploy(
+  //   Vault_address,
+  //   account,
+  //   _principal,
+  //   _interestAPR,
+  //   duration,
+  //   _faceValue
+  // ).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
+  // creditLine = await creditLine.deployed();
+  // console.log("here");
 
-  return creditLine.address;
+  // return creditLine.address;
+  return "0x0";
 }
 
 export async function canBuy(
   account: string, 
   library: Web3Provider
   ): Promise<boolean>{
-  //const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  //const marketmanager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account)); 
   //marketmanager.canBuy()
   return true; 
 }
@@ -381,7 +299,7 @@ export async function getHedgePrice(
   account: string, 
   provider:Web3Provider,
   marketId: string): Promise<string>{
-  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(provider, account)); 
+  const marketmanager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(provider, account)); 
   const hedgePrice = await marketmanager.getHedgePrice( marketId); 
   return hedgePrice.toString(); 
 }
@@ -421,7 +339,7 @@ export async function getTraderBudget(
   library: Web3Provider,
   marketId: string
 ): Promise<string>{
-  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const marketmanager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account)); 
   const budget = await marketmanager.getTraderBudget(marketId, account); 
   return budget.toString(); 
 }
@@ -440,7 +358,7 @@ export async function getHedgeQuantity(
   library: Web3Provider, 
   marketId: string, 
 ): Promise<string>{
-  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const marketmanager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account)); 
   const hedgeQuantity = await marketmanager.getHedgeQuantity(account, marketId);
 
   return hedgeQuantity.toString(); 
@@ -478,7 +396,7 @@ export async function doOwnerSettings(
   library: Web3Provider
   ): Promise<TransactionResponse>{
     const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-    await controller.setMarketManager(MM_address);
+    await controller.setMarketManager(market_manager_address);
     await controller.setVault(Vault_address);
     //await mintVaultDS(account, library); 
     const tx = await controller.setMarketFactory(marketFactoryAddress);
@@ -494,9 +412,9 @@ export async function resolveZCBMarket(
   ){
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   // await controller.resolveMarket(marketId, atLoss, extra_gain, principal_loss); 
-
-
 }
+
+
 export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider,
@@ -642,9 +560,10 @@ export async function borrow_from_creditline(
   const decimals = await collateral.decimals()
   
   const drawdownAmount = new BN(amount).shiftedBy(decimals).toFixed(); 
-  const tx =  await creditLine.drawdown(drawdownAmount); 
-  return tx; 
-
+  // const tx =  await creditLine.drawdown(drawdownAmount); 
+  // return tx; 
+  let tx: TransactionResponse;
+  return tx;
 }
 
 export async function repay_to_creditline(
@@ -667,8 +586,8 @@ export async function repay_to_creditline(
   let tx = await collateral.approve(instrument_address, totalAmount);
   tx.wait();
 
-  tx =  await creditLine.repay(repayAmount, repayInterest);
-  tx.wait();
+  // tx =  await creditLine.repay(repayAmount, repayInterest);
+  // tx.wait();
   return tx; 
 }
 
@@ -757,7 +676,7 @@ export async function redeemZCB(
   library: Web3Provider, 
   marketId: string 
   ){
-  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const MM = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
   //await MM.redeem(marketId, account);
 }
 
@@ -809,7 +728,7 @@ export async function buyZCB(
 ): Promise<TransactionResponse> {
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
-  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const MM = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
   const vault = Vault__factory.connect(Vault_address, getProviderOrSigner(library, account) ); 
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
   const bc_ad = await controller.getZCB_ad(marketId);
@@ -830,7 +749,7 @@ export async function sellZCB(
 ) : Promise<TransactionResponse> {
   const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
   const decimals = await collateral.decimals()
-  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const MM = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
   const _sellAmount = new BN(sellAmount).shiftedBy(decimals).toFixed()
   let tx: TransactionResponse;
   //let tx = MM.sell(marketId, _sellAmount);
@@ -843,7 +762,7 @@ export async function redeemPostAssessment(
   marketId: string,
   trader: string
 ) : Promise<TransactionResponse> {
-  const MM = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account));
+  const MM = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
   let tx = MM.redeemPostAssessment(marketId, trader);
   return tx;
 }
@@ -915,7 +834,7 @@ export async function canApproveUtilizer(
   library: Web3Provider, 
   marketId: string 
   ):Promise<boolean>{
-  const marketmanager = MarketManager__factory.connect(MM_address, getProviderOrSigner(library, account)); 
+  const marketmanager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account)); 
   const canApprove =  await marketmanager.marketCondition(marketId)
   return canApprove; 
 }
@@ -928,8 +847,8 @@ export async function contractApprovals(
 
   const rewardContractAddress = getRewardsContractAddress(TrustedMarketFactoryV3Address);
   console.log('rewardcontractaddress', rewardContractAddress)
-  const rewardContract = getRewardContract(provider, rewardContractAddress, account); 
-  await rewardContract.trustAMMFactory(ammFactoryAddress)
+  // const rewardContract = getRewardContract(provider, rewardContractAddress, account); 
+  // await rewardContract.trustAMMFactory(ammFactoryAddress)
 
 }
 
@@ -989,15 +908,12 @@ export async function fetchTradeData(
   account: string, 
   turboId: number, 
   ) : Promise<string> {
+  // const marketFactoryData = getMarketFactoryData(TrustedMarketFactoryV3Address);
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  // const amount = await marketFactoryContract.getTradeDetails(turboId, 1)//TODO get for all outcomes 
 
-
-  const marketFactoryData = getMarketFactoryData(TrustedMarketFactoryV3Address);
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
-  const amount = await marketFactoryContract.getTradeDetails(turboId, 1)//TODO get for all outcomes 
-
-  return amount.toString()
-
-
+  // return amount.toString()
+  return "";
 }
 
 
@@ -1006,11 +922,11 @@ export async function getNFTPositionInfo(
   account: string
   ) : Promise<any>{
 
-  const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress,
-   getProviderOrSigner(provider, account)) ; 
-  const infos = await indexCDS_contract.getUserTotalBalance(account); 
+  // const indexCDS_contract = IndexCDS__factory.connect(indexCDSAddress,
+  //  getProviderOrSigner(provider, account)) ; 
+  // const infos = await indexCDS_contract.getUserTotalBalance(account); 
 
-  return infos; 
+  // return infos; 
 
 }
 
@@ -1028,8 +944,8 @@ export async function createMarket_(provider: Web3Provider): Promise<boolean> {
   console.log('signers', signer)
   console.log("marketfactories", marketFactories)
   const marketFactoryData = getMarketFactoryData(marketFactoryAddress_);
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress_);
-    console.log('new marketfactorycontract', marketFactoryContract)
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress_);
+  //   console.log('new marketfactorycontract', marketFactoryContract)
 
   // await approveERC20Contract(dsAddress, "name", marketFactoryAddress, loginAccount, string  tokenAddress: string,
   // approvingName: string,
@@ -1037,14 +953,14 @@ export async function createMarket_(provider: Web3Provider): Promise<boolean> {
   // loginAccount: LoginAccount,
   // amount: string = APPROVAL_AMOUNT)
 
-  const details = await marketFactoryContract.createMarket(settlementAddress_, "testCDS",['longCDS', 'shortCDS'], 
-    [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+  // const details = await marketFactoryContract.createMarket(settlementAddress_, "testCDS",['longCDS', 'shortCDS'], 
+  //   [weight1, weight2] ).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
 
 
-  console.log(details)
+  // console.log(details)
   return true; 
 }
 export async function endMarket(
@@ -1059,7 +975,7 @@ export async function endMarket(
   const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
   const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
   const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
   // const tx = await marketFactoryContract.getMarketDetails(0); 
   // console.log('Detail', tx);
   const totalAmount = sharesDisplayToOnChain("100").toFixed();
@@ -1068,16 +984,16 @@ export async function endMarket(
   //       0, totalAmount, settlementAddress
   //   )
 
-  const tx = await marketFactoryContract.trustedResolveMarket(2, 0).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+  // const tx = await marketFactoryContract.trustedResolveMarket(2, 0).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
 
 
 
 
   // return tx;
- 
+  let tx: TransactionResponse;
   return tx; 
 }
 
@@ -1101,8 +1017,8 @@ export async function createMarket(
   const settlementAddress = "0xFD84b7AC1E646580db8c77f1f05F47977fAda692";
   const marketFactoryAddress = "0x78a37719caDFBb038359c3A06164c46932EBD29A"; 
   const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
-  console.log('isthisworking', marketFactoryData, marketFactoryContract)
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);
+  // console.log('isthisworking', marketFactoryData, marketFactoryContract)
   // const tx = await marketFactoryContract.getMarketDetails(0); 
   // console.log('Detail', tx);
   const totalAmount = sharesDisplayToOnChain("100").toFixed();
@@ -1111,16 +1027,18 @@ export async function createMarket(
   //       0, totalAmount, settlementAddress
   //   )
 
-  const tx = await marketFactoryContract.createMarket(settlementAddress, "testCDS",['longCDS', 'shortCDS'], 
-    [weight1, weight2] ).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+  // const tx = await marketFactoryContract.createMarket(settlementAddress, "testCDS",['longCDS', 'shortCDS'], 
+  //   [weight1, weight2] ).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
 
 
 
 
   // return tx;
+
+  let tx: TransactionResponse;
  
   return tx; 
 }
@@ -1136,14 +1054,15 @@ export async function mintCompleteSets_(
 
   const marketFactoryData = getMarketFactoryData(marketFactoryAddress);
   if (!marketFactoryData) return null;
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
-  const totalAmount = sharesDisplayToOnChain(amount).toFixed();
-    console.log('new function', marketFactoryContract); 
+  //const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
+  // const totalAmount = sharesDisplayToOnChain(amount).toFixed();
+  //   console.log('new function', marketFactoryContract); 
 
-  const tx = await marketFactoryContract.mintShares(1, totalAmount, account).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+  // const tx = await marketFactoryContract.mintShares(1, totalAmount, account).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
+  let tx: TransactionResponse;
 
   return tx;
 }
@@ -1163,17 +1082,17 @@ export async function resolveMarket(
   //ok, so this is not default. end market first 
   const winningOutcome = isDefault ? 0 : 1
   const marketFactoryData = getMarketFactoryData(TrustedMarketFactoryV3Address)
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);//only deployer can end market for now 
-  const tx = await marketFactoryContract.trustedResolveMarket(marketID, winningOutcome).catch((e) => {
-    console.error(e);
-    throw e;
-  });
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, settlementAddress);//only deployer can end market for now 
+  // const tx = await marketFactoryContract.trustedResolveMarket(marketID, winningOutcome).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
 
 
 
 
   // return tx;
- 
+  let tx: TransactionResponse;
   return tx; 
 }
 
@@ -1211,15 +1130,15 @@ export async function mintCompleteSets(
 
   const marketFactoryData = getMarketFactoryData(amm.marketFactoryAddress);
   if (!marketFactoryData) return null;
-  const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
+  // const marketFactoryContract = getMarketFactoryContract(provider, marketFactoryData, account);
   const totalAmount = sharesDisplayToOnChain(amount).toFixed();
-  console.log("minting!!!",marketFactoryContract, marketFactoryContract.address, amm?.market?.turboId, totalAmount, account, 
-    marketFactoryData);
-  const tx = await marketFactoryContract.mintShares(amm?.market?.turboId, totalAmount, account).catch((e) => {
-    console.error(e);
-    throw e;
-  });
-
+  // console.log("minting!!!",marketFactoryContract, marketFactoryContract.address, amm?.market?.turboId, totalAmount, account, 
+  //   marketFactoryData);
+  // const tx = await marketFactoryContract.mintShares(amm?.market?.turboId, totalAmount, account).catch((e) => {
+  //   console.error(e);
+  //   throw e;
+  // });
+  let tx: TransactionResponse;
   return tx;
 }
 
@@ -1231,10 +1150,10 @@ export async function estimateAddLiquidityPool(
   cashAmount: string
 ): Promise<LiquidityBreakdown> {
   if (!provider) console.error("provider is null");
-  const ammFactoryContract = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
+  // const ammFactoryContract = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
   console.log('cashamount', cashAmount)
   const { amount, marketFactoryAddress, turboId } = shapeAddLiquidityPool(amm, cash, cashAmount);
-  const ammAddress = amm?.id;
+  const ammAddress = null;// amm?.id;
 
   //
   // const dsContract = DS__factory.connect(dsAddress, getProviderOrSigner(provider, account))
@@ -1249,35 +1168,37 @@ export async function estimateAddLiquidityPool(
   let poolPct = "0";
 
   const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
-  const rewardContract = rewardContractAddress ? getRewardContract(provider, rewardContractAddress, account) : null;
+  const rewardContract = null; //rewardContractAddress ? getRewardContract(provider, rewardContractAddress, account) : null;
   if (!ammAddress) {
     console.log("est add init", marketFactoryAddress, turboId, amount, account, 
       'rewardcontractaddress' , rewardContractAddress);
-    results = rewardContractAddress
-      ? await rewardContract.callStatic.createPool(
-          amm.ammFactoryAddress,
-          marketFactoryAddress,
-          turboId,
-          amount,
-          account
-        )
-      : await ammFactoryContract.callStatic.createPool(marketFactoryAddress, turboId, amount, account);
+    // results = rewardContractAddress
+    //   ? await rewardContract.callStatic.createPool(
+    //       amm.ammFactoryAddress,
+    //       marketFactoryAddress,
+    //       turboId,
+    //       amount,
+    //       account
+    //     )
+    //   : await ammFactoryContract.callStatic.createPool(marketFactoryAddress, turboId, amount, account);
+    results = null;
     tokenAmount = trimDecimalValue(sharesOnChainToDisplay(String(results || "0")));
     console.log('results',results)
   } else {
     // todo: get what the min lp token out is
     console.log("est add additional", marketFactoryAddress, "marketId", turboId, "amount", amount, 0, account);
 
-    results = rewardContractAddress
-      ? await rewardContract.callStatic.addLiquidity(
-          amm.ammFactoryAddress,
-          marketFactoryAddress,
-          turboId,
-          amount,
-          0,
-          account
-        )
-      : await ammFactoryContract.callStatic.addLiquidity(marketFactoryAddress, turboId, amount, 0, account);
+    // results = rewardContractAddress
+    //   ? await rewardContract.callStatic.addLiquidity(
+    //       amm.ammFactoryAddress,
+    //       marketFactoryAddress,
+    //       turboId,
+    //       amount,
+    //       0,
+    //       account
+    //     )
+    //   : await ammFactoryContract.callStatic.addLiquidity(marketFactoryAddress, turboId, amount, 0, account);
+    results = null;
     if (results) {
       const { _balances, _poolAmountOut } = results;
       minAmounts = _balances
@@ -1316,7 +1237,7 @@ export async function addLiquidityPool(
   outcomes: AmmOutcome[]
 ): Promise<TransactionResponse> {
   if (!provider) console.error("provider is null");
-  const ammFactoryContract = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
+  // const ammFactoryContract = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
   const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
   const { amount, marketFactoryAddress, turboId } = shapeAddLiquidityPool(amm, cash, cashAmount);
   const bPoolId = amm?.id;
@@ -1336,39 +1257,39 @@ export async function addLiquidityPool(
     account
   );
   if (rewardContractAddress) {
-    const contract = getRewardContract(provider, rewardContractAddress, account);
+    //const contract = getRewardContract(provider, rewardContractAddress, account);
     // use reward contract (master chef) to add liquidity
     if (!bPoolId) {
-      tx = contract.createPool(amm.ammFactoryAddress, marketFactoryAddress, turboId, amount, account, {
-        // gasLimit: "800000",
-        // gasPrice: "10000000000",
-      });
+      // tx = contract.createPool(amm.ammFactoryAddress, marketFactoryAddress, turboId, amount, account, {
+      //   // gasLimit: "800000",
+      //   // gasPrice: "10000000000",
+      // });
     } else {
-      tx = contract.addLiquidity(
-        amm.ammFactoryAddress,
-        marketFactoryAddress,
-        turboId,
-        amount,
-        minLpTokenAllowed,
-        account,
-        {
-          // gasLimit: "800000",
-          // gasPrice: "10000000000",
-        }
-      );
+      // tx = contract.addLiquidity(
+      //   amm.ammFactoryAddress,
+      //   marketFactoryAddress,
+      //   turboId,
+      //   amount,
+      //   minLpTokenAllowed,
+      //   account,
+      //   {
+      //     // gasLimit: "800000",
+      //     // gasPrice: "10000000000",
+      //   }
+      // );
     }
   } else {
     if (!bPoolId) {
-      tx = ammFactoryContract.createPool(marketFactoryAddress, turboId, amount, account, {
-        // gasLimit: "800000",
-        // gasPrice: "10000000000",
-      });
+      // tx = ammFactoryContract.createPool(marketFactoryAddress, turboId, amount, account, {
+      //   // gasLimit: "800000",
+      //   // gasPrice: "10000000000",
+      // });
     } else {
 
-      tx = ammFactoryContract.addLiquidity(marketFactoryAddress, turboId, amount, minLpTokenAllowed, account, {
-        // gasLimit: "800000",
-        // gasPrice: "10000000000",
-      });
+      // tx = ammFactoryContract.addLiquidity(marketFactoryAddress, turboId, amount, minLpTokenAllowed, account, {
+      //   // gasLimit: "800000",
+      //   // gasPrice: "10000000000",
+      // });
     }
   }
 
@@ -1403,7 +1324,7 @@ export async function getRemoveLiquidity(
     return null;
   }
   const { market } = amm;
-  const ammFactory = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
+  // const ammFactory = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
 
   // balancer lp tokens are 18 decimal places
   const lpBalance = convertDisplayCashAmountToOnChainCashAmount(lpTokenBalance, 18).toFixed();
@@ -1412,21 +1333,22 @@ export async function getRemoveLiquidity(
   let minAmountsRaw = null;
   let collateralOut = "0";
 
-  const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
-  const rewardContract = rewardContractAddress ? getRewardContract(provider, rewardContractAddress, account) : null;
-  results = rewardContractAddress
-    ? await rewardContract.callStatic
-        .removeLiquidity(amm.ammFactoryAddress, market.marketFactoryAddress, market.turboId, lpBalance, "0", account) // uint256[] calldata minAmountsOut values be?
-        .catch((e) => {
-          console.log(e);
-          throw e;
-        })
-    : await ammFactory.callStatic
-        .removeLiquidity(market.marketFactoryAddress, market.turboId, lpBalance, "0", account) // uint256[] calldata minAmountsOut values be?
-        .catch((e) => {
-          console.log(e);
-          throw e;
-        });
+  const rewardContractAddress = null; // getRewardsContractAddress(amm.marketFactoryAddress);
+  const rewardContract = null; // rewardContractAddress ? getRewardContract(provider, rewardContractAddress, account) : null;
+  // results = rewardContractAddress
+  //   ? await rewardContract.callStatic
+  //       .removeLiquidity(amm.ammFactoryAddress, market.marketFactoryAddress, market.turboId, lpBalance, "0", account) // uint256[] calldata minAmountsOut values be?
+  //       .catch((e) => {
+  //         console.log(e);
+  //         throw e;
+  //       })
+  //   : await ammFactory.callStatic
+  //       .removeLiquidity(market.marketFactoryAddress, market.turboId, lpBalance, "0", account) // uint256[] calldata minAmountsOut values be?
+  //       .catch((e) => {
+  //         console.log(e);
+  //         throw e;
+  //       });
+  results = null;
 
   const balances = results ? results?._balances || results[1] : [];
   collateralOut = results ? results?._collateralOut || results[0] || "0" : collateralOut;
@@ -1461,19 +1383,22 @@ export async function estimateLPTokenInShares(
     console.error("estimate lp tokens: no provider or no balancer pool id");
     return null;
   }
-  const balancerPool = getBalancerPoolContract(provider, balancerPoolId, account);
+  // const balancerPool = getBalancerPoolContract(provider, balancerPoolId, account);
   // balancer lp tokens are 18 decimal places
   const lpBalance = convertDisplayCashAmountToOnChainCashAmount(lpTokenBalance, 18).toFixed();
 
-  const results = await balancerPool
-    .calcExitPool(
-      lpBalance,
-      outcomes.map((o) => "0")
-    ) // uint256[] calldata minAmountsOut values be?
-    .catch((e) => {
-      console.log(e);
-      throw e;
-    });
+  // const results = await balancerPool
+  //   .calcExitPool(
+  //     lpBalance,
+  //     outcomes.map((o) => "0")
+  //   ) // uint256[] calldata minAmountsOut values be?
+  //   .catch((e) => {
+  //     console.log(e);
+  //     throw e;
+  //   });
+
+  // ANTI-LEGACY
+  const results = null;
 
   if (!results) return null;
   const minAmounts = results.map((v) => ({ amount: lpTokensOnChainToDisplay(String(v)).toFixed() }));
@@ -1499,26 +1424,27 @@ export function doRemoveLiquidity(
     return null;
   }
   const { market } = amm;
-  const ammFactory = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
+  // const ammFactory = getAmmFactoryContract(provider, amm.ammFactoryAddress, account);
   const lpBalance = convertDisplayCashAmountToOnChainCashAmount(lpTokenBalance, 18).toFixed();
-  const balancerPool = getBalancerPoolContract(provider, amm?.id, account);
+  // const balancerPool = getBalancerPoolContract(provider, amm?.id, account);
   const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
 
   if (rewardContractAddress) {
-    const contract = getRewardContract(provider, rewardContractAddress, account);
-    return contract.removeLiquidity(
-      amm.ammFactoryAddress,
-      market.marketFactoryAddress,
-      market.turboId,
-      lpBalance,
-      "0",
-      account
-    );
+    // const contract = getRewardContract(provider, rewardContractAddress, account);
+    // return contract.removeLiquidity(
+    //   amm.ammFactoryAddress,
+    //   market.marketFactoryAddress,
+    //   market.turboId,
+    //   lpBalance,
+    //   "0",
+    //   account
+    // );
   } else {
-    return hasWinner
-      ? balancerPool.exitPool(lpBalance, amountsRaw)
-      : ammFactory.removeLiquidity(market.marketFactoryAddress, market.turboId, lpBalance, "0", account);
+    // return hasWinner
+    //   ? balancerPool.exitPool(lpBalance, amountsRaw)
+    //   : ammFactory.removeLiquidity(market.marketFactoryAddress, market.turboId, lpBalance, "0", account);
   }
+  return null; // AL
 }
 
 export const maxWhackedCollateralAmount = (amm: AmmExchange) => {
@@ -1563,7 +1489,7 @@ export const estimateResetPrices = async (
   amm: AmmExchange
 ): Promise<LiquidityBreakdown> => {
   const { evenTheOdds } = PARA_CONFIG;
-  const contract = EvenTheOdds__factory.connect(evenTheOdds, getProviderOrSigner(library, account));
+  // const contract = EvenTheOdds__factory.connect(evenTheOdds, getProviderOrSigner(library, account));
   const factory = getMarketFactoryData(amm.marketFactoryAddress);
 
   const maxCollateral = maxWhackedCollateralAmount(amm);
@@ -1610,20 +1536,20 @@ export const estimateResetPrices = async (
 export const doResetPrices = async (library: Web3Provider, account: string, amm: AmmExchange) => {
   if (!amm) return null;
   const { evenTheOdds } = PARA_CONFIG;
-  const contract = EvenTheOdds__factory.connect(evenTheOdds, getProviderOrSigner(library, account));
+  // const contract = EvenTheOdds__factory.connect(evenTheOdds, getProviderOrSigner(library, account));
   const factory = getMarketFactoryData(amm.marketFactoryAddress);
   const maxCollateral = maxWhackedCollateralAmount(amm);
-  return contract.bringTokenBalanceToMatchOtherToken(
-    factory.address,
-    amm.turboId,
-    amm.id,
-    maxCollateral.maxOutcomeId,
-    maxCollateral.collateralRaw,
-    {
-      //gasLimit: "800000",
-      //gasPrice: "10000000000",
-    }
-  );
+  // return contract.bringTokenBalanceToMatchOtherToken(
+  //   factory.address,
+  //   amm.turboId,
+  //   amm.id,
+  //   maxCollateral.maxOutcomeId,
+  //   maxCollateral.collateralRaw,
+  //   {
+  //     //gasLimit: "800000",
+  //     //gasPrice: "10000000000",
+  //   }
+  // );
 };
 
 export const estimateBuyTrade = (
@@ -1637,7 +1563,7 @@ export const estimateBuyTrade = (
     .toFixed();
   let result = null;
   try {
-    result = estimateBuy(amm.shareFactor, selectedOutcomeId, amount, amm.balancesRaw, amm.weights, amm.feeRaw);
+    // result = estimateBuy(amm.shareFactor, selectedOutcomeId, amount, amm.balancesRaw, amm.weights, amm.feeRaw);
   } catch (e) {
     if (String(e).indexOf("ERR_DIV_ZERO") > -1) {
       console.log("Insufficent Liquidity to estimate buy", inputDisplayAmount);
@@ -1672,50 +1598,51 @@ export const estimateSellTrade = (
   selectedOutcomeId: number,
   userBalances: { outcomeSharesRaw: string[] }
 ): EstimateTradeResult | null => {
-  const amount = sharesDisplayToOnChain(inputDisplayAmount).toFixed();
+  // const amount = sharesDisplayToOnChain(inputDisplayAmount).toFixed();
 
-  const [setsOut, undesirableTokensInPerOutcome] = calcSellCompleteSets(
-    amm.shareFactor,
-    selectedOutcomeId,
-    amount,
-    amm.balancesRaw,
-    amm.weights,
-    amm.feeRaw
-  );
-  let maxSellAmount = "0";
-  const completeSets = sharesOnChainToDisplay(setsOut); // todo: debugging div 1000 need to fix
-  const tradeFees = String(new BN(inputDisplayAmount).times(new BN(amm.feeDecimal)).toFixed(4));
+  // const [setsOut, undesirableTokensInPerOutcome] = calcSellCompleteSets(
+  //   amm.shareFactor,
+  //   selectedOutcomeId,
+  //   amount,
+  //   amm.balancesRaw,
+  //   amm.weights,
+  //   amm.feeRaw
+  // );
+  // let maxSellAmount = "0";
+  // const completeSets = sharesOnChainToDisplay(setsOut); // todo: debugging div 1000 need to fix
+  // const tradeFees = String(new BN(inputDisplayAmount).times(new BN(amm.feeDecimal)).toFixed(4));
 
-  const displayAmount = new BN(inputDisplayAmount);
-  const averagePrice = new BN(completeSets).div(displayAmount);
-  const price = new BN(String(amm.ammOutcomes[selectedOutcomeId].price));
-  const userShares = userBalances?.outcomeSharesRaw
-    ? new BN(userBalances?.outcomeSharesRaw?.[selectedOutcomeId] || "0")
-    : "0";
-  const priceImpact = averagePrice.minus(price).times(100).toFixed(4);
-  const ratePerCash = new BN(completeSets).div(displayAmount).toFixed(6);
-  const displayShares = sharesOnChainToDisplay(userShares);
-  const remainingShares = new BN(displayShares || "0").minus(displayAmount).abs();
+  // const displayAmount = new BN(inputDisplayAmount);
+  // const averagePrice = new BN(completeSets).div(displayAmount);
+  // const price = new BN(String(amm.ammOutcomes[selectedOutcomeId].price));
+  // const userShares = userBalances?.outcomeSharesRaw
+  //   ? new BN(userBalances?.outcomeSharesRaw?.[selectedOutcomeId] || "0")
+  //   : "0";
+  // const priceImpact = averagePrice.minus(price).times(100).toFixed(4);
+  // const ratePerCash = new BN(completeSets).div(displayAmount).toFixed(6);
+  // const displayShares = sharesOnChainToDisplay(userShares);
+  // const remainingShares = new BN(displayShares || "0").minus(displayAmount).abs();
 
-  const sumUndesirable = (undesirableTokensInPerOutcome || []).reduce((p, u) => p.plus(new BN(u)), ZERO);
+  // const sumUndesirable = (undesirableTokensInPerOutcome || []).reduce((p, u) => p.plus(new BN(u)), ZERO);
 
-  const canSellAll = new BN(amount).minus(sumUndesirable).abs();
+  // const canSellAll = new BN(amount).minus(sumUndesirable).abs();
 
-  if (canSellAll.gte(new BN(amm.shareFactor))) {
-    maxSellAmount = sharesOnChainToDisplay(sumUndesirable).decimalPlaces(4, 1).toFixed();
-  }
+  // if (canSellAll.gte(new BN(amm.shareFactor))) {
+  //   maxSellAmount = sharesOnChainToDisplay(sumUndesirable).decimalPlaces(4, 1).toFixed();
+  // }
 
-  return {
-    outputValue: String(completeSets),
-    tradeFees,
-    averagePrice: averagePrice.toFixed(2),
-    maxProfit: null,
-    ratePerCash,
-    remainingShares: remainingShares.toFixed(6),
-    priceImpact,
-    outcomeShareTokensIn: undesirableTokensInPerOutcome, // just a pass through to sell trade call
-    maxSellAmount,
-  };
+  // return {
+  //   outputValue: String(completeSets),
+  //   tradeFees,
+  //   averagePrice: averagePrice.toFixed(2),
+  //   maxProfit: null,
+  //   ratePerCash,
+  //   remainingShares: remainingShares.toFixed(6),
+  //   priceImpact,
+  //   outcomeShareTokensIn: undesirableTokensInPerOutcome, // just a pass through to sell trade call
+  //   maxSellAmount,
+  // };
+  return null;
 };
 
 
@@ -1730,8 +1657,9 @@ export const claimWinnings = (
     console.error("claimWinnings: no provider");
     return null;
   }
-  const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
-  return marketFactoryContract.claimManyWinnings(marketIds, account);
+  // const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
+  // return marketFactoryContract.claimManyWinnings(marketIds, account);
+  return null;
 };
 
 export const claimFees = (
@@ -1743,8 +1671,9 @@ export const claimFees = (
     console.error("claimFees: no provider");
     return null;
   }
-  const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
-  return marketFactoryContract.claimSettlementFees(account);
+  // const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
+  //return marketFactoryContract.claimSettlementFees(account);
+  return null;
 };
 
 export const cashOutAllShares = (
@@ -1759,7 +1688,7 @@ export const cashOutAllShares = (
     console.error("cashOutAllShares: no provider");
     return null;
   }
-  const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
+  // const marketFactoryContract = getAbstractMarketFactoryContract(provider, factoryAddress, account);
   const shareAmount = BN.min(...balancesRaw);
   const normalizedAmount = shareAmount
     .div(new BN(shareFactor))
@@ -1767,12 +1696,13 @@ export const cashOutAllShares = (
     .times(new BN(shareFactor))
     .decimalPlaces(0, 1);
   console.log("share to cash out", shareAmount.toFixed(), marketId, normalizedAmount.toFixed(), account);
-  return marketFactoryContract.burnShares(
-    marketId,
-    normalizedAmount.toFixed(),
-    account
-    //, { gasLimit: "800000", gasPrice: "10000000000", }
-  );
+  // return marketFactoryContract.burnShares(
+  //   marketId,
+  //   normalizedAmount.toFixed(),
+  //   account
+  //   //, { gasLimit: "800000", gasPrice: "10000000000", }
+  // );
+  return null;
 };
 
 export const getCompleteSetsAmount = (outcomeShares: string[], ammOutcomes): string => {
@@ -1913,68 +1843,69 @@ export const getUserBalances = async (
     console.log("AMMMEXCHANGE", rewardsUnsupportedExchanges)
 
   const supportRewardsExchanges = exchanges.filter((f) => supportRewards.includes(f.ammFactoryAddress));
-  const ammFactoryAbi =
-    supportRewards.length > 0 ? extractABI(getAmmFactoryContract(provider, supportRewards[0], account)) : null;
+  // const ammFactoryAbi =
+  //   supportRewards.length > 0 ? extractABI(getAmmFactoryContract(provider, supportRewards[0], account)) : null;
+  const ammFactoryAbi = null; // AL
 
-  const contractLpBalanceRewardsCall: ContractCallContext[] = ammFactoryAbi
-    ? supportRewardsExchanges.reduce(
-        (p, exchange) => [
-          ...p,
-          {
-            reference: `${exchange.id}-lp`,
-            contractAddress: getRewardsContractAddress(exchange.marketFactoryAddress),
-            abi: extractABI(
-              getRewardContract(provider, getRewardsContractAddress(exchange.marketFactoryAddress), account)
-            ),
-            calls: [
-              {
-                reference: `${exchange.id}-lp`,
-                methodName: POOL_TOKEN_BALANCE,
-                methodParameters: [
-                  exchange.ammFactoryAddress,
-                  exchange.marketFactoryAddress,
-                  exchange.turboId,
-                  account,
-                ],
-                context: {
-                  dataKey: exchange.marketId,
-                  collection: LP_TOKEN_COLLECTION,
-                  decimals: 18,
-                  marketId: exchange.marketId,
-                  totalSupply: exchange?.totalSupply,
-                },
-              },
-            ],
-          },
-          {
-            reference: `${exchange.id}-reward`,
-            contractAddress: getRewardsContractAddress(exchange.marketFactoryAddress),
-            abi: extractABI(
-              getRewardContract(provider, getRewardsContractAddress(exchange.marketFactoryAddress), account)
-            ),
-            calls: [
-              {
-                reference: `${exchange.id}-reward`,
-                methodName: POOL_PENDING_REWARDS,
-                methodParameters: [
-                  exchange.ammFactoryAddress,
-                  exchange.marketFactoryAddress,
-                  exchange.turboId,
-                  account,
-                ],
-                context: {
-                  dataKey: exchange.marketId,
-                  collection: PENDING_REWARDS_COLLECTION,
-                  decimals: 18,
-                  marketId: exchange.marketId,
-                },
-              },
-            ],
-          },
-        ],
-        []
-      )
-    : [];
+  const contractLpBalanceRewardsCall: ContractCallContext[] = []; // ammFactoryAbi
+    // ? supportRewardsExchanges.reduce(
+    //     (p, exchange) => [
+    //       ...p,
+    //       {
+    //         reference: `${exchange.id}-lp`,
+    //         contractAddress: getRewardsContractAddress(exchange.marketFactoryAddress),
+    //         abi: extractABI(
+    //           getRewardContract(provider, getRewardsContractAddress(exchange.marketFactoryAddress), account)
+    //         ),
+    //         calls: [
+    //           {
+    //             reference: `${exchange.id}-lp`,
+    //             methodName: POOL_TOKEN_BALANCE,
+    //             methodParameters: [
+    //               exchange.ammFactoryAddress,
+    //               exchange.marketFactoryAddress,
+    //               exchange.turboId,
+    //               account,
+    //             ],
+    //             context: {
+    //               dataKey: exchange.marketId,
+    //               collection: LP_TOKEN_COLLECTION,
+    //               decimals: 18,
+    //               marketId: exchange.marketId,
+    //               totalSupply: exchange?.totalSupply,
+    //             },
+    //           },
+    //         ],
+    //       },
+    //       {
+    //         reference: `${exchange.id}-reward`,
+    //         contractAddress: getRewardsContractAddress(exchange.marketFactoryAddress),
+    //         abi: extractABI(
+    //           getRewardContract(provider, getRewardsContractAddress(exchange.marketFactoryAddress), account)
+    //         ),
+    //         calls: [
+    //           {
+    //             reference: `${exchange.id}-reward`,
+    //             methodName: POOL_PENDING_REWARDS,
+    //             methodParameters: [
+    //               exchange.ammFactoryAddress,
+    //               exchange.marketFactoryAddress,
+    //               exchange.turboId,
+    //               account,
+    //             ],
+    //             context: {
+    //               dataKey: exchange.marketId,
+    //               collection: PENDING_REWARDS_COLLECTION,
+    //               decimals: 18,
+    //               marketId: exchange.marketId,
+    //             },
+    //           },
+    //         ],
+    //       },
+    //     ],
+    //     []
+    //   )
+    // : [];
 
   const contractLpBalanceCall: ContractCallContext[] = rewardsUnsupportedExchanges.map((exchange) => ({
     reference: exchange.id,
@@ -2666,13 +2597,13 @@ export const getContract = (tokenAddress: string, ABI: any, library: Web3Provide
   return new Contract(tokenAddress, ABI, getProviderOrSigner(library, account) as any);
 };
 
-const getAmmFactoryContract = (library: Web3Provider, address: string, account?: string): AMMFactory => {
-  return AMMFactory__factory.connect(address, getProviderOrSigner(library, account));
-};
+// const getAmmFactoryContract = (library: Web3Provider, address: string, account?: string): AMMFactory => {
+//   return AMMFactory__factory.connect(address, getProviderOrSigner(library, account));
+// };
 
-const getRewardContract = (library: Web3Provider, address: string, account?: string): MasterChef => {
-  return MasterChef__factory.connect(address, getProviderOrSigner(library, account));
-};
+// const getRewardContract = (library: Web3Provider, address: string, account?: string): MasterChef => {
+//   return MasterChef__factory.connect(address, getProviderOrSigner(library, account));
+// };
 
 // const getDSContract = (library: Web3Provider, address: string, account?: string): MasterChef => {
 //   return MasterChef__factory.connect(address, getProviderOrSigner(library, account));
@@ -2691,30 +2622,31 @@ export const faucetUSDC = async (library: Web3Provider, account?: string) => {
 //   marketFactoryData: MarketFactory,
 //   account?: string
 //   ): DSContract
-const getMarketFactoryContract = (
-  library: Web3Provider,
-  marketFactoryData: MarketFactory,
-  account?: string
-): MarketFactoryContract => {
-  return instantiateMarketFactory(
-    marketFactoryData.type,
-    marketFactoryData.subtype,
-    marketFactoryData.address,
-    getProviderOrSigner(library, account)
-  );
-};
 
-const getAbstractMarketFactoryContract = (
-  library: Web3Provider,
-  address: string,
-  account?: string
-): AbstractMarketFactoryV2 => {
-  return AbstractMarketFactoryV2__factory.connect(address, getProviderOrSigner(library, account));
-};
+// const getMarketFactoryContract = (
+//   library: Web3Provider,
+//   marketFactoryData: MarketFactory,
+//   account?: string
+// ): MarketFactoryContract => {
+//   return instantiateMarketFactory(
+//     marketFactoryData.type,
+//     marketFactoryData.subtype,
+//     marketFactoryData.address,
+//     getProviderOrSigner(library, account)
+//   );
+// };
 
-const getBalancerPoolContract = (library: Web3Provider, address: string, account?: string): BPool => {
-  return BPool__factory.connect(address, getProviderOrSigner(library, account));
-};
+// const getAbstractMarketFactoryContract = (
+//   library: Web3Provider,
+//   address: string,
+//   account?: string
+// ): AbstractMarketFactoryV2 => {
+//   return AbstractMarketFactoryV2__factory.connect(address, getProviderOrSigner(library, account));
+// };
+
+// const getBalancerPoolContract = (library: Web3Provider, address: string, account?: string): BPool => {
+//   return BPool__factory.connect(address, getProviderOrSigner(library, account));
+// };
 
 // returns null on errors
 export const getErc20Contract = (tokenAddress: string, library: Web3Provider, account: string): Contract | null => {
@@ -2851,6 +2783,110 @@ export const getMarketInfos = async (
   const exchanges = Object.values(filteredMarkets as MarketInfos).reduce((p, m) => ({ ...p, [m.marketId]: m.amm }), {});
   return { markets: filteredMarkets, ammExchanges: exchanges, blocknumber: newBlocknumber };
 };
+
+import {fetchInitialData} from "@augurproject/smart"
+import { isDataTooOld } from "./date-utils";
+
+/**
+ * 
+ * TODO shouldn't have to hardcode everything for reformatting
+ */
+export const getVaultInfos = async (
+  provider: Web3Provider,
+  account: string
+): Promise<{ vaults: VaultInfos | null; blocknumber: number | null }>  => {
+  
+  // get controller and marketManager and marketFactory
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
+  const vault_factory = VaultFactory__factory.connect(vault_factory_address, getProviderOrSigner(provider, account));
+  const market_manager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(provider, account));
+  const fetcher = Fetcher__factory.connect(fetcher_address, getProviderOrSigner(provider, account));
+
+  // retrieve raw data from fetcher, timestamp
+  const {bundles , timestamp: rawTimestamp} = await fetchInitialData(fetcher, controller, vault_factory, market_manager);
+
+  if (isDataTooOld(Number(rawTimestamp))) {
+    console.error(
+      "node returned data too old",
+      "timestamp",
+      new Date(Number(rawTimestamp) * 1000).toString(),
+      provider.connection.url
+    );
+    throw new Error("contract data too old");
+  }
+
+  // no vaults found.
+  if (bundles[0].vault.vaultId == 0) {
+    return {vaults: null, blocknumber: null};
+  }
+
+  // format data into large vault struct.
+  let tmp_vaults = bundles.map((bundle) => {
+    let v = bundle.vault;
+    let bmarkets = bundle.markets;
+
+    for (let prop in v.default_params) {
+      v.default_params[prop] = EthersBN_to_Num(v.default_params[prop]);
+    }
+
+    let _markets: CoreMarketInfo[] = bmarkets.map(bmarket => {
+      return {
+        marketId: EthersBN_to_Num(bmarket.marketId),
+        creationTimestamp: EthersBN_to_Num(bmarket.creationTimestamp),
+        resolutionTimestamp: EthersBN_to_Num(bmarket.resolutionTimestamp),
+        short: bmarket.short,
+        long: bmarket.long,
+        parameters: {
+          N: EthersBN_to_Num(bmarket.parameters.N),
+          delta: EthersBN_to_Num(bmarket.parameters.delta),
+          omega: EthersBN_to_Num(bmarket.parameters.omega),
+          r: EthersBN_to_Num(bmarket.parameters.r),
+          s: EthersBN_to_Num(bmarket.parameters.s),
+          sigma: EthersBN_to_Num(bmarket.parameters.sigma)
+        }
+      };
+    })
+
+    let markets: {[marketId: string]: CoreMarketInfo} = {};
+    for (let i = 1; i < _markets.length + 1; i ++) {
+      markets[String(i)] = _markets[i - 1];
+    }
+
+    return {
+      vaultId: EthersBN_to_Num(v.vaultId),
+      marketIds: v.marketIds.map((id) => EthersBN_to_Num(id)),
+      default_params:  {
+        N: EthersBN_to_Num(v.default_params.N),
+        delta: EthersBN_to_Num(v.default_params.delta),
+        omega: EthersBN_to_Num(v.default_params.omega),
+        r: EthersBN_to_Num(v.default_params.r),
+        s: EthersBN_to_Num(v.default_params.s),
+        sigma: EthersBN_to_Num(v.default_params.sigma)
+      },
+      onlyVerified: v.onlyVerified,
+      r: EthersBN_to_Num(v.r),
+      asset_limit: EthersBN_to_Num(v.asset_limit),
+      total_asset_limit: EthersBN_to_Num(v.total_asset_limit),
+      collateral_address: v.collateral.addr,
+      markets,
+    }
+  })
+
+  let vaults: VaultInfos = {};
+  for (let i = 1; i < tmp_vaults.length + 1; i++) {
+    vaults[String(i)] = tmp_vaults[i - 1];
+  }
+
+  return {
+    vaults,
+    blocknumber: Number(await provider.getBlockNumber()),
+  }
+}
+
+const EthersBN_to_Num = (a) => {
+  return new BN(String(a)).toNumber()
+}
+
 
 const setIgnoreRemoveMarketList = (
   allMarkets: MarketInfos,

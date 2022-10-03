@@ -19,10 +19,10 @@ import { AmmExchange, MarketInfo, MarketInfos } from "types";
 import { calculatePrices } from "./calculations";
 import { convertOnChainCashAmountToDisplayCashAmount, sharesOnChainToDisplay } from "./format-number";
 import { MarketFactory } from "@augurproject/smart";
-import * as SportFetcher from "./fetcher-sport";
-import * as CryptoFetcher from "./fetcher-crypto";
-import * as GroupedFetcher from "./fetcher-grouped";
-import * as TrustedFetcher from "./fetcher-trusted";
+// import * as SportFetcher from "./fetcher-sport";
+// import * as CryptoFetcher from "./fetcher-crypto";
+// import * as GroupedFetcher from "./fetcher-grouped";
+// import * as TrustedFetcher from "./fetcher-trusted";
 import { getDefaultPrice } from "./get-default-price";
 
 export const getResolutionRules = (marketInfo: MarketInfo): string[] => {
@@ -129,10 +129,10 @@ export const fetcherMarketsPerConfig = async (
     //   markets = await GroupedFetcher.fetchContractData(config, provider, account);
     //   break;
     // }
-    case MARKET_FACTORY_TYPES.TRUSTED: {
-      markets = await TrustedFetcher.fetchContractData(config, provider, account)
-      break;
-    }
+    // case MARKET_FACTORY_TYPES.TRUSTED: {
+    //   markets = await TrustedFetcher.fetchContractData(config, provider, account)
+    //   break;
+    // }
     default: {
       console.log("Config type not found", config.type);
       markets = null

@@ -28,7 +28,7 @@ contract VaultFactory{
 
   constructor(address _controller){
     owner = msg.sender; 
-    controller = Controller(_controller); 
+    controller = Controller(_controller);
   }
 
   function isVault(address v) external view returns(bool){
@@ -74,6 +74,7 @@ contract VaultFactory{
     numVaults++; 
 
     return (vault, numVaults); 
+    // vaultId is numVaults after new creation of the vault.
 
   }
 }

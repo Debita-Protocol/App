@@ -1,4 +1,4 @@
-import { deployments, ethers } from "hardhat";
+import { network, deployments, ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect, use as chaiUse } from "chai";
 
@@ -6,10 +6,7 @@ import chaiAsPromised from "chai-as-promised";
 import {
 
   Cash,
-  OwnedERC20,
-  OwnedERC20__factory,
   Controller, 
-  BondingCurve, 
   MarketManager, 
   ReputationNFT ,
 
@@ -21,12 +18,12 @@ import {
   LinearBondingCurve__factory,
   MarketManager__factory, 
   LinearShortZCB__factory, 
-  LinearShortZCB,
   VaultFactory ,
   Proxy__factory, 
 
   MockBorrowerContract, 
-MockBorrowerContract__factory
+MockBorrowerContract__factory,
+Fetcher
 } from "../typechain";
 
 import { BigNumber,BigNumberish  } from "ethers";
@@ -74,10 +71,6 @@ interface DefaultParams {
 
 }
 
-// async function reset( ): Promise<boolean>   
-// async function buy(): Promise<boolean>
-// async function sell(): Promise<boolean>
-
 export async function validator_approve(
   validator: SignerWithAddress,
   validator_address: string, 
@@ -98,16 +91,12 @@ export async function validator_approve(
 
 }
 
-describe.only("Fetcher Tests", ()=>{
+describe.only("Zeke Tests", ()=>{
   let owner: SignerWithAddress; 
   let trader: SignerWithAddress; 
   let manager1: SignerWithAddress; 
   let manager2: SignerWithAddress; 
-  let manager3: SignerWithAddress; 
-  let manager4: SignerWithAddress; 
-  let manager5: SignerWithAddress; 
-  let manager6: SignerWithAddress; 
-
+  let manager3: SignerWithAddress;
 
   let collateral: Cash; 
   let vault: Vault;
@@ -120,6 +109,7 @@ describe.only("Fetcher Tests", ()=>{
   let borrowerContract: MockBorrowerContract; 
   let CreditLine__factory: CreditLine__factory; 
   let MockBorrowerContract__factory: MockBorrowerContract__factory; 
+  let fetcher: Fetcher;
 
   // let Vault__factory: Vault__factory; 
   let MarketManager__factory: MarketManager__factory; 
@@ -147,12 +137,13 @@ describe.only("Fetcher Tests", ()=>{
 
 
   before(async() =>{
-    [owner, trader, manager1, manager2, manager3, manager4, manager5] = await ethers.getSigners();
+    [owner, trader, manager1, manager2, manager3] = await ethers.getSigners();
     controller = (await ethers.getContract("Controller")) as Controller; 
 
     marketmanager = (await ethers.getContract("MarketManager")) as MarketManager; 
     collateral = (await ethers.getContract("Collateral")) as Cash; 
-    // vault = (await ethers.getContract("Vault")) as Vault;
+    fetcher = (await ethers.getContract("Fetcher")) as Fetcher;
+
     CreditLine__factory = (await ethers.getContractFactory("CreditLine")) as CreditLine__factory; 
     MockBorrowerContract__factory = (await ethers.getContractFactory("MockBorrowerContract")) as MockBorrowerContract__factory; 
     rep = (await ethers.getContract("ReputationNFT")) as ReputationNFT; 
@@ -164,31 +155,30 @@ describe.only("Fetcher Tests", ()=>{
     await controller.setVaultFactory(vaultFactory.address)
     await controller.setReputationNFT(rep.address); 
 
-    await controller.createVault(
-     collateral.address, 
-     false, 1, 0, 0, params
-    )
-    const vault_ad = await controller.getVaultfromId(1); 
+    // await controller.createVault(
+    //  collateral.address, 
+    //  false, 1, 0, 0, params
+    // )
+    // const vault_ad = await controller.getVaultfromId(1); 
 
-    vault = Vault__factory.connect(vault_ad, owner) as Vault; 
+    // vault = Vault__factory.connect(vault_ad, owner) as Vault; 
 
-    creditline = await CreditLine__factory.deploy(
-    vault.address, trader.address, pp.mul(principal), pp.mul(interestAPR), pp.mul(duration), 
-      pp.mul(faceValue), collateral.address, 
-    collateral.address, pp.mul(principal), 2) as CreditLine;
+    // creditline = await CreditLine__factory.deploy(
+    // vault.address, trader.address, pp.mul(principal), pp.mul(interestAPR), pp.mul(duration), 
+    //   pp.mul(faceValue), collateral.address, 
+    // collateral.address, pp.mul(principal), 2) as CreditLine;
 
     borrowerContract = await MockBorrowerContract__factory.deploy() as MockBorrowerContract; 
     ///SETTINGS
- 
 
     await collateral.connect(owner).faucet(500000000000);
     await collateral.connect(trader).faucet(200000000000); 
-    const manager = [manager1, manager2, manager3, manager4];
+    const manager = [manager1, manager2, manager3];
     for (let i=0; i< manager.length; i++){
-      await collateral.connect(manager[i]).faucet(200000000000); 
+      await collateral.connect(manager[i]).faucet(200000000000);
     }
     //1 collateral is 1e12 other 
-    await creditline.setUtilizer(owner.address); 
+    // await creditline.setUtilizer(owner.address); 
     const repbalance = await rep.balanceOf(owner.address); 
     if (repbalance.toString() == "0"){
       await rep.mint(owner.address); 
@@ -197,97 +187,38 @@ describe.only("Fetcher Tests", ()=>{
 
         await rep.connect(manager[i]).mint(manager[i].address); 
       }
-    }
 
+    }
   }); 
 
-
-  it("can add proposal and create market", async()=> {
-    data.trusted = false; 
-    data.balance = pp.mul(0).toString();
-    data.faceValue = pp.mul(faceValue).toString();
-    data.marketId = pp.mul(0).toString(); 
-    data.principal = pp.mul(principal).toString();
-    data.expectedYield = pp.mul(interestAPR).toString();
-    data.duration = pp.mul(duration).toString();
-    data.description = "test";
-    data.Instrument_address = creditline.address;
-    data.instrument_type = String(0);
-    data.maturityDate = String(10); 
-    console.log('data', data)
-    await controller.initiateMarket(trader.address, data, 1); 
-    const marketId = await controller.getMarketId(trader.address); 
-    const instrumentdata = await vault.fetchInstrumentData(marketId); 
-    console.log("marketId", marketId.toString())
-    expect(instrumentdata.balance).to.equal(data.balance); 
-    expect(instrumentdata.principal).to.equal(data.principal); 
-    // await marketmanager.testSetValidator(marketId, trader.address); 
-
+  it("fetcher with empty markets", async () => {
+    console.log("empty fetcher: ", await fetcher.fetchInitial(controller.address, marketmanager.address, 1, 0));
   });
 
 
-  it("can approve and lower and upper bound is set", async()=>{
-    const marketId = await controller.getMarketId(trader.address);
-    const bc_address = await marketmanager.getZCB(marketId);
-    const bc = LinearBondingCurve__factory.connect(bc_address, owner);
-    const shortzcb_ad = await marketmanager.getShortZCB(marketId);
-    const sbc = LinearShortZCB__factory.connect(shortzcb_ad, owner); 
-    const proxy_address = await creditline.getProxy(); 
-    const proxy = Proxy__factory.connect(proxy_address, owner); 
-    const wCollateral_ad = await bc.getCollateral(); 
+  // it("can add proposal and create market", async()=> {
+  //   data.trusted = false; 
+  //   data.balance = pp.mul(0).toString();
+  //   data.faceValue = pp.mul(faceValue).toString();
+  //   data.marketId = pp.mul(0).toString(); 
+  //   data.principal = pp.mul(principal).toString();
+  //   data.expectedYield = pp.mul(interestAPR).toString();
+  //   data.duration = pp.mul(duration).toString();
+  //   data.description = "test";
+  //   data.Instrument_address = creditline.address;
+  //   data.instrument_type = String(0);
+  //   data.maturityDate = String(10);
+  //   await controller.initiateMarket(trader.address, data, 1);
+  //   const marketId = await controller.getMarketId(trader.address); 
 
-    //Check that the supply of the bondingcurve is 0, 
-    // await expect(bc.getTotalZCB()).to.equal(0); 
-    // await expect(bc.getTotalCollateral()).to.equal(0);
+  //   let market1 = await marketmanager.markets(1);
 
-    //Do proxy SETTINGS
-    await borrowerContract.changeOwner(proxy.address); 
-    await borrowerContract.autoDelegate(proxy.address);
-    expect(await borrowerContract.owner()).to.equal(proxy.address); 
+  //   console.log(market1);
 
-    const upper_bound_before = await bc.getUpperBound(); 
-    const lower_bound_before = await bc.getLowerBound(); 
-    console.log('bounds_before', upper_bound_before.toString(), lower_bound_before.toString()); 
+  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
 
-    //first need to see if market reverts approving when not enough colalteral bought 
-    await expect(controller.approveMarket(marketId)).to.be.reverted; 
+  //   expect(instrumentdata.balance).to.equal(data.balance); 
+  //   expect(instrumentdata.principal).to.equal(data.principal);
+  // });
 
-    //then buy 0.6 * principal amount for the instrument 
-    const instrumentdata = await vault.fetchInstrumentData(marketId); 
-    const amountToBuy = instrumentdata.principal.div(2); 
-    const amount = instrumentdata.principal.div(2); 
-    const preview = await vault.previewMint( amount); 
-    console.log('preview', preview.toString()); 
-    await collateral.connect(owner).faucet(amount); 
-    await collateral.approve(wCollateral_ad, amount.mul(20)); 
-
-    await marketmanager.buy(marketId, amount, 0); 
-    const canapprove = await marketmanager.validatorApprovalCondition( marketId ) ;
-    console.log('canapprove', canapprove)
-    const bal = await bc.balanceOf(owner.address); 
-    console.log('bal', bal.toString(),amount);
-
-    //Then approve this market again after chaning phase, now the instrument should be 
-    //credited with the proposed principal 
-    // await marketmanager.setAssessmentPhase(marketId, true, false); 
-    await collateral.connect(trader).approve(wCollateral_ad, amount.mul(20)); 
-
-    // //This will automatically approve the market 
-    await creditline.setValidator(owner.address); 
-    await collateral.approve(vault.address, amount.mul(2)); 
-    await vault.mint(amount.mul(2), owner.address); 
-    await marketmanager.validatorBuy(marketId); 
-
-    const creditline_balance = await collateral.balanceOf(creditline.address); 
-    expect(creditline_balance).to.equal(instrumentdata.principal.div(pp__)); 
-    // const validator_vault_balance_after_approve = await vault.connect(trader).balanceOf(owner.address); 
-    const validator_balance = await bc.balanceOf(trader.address); 
-    console.log('validatorbalance', validator_balance); 
-
-    // console.log('after_approve', validator_vault_balance_after_approve.toString(),validator_balance.toString() ); 
-
-    const upper_bound = await bc.getUpperBound(); 
-    const lower_bound = await bc.getLowerBound(); 
-    console.log('bounds', upper_bound.toString(), lower_bound.toString()); 
-    });
-})
+});

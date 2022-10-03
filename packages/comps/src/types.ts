@@ -4,6 +4,7 @@ import type { TradingDirection } from "./utils/constants";
 import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 import {Passport} from "@gitcoinco/passport-sdk-types"
+import { NewCash } from "stores/constants";
 
 export interface InstrumentData {
   trusted: boolean; 
@@ -345,6 +346,42 @@ export interface AmmExchanges {
 }
 export interface MarketInfos {
   [marketId: string]: MarketInfo;
+}
+
+export interface ParameterInfo {
+  N: number;
+  sigma: number;
+  omega: number;
+  delta: number;
+  r: number;
+  s: number;
+}
+
+export interface CoreMarketInfo {
+  marketId: number;
+  creationTimestamp: number;
+  resolutionTimestamp: number;
+  long: string;
+  short: string;
+  parameters: ParameterInfo;
+}
+
+export interface VaultInfo {
+  vaultId: number,
+  marketIds: number[],
+  onlyVerified: boolean,
+  default_params: ParameterInfo,
+  r: number,
+  asset_limit: number;
+  total_asset_limit: number;
+  collateral_address: string,
+  markets: {
+    [marketId: string] : CoreMarketInfo
+  }
+};
+
+export interface VaultInfos {
+  [vaultId: string]: VaultInfo
 }
 
 export interface FormattedNumber {

@@ -343,7 +343,6 @@ contract MarketManager is Owned
     // BondingCurve(controller.getZCB_ad(marketId)).setLowerBound(new_lower_bound);
     markets[marketId].long.setLowerBound(new_lower_bound);
   }
-
   
   /// @notice Called when market should end, a) when denied b) when maturity 
   /// @param resolve is true when instrument does not resolve prematurely

@@ -4,48 +4,18 @@ import { windowRef } from "../utils/window-ref";
 import { DATA_ACTIONS, DATA_KEYS, DEFAULT_DATA_STATE } from "./constants";
 import { calculateAmmTotalVolApy } from "../utils/contract-calls";
 
-const { UPDATE_DATA_HEARTBEAT, UPDATE_TRANSACTIONS,UPDATE_INSTRUMENT_DATA_HEARTBEAT } = DATA_ACTIONS;
-const { AMM_EXCHANGES, BLOCKNUMBER, CASHES, ERRORS, MARKETS, TRANSACTIONS } = DATA_KEYS;
+const { UPDATE_DATA_HEARTBEAT } = DATA_ACTIONS;
+const { VAULTS, BLOCKNUMBER, ERRORS, CASHES } = DATA_KEYS;
 
 export function DataReducer(state, action) {
   const updatedState = { ...state };
   switch (action.type) {
-    case UPDATE_TRANSACTIONS: {
-      const { transactions } = action;
-      const marketKeysFromTransactions = Object.keys(transactions).filter(
-        (key) => !["userAddress", "claimedFees", "claimedProceeds", "positionBalance"].includes(key)
-      );
-      const unKeyedUpdates = marketKeysFromTransactions.map((marketId) => {
-        const hasWinner = updatedState?.markets[marketId]?.hasWinner;
-        const marketTransactions = transactions[marketId];
-        const amm = state[AMM_EXCHANGES][marketId];
-        const market = state[MARKETS][marketId];
-        const { apy, vol, vol24hr } = calculateAmmTotalVolApy(amm, marketTransactions, market?.rewards, hasWinner);
-        return {
-          ...marketTransactions,
-          apy,
-          volumeTotalUSD: vol,
-          volume24hrTotalUSD: vol24hr,
-        };
-      });
-
-      const updatedTransactions = arrayToKeyedObjectByProp(unKeyedUpdates, "id");
-
-      updatedState[TRANSACTIONS] = {
-        ...transactions,
-        ...updatedTransactions,
-      };
-      break;
-    }
-    case UPDATE_DATA_HEARTBEAT: {
-      const { markets, cashes, ammExchanges, errors, blocknumber } = action;
-      updatedState[MARKETS] = markets;
-      updatedState[CASHES] = cashes;
-      updatedState[AMM_EXCHANGES] = ammExchanges;
-      updatedState[ERRORS] = errors || null;
-      updatedState[BLOCKNUMBER] = blocknumber ? blocknumber : updatedState[BLOCKNUMBER];
-      break;
-    }
+    case UPDATE_DATA_HEARTBEAT:
+      const { vaults, blocknumber, errors} = action;
+      updatedState[VAULTS] = vaults;
+      updatedState[BLOCKNUMBER] = blocknumber;
+      updatedState[ERRORS] = errors;
+      break
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);
   }
@@ -66,20 +36,13 @@ export const useData = (cashes, defaultState = DEFAULT_DATA_STATE) => {
   return {
     ...state,
     actions: {
-      updateTransactions: (transactions) => dispatch({ type: UPDATE_TRANSACTIONS, transactions }),
-      updateDataHeartbeat: ({ markets, cashes, ammExchanges }, blocknumber, errors) =>
+      updateDataHeartbeat: (vaults, blocknumber, errors) =>
         dispatch({
           type: UPDATE_DATA_HEARTBEAT,
-          ammExchanges,
+          vaults,
           blocknumber,
-          cashes,
           errors,
-          markets,
         }),
-      updateInstrumentDataHeartbeat: ({hedgePrice}) => dispatch({
-        type: UPDATE_INSTRUMENT_DATA_HEARTBEAT, 
-        hedgePrice, 
-      })
     },
   };
 };

@@ -9,7 +9,7 @@ import {
 } from "./constants";
 import { useData } from "./data-hooks";
 import { useUserStore, UserStore } from "./user";
-import { getMarketInfos, getRewardsStatus, getHedgePrice } from "../utils/contract-calls";
+import { getMarketInfos, getRewardsStatus, getVaultInfos } from "../utils/contract-calls";
 import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
@@ -32,8 +32,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
   const configCashes = getCashesInfo();
   const state = useData(configCashes);
   const {
-    cashes,
-    actions: { updateDataHeartbeat, updateTransactions, updateInstrumentDataHeartbeat },
+    actions: { updateDataHeartbeat },
   } = state;
 
   if (!DataStore.actionsSet) {
@@ -47,31 +46,26 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
   useEffect(() => {
     let isMounted = true;
     let intervalId = null;
+    
     const getMarkets = async () => {
       const { account: userAccount, loginAccount } = UserStore.get();
       const { isRpcDown, isWalletRpc } = AppStatusStore.get();
-      const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
-      const { actions: { setRewardsStatus, setIsRpcDown } } = AppStatusStore;
+      // const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
+      const { blocknumber: dblock, vaults: dvaults } = DataStore.get();
+
+      const { actions: { setIsRpcDown } } = AppStatusStore;
       const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
-      let infos = { markets: dmarkets, ammExchanges: damm, blocknumber: dblock };
+      let infos = { vaults: dvaults , blocknumber: dblock };
 
       try {
-        infos = await getMarketInfos(
+        infos = await getVaultInfos(
           provider,
-          dmarkets,
-          damm,
-          userAccount,
-          MULTICALL_MARKET_IGNORE_LIST,
-          loadType,
-          dblock
+          userAccount
         );
-        // console.log('datainfos', infos)
+        console.log('datainfos', infos)
         if (isRpcDown) {
           setIsRpcDown(false);
         }
-
-        getRewardsStatus(provider).then(status => setRewardsStatus(status));
-
         return infos;
       } catch (e) {
         if (e.data?.error?.details) {
@@ -83,20 +77,21 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
         }
         console.log("error getting market data", e);
       }
-      return { markets: {}, ammExchanges: {}, blocknumber: null };
+      return { vaults: {}, blocknumber: null };
     };
 
-    getMarkets().then(({ markets, ammExchanges, blocknumber }) => {
+    getMarkets().then(({ vaults, blocknumber }) => {
       isMounted &&
         blocknumber &&
         blocknumber > DataStore.get().blocknumber &&
-        updateDataHeartbeat({ ammExchanges, cashes, markets }, blocknumber, null);
+        updateDataHeartbeat(vaults, blocknumber, null);
+
       intervalId = setInterval(() => {
-        getMarkets().then(({ markets, ammExchanges, blocknumber }) => {
+        getMarkets().then(({ vaults, blocknumber }) => {
           isMounted &&
             blocknumber &&
             blocknumber > DataStore.get().blocknumber &&
-            updateDataHeartbeat({ ammExchanges, cashes, markets }, blocknumber, null);
+            updateDataHeartbeat(vaults, blocknumber, null);
         });
       }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
     });
@@ -107,63 +102,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
     };
   }, []);
 
-  // const fetchMarketInfos = async()=> {
-  //   const { account: userAccount, loginAccount } = UserStore.get();
-  //   const { hedgePrice: dhedgePrice, principal: dprincipal, expectedYield: dexpectedYield, 
-  //     duration: dduration, totalcollateral: dtotalcollateral} = DataStore.get(); 
-
-  //   dhedgePrice =   await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
-  //   return dhedgePrice; 
-  // }; 
-  // useEffect(()=>{
-
-
-
-  //   fetchMarketInfos().then(({hedgePrice})=>{
-  //   updateInstrumentDataHeartbeat(hedgePrice); 
-
-  //   }); 
-
-  //     //const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
-
-
-
-  // // hedgePrice: "0",
-  // // principal: "0",
-  // // expectedYioeld: "0",
-  // // duration: "0",
-  // // totalcollateral: "0", 
-  //     //const { }
-  //   }; 
-
-  // }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const { actions: { setIsDegraded } } = AppStatusStore;
-    const { isDegraded } = AppStatusStore.get();
-    const fetchTransactions = () =>
-      getAllTransactions(
-        account?.toLowerCase(),
-        (transactions) => isMounted && transactions && updateTransactions(transactions)
-      )
-        .then(() => {
-          isDegraded && setIsDegraded(false)
-        })
-        .catch((e) => {
-          !isDegraded && setIsDegraded(true);
-        });
-
-    fetchTransactions();
-
-    const intervalId = setInterval(() => {
-      fetchTransactions();
-    }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, [account]);
+  // removed record of transactions => need to build subgraph first
 
   return <DataContext.Provider value={state}>{children}</DataContext.Provider>;
 };
@@ -180,35 +119,23 @@ const output = {
 const getCashesInfo = (): any[] => {
   const { marketFactories } = PARA_CONFIG;
   const { collateral: usdcCollateral } = marketFactories[0];
-  // todo: need to grab all collaterals per market factory
+  // todo: need to grab all collaterals per vault.
 
   const cashes = [
-    {
-      name: "DS",
-      displayDecimals: 2,
-      decimals: 6,
-      address: dsAddress,
-      shareToken: "",
-      usdPrice: "1",
-      asset: "",
-    }, 
     {
       name: "USDC",
       displayDecimals: 2,
       decimals: 6,
       address: usdcCollateral,
-      shareToken: "",
-      usdPrice: "1",
-      asset: "",
+      symbol: "USDC",
+      usdPrice: "1"
     },
     {
       name: "ETH",
       displayDecimals: 4,
       decimals: 18,
       address: "0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa", // WETH address on Matic Mumbai
-      shareToken: "",
       usdPrice: "2000",
-      asset: "ETH",
     },
   ];
 
