@@ -33,8 +33,6 @@ contract Fetcher {
         MarketManager.MarketParameters parameters;
     }
 
-
-
     struct DynamicVaultBundle {
         uint256 vaultId;
         uint256 totalSupply;
@@ -77,18 +75,22 @@ contract Fetcher {
     public 
     view 
     returns (
-        StaticVaultBundle memory _vaultBundle,
-        StaticMarketBundle[] memory _staticMarketBundle,
-        uint256 _timestamp
+        StaticVaultBundle memory,
+        StaticMarketBundle[] memory,
+        uint256
     )
     {
+        StaticVaultBundle memory _vaultBundle;
+        StaticMarketBundle[] memory _staticMarketBundle;
+        uint256 _timestamp = block.timestamp;
+
         // vault bundle
         _vaultBundle.marketIds = _controller.getMarketIds(_vaultId);
 
         Vault _vault = _controller.vaults(_vaultId);
 
         if (address(_vault) == address(0)) {
-            return (makeEmptyVaultBundle(), [], 0);
+            return (makeEmptyStaticVaultBundle(), new StaticMarketBundle[](0), _timestamp);
         }
 
         _vaultBundle.collateral = buildCollateralBundle(_vault.asset());
@@ -100,21 +102,35 @@ contract Fetcher {
         _vaultBundle.asset_limit = _vault.asset_limit();
         _vaultBundle.total_asset_limit = _vault.total_asset_limit();
 
+        if (_vaultBundle.marketIds.length == 0) {
+            return (_vaultBundle, new StaticMarketBundle[](0), _timestamp);
+        }
+
         // market bundles
         (uint256[] memory _marketIds) = listOfInterestingMarkets(_vaultId, _controller, _marketManager, _offset);
         uint256 total = _marketIds.length;
+
         _staticMarketBundle = new StaticMarketBundle[](total);
 
         for (uint256 i = 0; i < total; i++) {
             _staticMarketBundle[i] = buildStaticMarketBundle(_marketIds[i], _marketManager);
         }
 
-        _timestamp = block.timestamp;
+        return (_vaultBundle, _staticMarketBundle, _timestamp);
     }
 
-    // function makeEmptyVaultBundle() internal returns (StaticVaultBundle memory bundle) {
-    //     bundle.
-    // }
+    function makeEmptyStaticVaultBundle() pure internal returns (StaticVaultBundle memory) {
+        return StaticVaultBundle(
+            0,
+            new uint256[](0),
+            MarketManager.MarketParameters(0,0,0,0,0,0,0),
+            false,
+            0,
+            0,
+            0,
+            CollateralBundle(address(0), "", 0)
+        );
+    }
 
     function buildStaticMarketBundle(
         uint256 _marketId,
@@ -176,16 +192,27 @@ contract Fetcher {
 
     function fetchDynamic(
         Controller _controller,
-        VaultFactory _vaultFactory,
         MarketManager _marketManager,
         uint256 _vaultId,
         uint256 _offset
     ) public view returns (
-        DynamicVaultBundle memory _vaultBundle,
-        DynamicMarketBundle[] memory _dynamicMarketBundles
+        DynamicVaultBundle memory,
+        DynamicMarketBundle[] memory,
+        uint256
     ) {
+        DynamicVaultBundle memory _vaultBundle;
+        DynamicMarketBundle[] memory _dynamicMarketBundles;
+        uint256 _timestamp = block.timestamp;
+        
         _vaultBundle.vaultId = _vaultId;
+        if (address(_controller.vaults(_vaultId)) == address(0)) {
+            return (makeEmptyDynamicVaultBundle(), new DynamicMarketBundle[](0), _timestamp);
+        }
         _vaultBundle.totalSupply = _controller.vaults(_vaultId).totalSupply();
+
+        if (_controller.getMarketIds(_vaultId).length == 0) {
+            return (_vaultBundle, new DynamicMarketBundle[](0), _timestamp);
+        }
         
         uint256[] memory _marketIds = listOfInterestingMarkets(_vaultId, _controller, _marketManager, _offset);
         uint256 total = _marketIds.length;
@@ -194,6 +221,11 @@ contract Fetcher {
         for (uint256 i = 0; i < total; i++) {
             _dynamicMarketBundles[i] = buildDynamicMarketBundle(_marketIds[i], _vaultId, _controller, _marketManager);
         }
+        return (_vaultBundle, _dynamicMarketBundles, _timestamp);
+    }
+
+    function makeEmptyDynamicVaultBundle() internal pure returns (DynamicVaultBundle memory) {
+        return DynamicVaultBundle(0,0);
     }
 
     function buildDynamicMarketBundle(

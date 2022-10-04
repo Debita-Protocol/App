@@ -149,24 +149,9 @@ describe.only("Zeke Tests", ()=>{
     rep = (await ethers.getContract("ReputationNFT")) as ReputationNFT; 
     vaultFactory = (await ethers.getContract("VaultFactory")) as VaultFactory; 
 
-    // ControllerFactory = (await ethers.getContractFactory("Controller")) as Controller__factory; 
-
     await controller.setMarketManager(marketmanager.address);
     await controller.setVaultFactory(vaultFactory.address)
-    await controller.setReputationNFT(rep.address); 
-
-    // await controller.createVault(
-    //  collateral.address, 
-    //  false, 1, 0, 0, params
-    // )
-    // const vault_ad = await controller.getVaultfromId(1); 
-
-    // vault = Vault__factory.connect(vault_ad, owner) as Vault; 
-
-    // creditline = await CreditLine__factory.deploy(
-    // vault.address, trader.address, pp.mul(principal), pp.mul(interestAPR), pp.mul(duration), 
-    //   pp.mul(faceValue), collateral.address, 
-    // collateral.address, pp.mul(principal), 2) as CreditLine;
+    await controller.setReputationNFT(rep.address);
 
     borrowerContract = await MockBorrowerContract__factory.deploy() as MockBorrowerContract; 
     ///SETTINGS
@@ -192,33 +177,57 @@ describe.only("Zeke Tests", ()=>{
   }); 
 
   it("fetcher with empty markets", async () => {
-    console.log("empty fetcher: ", await fetcher.fetchInitial(controller.address, marketmanager.address, 1, 0));
+    console.log("empty fetcher static: ", await fetcher.fetchInitial(controller.address, marketmanager.address, 1, 0));
+    console.log("empty fetcher dynamic: ", await fetcher.fetchDynamic(controller.address, marketmanager.address, 1, 0));
   });
 
+  it("fetcher with 1 vault no markets", async () => {
+    await controller.createVault(
+     collateral.address, 
+     false, 1, 0, 0, params
+    )
+    let [vaultStatic, marketStatic, timestampStatic] = await fetcher.fetchInitial(controller.address, marketmanager.address, 1, 0);
+    let [vaultDynamic, marketDynamic, timestampDynamic ] = await fetcher.fetchDynamic(controller.address, marketmanager.address, 1, 0);
 
-  // it("can add proposal and create market", async()=> {
-  //   data.trusted = false; 
-  //   data.balance = pp.mul(0).toString();
-  //   data.faceValue = pp.mul(faceValue).toString();
-  //   data.marketId = pp.mul(0).toString(); 
-  //   data.principal = pp.mul(principal).toString();
-  //   data.expectedYield = pp.mul(interestAPR).toString();
-  //   data.duration = pp.mul(duration).toString();
-  //   data.description = "test";
-  //   data.Instrument_address = creditline.address;
-  //   data.instrument_type = String(0);
-  //   data.maturityDate = String(10);
-  //   await controller.initiateMarket(trader.address, data, 1);
-  //   const marketId = await controller.getMarketId(trader.address); 
+    console.log("empty fetcher vault static: ", vaultStatic);
+    console.log("empty fetcher vault dynamic: ", vaultDynamic);
+  });
 
-  //   let market1 = await marketmanager.markets(1);
+  it("can add proposal and create market", async()=> {
+    const vault_ad = await controller.getVaultfromId(1); 
 
-  //   console.log(market1);
+    vault = Vault__factory.connect(vault_ad, owner) as Vault;
+    creditline = await CreditLine__factory.deploy(
+    vault.address, trader.address, pp.mul(principal), pp.mul(interestAPR), pp.mul(duration), 
+    pp.mul(faceValue), collateral.address, 
+    collateral.address, pp.mul(principal), 2) as CreditLine;
 
-  //   const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    
+    data.trusted = false; 
+    data.balance = pp.mul(0).toString();
+    data.faceValue = pp.mul(faceValue).toString();
+    data.marketId = pp.mul(0).toString(); 
+    data.principal = pp.mul(principal).toString();
+    data.expectedYield = pp.mul(interestAPR).toString();
+    data.duration = pp.mul(duration).toString();
+    data.description = "test";
+    data.Instrument_address = creditline.address;
+    data.instrument_type = String(0);
+    data.maturityDate = String(10); 
+    await controller.initiateMarket(trader.address, data, 1); 
+    const marketId = await controller.getMarketId(trader.address); 
+    const instrumentdata = await vault.fetchInstrumentData(marketId); 
+    expect(instrumentdata.balance).to.equal(data.balance); 
+    expect(instrumentdata.principal).to.equal(data.principal); 
+    // await marketmanager.testSetValidator(marketId, trader.address); 
 
-  //   expect(instrumentdata.balance).to.equal(data.balance); 
-  //   expect(instrumentdata.principal).to.equal(data.principal);
-  // });
+  });
 
+  it("fetcher with 1 vault 1 market", async () => {
+    let [vaultStatic, marketStatic, timestampStatic] = await fetcher.fetchInitial(controller.address, marketmanager.address, 1, 0);
+    let [vaultDynamic, marketDynamic, timestampDynamic ] = await fetcher.fetchDynamic(controller.address, marketmanager.address, 1, 0);
+
+    console.log("static: ", vaultStatic);
+    console.log("dynamic: ", vaultDynamic);
+  });
 });
