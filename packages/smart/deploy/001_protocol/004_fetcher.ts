@@ -10,7 +10,6 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: ["new", "1.0"],
     log: true, 
   });
-
 };
         
 func.tags = ["Fetcher"];

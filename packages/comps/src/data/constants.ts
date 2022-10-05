@@ -25,7 +25,15 @@ export const marketFactoryAddress = "0x0559B2a21d6479b9a03ea835D83895f5aEE47C5f"
 /**
  * used for data fetcher
  */
-export const controller_address = "0x4391d7acba8303740918308b119AAb956d7e6473";
-export const vault_factory_address = "0x0";
-export const market_manager_address = "0x5A6a4CC20047088A2ec5bd4E1F9D09eCD6dd1CC3";
-export const fetcher_address =  "0x0";
+export const controller_address = "0x10F3BcF56c012d46B04C9C7C7FFEeb332C25684D";
+export const vault_factory_address = "0xaB1867bAe964C07fA0F5A2Dff4575410Ff054433";
+export const market_manager_address = "0x487aa02A9A29bEF2A57D39A6851470f7b3D23DB4";
+export const fetcher_address =  "0x7f9c80f08810Cf7A03065cA78d015d121ebA68a7";
+export const rep_token_address = "0x23B6e59815CE428eCE3FA0a50bFf52D33d089785";
+
+
+// deploying "Controller" (tx: 0xea7f4d316b1b5e907e3ea58cb4b56db6f590147dcb41f61bdb8c25927f7d264c)...: deployed at 0x10F3BcF56c012d46B04C9C7C7FFEeb332C25684D with 9609423 gas
+// deploying "ReputationNFT" (tx: 0x0dee1452398316ae99a19a8d5165db874853d8affee72611a9eef54fd0093025)...: deployed at 0x23B6e59815CE428eCE3FA0a50bFf52D33d089785 with 1611034 gas
+// deploying "MarketManager" (tx: 0x43170abf4f140033d33e174862890e072a6d53f1f15131182e40980912804a46)...: deployed at 0x487aa02A9A29bEF2A57D39A6851470f7b3D23DB4 with 5464894 gas
+// deploying "VaultFactory" (tx: 0x96838556749b62fa7f920b66f5c84fbd455600738148752d04a710630901d47a)...: deployed at 0xaB1867bAe964C07fA0F5A2Dff4575410Ff054433 with 4822850 gas
+// deploying "Fetcher" (tx: 0x6be926314c3c94baae50e13556edf9208b1e6fd82705c2d6d9692d0e49c8b436)...: deployed at 0x7f9c80f08810Cf7A03065cA78d015d121ebA68a7 with 2017338 gas

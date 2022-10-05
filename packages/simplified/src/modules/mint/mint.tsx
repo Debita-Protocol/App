@@ -27,6 +27,7 @@ import inputStyles from "../common/inputs.styles.less";
 import formStyles from "../market/trading-form.styles.less";
 import { FailedX } from "@augurproject/comps/build/components/common/icons";
 import { ValueLabel } from "@augurproject/comps/build/components/common/labels";
+import { SUPER_BUTTON } from "../common/super-button";
 // import { RiSettings3Fill } from 'react-icons/ri'
 
 
@@ -131,7 +132,10 @@ const MintView= () => {
       </ul>
  
 
-     <div className = {styleMint.wrapper}>  
+     <div className = {styleMint.wrapper}> 
+        <div>
+          <SUPER_BUTTON />
+        </div>
         <div className = {formStyles.MintForm}>
           <div style={{'fontWeight':'750', 'display':'flex', 'justifyContent':'center', 'fontSize':'20px'}}>
             Mint DS for USDC

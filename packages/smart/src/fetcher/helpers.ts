@@ -30,7 +30,6 @@ export interface StaticVaultBundle {
 export interface StaticMarketBundle {
     marketId: BigNumberish;
     creationTimestamp: BigNumberish;
-    resolutionTimestamp: BigNumberish;
     long: string;
     short: string;
     parameters: MarketParameters;
@@ -75,9 +74,11 @@ export async function fetchInitialData(
 ): Promise<{bundles: SuperBundle[], timestamp: BigNumberish | null}> { // timestamp is the timestamp of the final contract call.
     const vaultCount = await vaultFactory.numVaults();
 
+    console.log("vaultCount: ", vaultCount);
+
     if (vaultCount.isZero()) {
         return {
-            bundles: [EmptySuperBundle],
+            bundles: [],
             timestamp: null
         }
     }
@@ -86,13 +87,18 @@ export async function fetchInitialData(
     let timestamp: BigNumberish | null = null;
 
     for (let i = 1; i < vaultCount.toNumber() + 1; i ++ ) {
+        console.log("calling fetchInitial")
         let sub_bundle: SuperBundle;
         
         const [rawVaultBundle, rawMarketBundles, _timestamp] = await fetcher.fetchInitial(controller.address, marketManager.address, i, 0); // offset is zero, retrieving all markets
 
+        console.log("rawVaultBundle: ", rawVaultBundle);
+        console.log("rawMarketBundles: ", rawMarketBundles);
+        console.log("timestamp: ", _timestamp);
         sub_bundle = createSuperBundle(rawVaultBundle, rawMarketBundles);
+        console.log("sub bundle: ", sub_bundle);
         
-        bundles.concat(sub_bundle);
+        bundles.push(sub_bundle);
 
         if (i == vaultCount.toNumber()) {
             timestamp = _timestamp;

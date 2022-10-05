@@ -7,6 +7,10 @@ import {Controller} from "../protocol/controller.sol";
 import {ERC20} from "../vaults/tokens/ERC20.sol";
 
 contract Fetcher {
+    /**
+        static => only called on creation of vault or market.
+        dynamic => called continuously.
+     */
     struct CollateralBundle {
         address addr;
         string symbol;
@@ -27,7 +31,6 @@ contract Fetcher {
     struct StaticMarketBundle {
         uint256 marketId;
         uint256 creationTimestamp;
-        uint256 resolutionTimestamp;
         address long;
         address short;
         MarketManager.MarketParameters parameters;
@@ -101,6 +104,7 @@ contract Fetcher {
         _vaultBundle.r = _vault.r();
         _vaultBundle.asset_limit = _vault.asset_limit();
         _vaultBundle.total_asset_limit = _vault.total_asset_limit();
+        _vaultBundle.vaultId = _vaultId;
 
         if (_vaultBundle.marketIds.length == 0) {
             return (_vaultBundle, new StaticMarketBundle[](0), _timestamp);
@@ -138,7 +142,6 @@ contract Fetcher {
     ) internal view returns (StaticMarketBundle memory bundle) {
         MarketManager.CoreMarketData memory m_data = _marketManager.getMarket(_marketId);
         bundle.creationTimestamp = m_data.creationTimestamp;
-        bundle.resolutionTimestamp = m_data.resolutionTimestamp;
         bundle.long = address(m_data.long);
         bundle.short = address(m_data.short);
         bundle.parameters = _marketManager.getParameters(_marketId);

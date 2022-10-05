@@ -31,6 +31,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
   const { account } = useUserStore();
   const configCashes = getCashesInfo();
   const state = useData(configCashes);
+  console.log("state: ", state);
   const {
     actions: { updateDataHeartbeat },
   } = state;
@@ -48,6 +49,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
     let intervalId = null;
     
     const getMarkets = async () => {
+      console.log("calling getMarkets...");
       const { account: userAccount, loginAccount } = UserStore.get();
       const { isRpcDown, isWalletRpc } = AppStatusStore.get();
       // const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
@@ -62,7 +64,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
           provider,
           userAccount
         );
-        console.log('datainfos', infos)
+        console.log('infos: ', infos)
         if (isRpcDown) {
           setIsRpcDown(false);
         }

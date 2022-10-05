@@ -90,9 +90,11 @@ import {
   MarketManager__factory,
   ReputationNFT__factory,
   CreditLine__factory,
+  CreditLine,
   BondingCurve, 
   BondingCurve__factory, 
-  Fetcher__factory
+  Fetcher__factory,
+  Vault
 
 } from "@augurproject/smart";
 import { fetcherMarketsPerConfig, isIgnoredMarket, isIgnoreOpendMarket } from "./derived-market-data";
@@ -113,11 +115,12 @@ import {
   market_manager_address,
   RepNFT_address,
   marketFactoryAddress,
-  fetcher_address
+  fetcher_address,
+  rep_token_address
 } from "../data/constants";
 
 
-import {BigNumber, utils} from "ethers"
+import {BigNumber, BigNumberish, utils} from "ethers"
 import { Loan, InstrumentData} from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
@@ -127,11 +130,84 @@ const { parseBytes32String, formatBytes32String } = utils;
 const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalPlaces(6, 1).toFixed();
 
 // ONLY FOR TESTING.
-export async function setupContracts (account: string, library: Web3Provider) {
+export async function setupContracts(account: string, library: Web3Provider) {
 
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account));
-  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
+  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account));
+  const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account));
+  const market_manager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
+  const vault_factory = VaultFactory__factory.connect(vault_factory_address, getProviderOrSigner(library, account));
+  const rep_token = ReputationNFT__factory.connect(rep_token_address, getProviderOrSigner(library, account));
+
+  const pp = BigNumber.from(10).pow(18);
+
+  const principal = 1000;
+  const drawdown = 5000000; 
+  const interestAPR = 100; 
+  const duration = 1; 
+  const faceValue = 1100;
+  const vault_ad = await controller.getVaultfromId(1); 
+  console.log("vault address: ", vault_ad);
+
+  let vault = Vault__factory.connect(vault_ad, getProviderOrSigner(library, account)) as Vault; 
+
+  let creditline_factory = new CreditLine__factory(getSigner(library, account));
+
+  console.log("vault addr: ", vault_ad)
+  console.log("account ", account)
+  console.log("collateral: ", collateral.address)
+
+  let data = {} as any;
+  data.trusted = false; 
+  data.balance = pp.mul(0).toString();
+  data.faceValue = pp.mul(faceValue).toString();
+  data.marketId = pp.mul(0).toString(); 
+  data.principal = pp.mul(principal).toString();
+  data.expectedYield = pp.mul(interestAPR).toString();
+  data.duration = pp.mul(duration).toString();
+  data.description = "test";
+  data.Instrument_address = collateral.address;
+  data.instrument_type = String(0);
+  data.maturityDate = String(10);
+
+    let tx = await controller.initiateMarket(account, data, 1);
+
+    await tx.wait();
+    console.log("success");
+
+  // interface DefaultParams {
+
+  //   N: string;
+  //   sigma: BigNumberish;
+  //   alpha: BigNumberish; 
+  //   omega: BigNumberish; 
+  //   delta: BigNumberish; 
+  //   r: string; 
+  //   s: BigNumberish; 
+  
+  // }
+  // const params = {} as DefaultParams; 
+
+  // params.N = "1"; 
+  // params.sigma = pp.mul(5).div(100); 
+  // params.alpha = pp.mul(4).div(10); 
+  // params.omega = pp.mul(2).div(10);
+  // params.delta = pp.mul(2).div(10); 
+  // params.r = "10"; 
+  // params.s = pp.mul(2);
+
+  // await controller.createVault(
+  //   collateral.address, 
+  //   false, 1, 0, 0, params
+  // )
+
+  // await (await controller.setMarketManager(market_manager.address)).wait();
+  // console.log("A")
+  // await (await controller.setVaultFactory(vault_factory.address)).wait();
+  // console.log("B")
+  // await (await controller.setReputationNFT(rep_token.address)).wait();
+  // console.log("Completed Reputation")
+
+
 }
 
 // NEW STUFF BELOW
@@ -2794,7 +2870,7 @@ import { isDataTooOld } from "./date-utils";
 export const getVaultInfos = async (
   provider: Web3Provider,
   account: string
-): Promise<{ vaults: VaultInfos | null; blocknumber: number | null }>  => {
+): Promise<{ vaults: VaultInfos | {}; blocknumber: number | null }>  => {
   
   // get controller and marketManager and marketFactory
   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
@@ -2805,7 +2881,9 @@ export const getVaultInfos = async (
   // retrieve raw data from fetcher, timestamp
   const {bundles , timestamp: rawTimestamp} = await fetchInitialData(fetcher, controller, vault_factory, market_manager);
 
-  if (isDataTooOld(Number(rawTimestamp))) {
+  console.log("bundles: ", bundles);
+
+  if (rawTimestamp && isDataTooOld(Number(rawTimestamp))) {
     console.error(
       "node returned data too old",
       "timestamp",
@@ -2816,8 +2894,8 @@ export const getVaultInfos = async (
   }
 
   // no vaults found.
-  if (bundles[0].vault.vaultId == 0) {
-    return {vaults: null, blocknumber: null};
+  if (bundles.length == 0) {
+    return {vaults: {}, blocknumber: Number(await provider.getBlockNumber())};
   }
 
   // format data into large vault struct.
@@ -2833,7 +2911,6 @@ export const getVaultInfos = async (
       return {
         marketId: EthersBN_to_Num(bmarket.marketId),
         creationTimestamp: EthersBN_to_Num(bmarket.creationTimestamp),
-        resolutionTimestamp: EthersBN_to_Num(bmarket.resolutionTimestamp),
         short: bmarket.short,
         long: bmarket.long,
         parameters: {

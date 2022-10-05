@@ -9,6 +9,7 @@ const { VAULTS, BLOCKNUMBER, ERRORS, CASHES } = DATA_KEYS;
 
 export function DataReducer(state, action) {
   const updatedState = { ...state };
+  console.log("data reducer action: ", action)
   switch (action.type) {
     case UPDATE_DATA_HEARTBEAT:
       const { vaults, blocknumber, errors} = action;

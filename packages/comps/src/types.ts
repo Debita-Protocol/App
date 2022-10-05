@@ -360,7 +360,6 @@ export interface ParameterInfo {
 export interface CoreMarketInfo {
   marketId: number;
   creationTimestamp: number;
-  resolutionTimestamp: number;
   long: string;
   short: string;
   parameters: ParameterInfo;

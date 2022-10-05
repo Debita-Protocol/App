@@ -303,7 +303,7 @@ const MarketsView = () => {
     settings: { showLiquidMarkets, timeFormat },
     actions: { setSidebar, updateMarketsViewSettings },
   } = useSimplifiedStore();
-  const { ammExchanges, markets, transactions } = useDataStore();
+  // const { ammExchanges, markets, transactions } = useDataStore();
   const { subCategories, sortBy, primaryCategory, reportingState, currency } = marketsViewSettings;
   const [loading, setLoading] = useState(true);
   const [filteredMarkets, setFilteredMarkets] = useState([]);
@@ -313,35 +313,35 @@ const MarketsView = () => {
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
-  const marketKeys = Object.keys(markets);
-  const {amm} = markets;
+  // const marketKeys = Object.keys(markets);
+  // const {amm} = markets;
 
 
   useScrollToTopOnMount(page);
   // console.log('UI markets', markets)
-  const handleFilterSort = () => {
-    if (Object.values(markets).length > 0) {
-      setLoading(false);
-    }
-    applyFiltersAndSort(Object.values(markets), setFilteredMarkets, transactions, {
-      filter,
-      primaryCategory,
-      subCategories,
-      sortBy,
-      currency,
-      reportingState,
-      showLiquidMarkets,
-    });
-  };
+  // const handleFilterSort = () => {
+  //   if (Object.values(markets).length > 0) {
+  //     setLoading(false);
+  //   }
+  //   applyFiltersAndSort(Object.values(markets), setFilteredMarkets, transactions, {
+  //     filter,
+  //     primaryCategory,
+  //     subCategories,
+  //     sortBy,
+  //     currency,
+  //     reportingState,
+  //     showLiquidMarkets,
+  //   });
+  // };
 
   useEffect(() => {
     setPage(page);
-    handleFilterSort();
+    // handleFilterSort();
   }, [sortBy, filter, primaryCategory, subCategories, reportingState, currency, showLiquidMarkets.valueOf()]);
 
-  useEffect(() => {
-    handleFilterSort();
-  }, [marketKeys.length]);
+  // useEffect(() => {
+  //   handleFilterSort();
+  // }, [marketKeys.length]);
 
   let changedFilters = 0;
   Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
@@ -454,7 +454,7 @@ const MarketsView = () => {
         </section>
       ) : filteredMarkets.length > 0 ? (
         <section>
-          {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market, index) => (
+          {/* {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market, index) => (
             <MarketCard
               key={`${market.marketId}-${index}`}
               marketId={market.marketId}
@@ -464,7 +464,7 @@ const MarketsView = () => {
               timeFormat={timeFormat}
               marketTransactions={transactions[market.marketId]}
             />         
-          ))}
+          ))} */}
     { /*<button onClick={() => confirmBulkTrade( { account, loginAccount, formData}
 )}>Buy</button> */}
         </section> 
