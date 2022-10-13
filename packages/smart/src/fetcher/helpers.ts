@@ -35,12 +35,56 @@ export interface StaticMarketBundle {
     parameters: MarketParameters;
 }
 
-export interface SuperBundle {
+export interface StaticSuperBundle {
     vault: StaticVaultBundle;
     markets: StaticMarketBundle[]
 }
 
-const EmptySuperBundle: SuperBundle = {
+interface MarketPhaseData {
+    duringAssessment: boolean;
+    onlyReputable: boolean;
+    resolved: boolean;
+    min_rep_score: BigNumberish;
+    alive: boolean;
+    atLoss: boolean;
+    base_budget: BigNumberish;
+}
+
+export interface DynamicVaultBundle {
+    vaultId: BigNumberish;
+    totalSupply:BigNumberish
+}
+
+export interface InstrumentData {
+    trusted: boolean;
+    balance: BigNumberish;
+    faceValue: BigNumberish;
+    marketId: BigNumberish;
+    principal: BigNumberish;
+    expectedYield: BigNumberish;
+    duration: BigNumberish;
+    description: string;
+    Instrument_address: string;
+    instrument_type: BigNumberish;
+    maturityDate:BigNumberish;
+}
+
+export interface DynamicMarketBundle {
+    marketId: BigNumberish;
+    phase: MarketPhaseData;
+    longZCB: BigNumberish;
+    shortZCB: BigNumberish;
+    instrument: InstrumentData;
+    approved_principal: BigNumberish;
+    approved_yield: BigNumberish;
+}
+
+export interface DynamicSuperBundle {
+    vault: DynamicVaultBundle;
+    markets: DynamicMarketBundle[];
+}
+
+const EmptySuperBundle: StaticSuperBundle = {
     vault: {
         vaultId: 0,
         marketIds: [],
@@ -71,7 +115,7 @@ export async function fetchInitialData(
     controller: Controller,
     vaultFactory: VaultFactory,
     marketManager: MarketManager
-): Promise<{bundles: SuperBundle[], timestamp: BigNumberish | null}> { // timestamp is the timestamp of the final contract call.
+): Promise<{bundles: StaticSuperBundle[], timestamp: BigNumberish | null}> { // timestamp is the timestamp of the final contract call.
     const vaultCount = await vaultFactory.numVaults();
 
     console.log("vaultCount: ", vaultCount);
@@ -83,12 +127,12 @@ export async function fetchInitialData(
         }
     }
 
-    let bundles: SuperBundle[] = [];
+    let bundles: StaticSuperBundle[] = [];
     let timestamp: BigNumberish | null = null;
 
     for (let i = 1; i < vaultCount.toNumber() + 1; i ++ ) {
         console.log("calling fetchInitial")
-        let sub_bundle: SuperBundle;
+        let sub_bundle: StaticSuperBundle;
         
         const [rawVaultBundle, rawMarketBundles, _timestamp] = await fetcher.fetchInitial(controller.address, marketManager.address, i, 0); // offset is zero, retrieving all markets
 
@@ -99,6 +143,44 @@ export async function fetchInitialData(
         console.log("sub bundle: ", sub_bundle);
         
         bundles.push(sub_bundle);
+
+        if (i == vaultCount.toNumber()) {
+            timestamp = _timestamp;
+        }
+    }
+
+    return {
+        bundles,
+        timestamp
+    };
+}
+
+export async function fetchDynamicData(
+    fetcher: Fetcher,
+    controller: Controller,
+    vaultFactory: VaultFactory,
+    marketManager: MarketManager
+): Promise<{bundles: DynamicSuperBundle[], timestamp: BigNumberish | null}> { // timestamp is the timestamp of the final contract call.
+    const vaultCount = await vaultFactory.numVaults();
+
+    console.log("vaultCount: ", vaultCount);
+
+    if (vaultCount.isZero()) {
+        return {
+            bundles: [],
+            timestamp: null
+        }
+    }
+
+    let bundles: DynamicSuperBundle[] = [];
+    let timestamp: BigNumberish | null = null;
+
+    for (let i = 1; i < vaultCount.toNumber() + 1; i ++ ) {
+        console.log("calling fetchInitial")
+        
+        const [rawVaultBundle, rawMarketBundles, _timestamp] = await fetcher.fetchDynamic(controller.address, marketManager.address, i, 0); // offset is zero, retrieving all markets
+        
+        bundles.push({vault: rawVaultBundle, markets: rawMarketBundles});
 
         if (i == vaultCount.toNumber()) {
             timestamp = _timestamp;

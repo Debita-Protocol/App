@@ -349,34 +349,66 @@ export interface MarketInfos {
 }
 
 export interface ParameterInfo {
-  N: number;
-  sigma: number;
-  omega: number;
-  delta: number;
-  r: number;
-  s: number;
+  N: string;
+  sigma: string;
+  omega: string;
+  delta: string;
+  r: string;
+  s: string;
+}
+
+export interface MarketPhaseData {
+  duringAssessment: boolean;
+  onlyReputable: boolean;
+  resolved: boolean;
+  min_rep_score: string;
+  alive: boolean;
+  atLoss: boolean;
+  base_budget: string;
+}
+
+interface CoreInstrumentData {
+  trusted: boolean;
+  balance: string;
+  faceValue: string;
+  marketId: string;
+  principal: string;
+  expectedYield: string;
+  duration: string;
+  description: string;
+  address: string;
+  type: number;
+  maturityDate: string;
 }
 
 export interface CoreMarketInfo {
-  marketId: number;
-  creationTimestamp: number;
+  marketId: string;
+  creationTimestamp: string;
   long: string;
   short: string;
   parameters: ParameterInfo;
+  phase?: MarketPhaseData;
+  longZCB?: string;
+  shortZCB?: string;
+  instrument?: CoreInstrumentData;
+  approved_principal?: string;
+  approved_yield?: string;
 }
 
 export interface VaultInfo {
-  vaultId: number,
-  marketIds: number[],
+  vaultId: string,
+  marketIds: string[],
   onlyVerified: boolean,
   default_params: ParameterInfo,
-  r: number,
-  asset_limit: number;
-  total_asset_limit: number;
+  r: string,
+  asset_limit: string;
+  total_asset_limit: string;
   collateral_address: string,
   markets: {
     [marketId: string] : CoreMarketInfo
-  }
+  },
+  // dynamic data
+  totalSupply?: string
 };
 
 export interface VaultInfos {

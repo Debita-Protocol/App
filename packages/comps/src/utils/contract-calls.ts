@@ -2860,7 +2860,7 @@ export const getMarketInfos = async (
   return { markets: filteredMarkets, ammExchanges: exchanges, blocknumber: newBlocknumber };
 };
 
-import {fetchInitialData} from "@augurproject/smart"
+import {fetchInitialData, fetchDynamicData} from "@augurproject/smart"
 import { isDataTooOld } from "./date-utils";
 
 /**
@@ -2880,6 +2880,7 @@ export const getVaultInfos = async (
 
   // retrieve raw data from fetcher, timestamp
   const {bundles , timestamp: rawTimestamp} = await fetchInitialData(fetcher, controller, vault_factory, market_manager);
+  const {bundles: dBundles, timestamp: dynamicRawTimestamp} = await fetchDynamicData(fetcher, controller, vault_factory, market_manager);
 
   console.log("bundles: ", bundles);
 
@@ -2904,22 +2905,22 @@ export const getVaultInfos = async (
     let bmarkets = bundle.markets;
 
     for (let prop in v.default_params) {
-      v.default_params[prop] = EthersBN_to_Num(v.default_params[prop]);
+      v.default_params[prop] = EthersBN_to_Str(v.default_params[prop]);
     }
 
     let _markets: CoreMarketInfo[] = bmarkets.map(bmarket => {
       return {
-        marketId: EthersBN_to_Num(bmarket.marketId),
-        creationTimestamp: EthersBN_to_Num(bmarket.creationTimestamp),
+        marketId: EthersBN_to_Str(bmarket.marketId),
+        creationTimestamp: EthersBN_to_Str(bmarket.creationTimestamp),
         short: bmarket.short,
         long: bmarket.long,
         parameters: {
-          N: EthersBN_to_Num(bmarket.parameters.N),
-          delta: EthersBN_to_Num(bmarket.parameters.delta),
-          omega: EthersBN_to_Num(bmarket.parameters.omega),
-          r: EthersBN_to_Num(bmarket.parameters.r),
-          s: EthersBN_to_Num(bmarket.parameters.s),
-          sigma: EthersBN_to_Num(bmarket.parameters.sigma)
+          N: EthersBN_to_Str(bmarket.parameters.N),
+          delta: EthersBN_to_Str(bmarket.parameters.delta),
+          omega: EthersBN_to_Str(bmarket.parameters.omega),
+          r: EthersBN_to_Str(bmarket.parameters.r),
+          s: EthersBN_to_Str(bmarket.parameters.s),
+          sigma: EthersBN_to_Str(bmarket.parameters.sigma)
         }
       };
     })
@@ -2930,29 +2931,75 @@ export const getVaultInfos = async (
     }
 
     return {
-      vaultId: EthersBN_to_Num(v.vaultId),
-      marketIds: v.marketIds.map((id) => EthersBN_to_Num(id)),
+      vaultId: EthersBN_to_Str(v.vaultId),
+      marketIds: v.marketIds.map((id) => EthersBN_to_Str(id)),
       default_params:  {
-        N: EthersBN_to_Num(v.default_params.N),
-        delta: EthersBN_to_Num(v.default_params.delta),
-        omega: EthersBN_to_Num(v.default_params.omega),
-        r: EthersBN_to_Num(v.default_params.r),
-        s: EthersBN_to_Num(v.default_params.s),
-        sigma: EthersBN_to_Num(v.default_params.sigma)
+        N: EthersBN_to_Str(v.default_params.N),
+        delta: EthersBN_to_Str(v.default_params.delta),
+        omega: EthersBN_to_Str(v.default_params.omega),
+        r: EthersBN_to_Str(v.default_params.r),
+        s: EthersBN_to_Str(v.default_params.s),
+        sigma: EthersBN_to_Str(v.default_params.sigma)
       },
       onlyVerified: v.onlyVerified,
-      r: EthersBN_to_Num(v.r),
-      asset_limit: EthersBN_to_Num(v.asset_limit),
-      total_asset_limit: EthersBN_to_Num(v.total_asset_limit),
+      r: EthersBN_to_Str(v.r),
+      asset_limit: EthersBN_to_Str(v.asset_limit),
+      total_asset_limit: EthersBN_to_Str(v.total_asset_limit),
       collateral_address: v.collateral.addr,
       markets,
     }
   })
 
   let vaults: VaultInfos = {};
-  for (let i = 1; i < tmp_vaults.length + 1; i++) {
-    vaults[String(i)] = tmp_vaults[i - 1];
+  for (let i = 0; i < tmp_vaults.length; i++) {
+    let vid = EthersBN_to_Str(tmp_vaults[i].vaultId);
+    vaults[vid] = tmp_vaults[i];
   }
+
+  // add dynamic vault data
+  for (let i = 0; i < dBundles.length; i++) {
+    let v = dBundles[i].vault;
+    let vid = EthersBN_to_Str(v.vaultId);
+
+    vaults[vid].totalSupply = EthersBN_to_Str(v.totalSupply);
+
+    let tmp_markets = dBundles[i].markets;
+    for (let j=0; j < tmp_markets.length; j++) {
+      let tmp_m = tmp_markets[0];
+      let mid = EthersBN_to_Str(tmp_m.marketId);
+      let m =  vaults[vid].markets[mid];
+      m.approved_principal = EthersBN_to_Str(tmp_m.approved_principal);
+      m.approved_yield = EthersBN_to_Str(tmp_m.approved_yield);
+      m.longZCB = EthersBN_to_Str(tmp_m.longZCB);
+      m.shortZCB = EthersBN_to_Str(tmp_m.shortZCB);
+
+      m.phase = {
+        duringAssessment: tmp_m.phase.duringAssessment,
+        onlyReputable: tmp_m.phase.onlyReputable,
+        resolved: tmp_m.phase.resolved,
+        min_rep_score: EthersBN_to_Str(tmp_m.phase.min_rep_score),
+        alive: tmp_m.phase.alive,
+        atLoss: tmp_m.phase.atLoss,
+        base_budget: EthersBN_to_Str(tmp_m.phase.base_budget)
+      }
+
+      let instr = tmp_m.instrument;
+      m.instrument = {
+        trusted: instr.trusted,
+        balance: EthersBN_to_Str(instr.balance),
+        faceValue: EthersBN_to_Str(instr.faceValue),
+        marketId: EthersBN_to_Str(instr.marketId),
+        principal: EthersBN_to_Str(instr.principal),
+        expectedYield: EthersBN_to_Str(instr.expectedYield),
+        duration: EthersBN_to_Str(instr.duration),
+        description: instr.description,
+        address: instr.Instrument_address,
+        type: Number(instr.instrument_type),
+        maturityDate: EthersBN_to_Str(instr.maturityDate)
+      }
+    }
+  }
+
 
   return {
     vaults,
@@ -2960,8 +3007,8 @@ export const getVaultInfos = async (
   }
 }
 
-const EthersBN_to_Num = (a) => {
-  return new BN(String(a)).toNumber()
+const EthersBN_to_Str = (a) => {
+  return new BN(String(a)).toNumber().toString()
 }
 
 
