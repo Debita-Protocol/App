@@ -32,7 +32,9 @@ import {
 } from "../types";
 import { ethers, Transaction } from "ethers";
 import { Contract } from "@ethersproject/contracts";
-import {addresses, LinearBondingCurve__factory } from "@augurproject/smart";
+import {addresses, 
+  //LinearBondingCurve__factory 
+} from "@augurproject/smart";
 
 // @ts-ignore
 import { ContractCallContext, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
@@ -90,8 +92,8 @@ import {
   ReputationNFT__factory,
   CreditLine__factory,
   CreditLine,
-  BondingCurve, 
-  BondingCurve__factory, 
+  // BondingCurve, 
+  // BondingCurve__factory, 
   Fetcher__factory,
   Vault
 
@@ -240,47 +242,47 @@ export async function getERCBalance(
   address: string) : Promise<string>{
   return (await ERC20__factory.connect(address, getProviderOrSigner(library, account)).balanceOf(account)).toString();
 }
-export async function estimateZCBBuyTrade(
-  account: string,
-  library: Web3Provider,
-  marketId: string,
-  inputDisplayAmount: string,
-  selectedOutcomeId: number,
-  cash: Cash
-): Promise<EstimateTradeResult>  {
-  const amount = convertDisplayCashAmountToOnChainCashAmount(inputDisplayAmount, cash.decimals)
-    .decimalPlaces(0, 1)
-    .toFixed();
+// export async function estimateZCBBuyTrade(
+//   account: string,
+//   library: Web3Provider,
+//   marketId: string,
+//   inputDisplayAmount: string,
+//   selectedOutcomeId: number,
+//   cash: Cash
+// ): Promise<EstimateTradeResult>  {
+//   const amount = convertDisplayCashAmountToOnChainCashAmount(inputDisplayAmount, cash.decimals)
+//     .decimalPlaces(0, 1)
+//     .toFixed();
   
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  const bc_ad = await controller.getZCB_ad(marketId);
-  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+//   const bc_ad = await controller.getZCB_ad(marketId);
+//   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
 
-  //how much I get from this vault amount
-  console.log(inputDisplayAmount, amount)
-  const estimatedShares_ = await bc.calculatePurchaseReturn(amount); 
-  // console.log('est', estimatedShares_.toString())
-  var estimatedShares = estimatedShares_.toString(); 
-  const averagePrice_ = await bc.calcAveragePrice(estimatedShares);
-  // console.log('avg', averagePrice_.toString())
+//   //how much I get from this vault amount
+//   console.log(inputDisplayAmount, amount)
+//   const estimatedShares_ = await bc.calculatePurchaseReturn(amount); 
+//   // console.log('est', estimatedShares_.toString())
+//   var estimatedShares = estimatedShares_.toString(); 
+//   const averagePrice_ = await bc.calcAveragePrice(estimatedShares);
+//   // console.log('avg', averagePrice_.toString())
 
-  const tradeFees = "0";  //APR 
-  estimatedShares = new BN(estimatedShares).div(10**18).toFixed(4); 
-  const averagePrice = new BN(averagePrice_.toString()).div(10**18).toFixed(4);
-  //const maxProfit = (new BN(estimatedShares).minus(new BN(amount))); 
-  const maxProfit =  (1 - Number(averagePrice))* Number(estimatedShares)
-  //const maxProfit = "1";
-  const priceImpact = "1";
-  const ratePerCash = "1";
-  return {
-    outputValue: estimatedShares,
-    tradeFees,
-    averagePrice: averagePrice,//.tofixed(4),
-    maxProfit: String(maxProfit),
-    ratePerCash,
-    priceImpact,
-  };
-};
+//   const tradeFees = "0";  //APR 
+//   estimatedShares = new BN(estimatedShares).div(10**18).toFixed(4); 
+//   const averagePrice = new BN(averagePrice_.toString()).div(10**18).toFixed(4);
+//   //const maxProfit = (new BN(estimatedShares).minus(new BN(amount))); 
+//   const maxProfit =  (1 - Number(averagePrice))* Number(estimatedShares)
+//   //const maxProfit = "1";
+//   const priceImpact = "1";
+//   const ratePerCash = "1";
+//   return {
+//     outputValue: estimatedShares,
+//     tradeFees,
+//     averagePrice: averagePrice,//.tofixed(4),
+//     maxProfit: String(maxProfit),
+//     ratePerCash,
+//     priceImpact,
+//   };
+// };
 
 // export async function estimateZCBShortTrade(
 //   account: string,
@@ -378,17 +380,17 @@ export async function getHedgePrice(
   const hedgePrice = await marketmanager.getHedgePrice( marketId); 
   return hedgePrice.toString(); 
 }
-export async function getTotalCollateral(
-  account: string, 
-  library: Web3Provider, 
-  marketId: string
-  ): Promise<string>{
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  const bc_ad = await controller.getZCB_ad(marketId);
-  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account))
-  const total_collateral = await bc.getTotalCollateral()
-  return total_collateral.toString(); 
-}
+// export async function getTotalCollateral(
+//   account: string, 
+//   library: Web3Provider, 
+//   marketId: string
+//   ): Promise<string>{
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+//   const bc_ad = await controller.getZCB_ad(marketId);
+//   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account))
+//   const total_collateral = await bc.getTotalCollateral()
+//   return total_collateral.toString(); 
+// }
 
 export async function getInstrumentData_(
   account: string, 
@@ -438,34 +440,34 @@ export async function getHedgeQuantity(
 
   return hedgeQuantity.toString(); 
 }
-export async function getBondingCurveContract(
-  account: string, 
-  library : Web3Provider, 
-  marketId: string
-  ): Promise<BondingCurve>{
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  const bc_ad = await controller.getZCB_ad(marketId);
-  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)) as BondingCurve
-  return bc; 
-}
+// export async function getBondingCurveContract(
+//   account: string, 
+//   library : Web3Provider, 
+//   marketId: string
+//   ): Promise<BondingCurve>{
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+//   const bc_ad = await controller.getZCB_ad(marketId);
+//   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)) as BondingCurve
+//   return bc; 
+// }
 // export async function isMarketActive(
 //   account:string, 
 //   library: Web3Provider, 
 //   marketId: string
 //   )
-export async function getBondingCurvePrice(
-  account: string, 
-  library: Web3Provider, 
-  marketId: string
-  ): Promise<any>{
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
-  const bc_ad = await controller.getZCB_ad(marketId);
-  const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
-  //const bc = getBondingCurveContract(account, library, marketId) as BondingCurve; 
-  const price =  await bc.calculateExpectedPrice(0); 
-  const totalsupply = await bc.getTotalZCB(); 
-  return price.toString(); 
-}
+// export async function getBondingCurvePrice(
+//   account: string, 
+//   library: Web3Provider, 
+//   marketId: string
+//   ): Promise<any>{
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(library, account)); 
+//   const bc_ad = await controller.getZCB_ad(marketId);
+//   const bc = BondingCurve__factory.connect(bc_ad, getProviderOrSigner(library, account)); 
+//   //const bc = getBondingCurveContract(account, library, marketId) as BondingCurve; 
+//   const price =  await bc.calculateExpectedPrice(0); 
+//   const totalsupply = await bc.getTotalZCB(); 
+//   return price.toString(); 
+// }
 export async function doOwnerSettings(
   account: string,
   library: Web3Provider
@@ -2866,145 +2868,145 @@ import { isDataTooOld } from "./date-utils";
  * 
  * TODO shouldn't have to hardcode everything for reformatting
  */
-export const getVaultInfos = async (
-  provider: Web3Provider,
-  account: string
-): Promise<{ vaults: VaultInfos | {}; blocknumber: number | null }>  => {
+// export const getVaultInfos = async (
+//   provider: Web3Provider,
+//   account: string
+// ): Promise<{ vaults: VaultInfos | {}; blocknumber: number | null }>  => {
   
-  // get controller and marketManager and marketFactory
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
-  const vault_factory = VaultFactory__factory.connect(vault_factory_address, getProviderOrSigner(provider, account));
-  const market_manager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(provider, account));
-  const fetcher = Fetcher__factory.connect(fetcher_address, getProviderOrSigner(provider, account));
+//   // get controller and marketManager and marketFactory
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account));
+//   const vault_factory = VaultFactory__factory.connect(vault_factory_address, getProviderOrSigner(provider, account));
+//   const market_manager = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(provider, account));
+//   const fetcher = Fetcher__factory.connect(fetcher_address, getProviderOrSigner(provider, account));
 
-  // retrieve raw data from fetcher, timestamp
-  const {bundles , timestamp: rawTimestamp} = await fetchInitialData(fetcher, controller, vault_factory, market_manager);
-  const {bundles: dBundles, timestamp: dynamicRawTimestamp} = await fetchDynamicData(fetcher, controller, vault_factory, market_manager);
+//   // retrieve raw data from fetcher, timestamp
+//   const {bundles , timestamp: rawTimestamp} = await fetchInitialData(fetcher, controller, vault_factory, market_manager);
+//   const {bundles: dBundles, timestamp: dynamicRawTimestamp} = await fetchDynamicData(fetcher, controller, vault_factory, market_manager);
 
-  console.log("bundles: ", bundles);
+//   console.log("bundles: ", bundles);
 
-  if (rawTimestamp && isDataTooOld(Number(rawTimestamp))) {
-    console.error(
-      "node returned data too old",
-      "timestamp",
-      new Date(Number(rawTimestamp) * 1000).toString(),
-      provider.connection.url
-    );
-    throw new Error("contract data too old");
-  }
+//   if (rawTimestamp && isDataTooOld(Number(rawTimestamp))) {
+//     console.error(
+//       "node returned data too old",
+//       "timestamp",
+//       new Date(Number(rawTimestamp) * 1000).toString(),
+//       provider.connection.url
+//     );
+//     throw new Error("contract data too old");
+//   }
 
-  // no vaults found.
-  if (bundles.length == 0) {
-    return {vaults: {}, blocknumber: Number(await provider.getBlockNumber())};
-  }
+//   // no vaults found.
+//   if (bundles.length == 0) {
+//     return {vaults: {}, blocknumber: Number(await provider.getBlockNumber())};
+//   }
 
-  // format data into large vault struct.
-  let tmp_vaults = bundles.map((bundle) => {
-    let v = bundle.vault;
-    let bmarkets = bundle.markets;
+//   // format data into large vault struct.
+//   let tmp_vaults = bundles.map((bundle) => {
+//     let v = bundle.vault;
+//     let bmarkets = bundle.markets;
 
-    for (let prop in v.default_params) {
-      v.default_params[prop] = EthersBN_to_Str(v.default_params[prop]);
-    }
+//     for (let prop in v.default_params) {
+//       v.default_params[prop] = EthersBN_to_Str(v.default_params[prop]);
+//     }
 
-    let _markets: CoreMarketInfo[] = bmarkets.map(bmarket => {
-      return {
-        marketId: EthersBN_to_Str(bmarket.marketId),
-        creationTimestamp: EthersBN_to_Str(bmarket.creationTimestamp),
-        short: bmarket.short,
-        long: bmarket.long,
-        parameters: {
-          N: EthersBN_to_Str(bmarket.parameters.N),
-          delta: EthersBN_to_Str(bmarket.parameters.delta),
-          omega: EthersBN_to_Str(bmarket.parameters.omega),
-          r: EthersBN_to_Str(bmarket.parameters.r),
-          s: EthersBN_to_Str(bmarket.parameters.s),
-          sigma: EthersBN_to_Str(bmarket.parameters.sigma)
-        }
-      };
-    })
+//     let _markets: CoreMarketInfo[] = bmarkets.map(bmarket => {
+//       return {
+//         marketId: EthersBN_to_Str(bmarket.marketId),
+//         creationTimestamp: EthersBN_to_Str(bmarket.creationTimestamp),
+//         short: bmarket.short,
+//         long: bmarket.long,
+//         parameters: {
+//           N: EthersBN_to_Str(bmarket.parameters.N),
+//           delta: EthersBN_to_Str(bmarket.parameters.delta),
+//           omega: EthersBN_to_Str(bmarket.parameters.omega),
+//           r: EthersBN_to_Str(bmarket.parameters.r),
+//           s: EthersBN_to_Str(bmarket.parameters.s),
+//           sigma: EthersBN_to_Str(bmarket.parameters.sigma)
+//         }
+//       };
+//     })
 
-    let markets: {[marketId: string]: CoreMarketInfo} = {};
-    for (let i = 1; i < _markets.length + 1; i ++) {
-      markets[String(i)] = _markets[i - 1];
-    }
+//     let markets: {[marketId: string]: CoreMarketInfo} = {};
+//     for (let i = 1; i < _markets.length + 1; i ++) {
+//       markets[String(i)] = _markets[i - 1];
+//     }
 
-    return {
-      vaultId: EthersBN_to_Str(v.vaultId),
-      marketIds: v.marketIds.map((id) => EthersBN_to_Str(id)),
-      default_params:  {
-        N: EthersBN_to_Str(v.default_params.N),
-        delta: EthersBN_to_Str(v.default_params.delta),
-        omega: EthersBN_to_Str(v.default_params.omega),
-        r: EthersBN_to_Str(v.default_params.r),
-        s: EthersBN_to_Str(v.default_params.s),
-        sigma: EthersBN_to_Str(v.default_params.sigma)
-      },
-      onlyVerified: v.onlyVerified,
-      r: EthersBN_to_Str(v.r),
-      asset_limit: EthersBN_to_Str(v.asset_limit),
-      total_asset_limit: EthersBN_to_Str(v.total_asset_limit),
-      collateral_address: v.collateral.addr,
-      markets,
-    }
-  })
+//     return {
+//       vaultId: EthersBN_to_Str(v.vaultId),
+//       marketIds: v.marketIds.map((id) => EthersBN_to_Str(id)),
+//       default_params:  {
+//         N: EthersBN_to_Str(v.default_params.N),
+//         delta: EthersBN_to_Str(v.default_params.delta),
+//         omega: EthersBN_to_Str(v.default_params.omega),
+//         r: EthersBN_to_Str(v.default_params.r),
+//         s: EthersBN_to_Str(v.default_params.s),
+//         sigma: EthersBN_to_Str(v.default_params.sigma)
+//       },
+//       onlyVerified: v.onlyVerified,
+//       r: EthersBN_to_Str(v.r),
+//       asset_limit: EthersBN_to_Str(v.asset_limit),
+//       total_asset_limit: EthersBN_to_Str(v.total_asset_limit),
+//       collateral_address: v.collateral.addr,
+//       markets,
+//     }
+//   })
 
-  let vaults: VaultInfos = {};
-  for (let i = 0; i < tmp_vaults.length; i++) {
-    let vid = tmp_vaults[i].vaultId;
-    vaults[vid] = tmp_vaults[i];
-  }
+//   let vaults: VaultInfos = {};
+//   for (let i = 0; i < tmp_vaults.length; i++) {
+//     let vid = tmp_vaults[i].vaultId;
+//     vaults[vid] = tmp_vaults[i];
+//   }
 
-  // add dynamic vault data
-  for (let i = 0; i < dBundles.length; i++) {
-    let v = dBundles[i].vault;
-    let vid = EthersBN_to_Str(v.vaultId);
-    console.log("vid: ", vid);
+//   // add dynamic vault data
+//   for (let i = 0; i < dBundles.length; i++) {
+//     let v = dBundles[i].vault;
+//     let vid = EthersBN_to_Str(v.vaultId);
+//     console.log("vid: ", vid);
 
-    vaults[vid].totalSupply = EthersBN_to_Str(v.totalSupply);
+//     vaults[vid].totalSupply = EthersBN_to_Str(v.totalSupply);
 
-    let tmp_markets = dBundles[i].markets;
-    // for (let j=0; j < tmp_markets.length; j++) {
-    //   let tmp_m = tmp_markets[0];
-    //   let mid = EthersBN_to_Str(tmp_m.marketId);
-    //   let m =  vaults[vid].markets[mid];
-    //   m.approved_principal = EthersBN_to_Str(tmp_m.approved_principal);
-    //   m.approved_yield = EthersBN_to_Str(tmp_m.approved_yield);
-    //   m.longZCB = EthersBN_to_Str(tmp_m.longZCB);
-    //   m.shortZCB = EthersBN_to_Str(tmp_m.shortZCB);
+//     let tmp_markets = dBundles[i].markets;
+//     // for (let j=0; j < tmp_markets.length; j++) {
+//     //   let tmp_m = tmp_markets[0];
+//     //   let mid = EthersBN_to_Str(tmp_m.marketId);
+//     //   let m =  vaults[vid].markets[mid];
+//     //   m.approved_principal = EthersBN_to_Str(tmp_m.approved_principal);
+//     //   m.approved_yield = EthersBN_to_Str(tmp_m.approved_yield);
+//     //   m.longZCB = EthersBN_to_Str(tmp_m.longZCB);
+//     //   m.shortZCB = EthersBN_to_Str(tmp_m.shortZCB);
 
-    //   m.phase = {
-    //     duringAssessment: tmp_m.phase.duringAssessment,
-    //     onlyReputable: tmp_m.phase.onlyReputable,
-    //     resolved: tmp_m.phase.resolved,
-    //     min_rep_score: EthersBN_to_Str(tmp_m.phase.min_rep_score),
-    //     alive: tmp_m.phase.alive,
-    //     atLoss: tmp_m.phase.atLoss,
-    //     base_budget: EthersBN_to_Str(tmp_m.phase.base_budget)
-    //   }
+//     //   m.phase = {
+//     //     duringAssessment: tmp_m.phase.duringAssessment,
+//     //     onlyReputable: tmp_m.phase.onlyReputable,
+//     //     resolved: tmp_m.phase.resolved,
+//     //     min_rep_score: EthersBN_to_Str(tmp_m.phase.min_rep_score),
+//     //     alive: tmp_m.phase.alive,
+//     //     atLoss: tmp_m.phase.atLoss,
+//     //     base_budget: EthersBN_to_Str(tmp_m.phase.base_budget)
+//     //   }
 
-    //   let instr = tmp_m.instrument;
-    //   m.instrument = {
-    //     trusted: instr.trusted,
-    //     balance: EthersBN_to_Str(instr.balance),
-    //     faceValue: EthersBN_to_Str(instr.faceValue),
-    //     marketId: EthersBN_to_Str(instr.marketId),
-    //     principal: EthersBN_to_Str(instr.principal),
-    //     expectedYield: EthersBN_to_Str(instr.expectedYield),
-    //     duration: EthersBN_to_Str(instr.duration),
-    //     description: instr.description,
-    //     address: instr.Instrument_address,
-    //     type: Number(instr.instrument_type),
-    //     maturityDate: EthersBN_to_Str(instr.maturityDate)
-    //   }
-    // }
-  }
+//     //   let instr = tmp_m.instrument;
+//     //   m.instrument = {
+//     //     trusted: instr.trusted,
+//     //     balance: EthersBN_to_Str(instr.balance),
+//     //     faceValue: EthersBN_to_Str(instr.faceValue),
+//     //     marketId: EthersBN_to_Str(instr.marketId),
+//     //     principal: EthersBN_to_Str(instr.principal),
+//     //     expectedYield: EthersBN_to_Str(instr.expectedYield),
+//     //     duration: EthersBN_to_Str(instr.duration),
+//     //     description: instr.description,
+//     //     address: instr.Instrument_address,
+//     //     type: Number(instr.instrument_type),
+//     //     maturityDate: EthersBN_to_Str(instr.maturityDate)
+//     //   }
+//     // }
+//   }
 
-  return {
-    vaults,
-    blocknumber: Number(await provider.getBlockNumber()),
-  }
-}
+//   return {
+//     vaults,
+//     blocknumber: Number(await provider.getBlockNumber()),
+//   }
+// }
 
 const EthersBN_to_Str = (a) => {
   return new BN(String(a)).toNumber().toString()

@@ -175,17 +175,17 @@ export async function fetchDynamicData(
     let bundles: DynamicSuperBundle[] = [];
     let timestamp: BigNumberish | null = null;
 
-    for (let i = 1; i < vaultCount.toNumber() + 1; i ++ ) {
-        console.log("calling fetchInitial")
+    // for (let i = 1; i < vaultCount.toNumber() + 1; i ++ ) {
+    //     console.log("calling fetchInitial")
         
-        const [rawVaultBundle, rawMarketBundles, _timestamp] = await fetcher.fetchDynamic(controller.address, marketManager.address, i, 0); // offset is zero, retrieving all markets
+    //     const [rawVaultBundle, rawMarketBundles, _timestamp] = await fetcher.fetchDynamic(controller.address, marketManager.address, i, 0); // offset is zero, retrieving all markets
         
-        bundles.push({vault: rawVaultBundle, markets: rawMarketBundles});
+    //     bundles.push({vault: rawVaultBundle, markets: rawMarketBundles});
 
-        if (i == vaultCount.toNumber()) {
-            timestamp = _timestamp;
-        }
-    }
+    //     if (i == vaultCount.toNumber()) {
+    //         timestamp = _timestamp;
+    //     }
+    // }
 
     return {
         bundles,

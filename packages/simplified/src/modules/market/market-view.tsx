@@ -43,7 +43,9 @@ const {
   PathUtils: { parseQuery },
 } = Utils;
 const { getCombinedMarketTransactionsFormatted } = ProcessData;
-const{ fetchTradeData, getHedgePrice, getInstrumentData_, getTotalCollateral, redeemZCB, getZCBBalances, approveUtilizer, 
+const{ fetchTradeData, getHedgePrice, getInstrumentData_, 
+  // getTotalCollateral, 
+  redeemZCB, getZCBBalances, approveUtilizer, 
 canApproveUtilizer, getERCBalance} = ContractCalls; 
 
 let timeoutId = null;
@@ -204,7 +206,8 @@ const MarketView = ({ defaultMarket = null }) => {
       //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
       //stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
      // instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
-      tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
+      //tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
+      tc = 0;
       bal = await getZCBBalances( account, loginAccount?.library, String(market?.amm.turboId)); 
       lbal = await getERCBalance(account, loginAccount?.library, "0x7C49b76207F71Ebd1D7E5a9661f82908E0055131" ); 
      // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))

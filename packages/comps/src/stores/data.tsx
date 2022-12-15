@@ -9,7 +9,9 @@ import {
 } from "./constants";
 import { useData } from "./data-hooks";
 import { useUserStore, UserStore } from "./user";
-import { getMarketInfos, getRewardsStatus, getVaultInfos } from "../utils/contract-calls";
+import { getMarketInfos, getRewardsStatus, 
+  //getVaultInfos 
+} from "../utils/contract-calls";
 import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
@@ -59,26 +61,26 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
       const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
       let infos = { vaults: dvaults , blocknumber: dblock };
 
-      try {
-        infos = await getVaultInfos(
-          provider,
-          userAccount
-        );
-        console.log('infos: ', infos)
-        if (isRpcDown) {
-          setIsRpcDown(false);
-        }
-        return infos;
-      } catch (e) {
-        if (e.data?.error?.details) {
-          if (e.data?.error?.details.toLowerCase().indexOf("rate limit") !== -1) {
-            if (e.data?.error?.data?.rate_violated.toLowerCase().indexOf("700 per 1 minute") !== -1) {
-              setIsRpcDown(true);
-            }
-          }
-        }
-        console.log("error getting market data", e);
-      }
+      // try {
+      //   infos = await getVaultInfos(
+      //     provider,
+      //     userAccount
+      //   );
+      //   console.log('infos: ', infos)
+      //   if (isRpcDown) {
+      //     setIsRpcDown(false);
+      //   }
+      //   return infos;
+      // } catch (e) {
+      //   if (e.data?.error?.details) {
+      //     if (e.data?.error?.details.toLowerCase().indexOf("rate limit") !== -1) {
+      //       if (e.data?.error?.data?.rate_violated.toLowerCase().indexOf("700 per 1 minute") !== -1) {
+      //         setIsRpcDown(true);
+      //       }
+      //     }
+      //   }
+      //   console.log("error getting market data", e);
+      // }
       return { vaults: {}, blocknumber: null };
     };
 
