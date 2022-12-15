@@ -2,7 +2,6 @@ pragma solidity ^0.8.4;
 //https://github.com/poap-xyz/poap-contracts/tree/master/contracts
 import {ERC721} from "solmate/src/tokens/ERC721.sol";
 import {Controller} from "./controller.sol";
-import {BondingCurve} from "../bonds/bondingcurve.sol";
 import "hardhat/console.sol";
 
 
@@ -19,7 +18,7 @@ contract ReputationNFT is ERC721 {
 
   struct ReputationData {
     uint256 n; // number of markets participated in => regular uint256
-    uint256 score; // averaged reputation score => 60.18
+    uint256 score; 
   }
 
   struct TraderData { // for each market
@@ -27,7 +26,7 @@ contract ReputationNFT is ERC721 {
     uint256 tokensBought;
   }
 
-    struct TopReputation{
+  struct TopReputation{
     address trader; 
     uint256 score; 
   }
@@ -93,10 +92,28 @@ contract ReputationNFT is ERC721 {
     return _reputation[_ownerToId[owner]].score;
   }
 
-  /**
-   @notice add scores and stores topX 
-   @param score: 60.18 format
-   */
+  function setReputationScore(address owner, uint256 score) external returns (uint256) 
+  //onlyOwner
+  {
+    require(_ownerToId[owner] != uint256(0), "No Id found");
+    return _reputation[_ownerToId[owner]].score = score;
+  }
+
+
+  function updateScore(address to, int256 score) external onlyController{
+    require(_ownerToId[to] != uint256(0), "No Id found");
+
+    ReputationData storage data = _reputation[_ownerToId[to]];
+    if (score > 0) data.score = data.score + uint256(score);
+    else{
+        if (data.score <= uint256(-score)) data.score = 0; 
+        else data.score = data.score - uint256(-score);
+      } 
+
+    storeTopX(data.score, to); 
+  }
+
+
   function addScore(address to, uint256 score) external onlyController
    {
     require(_ownerToId[to] != uint256(0), "No Id found");
@@ -118,10 +135,6 @@ contract ReputationNFT is ERC721 {
     storeTopX(data.score, to); 
   }
 
-  /**
-   @notice calculates average of scores added.
-   @param score: 60.18 format
-   */
   function addAverageScore(address to, uint256 score) external onlyController
 
    {
@@ -162,12 +175,11 @@ contract ReputationNFT is ERC721 {
   /// @notice gets the x's ranked score from all reputation scores 
   /// @dev returns 0 if topX is greater then avaiable nonzero rep scores-> everyone is allowed
   /// during reputation constraint periods 
-  function getMinRepScore(uint256 topX, uint256 marketId) public view returns(uint256){
+  function getMinRepScore(uint256 topX) public view returns(uint256) {
     if (getAvailableTopX() < topX) {
       return 0; 
     }
-    return topReputations[topX].score; 
-
+    return topReputations[topX].score;
   }
 
   function getAvailableTopX() public view returns(uint256){
@@ -188,9 +200,9 @@ contract ReputationNFT is ERC721 {
     uint256 i = 0;
 
     for(i; i < topReputations.length; i++) {
-        if(topReputations[i].score < score) {
-            break;
-        }
+      if(topReputations[i].score < score) {
+        break;
+      }
     }
     // shifting the array of position (getting rid of the last element) 
     for(uint j = topReputations.length - 1; j > i; j--) {
@@ -207,14 +219,9 @@ contract ReputationNFT is ERC721 {
 
   }
 
-
- 
-
   function testStore() public view {
     for (uint i=0; i<10; i++){
       console.log('score', topReputations[i].score); 
     }
-  }
-
-  
+  }  
 }

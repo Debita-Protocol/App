@@ -45,7 +45,7 @@ export const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.4",
+        version: "0.8.12",
         settings: {
           optimizer: {
             enabled: true,
@@ -157,7 +157,7 @@ export const config: HardhatUserConfig = {
       'f7c11910f42a6cab4436bffea7dca20fed310bd794b7c37a930cc013ae6392d2'],
    gas: 1000000000,
       gasPrice: 10000000000,
-            allowUnlimitedContractSize: true
+      allowUnlimitedContractSize: true
 
     },
     maticMainnet: {

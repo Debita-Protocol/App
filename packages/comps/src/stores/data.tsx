@@ -48,7 +48,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
     let isMounted = true;
     let intervalId = null;
     
-    const getMarkets = async () => {
+    const getVaults = async () => {
       console.log("calling getMarkets...");
       const { account: userAccount, loginAccount } = UserStore.get();
       const { isRpcDown, isWalletRpc } = AppStatusStore.get();
@@ -82,14 +82,14 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
       return { vaults: {}, blocknumber: null };
     };
 
-    getMarkets().then(({ vaults, blocknumber }) => {
+    getVaults().then(({ vaults, blocknumber }) => {
       isMounted &&
         blocknumber &&
         blocknumber > DataStore.get().blocknumber &&
         updateDataHeartbeat(vaults, blocknumber, null);
 
       intervalId = setInterval(() => {
-        getMarkets().then(({ vaults, blocknumber }) => {
+        getVaults().then(({ vaults, blocknumber }) => {
           isMounted &&
             blocknumber &&
             blocknumber > DataStore.get().blocknumber &&

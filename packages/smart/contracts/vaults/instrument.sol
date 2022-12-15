@@ -64,11 +64,11 @@ abstract contract Instrument {
         Utilizer = _Utilizer;
     }
 
-    function setValidator(address _validator) external {
-        require(msg.sender == vault.owner(), "Not owner"); 
-        validators.push(_validator); 
-        isValidator[_validator] = true;     
-    }
+    // function setValidator(address _validator) external {
+    //     require(msg.sender == vault.owner(), "Not owner"); 
+    //     validators.push(_validator); 
+    //     isValidator[_validator] = true;     
+    // }
 
 
     /// @notice Withdraws a specific amount of underlying tokens from the Instrument.
@@ -84,7 +84,7 @@ abstract contract Instrument {
     /// @dev May mutate the state of the Instrument by accruing interest.
     function balanceOfUnderlying(address user) public view returns (uint256){
         return underlying.balanceOf(user); 
-        }
+    }
 
 
     /**
@@ -115,23 +115,8 @@ abstract contract Instrument {
      */
     function estimatedTotalAssets() public view virtual returns (uint256){}
 
-    /**
-     * Free up returns for vault to pull
-     * Perform any Instrument divesting + unwinding or other calls necessary to capture the
-     * "free return" this Instrument has generated since the last time its core
-     * position(s) were adjusted. Examples include unwrapping extra rewards.
-     * This call is only used during "normal operation" of a Instrument, and
-     * should be optimized to minimize losses as much as possible.
-     *
-     * This method returns any realized profits and/or realized losses
-     * incurred, and should return the total amounts of profits/losses/debt
-     * payments (in `underlying` tokens) for the Vault's accounting (e.g.
-     * `underlying.balanceOf(this) >= principal + profit`).
-     *
-     * param _debtPayment is the total amount expected to be returned to the vault
-     */
 
-    /// @notice checks if the instrument is ready to be withdrawed, i.e all 
+    /// @notice Free up returns for vault to pull,  checks if the instrument is ready to be withdrawed, i.e all 
     /// loans have been paid, all non-underlying have been liquidated, etc
     function readyForWithdrawal() public view virtual returns(bool){
         return true; 
@@ -152,7 +137,7 @@ abstract contract Instrument {
             uint256 _loss,
             uint256 _debtPayment
         ){
-            require(readyForWithdrawal()); 
+            require(readyForWithdrawal(), "not ready to withdraw"); 
 
             // Lock additional drawdowns or usage of instrument balance 
             lockLiquidityFlow();    
@@ -195,7 +180,6 @@ abstract contract Instrument {
     function transfer_liq_from(address from, address to, uint256 amount) internal notLocked {
         if (vault.decimal_mismatch()) amount = vault.decSharesToAssets(amount); 
         underlying.transferFrom(from, to, amount);
-
     }
 
     /// @notice called before resolve, to avoid calculating redemption price based on manipulations 
@@ -210,6 +194,8 @@ abstract contract Instrument {
         return maturity_balance; 
     }
 
+    function isLiquid(uint256 amount) public virtual view returns(bool){}
+
 
     /// @notice Before supplying liquidity from the vault to this instrument,
     /// which is done automatically when instrument is trusted, 
@@ -218,9 +204,6 @@ abstract contract Instrument {
     /// requirement need to check if this address has the specific amount of collateral
     /// @dev called to be checked at the approve phase from controller  
     function instrumentApprovalCondition() public virtual view returns(bool); 
-
-
-
 }
 
 
@@ -343,9 +326,14 @@ contract CreditLine is Instrument {
     /// @notice if possible, and borrower defaults, liquidates given collateral to underlying
     /// and push back to vault. If not possible, push the collateral back to
     function liquidateAndPushToVault() internal  {}
-
     function auctionAndPushToVault() internal {} 
+    function isLiquidatable(address collateral) public view returns(bool){}
 
+    /// @notice if collateral is liquidateable and has oracle, fetch value of collateral 
+    /// and return ratio to principal 
+    function getCollateralRatio() public view returns(uint256){
+
+    }
     /// @notice After grace period auction off ownership to some other party and transfer the funds back to vault 
     /// @dev assumes collateral has already been transferred to vault, needs to be checked by the caller 
     function liquidateOwnership(address buyer) public virtual onlyAuthorized{
@@ -359,13 +347,7 @@ contract CreditLine is Instrument {
         ERC20(collateral).transfer(to, amount); 
     }
 
-    function isLiquidatable(address collateral) public view returns(bool){}
 
-    /// @notice if collateral is liquidateable and has oracle, fetch value of collateral 
-    /// and return ratio to principal 
-    function getCollateralRatio() public view returns(uint256){
-
-    }
 
     /// @notice validators have to check these conditions at a human level too before approving 
     function instrumentApprovalCondition() public override view returns(bool){
@@ -376,8 +358,8 @@ contract CreditLine is Instrument {
             require(ERC20(collateral).balanceOf(address(this)) >= collateral_balance, "Insufficient collateral"); 
         }
 
-        // check if validator(s) are set 
-        if (validators.length == 0) {revert("No validators"); }
+        // // check if validator(s) are set 
+        // if (validators.length == 0) {revert("No validators"); }
 
         // Check if proxy has been given ownership
         if (collateral_type == CollateralType.ownership && proxy.numContracts() == 0) revert("Ownership "); 
@@ -404,9 +386,8 @@ contract CreditLine is Instrument {
     function adjustInterestOwed() internal {
 
         uint256 remainingDuration = (drawdown_block + toSeconds(duration)) - getCurrentTime();
-        console.log('remainingDuration', remainingDuration);
+
         interestOwed = interestAPR.mulWadDown(toYear(remainingDuration).mulWadDown(principalOwed)); 
-        console.log('interestOwed should be same', interestOwed); 
     }
 
     /// @param quoted_yield is in notional amount denominated in underlying, which is the area between curve and 1 at the x-axis point 
@@ -430,7 +411,6 @@ contract CreditLine is Instrument {
         else proxy.changeOwnership(borrower);
         
         bool isPrepaid = loanStatus == LoanStatus.prepayment_fulfilled? true:false;
-        console.log('isprepaid', isPrepaid); 
         // Write to storage resolve details (principal+interest repaid, is prepaid, etc) 
         vault.pingMaturity(address(this), isPrepaid); 
 
@@ -442,7 +422,6 @@ contract CreditLine is Instrument {
 
         // Normalized to year
         uint256 elapsedTime = toYear(getCurrentTime() - lastRepaymentTime);
-        console.log('elapsedTime', elapsedTime); 
         // Owed interest from last timestamp till now  + any unpaid interest that has accumulated
         return elapsedTime.mulWadDown(interestAPR.mulWadDown(principalOwed)) + accumulated_interest ; 
     }
@@ -474,7 +453,7 @@ contract CreditLine is Instrument {
         uint256 owedInterest = interestToRepay(); 
         uint256 repay_principal; 
         uint256 repay_interest = _repay_amount; 
-        console.log('owedinterest', owedInterest, accumulated_interest);
+
         // Push remaineder to repaying principal 
         if (_repay_amount >= owedInterest){
             repay_principal += (_repay_amount - owedInterest);  
@@ -510,8 +489,7 @@ contract CreditLine is Instrument {
         totalOwed -= Math.min((repay_principal + repay_interest), totalOwed); 
         principalOwed -= Math.min(repay_principal, principalOwed);
         interestOwed -= Math.min(repay_interest, interestOwed);
-        console.log('repayment', repay_principal, repay_interest); 
-        console.log('interestOwed should be same here', interestOwed, principalOwed); 
+
         principalRepayed += repay_principal;
         interestRepayed += repay_interest; 
         if (repay_principal > 0) adjustInterestOwed(); 
@@ -519,9 +497,6 @@ contract CreditLine is Instrument {
         bool fullyRepayed = (principalOwed == 0 && interestOwed == 0)? true : false; 
         return fullyRepayed; 
     }
-
-
-
 
     function setGracePeriod() external {}
 
@@ -711,7 +686,7 @@ contract MockBorrowerContract{
         console.log('hello', a); 
     }
 
-    function autoDelegate(address proxyad) public{
+    function autoDelegate(address proxyad) public {
         Proxy(proxyad).delegateOwnership(address(this), this.changeOwner.selector); 
     }
     fallback () external {

@@ -355,13 +355,14 @@ export interface ParameterInfo {
   delta: string;
   r: string;
   s: string;
+  steak: string;
 }
+
 
 export interface MarketPhaseData {
   duringAssessment: boolean;
   onlyReputable: boolean;
   resolved: boolean;
-  min_rep_score: string;
   alive: boolean;
   atLoss: boolean;
   base_budget: string;
@@ -381,6 +382,16 @@ interface CoreInstrumentData {
   maturityDate: string;
 }
 
+
+interface CorePoolData {
+  saleAmount: string;
+  initPrice: string;
+  promisedReturn: string;
+  inceptionTime: string;
+  inceptionPrice: string;
+  leverageFactor: string;
+}
+
 export interface CoreMarketInfo {
   marketId: string;
   creationTimestamp: string;
@@ -391,6 +402,7 @@ export interface CoreMarketInfo {
   longZCB?: string;
   shortZCB?: string;
   instrument?: CoreInstrumentData;
+  pool?: CorePoolData;
   approved_principal?: string;
   approved_yield?: string;
 }

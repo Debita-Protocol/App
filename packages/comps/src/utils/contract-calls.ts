@@ -1,5 +1,4 @@
 import { BigNumber as BN } from "bignumber.js";
-
 import {
   AddRemoveLiquidity,
   AllMarketsTransactions,
@@ -2952,7 +2951,7 @@ export const getVaultInfos = async (
 
   let vaults: VaultInfos = {};
   for (let i = 0; i < tmp_vaults.length; i++) {
-    let vid = EthersBN_to_Str(tmp_vaults[i].vaultId);
+    let vid = tmp_vaults[i].vaultId;
     vaults[vid] = tmp_vaults[i];
   }
 
@@ -2960,46 +2959,46 @@ export const getVaultInfos = async (
   for (let i = 0; i < dBundles.length; i++) {
     let v = dBundles[i].vault;
     let vid = EthersBN_to_Str(v.vaultId);
+    console.log("vid: ", vid);
 
     vaults[vid].totalSupply = EthersBN_to_Str(v.totalSupply);
 
     let tmp_markets = dBundles[i].markets;
-    for (let j=0; j < tmp_markets.length; j++) {
-      let tmp_m = tmp_markets[0];
-      let mid = EthersBN_to_Str(tmp_m.marketId);
-      let m =  vaults[vid].markets[mid];
-      m.approved_principal = EthersBN_to_Str(tmp_m.approved_principal);
-      m.approved_yield = EthersBN_to_Str(tmp_m.approved_yield);
-      m.longZCB = EthersBN_to_Str(tmp_m.longZCB);
-      m.shortZCB = EthersBN_to_Str(tmp_m.shortZCB);
+    // for (let j=0; j < tmp_markets.length; j++) {
+    //   let tmp_m = tmp_markets[0];
+    //   let mid = EthersBN_to_Str(tmp_m.marketId);
+    //   let m =  vaults[vid].markets[mid];
+    //   m.approved_principal = EthersBN_to_Str(tmp_m.approved_principal);
+    //   m.approved_yield = EthersBN_to_Str(tmp_m.approved_yield);
+    //   m.longZCB = EthersBN_to_Str(tmp_m.longZCB);
+    //   m.shortZCB = EthersBN_to_Str(tmp_m.shortZCB);
 
-      m.phase = {
-        duringAssessment: tmp_m.phase.duringAssessment,
-        onlyReputable: tmp_m.phase.onlyReputable,
-        resolved: tmp_m.phase.resolved,
-        min_rep_score: EthersBN_to_Str(tmp_m.phase.min_rep_score),
-        alive: tmp_m.phase.alive,
-        atLoss: tmp_m.phase.atLoss,
-        base_budget: EthersBN_to_Str(tmp_m.phase.base_budget)
-      }
+    //   m.phase = {
+    //     duringAssessment: tmp_m.phase.duringAssessment,
+    //     onlyReputable: tmp_m.phase.onlyReputable,
+    //     resolved: tmp_m.phase.resolved,
+    //     min_rep_score: EthersBN_to_Str(tmp_m.phase.min_rep_score),
+    //     alive: tmp_m.phase.alive,
+    //     atLoss: tmp_m.phase.atLoss,
+    //     base_budget: EthersBN_to_Str(tmp_m.phase.base_budget)
+    //   }
 
-      let instr = tmp_m.instrument;
-      m.instrument = {
-        trusted: instr.trusted,
-        balance: EthersBN_to_Str(instr.balance),
-        faceValue: EthersBN_to_Str(instr.faceValue),
-        marketId: EthersBN_to_Str(instr.marketId),
-        principal: EthersBN_to_Str(instr.principal),
-        expectedYield: EthersBN_to_Str(instr.expectedYield),
-        duration: EthersBN_to_Str(instr.duration),
-        description: instr.description,
-        address: instr.Instrument_address,
-        type: Number(instr.instrument_type),
-        maturityDate: EthersBN_to_Str(instr.maturityDate)
-      }
-    }
+    //   let instr = tmp_m.instrument;
+    //   m.instrument = {
+    //     trusted: instr.trusted,
+    //     balance: EthersBN_to_Str(instr.balance),
+    //     faceValue: EthersBN_to_Str(instr.faceValue),
+    //     marketId: EthersBN_to_Str(instr.marketId),
+    //     principal: EthersBN_to_Str(instr.principal),
+    //     expectedYield: EthersBN_to_Str(instr.expectedYield),
+    //     duration: EthersBN_to_Str(instr.duration),
+    //     description: instr.description,
+    //     address: instr.Instrument_address,
+    //     type: Number(instr.instrument_type),
+    //     maturityDate: EthersBN_to_Str(instr.maturityDate)
+    //   }
+    // }
   }
-
 
   return {
     vaults,

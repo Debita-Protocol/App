@@ -30,6 +30,7 @@ import ProfileView from "../profile/profile-view";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
 import CreditlineView from "../creditline/creditline-view";
 import InstrumentProposalView from "../instrument-proposal/instrument-proposal-view";
+import InvestView from '../invest/invest-view';
 
 const { PathUtils: { makePath } } = Utils;
 
@@ -48,6 +49,7 @@ const Routes = p => {
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
       <Route path={makePath(CREDITLINE)} component={CreditlineView} />
+      <Route path={makePath("invest")} component={InvestView} />
       <Redirect to={makePath(MARKETS)} />
     </Switch>
   );

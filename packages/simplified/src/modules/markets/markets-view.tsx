@@ -16,7 +16,6 @@ import {
   ContractCalls,
   useUserStore,
   ApprovalHooks,
-
 } from "@augurproject/comps";
 
 import type { MarketInfo } from "@augurproject/comps/build/types";

@@ -8,7 +8,7 @@ const func: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deployments.deploy("Fetcher", {
     from: deployer,
     args: ["new", "1.0"],
-    log: true, 
+    log: true,
   });
 };
         

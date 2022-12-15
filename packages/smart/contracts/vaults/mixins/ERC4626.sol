@@ -53,6 +53,10 @@ abstract contract ERC4626 is ERC20 {
                         DEPOSIT/WITHDRAWAL LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    function burn(uint256 shares) public virtual {
+        _burn(msg.sender, shares);
+    }
+
     function deposit(uint256 assets, address receiver) public virtual returns (uint256 shares) {
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");

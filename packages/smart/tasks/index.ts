@@ -6,7 +6,7 @@ export * from "./deploy";
 // export * from "./markets";
 export * from "./rundown";
 // export * from "./setTrustedResolution";
-export * from "./fundLink";
+// export * from "./fundLink";
 export * from "./getTeams";
 export * from "./tenderlyVerify";
 // export * from "./pokeLink";
