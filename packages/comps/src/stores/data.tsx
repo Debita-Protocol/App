@@ -12,7 +12,7 @@ import { useUserStore, UserStore } from "./user";
 import { getMarketInfos, getRewardsStatus, 
   //getVaultInfos 
 } from "../utils/contract-calls";
-import { VaultInfos } from "types";
+import { VaultInfos, VaultInfo } from "types";
 import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
@@ -155,32 +155,35 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
         markets: {}
       };
       for (let i = 1; i < 10; i++) { 
-        vaults[i.toString()] = {
-          ...emptyVault,
-          vaultId: i.toString(),
-          address: "0x" + i.toString(),
-          marketIds: [i.toString()] 
+        let vault: any = {};
+        Object.assign(
+          vault, 
+          emptyVault,
+          {
+            vaultId: i.toString(),
+            address: "0x" + i.toString(),
+            marketIds: []
+          }
+        );
+        let _markets = {};
+        for (let j= i + (i-1); j < i + (i-1) + 2; j++) {
+          vault.marketIds.push(j.toString());
+          Object.assign(
+            _markets,
+            {
+              [j.toString()]: {
+                ...emptyMarket,
+                longZCB: "0x" + j.toString(),
+                shortZCB: "0x" + j.toString(),
+                marketId: j.toString(),
+              }
+            }
+          );
         }
-        // vaults[i.toString()].vaultId = i.toString();
-        // vaults[i.toString()].address = "0x" + i.toString();
-        // vaults[i.toString()].marketIds.push(i.toString());
-        
-        // for (let j= i + (i-1); j < i + (i-1) + 2; j++) {
-        //   console.log("j: ", j)
-        //   console.log("i: ", i)
-        //   console.log("vaultId: ", vaults[i.toString()].vaultId);
-        //   vaults[i.toString()].marketIds.push(j.toString());
-        //   vaults[i.toString()].markets[j.toString()] = {
-        //     ...emptyMarket
-        //   }
-          // vaults[i.toString()].markets[j.toString()].marketId = j.toString();
-          // vaults[i.toString()].markets[j.toString()].long = "0x" + j.toString();
-          // vaults[i.toString()].markets[j.toString()].short = "0x" + j.toString();
-          // vaults[i.toString()].markets[j.toString()].longZCB = "0x" + j.toString();
-          // vaults[i.toString()].markets[j.toString()].shortZCB = "0x" + j.toString();
-          // vaults[i.toString()].markets[j.toString()].instrument.address = "0x" + j.toString();
-        // }
+        Object.assign(vault, {markets: _markets});
+        Object.assign(vaults, {[i.toString()]: vault});
       }
+      
       return { vaults, blocknumber: 1 };
     };
 
@@ -190,14 +193,14 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
         blocknumber > DataStore.get().blocknumber &&
         updateDataHeartbeat(vaults, blocknumber, null);
 
-      intervalId = setInterval(() => {
-        getVaults().then(({ vaults, blocknumber }) => {
-          isMounted &&
-            blocknumber &&
-            blocknumber > DataStore.get().blocknumber &&
-            updateDataHeartbeat(vaults, blocknumber, null);
-        });
-      }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
+      // intervalId = setInterval(() => {
+      //   getVaults().then(({ vaults, blocknumber }) => {
+      //     isMounted &&
+      //       blocknumber &&
+      //       blocknumber > DataStore.get().blocknumber &&
+      //       updateDataHeartbeat(vaults, blocknumber, null);
+      //   });
+      // }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
     });
 
     return () => {

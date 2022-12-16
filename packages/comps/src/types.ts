@@ -400,8 +400,6 @@ export interface CoreMarketInfo {
   bondPool: string;
   marketId: string;
   creationTimestamp: string;
-  long: string;
-  short: string;
   parameters: ParameterInfo;
   phase?: MarketPhaseData;
   longZCB?: string;
