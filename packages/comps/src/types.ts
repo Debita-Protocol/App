@@ -344,8 +344,13 @@ export interface Cash {
 export interface AmmExchanges {
   [id: string]: AmmExchange;
 }
+
 export interface MarketInfos {
   [marketId: string]: MarketInfo;
+}
+
+export interface InstrumentInfos {
+  [marketId: string]: CoreInstrumentData;
 }
 
 export interface ParameterInfo {
@@ -372,6 +377,9 @@ export interface CoreMarketInfos {
 }
 
 export interface CoreInstrumentData {
+  marketId: string;
+  vaultId: string;
+  utilizer?: string;
   trusted: boolean;
   isPool: boolean;
   balance: string;
@@ -399,15 +407,14 @@ export interface CorePoolData {
 export interface CoreMarketInfo {
   bondPool: string;
   marketId: string;
+  vaultId: string;
   creationTimestamp: string;
   parameters: ParameterInfo;
   phase?: MarketPhaseData;
   longZCB?: string;
   shortZCB?: string;
-  instrument?: CoreInstrumentData;
   approved_principal?: string;
   approved_yield?: string;
-  utilizer?: string;
 }
 
 export interface VaultInfo {
@@ -420,7 +427,6 @@ export interface VaultInfo {
   asset_limit: string;
   total_asset_limit: string;
   collateral_address: string,
-  markets: CoreMarketInfos;
   // dynamic data
   totalSupply?: string
 };

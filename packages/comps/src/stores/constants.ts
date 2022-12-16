@@ -1,4 +1,6 @@
-import type { AppStatusState, GraphDataState, UserState, ParaDeploys, VaultInfos } from "../types";
+import type { AppStatusState, GraphDataState, UserState, ParaDeploys, VaultInfos, CoreMarketInfos,
+InstrumentInfos
+} from "../types";
 import { addresses } from "@augurproject/smart";
 import { BigNumberish } from "ethers";
 
@@ -208,20 +210,25 @@ export interface NewCash {
   displayDecimals: number;
 };
 
+
 export interface CoreDataState {
   vaults: VaultInfos,
   blocknumber: number,
   errors: any,
   cashes: {
     [address: string]: NewCash;
-  };
+  },
+  markets: CoreMarketInfos,
+  instruments: InstrumentInfos
 }
 
 export const DEFAULT_DATA_STATE: CoreDataState = {
   vaults: {},
   blocknumber: null,
   errors: null,
-  cashes: {}
+  cashes: {},
+  markets: {},
+  instruments: {}
 }
 
 // export const DATA_KEYS = {
@@ -243,7 +250,9 @@ export const DATA_KEYS = {
   VAULTS: "vaults",
   BLOCKNUMBER: "blocknumber",
   ERRORS: "errors",
-  CASHES: "cashes"
+  CASHES: "cashes",
+  MARKETS: "markets",
+  INSTRUMENTS: "instruments",
 }
 
 // export const DATA_ACTIONS = {

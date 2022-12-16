@@ -109,31 +109,33 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
         },
         longZCB: "0x1",
         shortZCB: "0x1",
-        instrument: {
-          trusted: false,
-          isPool: false,
-          balance: "0",
-          faceValue: "0",
-          principal: "0",
-          expectedYield: "0",
-          duration: "0",
-          description: "a test description of the instrument",
-          address: "0x1",
-          type: 0,
-          maturityDate: "0",
-          poolData: { 
-            saleAmount: "0",
-            initPrice: "0",
-            promisedReturn: "0",
-            inceptionTime: "0",
-            inceptionPrice: "0",
-            leverageFactor: "1"
-          }
-        },
         approved_principal: "0",
         approved_yield: "0",
         utilizer: "0x1",
       };
+
+      let emptyInstrument =  {
+        trusted: false,
+        isPool: true,
+        balance: "0",
+        faceValue: "0",
+        principal: "0",
+        expectedYield: "0",
+        duration: "0",
+        description: "a test description of the instrument",
+        address: "0x1",
+        type: 0,
+        maturityDate: "0",
+        poolData: { 
+          saleAmount: "0",
+          initPrice: "0",
+          promisedReturn: "0",
+          inceptionTime: "0",
+          inceptionPrice: "0",
+          leverageFactor: "1"
+        }
+      };
+
       let emptyVault = {
         vaultId: "1",
         address: "0x1",
@@ -151,9 +153,10 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
         r: "10",
         asset_limit:"0",
         total_asset_limit:"0",
-        collateral_address:"0x1",
-        markets: {}
+        collateral_address:"0x1"
       };
+      let _markets = {};
+      let instruments = {};
       for (let i = 1; i < 10; i++) { 
         let vault: any = {};
         Object.assign(
@@ -165,7 +168,6 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
             marketIds: []
           }
         );
-        let _markets = {};
         for (let j= i + (i-1); j < i + (i-1) + 2; j++) {
           vault.marketIds.push(j.toString());
           Object.assign(
@@ -173,25 +175,35 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
             {
               [j.toString()]: {
                 ...emptyMarket,
+                vaultId: i.toString(),
                 longZCB: "0x" + j.toString(),
                 shortZCB: "0x" + j.toString(),
-                marketId: j.toString(),
+                marketId: j.toString()
               }
             }
           );
+          Object.assign(instruments,
+            {
+              [j.toString()]: {
+                ...emptyInstrument,
+                vaultId: i.toString(),
+                marketId: j.toString(),
+                utilizer: "0x" + j.toString(),
+              }
+            })
         }
         Object.assign(vault, {markets: _markets});
         Object.assign(vaults, {[i.toString()]: vault});
       }
       
-      return { vaults, blocknumber: 1 };
+      return { vaults, blocknumber: 1, markets: _markets, instruments };
     };
 
-    getVaults().then(({ vaults, blocknumber }) => {
+    getVaults().then(({ vaults, blocknumber, markets, instruments }) => {
       isMounted &&
         blocknumber &&
         blocknumber > DataStore.get().blocknumber &&
-        updateDataHeartbeat(vaults, blocknumber, null);
+        updateDataHeartbeat(vaults, blocknumber, null, markets, instruments);
 
       // intervalId = setInterval(() => {
       //   getVaults().then(({ vaults, blocknumber }) => {
