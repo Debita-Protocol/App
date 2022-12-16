@@ -6,7 +6,6 @@ const InvestView = p => {
     const {
         vaults
     } = useDataStore();
-    console.log(vaults);
     return (
         <div>
         <h1>Invest</h1>

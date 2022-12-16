@@ -358,7 +358,6 @@ export interface ParameterInfo {
   steak: string;
 }
 
-
 export interface MarketPhaseData {
   duringAssessment: boolean;
   onlyReputable: boolean;
@@ -368,11 +367,15 @@ export interface MarketPhaseData {
   base_budget: string;
 }
 
-interface CoreInstrumentData {
+export interface CoreMarketInfos {
+  [marketId: string]: CoreMarketInfo;
+}
+
+export interface CoreInstrumentData {
   trusted: boolean;
+  isPool: boolean;
   balance: string;
   faceValue: string;
-  marketId: string;
   principal: string;
   expectedYield: string;
   duration: string;
@@ -380,10 +383,11 @@ interface CoreInstrumentData {
   address: string;
   type: number;
   maturityDate: string;
+  poolData?: CorePoolData;
 }
 
 
-interface CorePoolData {
+export interface CorePoolData {
   saleAmount: string;
   initPrice: string;
   promisedReturn: string;
@@ -393,6 +397,7 @@ interface CorePoolData {
 }
 
 export interface CoreMarketInfo {
+  bondPool: string;
   marketId: string;
   creationTimestamp: string;
   long: string;
@@ -402,12 +407,13 @@ export interface CoreMarketInfo {
   longZCB?: string;
   shortZCB?: string;
   instrument?: CoreInstrumentData;
-  pool?: CorePoolData;
   approved_principal?: string;
   approved_yield?: string;
+  utilizer?: string;
 }
 
 export interface VaultInfo {
+  address: string;
   vaultId: string,
   marketIds: string[],
   onlyVerified: boolean,
@@ -416,9 +422,7 @@ export interface VaultInfo {
   asset_limit: string;
   total_asset_limit: string;
   collateral_address: string,
-  markets: {
-    [marketId: string] : CoreMarketInfo
-  },
+  markets: CoreMarketInfos;
   // dynamic data
   totalSupply?: string
 };

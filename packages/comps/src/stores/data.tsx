@@ -12,6 +12,7 @@ import { useUserStore, UserStore } from "./user";
 import { getMarketInfos, getRewardsStatus, 
   //getVaultInfos 
 } from "../utils/contract-calls";
+import { VaultInfos } from "types";
 import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
@@ -81,7 +82,106 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
       //   }
       //   console.log("error getting market data", e);
       // }
-      return { vaults: {}, blocknumber: null };
+      // return { vaults: {}, blocknumber: null };
+      let vaults: VaultInfos = {};
+      let emptyMarket = {
+        bondPool: "0x1",
+        marketId: "1",
+        creationTimestamp: "1",
+        long: "0x1",
+        short: "0x1",
+        parameters: {
+          N: "1",
+          sigma: "1",
+          omega: "1",
+          delta: "1",
+          r: "1",
+          s: "1",
+          steak: "1"
+        },
+        phase: {
+          duringAssessment: true,
+          onlyReputable: true,
+          resolved: false,
+          alive: true,
+          atLoss: false,
+          base_budget: "0"
+        },
+        longZCB: "0x1",
+        shortZCB: "0x1",
+        instrument: {
+          trusted: false,
+          isPool: false,
+          balance: "0",
+          faceValue: "0",
+          principal: "0",
+          expectedYield: "0",
+          duration: "0",
+          description: "a test description of the instrument",
+          address: "0x1",
+          type: 0,
+          maturityDate: "0",
+          poolData: { 
+            saleAmount: "0",
+            initPrice: "0",
+            promisedReturn: "0",
+            inceptionTime: "0",
+            inceptionPrice: "0",
+            leverageFactor: "1"
+          }
+        },
+        approved_principal: "0",
+        approved_yield: "0",
+        utilizer: "0x1",
+      };
+      let emptyVault = {
+        vaultId: "1",
+        address: "0x1",
+        marketIds: [],
+        onlyVerified: false,
+        default_params: {
+          N: "1",
+          sigma: "1",
+          omega: "1",
+          delta: "1",
+          r: "1",
+          s: "1",
+          steak: "1"
+        },
+        r: "10",
+        asset_limit:"0",
+        total_asset_limit:"0",
+        collateral_address:"0x1",
+        markets: {}
+      };
+      for (let i = 1; i < 10; i++) { 
+        vaults[i.toString()] = {
+          ...emptyVault,
+          vaultId: i.toString(),
+          address: "0x" + i.toString(),
+          marketIds: [i.toString()] 
+        }
+        // vaults[i.toString()].vaultId = i.toString();
+        // vaults[i.toString()].address = "0x" + i.toString();
+        // vaults[i.toString()].marketIds.push(i.toString());
+        
+        // for (let j= i + (i-1); j < i + (i-1) + 2; j++) {
+        //   console.log("j: ", j)
+        //   console.log("i: ", i)
+        //   console.log("vaultId: ", vaults[i.toString()].vaultId);
+        //   vaults[i.toString()].marketIds.push(j.toString());
+        //   vaults[i.toString()].markets[j.toString()] = {
+        //     ...emptyMarket
+        //   }
+          // vaults[i.toString()].markets[j.toString()].marketId = j.toString();
+          // vaults[i.toString()].markets[j.toString()].long = "0x" + j.toString();
+          // vaults[i.toString()].markets[j.toString()].short = "0x" + j.toString();
+          // vaults[i.toString()].markets[j.toString()].longZCB = "0x" + j.toString();
+          // vaults[i.toString()].markets[j.toString()].shortZCB = "0x" + j.toString();
+          // vaults[i.toString()].markets[j.toString()].instrument.address = "0x" + j.toString();
+        // }
+      }
+      return { vaults, blocknumber: 1 };
     };
 
     getVaults().then(({ vaults, blocknumber }) => {
