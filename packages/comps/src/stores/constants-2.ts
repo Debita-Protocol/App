@@ -1,7 +1,13 @@
-import type { AppStatusState, GraphDataState, UserState, ParaDeploys } from "../types";
+import type { AppStatusState, GraphDataState, UserState, ParaDeploys, VaultInfos, CoreMarketInfos,
+InstrumentInfos
+} from "../types";
 import { addresses } from "@augurproject/smart";
+import { BigNumberish } from "ethers";
+
+
 
 export const DEFAULT_NETWORK_ID = (process.env.DEFAULT_NETWORK_ID || "80001").toString();
+
 export const PARA_CONFIG: ParaDeploys = {
   networkId: DEFAULT_NETWORK_ID,
   ...addresses[DEFAULT_NETWORK_ID],
@@ -42,6 +48,7 @@ export const STUBBED_USER_ACTIONS = {
   updateTransaction: (hash, updates) => {},
   updateUserBalances: (balances) => {},
   logout: () => {},
+  updateVerificationStatus: (isVerified) => {},
 };
 
 export const DEFAULT_USER_STATE: UserState = {
@@ -77,6 +84,13 @@ export const DEFAULT_USER_STATE: UserState = {
   loginAccount: null,
   seenPositionWarnings: {},
   transactions: [],
+  verificationStatus: false,
+  passport: {
+    issuanceDate: null,
+    expiryDate: null,
+    stamps: []
+  },
+  activePassport: false
 };
 
 export const USER_KEYS = {
@@ -84,7 +98,7 @@ export const USER_KEYS = {
   BALANCES: "balances",
   LOGIN_ACCOUNT: "loginAccount",
   SEEN_POSITION_WARNINGS: "seenPositionWarnings",
-  TRANSACTIONS: "transactions",
+  TRANSACTIONS: "transactions"
 };
 
 export const USER_ACTIONS = {
@@ -97,6 +111,12 @@ export const USER_ACTIONS = {
   SET_LOGIN_ACCOUNT: "SET_LOGIN_ACCOUNT",
   UPDATE_USER_BALANCES: "UPDATE_USER_BALANCES",
   LOGOUT: "LOGOUT",
+  UPDATE_VERIFICATION_STATUS: "UPDATE_VERIFICATION_STATUS",
+  UPDATE_NUMBER_OF_LOANS: "UPDATE_NUMBER_OF_LOANS",
+  UPDATE_NUMBER_OF_PROPOSALS: "UPDATE_NUMBER_OF_PROPOSALS",
+  UPDATE_BORROWER_LOANS: "UPDATE_BORROWER_LOANS",
+  UPDATE_PASSPORT: "UPDATE_PASSPORT",
+  UPDATE_PASSPORT_STATUS: "UPDATE_PASSPORT_STATUS"
 };
 
 export const STUBBED_APP_STATUS_ACTIONS = {
@@ -147,33 +167,103 @@ export const MOCK_APP_STATUS_STATE = {
   ...DEFAULT_APP_STATUS_STATE,
 };
 
-export const STUBBED_DATA_ACTIONS = {
-  updateDataHeartbeat: (processed, blocknumber, errors) => {},
-  updateTransactions: (transactions) => {},
+// export const STUBBED_DATA_ACTIONS = {
+//   updateDataHeartbeat: (processed, blocknumber, errors) => {},
+//   updateTransactions: (transactions) => {},
+//   updateInstrumentDataHeartbeat: (processed)=>{},
+// };
+
+export const STUBBED_DATA_ACTIONS_2 = {
+  updateDataHeartBeat: (vaults, blocknumber, errors) => {}
 };
 
-export const DEFAULT_DATA_STATE: GraphDataState = {
-  ammExchanges: {},
+
+export const DEFAULT_INSTRUMENT_STATE = {
+  hedgePrice: "0",
+  principal: "0",
+  expectedYield: "0",
+  duration: "0",
+  totalcollateral: "0",  
+}
+
+// export const DEFAULT_DATA_STATE: GraphDataState = {
+//   ammExchanges: {},
+//   blocknumber: null,
+//   cashes: {},
+//   errors: null,
+//   markets: {},
+//   transactions: {},
+
+//   hedgePrice: "0",
+//   principal: "0",
+//   expectedYield: "0",
+//   duration: "0",
+//   totalcollateral: "0", 
+// };
+
+export interface NewCash {
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  usdPrice?: string;
+  displayDecimals: number;
+};
+
+
+export interface CoreDataState {
+  vaults: VaultInfos,
+  blocknumber: number,
+  errors: any,
+  cashes: {
+    [address: string]: NewCash;
+  },
+  markets: CoreMarketInfos,
+  instruments: InstrumentInfos
+}
+
+export const DEFAULT_DATA_STATE_2: CoreDataState = {
+  vaults: {},
   blocknumber: null,
-  cashes: {},
   errors: null,
+  cashes: {},
   markets: {},
-  transactions: {},
-};
+  instruments: {}
+}
 
-export const DATA_KEYS = {
-  AMM_EXCHANGES: "ammExchanges",
+// export const DATA_KEYS = {
+//   AMM_EXCHANGES: "ammExchanges",
+//   BLOCKNUMBER: "blocknumber",
+//   CASHES: "cashes",
+//   ERRORS: "errors",
+//   MARKETS: "markets",
+//   TRANSACTIONS: "transactions",
+
+//   HEDGEPRICE: 'hedgePrice',
+//   PRINCIPAL: 'principal', 
+//   EXPECTEDYIELD:'expectedYield', 
+//   DURATION:'duration', 
+//   TOTALCOLLATERAL: 'totalcollateral',
+// };
+
+export const DATA_KEYS_2 = {
+  VAULTS: "vaults",
   BLOCKNUMBER: "blocknumber",
-  CASHES: "cashes",
   ERRORS: "errors",
+  CASHES: "cashes",
   MARKETS: "markets",
-  TRANSACTIONS: "transactions",
-};
+  INSTRUMENTS: "instruments",
+}
 
-export const DATA_ACTIONS = {
-  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
-  UPDATE_TRANSACTIONS: "UPDATE_TRANSACTIONS",
-};
+// export const DATA_ACTIONS = {
+//   UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
+//   UPDATE_TRANSACTIONS: "UPDATE_TRANSACTIONS",
+//   UPDATE_INSTRUMENT_DATA_HEARTBEAT: "UPDATE_INSTRUMENT_DATA_HEARTBEAT"
+// };
+
+export const DATA_ACTIONS_2 = {
+  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT"
+}
 
 export const MAINNET: string = "1";
 export const KOVAN: string = "42";

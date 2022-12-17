@@ -4,8 +4,9 @@ import type { TradingDirection } from "./utils/constants";
 import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 import {Passport} from "@gitcoinco/passport-sdk-types"
-import { NewCash } from "stores/constants";
+import { NewCash } from "stores/constants-2";
 
+// deprecated
 export interface InstrumentData {
   trusted: boolean; 
   balance: BigNumber; 
@@ -379,7 +380,7 @@ export interface CoreMarketInfos {
 export interface CoreInstrumentData {
   marketId: string;
   vaultId: string;
-  utilizer?: string;
+  utilizer: string;
   trusted: boolean;
   isPool: boolean;
   balance: string;
@@ -844,9 +845,9 @@ export interface UserState {
     [id: string]: SeenPositionWarnings;
   };
   transactions: TransactionDetails[];
-  verificationStatus: boolean;
-  passport: Passport;
-  activePassport: boolean
+  verificationStatus?: boolean;
+  passport?: Passport;
+  activePassport?: boolean
 }
 
 export interface TransactionDetails {
