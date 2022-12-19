@@ -11,9 +11,11 @@ import {
   ContractCalls,
   Stores,
   useScrollToTopOnMount,
+  useDataStore2
 } from "@augurproject/comps";
 import { AppViewStats, AvailableLiquidityRewards, MaticAddMetaMaskToken } from "../common/labels";
 import {
+  MARKET, 
   categoryItems,
   MARKET_LIQUIDITY,
   ZERO,
@@ -23,7 +25,8 @@ import {
 } from "../constants";
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
-import { MarketInfo } from "@augurproject/comps/build/types";
+import { MarketInfo,InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
+
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
 
@@ -38,7 +41,7 @@ const {
   MarketCardComps: { MarketTitleArea },
   ButtonComps: { PrimaryThemeButton, SecondaryThemeButton },
 } = Components;
-const { canAddLiquidity, getMaticUsdPrice } = ContractCalls;
+const { canAddLiquidity, getMaticUsdPrice, setUpExampleController  } = ContractCalls;
 const {
   DateUtils: { getMarketEndtimeDate },
   Formatter: { formatApy, formatCash, formatToken },
@@ -53,6 +56,15 @@ const PAGE_LIMIT = 50;
 interface LiquidityMarketCardProps {
   key?: string;
   market: MarketInfo;
+}
+
+const setupExample = async({
+  account, loginAccount, 
+}) => {
+
+  await setUpExampleController(account, loginAccount.library)
+
+
 }
 
 const applyFiltersAndSort = (
@@ -156,6 +168,205 @@ const applyFiltersAndSort = (
 
   setFilteredMarkets(updatedFilteredMarkets);
 };
+export const InstrumentCard = ({instrument}: any):React.FC=>{
+  const {
+    settings: { timeFormat },
+  } = useSimplifiedStore();
+  const {
+    account, 
+    balances: { lpTokens, pendingRewards },
+    loginAccount,
+  } = useUserStore();
+    const [expanded, setExpanded] = useState(false);
+
+    // const {actions: {setModal},} = useAppStatusStore(); 
+  const history = useHistory();
+
+  // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  const{vaultId} = instrument; 
+ return (
+    <article
+      className={classNames(Styles.LiquidityMarketCard, {
+        [Styles.HasUserLiquidity]: true,
+        [Styles.Expanded]: true,
+        [Styles.Final]: true,
+      })}
+    >
+
+      <MarketLink id={vaultId?.toString()} dontGoToMarket={true}>
+        {/*<CategoryIcon {...{ "categories" }} />
+        <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+
+        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{vaultId?.toString()+" "}{"USDC"}{" Vault"}</p>
+
+      </MarketLink>
+
+      <button onClick={() => setExpanded(!expanded)}>
+        {/*<CategoryIcon {...{ categories }} />
+                <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+      </button>
+      <span>{ "-"}</span>
+      <span>{"-"}</span>
+      <span>{"-"}</span>
+      <span>
+        {"$0.00"}
+      </span>
+      <span>
+        {"$0.00"} 
+        {true && <span>{"0"}</span>}
+      </span>
+      <div>
+        <div className={Styles.MobileLabel}>
+          <span>My Liquidity</span>
+          <span>{ "$0.00"}</span>
+          {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
+        </div>
+      <PrimaryThemeButton
+            text="Go to Instrument"
+            small
+            disabled={false}
+            action={() =>
+              history.push({
+                pathname: makePath(MARKET),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: vaultId,
+                  
+                }),
+              })
+            }
+          />
+        
+      </div>
+    </article>
+  );
+}
+
+const VaultCard = ({vault}: any):React.FC=>{
+  const {
+    settings: { timeFormat },
+  } = useSimplifiedStore();
+  const {
+    account, 
+    balances: { lpTokens, pendingRewards },
+    loginAccount,
+  } = useUserStore();
+    const [expanded, setExpanded] = useState(false);
+
+    // const {actions: {setModal},} = useAppStatusStore(); 
+  const history = useHistory();
+
+  // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  const{vaultId} = vault; 
+ return (
+    <article
+      className={classNames(Styles.LiquidityMarketCard, {
+        [Styles.HasUserLiquidity]: true,
+        [Styles.Expanded]: true,
+        [Styles.Final]: true,
+      })}
+    >
+
+      <MarketLink id={vaultId?.toString()} dontGoToMarket={true}>
+        {/*<CategoryIcon {...{ "categories" }} />
+        <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+
+        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{vaultId?.toString()+" "}{"USDC"}{" Vault"}</p>
+
+      </MarketLink>
+
+      <button onClick={() => setExpanded(!expanded)}>
+        {/*<CategoryIcon {...{ categories }} />
+                <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+      </button>
+      <span>{ "-"}</span>
+      <span>{"-"}</span>
+      <span>{"-"}</span>
+      <span>
+        {"$0.00"}
+      </span>
+      <span>
+        {"$0.00"} 
+        {true && <span>{"0"}</span>}
+      </span>
+      <div>
+        <div className={Styles.MobileLabel}>
+          <span>My Liquidity</span>
+          <span>{ "$0.00"}</span>
+          {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
+        </div>
+        {/*<div className={Styles.MobileLabel}>
+          <span>My Rewards</span>
+          <span>
+            {rewardAmount.formatted} {MaticIcon}
+          </span>
+          <span>(${rewardsInUsd})</span>
+        </div>*/}
+
+        {true ? (
+          <PrimaryThemeButton
+            text="Go to Vault"
+            small
+            disabled={false}
+            action={() =>
+              history.push({
+                pathname: makePath(MARKET_LIQUIDITY),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: vaultId,
+                  [MARKET_LIQUIDITY]: ADD,
+                }),
+              })
+            }
+          />
+        ) : true ? (
+          <PrimaryThemeButton
+            text="REMOVE LIQUIDITY"
+            small
+            action={() =>
+              history.push({
+                pathname: makePath(MARKET_LIQUIDITY),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: vaultId,
+                  [MARKET_LIQUIDITY]: REMOVE,
+                }),
+              })
+            }
+          />
+        ) : (
+          <>
+            <SecondaryThemeButton
+              text="-"
+              small
+              action={() =>
+                history.push({
+                  pathname: makePath(MARKET_LIQUIDITY),
+                  search: makeQuery({
+                    [MARKET_ID_PARAM_NAME]: vaultId,
+                    [MARKET_LIQUIDITY]: REMOVE,
+                  }),
+                })
+              }
+            />
+            <PrimaryThemeButton
+              text="+"
+              small
+              disabled={true}
+              action={() =>
+                !true &&
+                history.push({
+                  pathname: makePath(MARKET_LIQUIDITY),
+                  search: makeQuery({
+                    [MARKET_ID_PARAM_NAME]: vaultId,
+                    [MARKET_LIQUIDITY]: ADD,
+                  }),
+                })
+              }
+            />
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
 
 const LiquidityMarketCard = ({ market }: LiquidityMarketCardProps): React.FC => {
   const {
@@ -316,10 +527,14 @@ const LiquidityView = () => {
     actions: { updatePoolsViewSettings },
   } = useSimplifiedStore();
   const {
+    account, 
+    loginAccount, 
     balances: { lpTokens, pendingRewards },
   } = useUserStore();
   const { markets, transactions } = useDataStore();
   const { marketTypeFilter, sortBy, primaryCategory, subCategories, onlyUserLiquidity } = poolsViewSettings;
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  console.log('vaults', vaults, 'instruments', instruments); 
 
   const [filter, setFilter] = useState("");
   const [filteredMarkets, setFilteredMarkets] = useState([]);
@@ -364,6 +579,8 @@ const LiquidityView = () => {
       <AppViewStats small liquidity />
       <AvailableLiquidityRewards balance={rewardBalance} />
       <MaticAddMetaMaskToken />
+  <button onClick={() => setupExample( { account,loginAccount}
+)}>SetUp</button>
       <h1>Explore LP Opportunties</h1>
       <p>
         Add Market liquidity to earn fees and rewards. <a href=".">Learn more →</a>
@@ -420,6 +637,9 @@ const LiquidityView = () => {
         <section>
           {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market: MarketInfo) => (
             <LiquidityMarketCard market={market} key={market.marketId} />
+          ))}
+          {Object.values(vaults).map((vaultinfo: any) => (
+            <VaultCard vault={vaultinfo} />
           ))}
         </section>
       </section>

@@ -17,9 +17,10 @@ import {
   ProcessData,
   Stores,
   ContractCalls, 
-  useUserStore
+  useUserStore, useDataStore2
 } from "@augurproject/comps";
-import type { MarketInfo, AmmOutcome, MarketOutcome, AmmExchange } from "@augurproject/comps/build/types";
+import type { MarketInfo, AmmOutcome, MarketOutcome, AmmExchange, 
+InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import { useSimplifiedStore } from "../stores/simplified";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
@@ -178,54 +179,54 @@ const MarketView = ({ defaultMarket = null }) => {
       balances,
       actions: { addTransaction },
     } = useUserStore();
-
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2()
   // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
-  useEffect(async() =>{
-    let stored; 
-    let instrument;
+  // useEffect(async() =>{
+  //   let stored; 
+  //   let instrument;
 
-    try{stored = await getHedgePrice(account, loginAccount?.library, String(market?.amm?.turboId));
-    instrument = await getInstrumentData_(account, loginAccount?.library, String(market?.amm?.turboId))
-  }
-      catch (err){console.log("status error", err)}
+  //   try{stored = await getHedgePrice(account, loginAccount?.library, String(market?.amm?.turboId));
+  //   instrument = await getInstrumentData_(account, loginAccount?.library, String(market?.amm?.turboId))
+  // }
+  //     catch (err){console.log("status error", err)}
 
-    setstoredCollateral(stored);
-    setPrincipal(instrument?.principal.toString());
-    setYield(instrument?.expectedYield.toString()); 
-    const dur = Number(instrument?.duration.toString()); 
-    setDuration(String(dur)); 
+  //   setstoredCollateral(stored);
+  //   setPrincipal(instrument?.principal.toString());
+  //   setYield(instrument?.expectedYield.toString()); 
+  //   const dur = Number(instrument?.duration.toString()); 
+  //   setDuration(String(dur)); 
 
 
-  }, [])
-  useEffect(async ()=> {
-    let tc; 
-    let bal; 
-    let lbal; 
+  // }, [])
+  // useEffect(async ()=> {
+  //   let tc; 
+  //   let bal; 
+  //   let lbal; 
 
-      try{
-      //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
-      //stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
-     // instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
-      //tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
-      tc = 0;
-      bal = await getZCBBalances( account, loginAccount?.library, String(market?.amm.turboId)); 
-      lbal = await getERCBalance(account, loginAccount?.library, "0x7C49b76207F71Ebd1D7E5a9661f82908E0055131" ); 
-     // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))
+  //     try{
+  //     //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
+  //     //stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
+  //    // instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
+  //     //tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
+  //     tc = 0;
+  //     bal = await getZCBBalances( account, loginAccount?.library, String(market?.amm.turboId)); 
+  //     lbal = await getERCBalance(account, loginAccount?.library, "0x7C49b76207F71Ebd1D7E5a9661f82908E0055131" ); 
+  //    // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))
   
-     // console.log('instruments', instrument); 
-    }
-    catch (err){console.log("status error", err)
-   return;}
-    // setstoredCollateral(stored);
-    // setPrincipal(instrument.principal.toString());
-    // setYield(instrument.expectedYield.toString()); 
-    // const dur = Number(instrument.duration.toString()); 
-    // setDuration(String(dur)); 
-    setTotalCollateral(tc); 
-    setLongBalance(Number(lbal.toString())/(10**18)); 
-    setShortBalance(bal[1]); 
-    console.log('here')
-  }, [blocknumber, transactions]);
+  //    // console.log('instruments', instrument); 
+  //   }
+  //   catch (err){console.log("status error", err)
+  //  return;}
+  //   // setstoredCollateral(stored);
+  //   // setPrincipal(instrument.principal.toString());
+  //   // setYield(instrument.expectedYield.toString()); 
+  //   // const dur = Number(instrument.duration.toString()); 
+  //   // setDuration(String(dur)); 
+  //   setTotalCollateral(tc); 
+  //   setLongBalance(Number(lbal.toString())/(10**18)); 
+  //   setShortBalance(bal[1]); 
+  //   console.log('here')
+  // }, [blocknumber, transactions]);
 
   useEffect(() => {
     if (!market) {
@@ -260,18 +261,25 @@ const MarketView = ({ defaultMarket = null }) => {
 
 
 
-  if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
+  // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
 
-  if (!market) return <EmptyMarketView />;
+  // if (!market) return <EmptyMarketView />;
+
  // const details = detailFromResolutionRules? getResolutionRules(market) : "No details";
-  const details = getResolutionRules(market)
+  const details = "No details"; //getResolutionRules(market)
 
-  const { reportingState, title, description, startTimestamp, categories, winner } = market;
-  const winningOutcome = market.amm?.ammOutcomes?.find((o) => o.id === winner);
-  const marketTransactions = getCombinedMarketTransactionsFormatted(transactions, market, cashes);
+  // const { reportingState, title, description, startTimestamp, categories, winner } = market;
+  const reportingState = null; 
+  const title = null; 
+  const description = null;
+  const startTimestamp = 0; 
+  const categories = null; 
+  const winner = 0; 
+  const winningOutcome = 0//market.amm?.ammOutcomes?.find((o) => o.id === winner);
+  const marketTransactions = null//getCombinedMarketTransactionsFormatted(transactions, market, cashes);
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
-  const isFinalized = isMarketFinal(market);
-  const marketHasNoLiquidity = !amm?.id && !market.hasWinner;
+  const isFinalized = false//isMarketFinal(market);
+  const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
 
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
@@ -292,14 +300,13 @@ const MarketView = ({ defaultMarket = null }) => {
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
   return (
     <div className={Styles.MarketView}>
-      <SEO {...MARKETS_LIST_HEAD_TAGS} title={description} ogTitle={description} twitterTitle={description} />
+      <SEO {...MARKETS_LIST_HEAD_TAGS} title={descriptions[0]} ogTitle={descriptions[0]} twitterTitle={descriptions[0]} />
       <section>
         <NetworkMismatchBanner />
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
-          <CategoryIcon big categories={categories} />
-          <CategoryLabel big categories={categories} />
-          {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
+          {/*<CategoryIcon big categories={categories} />
+          {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
         </div>
         {!!title && <h1>{titles[1]}</h1>}
         {!!description && <h2>{descriptions[1]}</h2>}
@@ -312,9 +319,9 @@ const MarketView = ({ defaultMarket = null }) => {
           })}
         >
           <h4>Instrument Overview</h4>
-          {details.map((detail, i) => (
+          {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
-          ))}
+          ))*/}
           {details.length > 1 && (
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
@@ -407,9 +414,9 @@ const MarketView = ({ defaultMarket = null }) => {
           })}
         >
           <h4>Market Details</h4>
-          {details.map((detail, i) => (
+          {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
-          ))}
+          ))*/}
           {details.length > 1 && (
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
@@ -433,7 +440,7 @@ const MarketView = ({ defaultMarket = null }) => {
           [Styles.ShowTradingForm]: showTradingForm,
         })}
       >
-        {!(isFinalized && winningOutcome )&& <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} />}
+        {/*!(isFinalized && winningOutcome )&& <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} />*/}
         {isFinalized && winningOutcome &&      <SecondaryThemeButton
           text="Redeem All ZCB"
           action={redeem}
