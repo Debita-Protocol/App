@@ -1,38 +1,28 @@
 @import (reference) '~assets/styles/shared';
 
 .BorrowView {
-    display: flex;
-    justify-content: center;
-    flex-flow: column nowrap;
-
-    ul.nav {
-        width: 60%;
-        margin: 0 auto 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border: 1px solid #39A2DB;
-        border-radius: 2rem;
-        padding-left: 0px;
-        @media (max-width: 768px) {
-          width: 90%;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: left;
+  padding: @size-40 @size-72 @size-48;
+  > section {
+    margin: @size-10;
+    &.Nav {
+      display: flex;
+      flex-flow:row nowrap;
+      align-items: center;
+      > div {
+        font-weight:@weight-bold;
+        font-size: @size-24;
+        padding: @size-8 @size-16 0;
+        border-bottom: @size-2 solid var(--primary-text);
+        &.Active {
+          border-bottom: @size-2 solid var(--color-brand);
         }
+      }
     }
-    ul.nav li:first-child {
-        border-bottom-left-radius: 2rem;
-        border-top-left-radius: 2rem;
-    }
-    
-    ul.nav li:last-child {
-        border-bottom-right-radius: 2rem;
-        border-top-right-radius: 2rem;
-    }
-    ul.nav li:hover {
-        background: rgba(50, 224, 196, 0.15);
-    }
-    ul.nav li.active {
-        background: #39A2DB;
-    }
+  }
+
 }
 
 .PoolCardView {
@@ -42,9 +32,72 @@
     }
 }
 
+.PoolsView {
+  display: flex;
+  flex-flow: column nowrap;
+  background-color: var(--primary-bg);
+  padding: @size-24;
+  border-radius: @size-10;
+  > table {
+    border-collapse: separate;
+      border-spacing: 0px 16px;
+    > thead {
+      border-collapse: separate;
+      border-spacing: 0px 16px;
+      > td {
+        vertical-align: middle;
+        text-align: center;
+        font-weight: @weight-bold;
+        font-size: @size-18;
+        padding: @size-8;
+      }
+      margin: @size-10;
+    }
+    > tbody {
+     
+      > tr {
+        border-collapse: separate;
+        border-spacing: 0px 16px;
+        > td {
+          border-bottom:@size-1 solid var(--tertiary-text);
+          padding-bottom: @size-10;
+          border-top: @size-1 solid var(--tertiary-text);
+          padding-top: @size-10;
+          vertical-align: middle;
+          text-align: center;
+          padding: @size-5;
+          position: relative;
+        }
+        > td:first-of-type {
+          border-left: @size-1 solid var(--tertiary-text);
+          border-top-left-radius: @size-5;
+          border-bottom-left-radius: @size-5;
+        }
+        > td:last-of-type {
+          border-right: @size-1 solid var(--tertiary-text);
+          border-top-right-radius: @size-5;
+          border-bottom-right-radius: @size-5;
+          > div {
+            font-weight: @weight-semi-bold;
+            font-size: @size-18;
+            color: var(--primary-button-text-color);
+            &:hover {
+              color: var(--primary-button-text-color-hover);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 .NFTItem {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: center;
     >ul {
         display: flex;
+        padding-top: @size-5;
     }
 }
 
@@ -130,17 +183,57 @@
     grid-column: span 3;
 }
 
-.UserLoanCardView {
-    display: flex;
-    > div {
-        float: right;
-    }
-}
-
 .PoolView {
-    display: flex;
+  display: flex;
+  flex-flow: row nowrap;
+  padding: @size-24;
 }
 
 .BorrowItemCard {
   display: flex;
+}
+
+// marketcard
+.LoanCard {
+  .HoverDropShadow;
+  .ThemeBorder;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items:center;
+  width: 30%;
+  height: 30%;
+  border-radius: @size-8;
+  padding: @size-4;
+  >div:first-of-type {
+    font-size: @size-16;
+    font-weight: @weight-bold;
+    padding: @size-4;
+  }
+  >section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    >div {
+      padding:@size-6;
+    }
+    > div:first-of-type {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      > span {
+        &:first-of-type {
+          .text-16-semi-bold;
+    
+          color: var(--secondary-text);
+          margin-bottom: @size-8;
+          grid-column: 1 / span 2;
+        }
+      }
+    }
+  }
+}
+
+.MyLoansView {
+  display: flex;
+  flex-flow: column nowrap;
+  padding: @size-24;
+  border-radius: @size-10;
 }

@@ -349,7 +349,7 @@ export interface MarketInfos {
   [marketId: string]: MarketInfo;
 }
 
-export interface InstrumentInfos {
+export interface  InstrumentInfos {
   [marketId: string]: CoreInstrumentData;
 }
 

@@ -9,15 +9,14 @@ const {CloseIcon} = Icons;
 const {PrimaryThemeButton} = ButtonComps;
 const {ValueLabel} = LabelComps;
 
-const ModalNFTPoolBorrow = (
+const ModalNFTPoolAction = (
     {
         closeModal,
         buttonAction,
         buttonText,
         asset,
         asset_limit,
-        balance="0",
-        icon=USDCIcon
+        balance="0"
     }
     : {
         closeModal: Function,
@@ -26,7 +25,6 @@ const ModalNFTPoolBorrow = (
         asset: Cash,
         asset_limit: string,
         balance: string,
-        icon: Object,
         assetName: string
     }
 ) => {
@@ -35,25 +33,22 @@ const ModalNFTPoolBorrow = (
     const borrow_max = "100"; // borrow limit ?? TODO: get this from somewhere.
     return (
         <div className={Styles.ModalNFTPoolBorrow}>
-            <span>{USDCIcon}</span>
             <button onClick={() => closeModal()}>{CloseIcon}</button>
             <AmountInput 
                 chosenCash={asset.name ? asset.name : "USDC"}
                 heading="Amount"
                 updateInitialAmount={() => {}}
                 initialAmount={"0"}
-                maxValue={borrow_max}
+                maxValue={asset_limit}
                 ammCash={asset}
             />
             <ValueLabel label="balance" value={balance}/>
             <PrimaryThemeButton 
-                text="Borrow"
-                action={() => {
-                    console.log("borrowing");
-                }}
+                text={buttonText}
+                action={buttonAction}
             />
         </div>
     )
 };
 
-export default ModalNFTPoolBorrow;
+export default ModalNFTPoolAction;

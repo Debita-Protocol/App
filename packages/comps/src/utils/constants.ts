@@ -85,6 +85,7 @@ export const CASH_LABEL_FORMATS = {
   ETH: { symbol: "Ξ", prepend: true, displayDecimals: 4, icon: EthIcon },
   USDC: { symbol: "$", prepend: true, displayDecimals: 2, icon: UsdIcon },
   SHARES: { symbol: "", prepend: true, displayDecimals: 4, icon: null },
+
 };
 
 // Portfolio table views
@@ -299,6 +300,8 @@ export const MODAL_ADD_LIQUIDITY: string = "MODAL_ADD_LIQUIDITY";
 export const MODAL_CONNECT_WALLET: string = "MODAL_CONNECT_WALLET";
 export const MODAL_CONNECT_TO_POLYGON: string = "MODAL_CONNECT_TO_POLYGON";
 export const MODAL_NFT_POOL_BORROW = "MODAL_NFT_POOL_BORROW";
+export const MODAL_NFT_POOL_ACTION = "MODAL_NFT_POOL_ACTION";
+
 
 export const CREATE: string = "create";
 export const MINT_SETS: string = "mintSets";

@@ -43,8 +43,6 @@ const Routes = p => {
       <Route path={makePath(MARKETS)} component={MarketsView} />
       <Route path={makePath(MARKET)} component={MarketView} />
       <Route path={makePath(LIQUIDITY)} component={LiquidityView} />
-      <Route path={makePath(MINT)} component={MintView} />
-      <Route path={makePath(REDEEM)} component={RedeemView} />
       <Route path={makePath([PROPOSAL, CREDITLINE])} component={CreditLineProposalView} />
       <Route path={makePath([PROPOSAL, "other"])} component={InstrumentProposalView} />
       <Route path={makePath(PROPOSAL)} component={ProposalsView} />
