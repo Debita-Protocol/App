@@ -99,6 +99,7 @@ export const AmountInput = ({
   const icon = currencyName === USDC ? UsdIcon : EthIcon;
   const label = currencyName === USDC ? USDC : ETH;
   const { symbol, prepend } = getCashFormat(chosenCash);
+  console.log("isLogged: ", isLogged);
   const setMax = () => {
     if (new BN(maxValue).lte(DUST_POSITION_AMOUNT)) return;
     updateAmount(maxValue);
@@ -152,10 +153,9 @@ export const AmountInput = ({
         <TinyThemeButton text="Max" action={setMax} noHighlight />
         {!!currencyName && chosenCash !== SHARES && !showCurrencyDropdown && (
           <span className={Styles.CurrencyLabel}>
-            {/*icon*/} 
-            {"dbUSDC"}
+            {icon} {label}
           </span>
-        )} 
+        )}
         {chosenCash === SHARES && !showCurrencyDropdown && <span className={Styles.SharesLabel}>Shares</span>}
         {showCurrencyDropdown && <CurrencyDropdown defaultValue={chosenCash} onChange={(cash) => updateCash(cash)} />}
       </div>

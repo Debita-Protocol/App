@@ -41,7 +41,8 @@ export const STUBBED_USER_ACTIONS = {
   updateSeenPositionWarning: (id, seenPositionWarning, warningType) => {},
   updateTransaction: (hash, updates) => {},
   updateUserBalances: (balances) => {},
-  logout: () => {},
+  updateUserNFTBalances: (balances) => {},
+  logout: () => {}
 };
 
 export const DEFAULT_USER_STATE: UserState = {
@@ -57,6 +58,7 @@ export const DEFAULT_USER_STATE: UserState = {
       rawBalance: null,
       usdValue: null,
     },
+    NFTs: {},
     totalAccountValue: null,
     totalPositionUsd: null,
     total24hrPositionUsd: null,
@@ -97,6 +99,13 @@ export const USER_ACTIONS = {
   SET_LOGIN_ACCOUNT: "SET_LOGIN_ACCOUNT",
   UPDATE_USER_BALANCES: "UPDATE_USER_BALANCES",
   LOGOUT: "LOGOUT",
+  UPDATE_VERIFICATION_STATUS: "UPDATE_VERIFICATION_STATUS",
+  UPDATE_NUMBER_OF_LOANS: "UPDATE_NUMBER_OF_LOANS",
+  UPDATE_NUMBER_OF_PROPOSALS: "UPDATE_NUMBER_OF_PROPOSALS",
+  UPDATE_BORROWER_LOANS: "UPDATE_BORROWER_LOANS",
+  UPDATE_PASSPORT: "UPDATE_PASSPORT",
+  UPDATE_PASSPORT_STATUS: "UPDATE_PASSPORT_STATUS",
+  UPDATE_USER_NFT_BALANCES: "UPDATE_USER_NFT_BALANCES",
 };
 
 export const STUBBED_APP_STATUS_ACTIONS = {

@@ -2,12 +2,15 @@ import React, { useEffect, useState } from "react";
 import ModalConfirmTransaction from './modal-confirm-transaction';
 import { useHistory } from "react-router";
 import Styles from "./modal.styles.less";
-import { MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON } from "../constants";
+import { MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "../constants";
 import { Constants, Modals, useUserStore, useAppStatusStore } from "@augurproject/comps";
+import ModalNFTPoolBorrow from "./modal-nft-pool-borrow";
+import ModalNFTPoolAction from "./modal-nft-pool";
 
 const { ModalConnectWallet } = Modals;
 
 function selectModal(type, modal, logout, closeModal, removeTransaction, isLogged, isMobile) {
+
   switch (type) {
     case Constants.MODAL_CONNECT_WALLET:
       return (
@@ -37,6 +40,23 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
           </div>
         </section>
       );
+    case MODAL_NFT_POOL_BORROW:
+      return (
+        <section className={Styles.ModalView}>
+          <ModalNFTPoolBorrow
+          {...modal}
+          closeModal={closeModal}
+          />
+        </section>
+      )
+    case MODAL_NFT_POOL_ACTION:
+      return (
+        // <section className={Styles.ModalView}>
+        //   <ModalNFTPoolAction />
+        // </section>
+        <div>
+        </div>
+      )
     default:
       return <div />;
   }

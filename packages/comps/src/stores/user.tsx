@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { DEFAULT_USER_STATE, STUBBED_USER_ACTIONS } from "./constants";
 import { useUser } from "./user-hooks";
 
@@ -15,6 +15,25 @@ export const UserStore = {
 
 export const UserProvider = ({ children }: any) => {
   const state = useUser();
+  const { updateUserNFTBalances } = state.actions;
+
+  // fake data
+  useEffect(() => {
+    updateUserNFTBalances({
+      "0x1": {
+          name: "NFT 1",
+          symbol: "NFT1",
+          balance: "1",
+          usdValue: "100"
+      },
+      "0x2": {
+          name: "NFT 2",
+          symbol: "NFT2",
+          balance: "2",
+          usdValue: "200"
+      }
+    })
+  },[])
 
   if (!UserStore.actionsSet) {
     UserStore.actions = state.actions;

@@ -4,7 +4,6 @@ import type { TradingDirection } from "./utils/constants";
 import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 import {Passport} from "@gitcoinco/passport-sdk-types"
-import { NewCash } from "stores/constants-2";
 
 // deprecated
 export interface InstrumentData {
@@ -395,7 +394,16 @@ export interface CoreInstrumentData {
   poolData?: CorePoolData;
 }
 
+export interface NFT {
+  name: string,
+  symbol: string,
+  tokenURI: string,
+  address: string,
+  maxLTV: string,
+  APY: string
+};
 
+// can make more modular in future
 export interface CorePoolData {
   saleAmount: string;
   initPrice: string;
@@ -403,6 +411,8 @@ export interface CorePoolData {
   inceptionTime: string;
   inceptionPrice: string;
   leverageFactor: string;
+  APR?: string;
+  NFTs?: NFT[];
 }
 
 export interface CoreMarketInfo {
@@ -427,7 +437,7 @@ export interface VaultInfo {
   r: string,
   asset_limit: string;
   total_asset_limit: string;
-  collateral_address: string,
+  want: Cash,
   // dynamic data
   totalSupply?: string
 };
@@ -744,9 +754,22 @@ export interface PendingUserReward {
 export interface PendingRewards {
   [marketId: string]: PendingUserReward;
 }
+
+export interface NFTBalance {
+  name: string;
+  symbol: string;
+  balance: string;
+  usdValue?: string;
+}
+
+export interface NFTBalances {
+  [address: string]: NFTBalance;
+}
+
 export interface UserBalances {
   ETH: CurrencyBalance;
   USDC: CurrencyBalance;
+  NFTs?: NFTBalances,
   totalAccountValue: string;
   totalPositionUsd: string;
   total24hrPositionUsd: string;

@@ -2,9 +2,10 @@ import { dispatchMiddleware, getSavedUserInfo } from "./utils";
 import { useReducer } from "react";
 import { windowRef } from "../utils/window-ref";
 import { USER_ACTIONS, USER_KEYS, DEFAULT_USER_STATE } from "./constants";
-import { UserBalances, TransactionDetails } from "../types";
+import { UserBalances, TransactionDetails, NFTBalances } from "../types";
 import { TX_STATUS } from "../utils/constants";
 import { Passport } from "@gitcoinco/passport-sdk-types";
+
 
 const {
   ADD_TRANSACTION,
@@ -14,6 +15,7 @@ const {
   ADD_SEEN_POSITION_WARNINGS,
   SET_LOGIN_ACCOUNT,
   UPDATE_USER_BALANCES,
+  UPDATE_USER_NFT_BALANCES,
   UPDATE_TRANSACTION,
   LOGOUT,
   UPDATE_VERIFICATION_STATUS,
@@ -89,6 +91,9 @@ export function UserReducer(state, action) {
       updatedState[BALANCES] = action.userBalances;
       break;
     }
+    case UPDATE_USER_NFT_BALANCES: {
+      updatedState[BALANCES].NFTs = action.nfts;
+    }
     case UPDATE_TRANSACTION: {
       const transactionIndex = updatedState[TRANSACTIONS].findIndex((transaction) => transaction.hash === action.hash);
       if (transactionIndex >= 0) {
@@ -155,6 +160,7 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
     actions: {
       updateLoginAccount: (account) => dispatch({ type: SET_LOGIN_ACCOUNT, account }),
       updateUserBalances: (userBalances: UserBalances) => dispatch({ type: UPDATE_USER_BALANCES, userBalances }),
+      updateUserNFTBalances: (nfts: NFTBalances) => dispatch({ type: UPDATE_USER_NFT_BALANCES, nfts }),
       updateTransaction: (hash, updates) => dispatch({ type: UPDATE_TRANSACTION, hash, updates }),
       addTransaction: (transaction: TransactionDetails) => dispatch({ type: ADD_TRANSACTION, transaction }),
       removeTransaction: (hash: string) => dispatch({ type: REMOVE_TRANSACTION, hash }),

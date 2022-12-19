@@ -32,6 +32,7 @@ import CreditlineView from "../creditline/creditline-view";
 import InstrumentProposalView from "../instrument-proposal/instrument-proposal-view";
 import InvestView from '../invest/invest-view';
 import BorrowView from "../borrow/borrow-view";
+import PoolView from "../borrow/pool-view";
 
 const { PathUtils: { makePath } } = Utils;
 
@@ -49,9 +50,11 @@ const Routes = p => {
       <Route path={makePath(PROPOSAL)} component={ProposalsView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
+      <Route path={makePath("pool")} component={PoolView} />
       <Route path={makePath(CREDITLINE)} component={CreditlineView} />
       <Route path={makePath("invest")} component={InvestView} />
       <Route path={makePath("borrow")} component={BorrowView} />
+      
       <Redirect to={makePath(MARKETS)} />
     </Switch>
   );

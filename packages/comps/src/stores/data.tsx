@@ -46,6 +46,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
     let isMounted = true;
     let intervalId = null;
     const getMarkets = async () => {
+      console.log("getMarkets...")
       const { account: userAccount, loginAccount } = UserStore.get();
       const { isRpcDown, isWalletRpc } = AppStatusStore.get();
       const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();

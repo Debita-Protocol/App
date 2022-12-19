@@ -7,7 +7,7 @@ import {
     Constants,
     Components
 } from "@augurproject/comps";
-import { InstrumentInfos, CoreInstrumentData, VaultInfos } from "@augurproject/comps/build/types";
+import { InstrumentInfos, CoreInstrumentData, VaultInfos, NFT } from "@augurproject/comps/build/types";
 
 const { 
     LabelComps: {ValueLabel} 
@@ -30,18 +30,35 @@ export const PoolCard: React.FC = ({
     if (!instrument) {
         return <LoadingPoolCard/>;
     }
-    const { vaultId, utilizer, poolData: {leverageFactor} } = instrument;
-    const collateral = vaults[vaultId].collateral_address;
+    const { vaultId, utilizer, poolData: {leverageFactor, NFTs: acceptedNFTs } } = instrument;
+
     return (
         <PoolCardView
             marketId={marketId}
             vaultId={vaultId}
             utilizer={utilizer}
-            collateral={collateral}
+            collateral={acceptedNFTs}
             leverageFactor={leverageFactor}
             {...props}
         />
     )
+}
+
+const NFTItem: React.FC = ({nft}: {nft: NFT})  => {
+    const { address, name, symbol, tokenURI } = nft;
+    return (
+        <div className={Styles.nftItem}>
+            <ul className="nftSymbol">
+                { symbol }
+            </ul>
+            <ul className="nftName">
+                { name }
+            </ul>
+            {/* <ul className="nftAddress">
+                { address }
+            </ul> */}
+        </div>
+    );
 }
 
 const PoolCardView: React.FC = ({
@@ -55,7 +72,7 @@ const PoolCardView: React.FC = ({
     marketId: string,
     vaultId: string,
     utilizer: string,
-    collateral: string,
+    collateral: NFT[],
     leverageFactor: string,
     dontGoToMarket?: boolean
 }) => {
@@ -68,7 +85,7 @@ const PoolCardView: React.FC = ({
                     to={
                         !dontGoToMarket
                         ? {
-                            pathname: makePath(marketId),
+                            pathname: makePath("pool"),
                             search: makeQuery({
                                 [MARKET_ID_PARAM_NAME]: marketId,
                             }),
@@ -82,23 +99,35 @@ const PoolCardView: React.FC = ({
             <ValueLabel 
                 label="Market Id"
                 value={marketId}
+                small={true}
             />
             <ValueLabel
                 label="Vault Id"
                 value={vaultId}
+                small={true}
             />
             <ValueLabel
                 label="Utilizer"
                 value={utilizer}
-            />
-            <ValueLabel
-                label="Collateral"
-                value={collateral}
+                small={true}
             />
             <ValueLabel
                 label="Leverage Factor"
                 value={leverageFactor}
+                small={true}
             />
+            { (collateral && collateral.length > 0) ?(
+                collateral.map((nft: NFT) => {
+                    return (
+                        <NFTItem
+                            key={nft.name}
+                            nft={nft}
+                        />
+                    )
+                }) 
+            ) : (
+                null
+            )}
         </div>
     )
 }

@@ -97,12 +97,14 @@ function App() {
     AppStatus: { AppStatusProvider },
     ConnectAccount: { ConnectAccountProvider },
     Data: { DataProvider },
+    Data2: { DataProvider2 },
     User: { UserProvider },
   } = Stores;
   return (
     <HashRouter hashType="hashbang">
       <ConnectAccountProvider>
         <UserProvider>
+          <DataProvider2>
           <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
@@ -112,6 +114,7 @@ function App() {
               </SimplifiedProvider>
             </AppStatusProvider>
           </DataProvider>
+          </DataProvider2>
         </UserProvider>
       </ConnectAccountProvider>
     </HashRouter>

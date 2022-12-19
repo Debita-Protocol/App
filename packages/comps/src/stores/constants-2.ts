@@ -47,6 +47,7 @@ export const STUBBED_USER_ACTIONS = {
   updateSeenPositionWarning: (id, seenPositionWarning, warningType) => {},
   updateTransaction: (hash, updates) => {},
   updateUserBalances: (balances) => {},
+  updateUserNFTBalances: (nfts) => {},
   logout: () => {},
   updateVerificationStatus: (isVerified) => {},
 };
@@ -64,6 +65,7 @@ export const DEFAULT_USER_STATE: UserState = {
       rawBalance: null,
       usdValue: null,
     },
+    NFTs: {},
     totalAccountValue: null,
     totalPositionUsd: null,
     total24hrPositionUsd: null,
@@ -201,22 +203,23 @@ export const DEFAULT_INSTRUMENT_STATE = {
 //   totalcollateral: "0", 
 // };
 
-export interface NewCash {
+export interface Cash {
   address: string;
+  shareToken?: string;
   name: string;
   symbol: string;
+  asset: string;
   decimals: number;
   usdPrice?: string;
   displayDecimals: number;
-};
-
+}
 
 export interface CoreDataState {
   vaults: VaultInfos,
   blocknumber: number,
   errors: any,
   cashes: {
-    [address: string]: NewCash;
+    [address: string]: Cash;
   },
   markets: CoreMarketInfos,
   instruments: InstrumentInfos
