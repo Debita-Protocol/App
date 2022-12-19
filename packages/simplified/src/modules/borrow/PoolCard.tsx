@@ -47,17 +47,17 @@ export const PoolCard: React.FC = ({
 const NFTItem: React.FC = ({nft}: {nft: NFT})  => {
     const { address, name, symbol, tokenURI } = nft;
     return (
-        <div className={Styles.nftItem}>
+        <td className={Styles.nftItem}>
             <ul className="nftSymbol">
                 { symbol }
             </ul>
-            <ul className="nftName">
+            {/* <ul className="nftName">
                 { name }
-            </ul>
+            </ul> */}
             {/* <ul className="nftAddress">
                 { address }
             </ul> */}
-        </div>
+        </td>
     );
 }
 
@@ -77,9 +77,36 @@ const PoolCardView: React.FC = ({
     dontGoToMarket?: boolean
 }) => {
 
-    return (
-        <div className={Styles.PoolCardView}>
-            <div className={"SelectButton"}>
+    return (<tr>
+            <td>
+                { marketId }
+            </td>
+            <td>
+                { vaultId }
+            </td>
+            <td>
+                { utilizer }
+            </td>
+            <td>
+                { leverageFactor }
+            </td>
+            <td>
+            { (collateral && collateral.length > 0) ?(
+                collateral.map((nft: NFT) => {
+                    return (
+                        <NFTItem
+                            key={nft.name}
+                            nft={nft}
+                        />
+                    )
+                }) 
+            ) : (
+                null
+            )}
+            </td>
+            
+            <td>
+                <div>
                 <Link
                     data-testid={`link-${marketId}`}
                     to={
@@ -95,40 +122,10 @@ const PoolCardView: React.FC = ({
                 >
                     Select
                 </Link>
-            </div>
-            <ValueLabel 
-                label="Market Id"
-                value={marketId}
-                small={true}
-            />
-            <ValueLabel
-                label="Vault Id"
-                value={vaultId}
-                small={true}
-            />
-            <ValueLabel
-                label="Utilizer"
-                value={utilizer}
-                small={true}
-            />
-            <ValueLabel
-                label="Leverage Factor"
-                value={leverageFactor}
-                small={true}
-            />
-            { (collateral && collateral.length > 0) ?(
-                collateral.map((nft: NFT) => {
-                    return (
-                        <NFTItem
-                            key={nft.name}
-                            nft={nft}
-                        />
-                    )
-                }) 
-            ) : (
-                null
-            )}
-        </div>
+                </div>
+                
+            </td>
+    </tr>
     )
 }
 

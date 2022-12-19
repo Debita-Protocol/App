@@ -5,100 +5,81 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import makeQuery from "@augurproject/comps/build/utils/links/make-query";
 import {
     Constants,
-    Components
+    Components,
+    Stores,
+    useAppStatusStore,
+    useDataStore2,
+    ButtonComps,
+    LabelComps
 } from "@augurproject/comps";
 import { InstrumentInfos, CoreInstrumentData, VaultInfos } from "@augurproject/comps/build/types";
+import { MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
+import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 
+const {
+    SecondaryThemeButton
+} = ButtonComps;
 const { 
-    LabelComps: {ValueLabel} 
+    LabelComps: {ValueLabel, IconLabel} 
 } = Components;
 const {
     MARKET_ID_PARAM_NAME
 } = Constants;
 
-export const UserLoanCard: React.FC = ({
-    marketId,
-    instruments,
-    vaults,
-    ...props
-}): {
-    marketId: string,
-    instruments: InstrumentInfos,
-    vaults: VaultInfos
-} => {
-    const instrument: CoreInstrumentData = useMemo(() => instruments[marketId], [marketId, instruments]);
-    const { 
-        vaultId , 
-        isPool,
-        trusted,
-        balance,
-        principal,
-        faceValue,
-        duration
-    } = instrument;
-    const collateral = vaults[vaultId].collateral_address;
-    if (!instrument) {
-        return <LoadingUserLoanCard/>;
+// how much borrowed from pool atm, what pool, what type of collateral, repay button
+// pool (instrument) description, APR, user balance of collateral.
+export const LoanCard: React.FC = (
+    {
+        borrow_balance="0",
+        want_balance="0",
+        pool_description="Pool 1",
+        pool_address,
+        want="0xC9a5FfC14d68c511e83E758d186C249580d5f111",
+        APR="0.5",
+        icon=USDCIcon // of want
     }
-    return (
-        <UserLoanCardView
-            marketId={marketId}
-            vaultId={vaultId}
-            collateral={collateral}
-            isPool={isPool}
-            trusted={trusted}
-            balance={balance}
-            principal={principal}
-            faceValue={faceValue}
-            duration={duration}
-            {...props}
-        />
-    )
-}
+) => {
+    const { actions: { setModal } } = useAppStatusStore();
+    const { cashes } = useDataStore2();
+    //TODO: get this from somewhere instead of assuming USDC => should be want
+    const USDC = cashes[want];
+    const buttonProps ={
+        text: "Repay",
+        action: () => {
+            setModal({
+                type: MODAL_NFT_POOL_ACTION,
+                buttonText: "repay",
+                buttonAction: () => {
+                    console.log("repay");
+                },
+                asset: USDC
+            })
+        },
 
-const UserLoanCardView: React.FC = ({
-    marketId,
-    vaultId , 
-    collateral,
-    isPool,
-    trusted,
-    balance,
-    principal,
-    faceValue,
-    duration,
-    dontGoToMarket=false
-}: {
-    marketId: string,
-    vaultId: string,
-    collateral: string,
-    isPool: boolean,
-    trusted: boolean,
-    balance: string,
-    principal: string,
-    faceValue: string,
-    duration: string,
-    dontGoToMarket?: boolean
-}) => {
+    }
 
     return (
-        <div className={Styles.userLoanCardView}>
-            <ValueLabel 
-                label="Market Id"
-                value={marketId}
-            />
-            <ValueLabel
-                label="Vault Id"
-                value={vaultId}
-            />
-            <ValueLabel
-                label="Collateral"
-                value={collateral}
-            />
+        <div className={Styles.LoanCard}>
+            <div>
+                { pool_description }
+            </div>
+            <section>
+                <div>
+                    <span>{"Want"}</span>
+                    <span>{icon}</span>
+                    <span>{USDC.name}</span>
+                </div>
+                <ValueLabel label="Borrowed Amount" value={borrow_balance}/>
+                <ValueLabel label="Balance" value={want_balance}/>
+                <ValueLabel label="APR" value={APR}/>
+            </section>
+            <SecondaryThemeButton {...buttonProps}/>
         </div>
+    
     )
 }
 
-export const LoadingUserLoanCard = () => {
+export const LoadingLoanCard = () => {
     return (
       <article className={Styles.LoadingMarketCard}>
         <div>

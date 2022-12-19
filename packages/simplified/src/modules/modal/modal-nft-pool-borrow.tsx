@@ -30,7 +30,6 @@ const ModalNFTPoolBorrow = (
     const borrow_max = "100"; // borrow limit ?? TODO: get this from somewhere.
     return (
         <div className={Styles.ModalNFTPoolBorrow}>
-            <span>{USDCIcon}</span>
             <button onClick={() => closeModal()}>{CloseIcon}</button>
             <AmountInput 
                 chosenCash={want.name}

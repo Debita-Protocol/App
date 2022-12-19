@@ -40,22 +40,14 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
           </div>
         </section>
       );
-    case MODAL_NFT_POOL_BORROW:
+    case MODAL_NFT_POOL_ACTION: // borrow and repay, ui are similar.
       return (
         <section className={Styles.ModalView}>
-          <ModalNFTPoolBorrow
+          <ModalNFTPoolAction 
           {...modal}
           closeModal={closeModal}
           />
         </section>
-      )
-    case MODAL_NFT_POOL_ACTION:
-      return (
-        // <section className={Styles.ModalView}>
-        //   <ModalNFTPoolAction />
-        // </section>
-        <div>
-        </div>
       )
     default:
       return <div />;

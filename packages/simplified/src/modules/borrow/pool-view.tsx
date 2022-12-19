@@ -13,7 +13,8 @@ import {
 import { useLocation, useHistory } from "react-router";
 import Styles from "./borrow-view.styles.less";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
-import { MODAL_ADD_LIQUIDITY, MODAL_NFT_POOL_BORROW } from "@augurproject/comps/build/utils/constants";
+import { MODAL_ADD_LIQUIDITY, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
+import { LoadingPoolCard } from "./PoolCard";
 
 const TokenIconMap = {
     "USDC": "../../assets/images/usdc.png",
@@ -34,25 +35,48 @@ const PoolView: React.FC = () => {
     const { [MARKET_ID_PARAM_NAME]: marketId } = parseQuery(location.search);
     const { 
         balances: { NFTs: NFTBalances }, 
-        actions: {
-            updateUserNFTBalances
-        } 
     } = useUserStore();
     const { vaults, instruments } = useDataStore2();
+    const [loading, setLoading] = useState(true);
 
-    if (instruments[marketId]) {
-        const { poolData: {
-            NFTs,
-            APR
-        }} = instruments[marketId];
-        const { collateral_address } = vaults[instruments[marketId].vaultId];
+    useEffect(() => {
+        if (Object.keys(vaults).length > 0 &&
+            Object.keys(instruments).length > 0 &&
+            Object.keys(NFTBalances).length > 0
+        ) {
+            setLoading(false);
+        }
+    }, [vaults, instruments, NFTBalances]);
+    if (loading) {
         return (
-            <div className={Styles.poolView}>
-                <section className="supply">
-                    <h3>
-                        Supply
-                    </h3>
-                    <section className="supplyHeader">
+            <div>
+            <LoadingPoolCard />
+            </div>
+        )
+    }
+
+    const { poolData: {
+        NFTs,
+        APR
+    }} = instruments[marketId];
+    const { collateral_address } = vaults[instruments[marketId].vaultId];
+    
+
+    return (
+        <div className={Styles.poolView}>
+            <section>
+                <h3>
+                    Supply
+                </h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <td>Asset/LTV</td>
+                            <td>APY</td>
+                            <td>Wallet</td>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {NFTs.map((nft, i) => {
                             const { symbol, address, name, APY, maxLTV } = nft;
                             const balance = !!NFTBalances && NFTBalances[address] ? NFTBalances[address].balance : "0";
@@ -66,22 +90,20 @@ const PoolView: React.FC = () => {
                                 />
                             )
                         })}
-                    </section>
+                    </tbody>
+                    
+                </table>
+            </section>
+            <section>
+                <h3>
+                    Borrow
+                </h3>
+                <section className="borrowHeader">
+                    <BorrowItemCard APR={APR} want={collateral_address} marketId={marketId}/>
                 </section>
-                <section className="borrow">
-                    <h3>
-                        Borrow
-                    </h3>
-                    <section className="borrowHeader">
-                        <BorrowItemCard APR={APR} want={collateral_address} marketId={marketId}/>
-                    </section>
-                </section>
-            </div>
-        )
-    }
-    return <div>
-        loading...
-    </div>
+            </section>
+        </div>
+    )
     };
 
 const CollateralSupplyCard: React.FC = ({
@@ -97,22 +119,17 @@ const CollateralSupplyCard: React.FC = ({
     APY: string
 } => {
     return (
-        <div className={Styles.collateralSupplyCard}>
-            <div className="collateral">
-                <ul>
-                    { symbol }
-                </ul>
-                <ul>
-                    { APY }
-                </ul>
-                <ul>
-                    { maxLTV }
-                </ul>
-                <ul>
-                    { balance}
-                </ul>
-            </div>
-        </div>
+        <tr className={Styles.collateralSupplyCard}>
+            <td>
+                { symbol }/{ maxLTV }
+            </td>
+            <td>
+                { APY }
+            </td>
+            <td>
+                { balance }
+            </td>
+        </tr>
     );
 }
 
@@ -123,15 +140,18 @@ const BorrowItemCard: React.FC = ({
 }) => {
     const { actions: { setModal } } = useAppStatusStore();
     const {cashes} = useDataStore2();
-    const USDC_addr = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+    //TODO: get this from somewhere instead of assuming USDC
+    const USDC_addr = "0xC9a5FfC14d68c511e83E758d186C249580d5f111";
     const USDC = cashes[USDC_addr];
     // cashes[want]
     // get icon related to want.
     const buttonProps = {
         action: () => {
             setModal({
-                type: MODAL_NFT_POOL_BORROW,
-                marketId
+                type: MODAL_NFT_POOL_ACTION,
+                buttonAction: () => {},
+                buttonText: "borrow",
+                asset: USDC
             });
         },
         text: "Borrow"

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react"
 import { useDataStore2, useUserStore } from "@augurproject/comps"
 import Styles from "./borrow-view.styles.less";
+import classNames from "classnames";
 import {TabContent, TabNavItem} from "./Tabs";
 import { InstrumentInfos, VaultInfos, CoreInstrumentData} from "@augurproject/comps/build/types"
 import { PoolCard, LoadingPoolCard } from "./PoolCard";
+import { LoanCard } from "./UserLoanCard";
 
 import {
     Components,
@@ -26,6 +28,11 @@ const Pools: React.FC = () => {
     const [ pools, setPools ] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        if (Object.values(vaults).length > 0 && Object.values(instruments).length > 0) {
+            setLoading(false);
+        }
+    }, [vaults, instruments]);
 
     // get the pools
     const getPools = (_instruments: InstrumentInfos) => {
@@ -54,45 +61,51 @@ const Pools: React.FC = () => {
     }, [instruments]);
     
     return (
-        <div className="Pools">
-            <h3>Pools</h3>
-            <div className="PoolHeader">
-                <ul className="PoolHeaderItem">
-                    Market Id
-                </ul>
-                <ul className="PoolHeaderItem">
-                    Vault Id
-                </ul>
-                <ul className="PoolHeaderItem">
-                    Utilizer
-                </ul>
-                <ul className="PoolHeaderItem">
-                    Collateral
-                </ul>
-                <ul className="PoolHeaderItem">
-                    Leverage Factor
-                </ul>
-            </div>
-            { loading ? (
-                <section>
-                {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
-                    <LoadingPoolCard key={index} />
-                ))}
-                </section>
-            ) : pools.length > 0 ? (
-                <section>
-                  {sliceByPage(pools, page, PAGE_LIMIT).map((pool, index) => (
-                    <PoolCard
-                      key={`${pool.marketId}-${index}`}
-                      marketId={pool.marketId}
-                      instruments={pools}
-                      vaults={vaults}
-                    />
-                  ))}
-                </section>
-              ) : (
-                <span className={Styles.EmptyMarketsMessage}>No markets to show. Try changing the filter options.</span>
-              )}
+        <div className={Styles.PoolsView}>
+            <table>
+                <thead>
+                    <td>
+                        Market Id
+                    </td>
+                    <td>
+                        Vault Id
+                    </td>
+                    <td>
+                        Utilizer
+                    </td>
+                    <td>
+                        Leverage Factor
+                    </td>
+                    <td>
+                        Collateral
+                    </td>
+                </thead>
+                { loading ? (
+                    <tbody>
+                        <tr className={Styles.EmptyMarketsMessage}>Loading</tr>
+                    </tbody>
+                    
+                ) : pools.length > 0 ? (
+
+                    <tbody>
+                        {sliceByPage(pools, page, PAGE_LIMIT).map((pool, index) => (
+                        <PoolCard
+                        key={`${pool.marketId}-${index}`}
+                        marketId={pool.marketId}
+                        instruments={pools}
+                        vaults={vaults}
+                        />
+                      ))}
+                    </tbody>
+                    
+                ) : (
+                    <tbody>
+                        <tr className={Styles.EmptyMarketsMessage}>No pools to show</tr>
+                    </tbody>
+                    
+                )}
+            </table>
+            
               {pools.length > 0 && (
                     <Pagination
                     page={page}
@@ -120,27 +133,30 @@ const MyLoans: React.FC = () => {
         itemCount: loans.length,
     });
 
-    useScrollToTopOnMount(page);
-
-    const getUserLoans = (_instruments: InstrumentInfos) => {
-        let _loans = [];
-        for (const [id, instr] of Object.entries(_instruments)) {
-            if (instr.utilizer === account) {
-                _loans.push(instr);
-            }
-        }
-        return _loans;
-    }
-
     useEffect(() => {
-        if (instruments.length > 0) {
+        if (Object.values(instruments).length > 0) {
+            setLoading(false);
             setLoans(getUserLoans(instruments));
         }
     }, [instruments]);
+
+    useScrollToTopOnMount(page);
+
+    const getUserLoans = (_instruments: InstrumentInfos) => {
+        // TODO: contract-calls to get user loans.
+        // const { loans, borrowedBalances } = getUserLoanData(instruments)
+
+        // incorrect, but for now match instruments where the utilizer is the user.
+        let _loans = [];
+        for (const [id, instr] of Object.entries(_instruments)) {
+            _loans.push(instr);
+            break;
+        }
+        return _loans;
+    }
     
     return (
-        <div className="MyLoansPage">
-            <h3>My Loans</h3>
+        <div className={Styles.MyLoansView}>
             { loading ? (
                 <section>
                 {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
@@ -150,16 +166,14 @@ const MyLoans: React.FC = () => {
             ) : loans.length > 0 ? (
                 <section>
                   {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
-                    <PoolCard
+                    <LoanCard
                       key={`${loan.marketId}-${index}`}
-                      marketId={loan.marketId}
-                      instruments={loans}
-                      vaults={loans}
+                      
                     />
                   ))}
                 </section>
               ) : (
-                <span className={Styles.EmptyMarketsMessage}>No markets to show. Try changing the filter options.</span>
+                <span className={Styles.EmptyMarketsMessage}>No loans to show</span>
               )}
               {loans.length > 0 && (
                     <Pagination
@@ -184,18 +198,20 @@ const BorrowView: React.FC = () => {
 
     return (
         <div className={Styles.BorrowView}>
-            <ul className="nav">
+            <section className={Styles.Nav}>
                 <TabNavItem title="Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
                 <TabNavItem title="My Loans" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
-            </ul>
-            <div className="outlet">
+            </section>
+            
+            <section>
                 <TabContent id="0" activeTab={activeTab}> 
                     <Pools />
                 </TabContent>
                 <TabContent id="1" activeTab={activeTab}>
                     <MyLoans />
                 </TabContent>
-            </div>
+            </section>
+            
         </div>
     )
 }

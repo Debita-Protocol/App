@@ -1,4 +1,6 @@
 import React from "react"
+import Styles from "./borrow-view.styles.less";
+import classNames from "classnames";
 
 export const TabContent: React.FC = ({id, activeTab, children}) => {
  return (
@@ -10,15 +12,15 @@ export const TabContent: React.FC = ({id, activeTab, children}) => {
 };
 
 export const TabNavItem: React.FC = ({ id, title, activeTab, setActiveTab }) => {
- 
+  console.log("activeTab", activeTab === id);
     const handleClick = () => {
       setActiveTab(id);
     };
     
    return (
-      <li onClick={handleClick} className={activeTab === id ? "active" : ""}>
+      <div onClick={handleClick} className={classNames({ [Styles.Active]: activeTab === id})}>
         { title }
-      </li>
+      </div>
     );
    };
  
