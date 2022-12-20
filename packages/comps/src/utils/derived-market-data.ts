@@ -27,19 +27,19 @@ import { getDefaultPrice } from "./get-default-price";
 
 export const getResolutionRules = (marketInfo: MarketInfo): string[] => {
   switch (marketInfo.marketFactoryType) {
-    case MARKET_FACTORY_TYPES.CRYPTO: {
-      return CryptoMarkets.getResolutionRules(marketInfo);
-    }
-    case MARKET_FACTORY_TYPES.MMA:
-    case MARKET_FACTORY_TYPES.MMALINK: {
-      return MmaDailies.getResolutionRules(marketInfo);
-    }
-    case MARKET_FACTORY_TYPES.GROUPED: {
-      return GroupedMarkets.getResolutionRules(marketInfo);
-    }
-    case MARKET_FACTORY_TYPES.TRUSTED:{
-      return TrustedMarkets.getResolutionRules(marketInfo);
-    }
+    // case MARKET_FACTORY_TYPES.CRYPTO: {
+    //   return CryptoMarkets.getResolutionRules(marketInfo);
+    // }
+    // case MARKET_FACTORY_TYPES.MMA:
+    // case MARKET_FACTORY_TYPES.MMALINK: {
+    //   return MmaDailies.getResolutionRules(marketInfo);
+    // }
+    // case MARKET_FACTORY_TYPES.GROUPED: {
+    //   return GroupedMarkets.getResolutionRules(marketInfo);
+    // }
+    // case MARKET_FACTORY_TYPES.TRUSTED:{
+    //   return TrustedMarkets.getResolutionRules(marketInfo);
+    // }
     // case MARKET_FACTORY_TYPES.CDS:{
     //   return TrustedMarkets.getResolutionRules(marketInfo);
     // }
@@ -111,14 +111,14 @@ export const fetcherMarketsPerConfig = async (
   const blocknumber = await provider.getBlockNumber();
   let markets = null;
   switch (config?.type) {
-  //  case MARKET_FACTORY_TYPES.NFL:
-  //  case MARKET_FACTORY_TYPES.MMA:
-  //  case MARKET_FACTORY_TYPES.MLB:
-    // case MARKET_FACTORY_TYPES.NBA: {
-    //   //markets = await SportFetcher.fetchContractData(config, provider, account);
-    //  markets=  null;
-    //   break;
-    // }
+   case MARKET_FACTORY_TYPES.NFL:
+   case MARKET_FACTORY_TYPES.MMA:
+   case MARKET_FACTORY_TYPES.MLB:
+    case MARKET_FACTORY_TYPES.NBA: {
+      //markets = await SportFetcher.fetchContractData(config, provider, account);
+     markets=  null;
+      break;
+    }
     // case MARKET_FACTORY_TYPES.CRYPTO: {
     //   markets = await CryptoFetcher.fetchContractData(config, provider, account);
     //   console.log('cryptomarkets?', markets)
