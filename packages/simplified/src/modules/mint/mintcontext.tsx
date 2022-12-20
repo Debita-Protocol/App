@@ -37,7 +37,7 @@ export const MintProvider = ({ children }: any) => {
             console.log('MINTING!', account, loginAccount.library, amount.toString())
 
       //mintDS(account, loginAccount.library, amount.toString(), true )
-        mintVaultDS(account, loginAccount.library, amount.toString(), true)
+        //mintVaultDS(account, loginAccount.library, amount.toString(), true)
 
     }
 

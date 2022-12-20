@@ -99,7 +99,7 @@ const MintView= () => {
   const [ balance, setBalance ] = useState("0.0");
 
   const handleSubmit = async (e: any) => { 
-    await mintVaultDS(account, loginAccount.library, amount, true);
+    //await mintVaultDS(account, loginAccount.library, amount, true);
   }
 
   const getBalance = useCallback(async () => {

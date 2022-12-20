@@ -451,7 +451,7 @@ const MarketView = ({ defaultMarket = null }) => {
           action={approve_utilizer}
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
-        {/*<TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> */}
+        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> 
       </section>
     </div>
   );

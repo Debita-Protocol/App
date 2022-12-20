@@ -121,7 +121,8 @@ import {
   fetcher_address,
   rep_token_address, 
   cash_address, 
-  pool_factory_address
+  pool_factory_address, 
+  creditLine_address, 
 } from "../data/constants";
 
 
@@ -134,6 +135,8 @@ import tlensabi from "../data/TrustedMarketFactoryV3.json";
 import controllerabi from "../data/controller.json" ; 
 import cashabi from "../data/cash.json"; 
 import vaultabi from "../data/vault.json"; 
+import marketmanagerabi from "../data/marketmanager.json"; 
+
 
 
 const pp = BigNumber.from(10).pow(18);
@@ -141,23 +144,21 @@ const { parseBytes32String, formatBytes32String } = utils;
 
 
 
-// export interface CoreInstrumentData {
-//   marketId: string;
-//   vaultId: string;
-//   utilizer: string;
-//   trusted: boolean;
-//   isPool: boolean;
-//   balance: string;
-//   faceValue: string;
-//   principal: string;
-//   expectedYield: string;
-//   duration: string;
-//   description: string;
-//   address: string;
-//   type: number;
-//   maturityDate: string;
-//   poolData?: CorePoolData;
-// }
+export interface CoreInstrumentData_ {
+  marketId: string;
+  trusted: boolean;
+  isPool: boolean;
+  balance: string;
+  faceValue: BigNumberish;
+  principal: BigNumberish;
+  expectedYield: BigNumberish;
+  duration: BigNumberish;
+  description: string;
+  Instrument_address: string;
+  instrument_type: number;
+  maturityDate: string;
+  poolData?: CorePoolData;
+}
 
 // export interface NFT {
 //   name: string,
@@ -169,16 +170,60 @@ const { parseBytes32String, formatBytes32String } = utils;
 // };
 
 // // can make more modular in future
-// export interface CorePoolData {
-//   saleAmount: string;
-//   initPrice: string;
-//   promisedReturn: string;
-//   inceptionTime: string;
-//   inceptionPrice: string;
-//   leverageFactor: string;
-//   APR?: string;
-//   NFTs?: NFT[];
-// }
+export interface CorePoolData_ {
+  saleAmount: string;
+  initPrice: string;
+  promisedReturn: string;
+  inceptionTime: string;
+  inceptionPrice: string;
+  leverageFactor: string;
+  managementFee: string; 
+  
+}
+
+export async function setUpManager(
+  account: string, 
+  library: Web3Provider
+  ) {
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+  await controller.testVerifyAddress(); 
+}
+
+export async function tradeZCB(
+  account: string,
+  library: Web3Provider, 
+  marketId: string, 
+  amount: string, 
+  long: boolean, 
+  close: boolean, 
+  underlyingAddress: string = ""
+  ): Promise<TransactionResponse>{
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+  await controller.testVerifyAddress(); 
+
+  if (underlyingAddress=="") underlyingAddress = cash_address; 
+
+  const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
+  const marketmanager = new ethers.Contract(market_manager_address, 
+    marketmanagerabi["abi"], getProviderOrSigner(library, account));
+  const scaledAmount = pp.mul(amount); 
+  if (long){
+    await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
+    await marketmanager.buyBond(marketId, scaledAmount, pp.mul(100), 0); 
+    
+  }
+  else{
+
+  }
+  let tx; 
+  return tx; 
+
+}
+
 
 export async function setUpExampleController(account: string, library: Web3Provider){
   interface DefaultParams {
@@ -205,9 +250,9 @@ export async function setUpExampleController(account: string, library: Web3Provi
   params.s = pp.mul(2);
   params.steak = pp; 
 
-await controller.setMarketManager(market_manager_address);
-await controller.setVaultFactory(vault_factory_address);
-await controller.setPoolFactory(pool_factory_address); 
+  await controller.setMarketManager(market_manager_address);
+  await controller.setVaultFactory(vault_factory_address);
+  await controller.setPoolFactory(pool_factory_address); 
   // await (await controller.setMarketManager(market_manager_address)).wait();
   // console.log("A")
   // await (await controller.setVaultFactory(vault_factory_address)).wait();
@@ -225,58 +270,83 @@ await controller.setPoolFactory(pool_factory_address);
 export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider,
-  faceValue: string = "3300", 
-  principal: string= "3000", 
-  expectedYield: string= "300", // this should be amount of collateral yield to be collected over the duration, not percentage
+  faceValue: string = "11000", 
+  principal: string= "10000", 
+  expectedYield: string= "1000", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
   description: string= "Test Description", 
-  Instrument_address: string = controller_address, //need to have been created before
-  instrument_type: string = "0"
+  Instrument_address: string = creditLine_address, //need to have been created before
+  instrument_type: number = 0, 
+  vaultId: string = "1"
   ): Promise<TransactionResponse> {
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
 
-  // console.log('here', controller_address, account)
-  // const vault = Vault__factory.connect(Vault_address,getProviderOrSigner(library, account) ); 
-  // console.log('here2')
 
-  // const collateral = Cash__factory.connect(collateral_address, getProviderOrSigner(library, account))
-  // console.log('here3')
+  const data = {} as CoreInstrumentData_; 
+  const pooldata = {} as CorePoolData_; 
+  data.isPool = false; 
+  data.trusted = false; 
+  data.balance = new BN(0).toFixed(); 
+  data.faceValue = pp.mul(faceValue); //new BN(faceValue).shiftedBy(decimals).toFixed(); 
+  data.marketId = "0"; //new BN(0).toFixed(); 
+  data.principal = pp.mul(principal); //new BN(principal).shiftedBy(decimals).toFixed(); 
+  data.expectedYield = pp.mul(expectedYield);//new BN(expectedYield).shiftedBy(decimals).toFixed(); 
+  data.duration = duration//new BN(duration).toString(); 
+  data.description = description;
+  data.Instrument_address = Instrument_address; //sample_instument_address;
+  data.instrument_type = instrument_type;
+  data.maturityDate = String(0);
 
-  // const decimals = await collateral.decimals()
-  
-
-  // const data = {} as InstrumentData_; 
-
-  // data.trusted = false; 
-  // data.balance = new BN(0).toFixed(); 
-  // data.faceValue = new BN(faceValue).shiftedBy(decimals).toFixed(); 
-  // data.marketId = new BN(0).toFixed(); 
-  // data.principal = new BN(principal).shiftedBy(decimals).toFixed(); 
-  // data.expectedYield = new BN(expectedYield).shiftedBy(decimals).toFixed(); 
-  // data.duration = new BN(duration).toString(); 
-  // data.description = description;
-  // data.Instrument_address = Instrument_address; //sample_instument_address;
-  // data.instrument_type = instrument_type;
-  // data.maturityDate = String(0);
+  pooldata.saleAmount = "0"
+  pooldata.initPrice = "0"
+  pooldata.promisedReturn = "0"
+  pooldata.inceptionTime = "0"
+  pooldata.inceptionPrice = "0"
+  pooldata.leverageFactor = "0"
+  pooldata.managementFee = "0"
+  data.poolData = pooldata; 
+  console.log('account', account, Instrument_address); 
+  await controller.initiateMarket(account, data, vaultId)
+  // export interface CorePoolData {
+//   saleAmount: string;
+//   initPrice: string;
+//   promisedReturn: string;
+//   inceptionTime: string;
+//   inceptionPrice: string;
+//   leverageFactor: string;
+//   APR?: string;
+//   NFTs?: NFT[];
+// }
   // const id = await controller.getMarketId(account); 
   // console.log('id', id, data); 
   // // const credit_line_address = await createCreditLine(account, library, principal, expectedYield, duration, faceValue ); 
   // // console.log('creation', credit_line_address); 
 
-  // // const tx = await controller.initiateMarket(account, data).catch((e) => {
-  // //   console.error(e);
-  // //   throw e;
-  // // }); 
-  // // return tx; 
-   let tx: TransactionResponse;
-  return tx;
+  // const tx = await controller.initiateMarket(account, data, vaultId).catch((e) => {
+  //     console.error(e);
+  //     throw e;
+  //   }); 
+  let tx; 
+    return tx; 
 }
+
+export const faucetUnderlying = async (account: string, library: Web3Provider) => {
+  const collateral = new ethers.Contract(cash_address, cashabi["abi"], getProviderOrSigner(library, account)); 
+  await collateral.faucet(pp.mul(100000)); 
+  // const { marketFactories } = PARA_CONFIG;
+  // const usdcContract = marketFactories[0].collateral;
+  // const amount = ethers.BigNumber.from(10).pow(10); // 10k
+  // const collateral = Cash__factory.connect(usdcContract, getProviderOrSigner(library, account));
+  // await collateral.faucet(String(amount));
+};
+
+
 export async function mintVaultDS(
   account: string,
   library: Web3Provider,
-  vaultId: number, 
+  vaultId: string, 
   depositAmount: string = "0" 
   // not_faucet: boolean = false
   ) {
@@ -285,12 +355,13 @@ export async function mintVaultDS(
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
-
+  console.log('colla', collateral, controller, vaultId); 
   const vaultAd = await controller.getVaultfromId(vaultId); 
+  console.log('vaultad,', vaultAd); 
 
   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
   const scaledAmount = pp.mul(depositAmount); 
-  console.log('vaultad,', vaultAd); 
+
   await collateral.approve(vaultAd, scaledAmount); 
   await vault.deposit(scaledAmount, account); 
 
@@ -425,11 +496,11 @@ const trimDecimalValue = (value: string | BN) => createBigNumber(value).decimalP
 
 interface InstrumentData_ {
   trusted: boolean; 
-  balance: string; 
-  faceValue: string;
+  balance: BigNumberish; 
+  faceValue: BigNumberish;
   marketId: string; 
-  principal: string; 
-  expectedYield: string; 
+  principal: BigNumberish; 
+  expectedYield: BigNumberish; 
   duration: string;
   description: string; 
   Instrument_address: string; 

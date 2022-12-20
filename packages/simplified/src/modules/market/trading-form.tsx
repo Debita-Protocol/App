@@ -187,15 +187,17 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const isBuy = orderType === BUY;
   const approvalAction = isBuy ? ApprovalAction.ENTER_POSITION : ApprovalAction.EXIT_POSITION;
   const outcomeShareToken = selectedOutcome?.shareToken;
-  const approvalStatus = useApprovalStatus({
-    cash: ammCash,
-    amm,
-    refresh: blocknumber,
-    actionType: approvalAction,
-    outcomeShareToken,
-  });
-  const isApprovedTrade = approvalStatus === ApprovalState.APPROVED;
-  const { hasLiquidity } = amm;
+  const approvalStatus = true; 
+  // useApprovalStatus({
+  //   cash: ammCash,
+  //   amm,
+  //   refresh: blocknumber,
+  //   actionType: approvalAction,
+  //   outcomeShareToken,
+  // });
+  const isApprovedTrade =true// approvalStatus === ApprovalState.APPROVED;
+ // const { hasLiquidity } = amm;
+  const hasLiquidity = true; 
   const selectedOutcomeId = selectedOutcome?.id;
   const marketShares = balances?.marketShares && balances?.marketShares[amm?.marketId];
   const hasWinner = amm?.market.hasWinner;
@@ -221,53 +223,15 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   // );
 
   useEffect(async() => {
-        let bal; 
-        //const vaultad = "0x3C95067507C0346e40439E46dD9FFce3eF4F264E"
-        //bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
-        bal = await getVaultTokenBalance(account, loginAccount.library)
-        console.log('bal', bal.toString(), userBalance); 
-        setUserBalance(Number(bal.toString())); 
+        // let bal; 
+        // //const vaultad = "0x3C95067507C0346e40439E46dD9FFce3eF4F264E"
+        // //bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
+        // bal = await getVaultTokenBalance(account, loginAccount.library)
+        // console.log('bal', bal.toString(), userBalance); 
+        // setUserBalance(Number(bal.toString())); 
           
       }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
-  const getbudget = async()=>{
-   // const b =  await getTraderBudget(account, loginAccount.library, String(amm?.turboId)); 
-   // const h = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) );
-    const b = 1000000*230; 
-    const h = 1000000*130; 
-    setTraderBudget(Number(b)/1000000); 
-    setHedgeQuantity(Number(h)/1000000);
-
-  } 
-
-
-  useEffect(async()=>{
-    getbudget(); 
-  }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance])
-
-  //console.log('ammdata', amm); 
-  useEffect(async()=> {
-    let breakdown; 
-    let hedgeq; 
-    let budget_; 
-
-
-    try{
-      if(amount){
-        // breakdown = await estimateZCBBuyTrade(account, loginAccount.library, String(amm?.turboId), amount,
-        //  selectedOutcomeId, ammCash)
-        hedgeq = "1";
-        //hedgeq = await getHedgeQuantity(account, loginAccount.library, String(amm?.turboId) ); 
-       // budget_ = await getTraderBudget(account, loginAccount.library); 
-      }
-    }
-    catch (err){console.log("status error", err)
-    return;}
-    setBondBreakDown(breakdown); 
-
-    // setTraderBudget(budget_); 
-
-  }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance])
   useEffect(() => {
     let isMounted = true;
     function handleShowTradingForm() {
@@ -309,19 +273,6 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
 
-
-  useEffect(() =>{
-    
-    const getCanBuy = async() =>{
-      const canbuy_ = await canBuy(account, loginAccount.library); 
-      //const canRedeem = aw
-      setCanBuy(canbuy_); 
-
-
-    }
-    getCanBuy(); 
-    setCanRedeem(amm.market.hasWinner); 
-  }); 
   // console.log('canredeem', canRedeem, canbuy);
   //console.log('bondbreakdown',bondbreakdown); 
 
@@ -594,9 +545,9 @@ export const ApprovalButton = ({
     actions: { addTransaction },
   } = useUserStore();
   const marketCashType = cash?.name;
-  const ammFactory = amm.ammFactoryAddress;
+  const ammFactory = amm?.ammFactoryAddress;
   const marketDescription = `${amm?.market?.title} ${amm?.market?.description}`;
-  const rewardContractAddress = getRewardsContractAddress(amm.marketFactoryAddress);
+  const rewardContractAddress = " "//getRewardsContractAddress(amm.marketFactoryAddress);
   useEffect(() => {
     // make sure to flip local state off if we are approved, logged, pending
     if (isApproved && loginAccount && isPendingTx) {

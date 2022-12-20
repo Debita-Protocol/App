@@ -41,7 +41,7 @@ const {
   MarketCardComps: { MarketTitleArea },
   ButtonComps: { PrimaryThemeButton, SecondaryThemeButton },
 } = Components;
-const { canAddLiquidity, getMaticUsdPrice, setUpExampleController  } = ContractCalls;
+const { canAddLiquidity, getMaticUsdPrice, setUpExampleController, addProposal  } = ContractCalls;
 const {
   DateUtils: { getMarketEndtimeDate },
   Formatter: { formatApy, formatCash, formatToken },
@@ -64,6 +64,12 @@ const setupExample = async({
 
   await setUpExampleController(account, loginAccount.library)
 
+
+}
+const addExampleProposal = async({
+  account, loginAccount
+})=> {
+await addProposal(account, loginAccount.library); 
 
 }
 
@@ -183,7 +189,8 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  const{vaultId} = instrument; 
+  const{marketId} = instrument; 
+  console.log('instrument Id', marketId); 
  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -193,11 +200,11 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       })}
     >
 
-      <MarketLink id={vaultId?.toString()} dontGoToMarket={true}>
+      <MarketLink id={marketId?.toString()} dontGoToMarket={true}>
         {/*<CategoryIcon {...{ "categories" }} />
         <MarketTitleArea {...{ ...market, timeFormat }} />*/}
 
-        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{vaultId?.toString()+" "}{"USDC"}{" Vault"}</p>
+        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{marketId?.toString()+" "}{"USDC"}{" Vault"}</p>
 
       </MarketLink>
 
@@ -229,7 +236,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
               history.push({
                 pathname: makePath(MARKET),
                 search: makeQuery({
-                  [MARKET_ID_PARAM_NAME]: vaultId,
+                  [MARKET_ID_PARAM_NAME]: marketId,
                   
                 }),
               })
@@ -581,6 +588,7 @@ const LiquidityView = () => {
       <MaticAddMetaMaskToken />
   <button onClick={() => setupExample( { account,loginAccount}
 )}>SetUp</button>
+  <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> 
       <h1>Explore LP Opportunties</h1>
       <p>
         Add Market liquidity to earn fees and rewards. <a href=".">Learn more →</a>

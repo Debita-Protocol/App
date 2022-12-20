@@ -32,7 +32,7 @@ export const fetcher_address =  "0x26F1c66257A981c23632571e4Cca278860F4C9bE";
 export const rep_token_address = "0x3c33c0125744E282F8302adCdad76376cA80f393";
 export const pool_factory_address = "0x64bE7206c5fcC5a995ACcfF59d735795325C162B"; 
 export const cash_address = "0xd6A5640De726a89A54ca724ac12BCc5E89600720"; 
-
+export const creditLine_address = "0xB0243f768dBaC61aF4DC063358360d7AE25b25c4"; 
 // 0xd6A5640De726a89A54ca724ac12BCc5E89600720 
 // deploying "Controller" (tx: 0x7c74144de0174928c96c546c3e7ec5ac537a211ab39813fca1be45944993a615)...: deployed at 0xFdeE43628CC24e583dEfaB4036aAb0B52eB5FB85 with 5369148 gas
 // deploying "ReputationNFT" (tx: 0xf6c506e579dd5f68b22e58ca1e42377c651046125aaf493b68da1c3372c82983)...: deployed at 0x3c33c0125744E282F8302adCdad76376cA80f393 with 1668480 gas
