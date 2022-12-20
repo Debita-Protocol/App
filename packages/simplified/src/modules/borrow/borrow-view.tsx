@@ -105,7 +105,6 @@ const Pools: React.FC = () => {
                     
                 )}
             </table>
-            
               {pools.length > 0 && (
                     <Pagination
                     page={page}

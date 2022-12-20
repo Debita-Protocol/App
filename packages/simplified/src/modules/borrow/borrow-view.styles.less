@@ -38,9 +38,14 @@
   background-color: var(--primary-bg);
   padding: @size-24;
   border-radius: @size-10;
+  position: relative;
+  flex: 1 1;
+  justify-content: center;
+  align-items: center;
   > table {
     border-collapse: separate;
       border-spacing: 0px 16px;
+      width: 100%;
     > thead {
       border-collapse: separate;
       border-spacing: 0px 16px;
@@ -50,8 +55,9 @@
         font-weight: @weight-bold;
         font-size: @size-18;
         padding: @size-8;
+        background-color: var(--primary-bg);
+        margin: auto;
       }
-      margin: @size-10;
     }
     > tbody {
      
@@ -67,14 +73,17 @@
           text-align: center;
           padding: @size-5;
           position: relative;
+          font-weight: @weight-semi-bold;
+          color: var(--secondary-text);
+          border-color:var(--theme-border);
         }
         > td:first-of-type {
-          border-left: @size-1 solid var(--tertiary-text);
+          border-left: @size-1 solid var(--theme-border);
           border-top-left-radius: @size-5;
           border-bottom-left-radius: @size-5;
         }
         > td:last-of-type {
-          border-right: @size-1 solid var(--tertiary-text);
+          border-right: @size-1 solid var(--theme-border);
           border-top-right-radius: @size-5;
           border-bottom-right-radius: @size-5;
           > div {
@@ -99,10 +108,6 @@
         display: flex;
         padding-top: @size-5;
     }
-}
-
-.collateralSupplyCard {
-    display: flex;
 }
 
 .LoadingMarketCard {
@@ -186,11 +191,76 @@
 .PoolView {
   display: flex;
   flex-flow: row nowrap;
-  padding: @size-24;
+  position: relative;
+  flex: 1 1;
+  padding: @size-12 @size-24 @size-36;
+  > div {
+    margin-top:0;
+    margin-left: 2%;
+    margin-right: 2%;
+    display: flex;
+    flex-flow: row nowrap;
+    position: relative;
+    flex: 1 1;
+    padding: @size-12 @size-40 0;
+    > div{
+      width:100%;
+      border-radius: @size-8;
+      margin-left: 2%;
+      margin-right: 2%;
+      margin-bottom: 0;
+      position: relative;
+      > h3 {
+        font-size: @size-24;
+        font-weight: @weight-bold;
+        padding: @size-8;
+      }
+      > table {
+        background-color:var(--primary-bg);
+        border-radius: @size-6;
+        width: 100%;
+        border: none;
+        text-align: left;
+        border-collapse: collapse;
+        > thead  {
+          > tr {
+            > td {
+              font-size: @size-12;
+              font-weight: @weight-bold;
+              padding: @size-8;
+              color: var(--secondary-text);
+            }
+          }
+        }
+        > tbody {
+          > tr {
+            > td {
+              font-size: @size-14;
+              font-weight: @weight-semi-bold;
+              padding: @size-8;
+              color: var(--primary-text);
+            }
+            border-top: @size-1 solid var(--theme-border);
+            border-bottom: @size-1 solid var(--theme-border);
+          }
+          > tr:last-of-type {
+            border-width: 0;
+          }
+        }
+      }
+    }
+
+  }
+
 }
 
 .BorrowItemCard {
   display: flex;
+  padding: @size-8;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  border-radius: @size-10;
+  background-color:var(--primary-bg);
 }
 
 // marketcard
@@ -204,7 +274,7 @@
   height: 30%;
   border-radius: @size-8;
   padding: @size-4;
-  >div:first-of-type {
+  > div:first-of-type {
     font-size: @size-16;
     font-weight: @weight-bold;
     padding: @size-4;

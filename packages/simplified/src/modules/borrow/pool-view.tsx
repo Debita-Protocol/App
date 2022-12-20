@@ -33,11 +33,25 @@ const { MARKET_ID_PARAM_NAME, } = Constants;
 const PoolView: React.FC = () => {
     const location = useLocation();
     const { [MARKET_ID_PARAM_NAME]: marketId } = parseQuery(location.search);
-    const { 
-        balances: { NFTs: NFTBalances }, 
-    } = useUserStore();
+    // const { 
+    //     balances: { NFTs: NFTBalances }, 
+    // } = useUserStore();
     const { vaults, instruments } = useDataStore2();
     const [loading, setLoading] = useState(true);
+    const NFTBalances = {
+        "0x1": {
+            name: "NFT 1",
+            symbol: "NFT1",
+            balance: "1",
+            usdValue: "100"
+        },
+        "0x2": {
+            name: "NFT 2",
+            symbol: "NFT2",
+            balance: "2",
+            usdValue: "200"
+        }
+      };
 
     useEffect(() => {
         if (Object.keys(vaults).length > 0 &&
@@ -64,7 +78,8 @@ const PoolView: React.FC = () => {
 
     return (
         <div className={Styles.poolView}>
-            <section>
+            <div>
+                <div>
                 <h3>
                     Supply
                 </h3>
@@ -93,15 +108,17 @@ const PoolView: React.FC = () => {
                     </tbody>
                     
                 </table>
-            </section>
-            <section>
+                
+            </div>
+            <div>
                 <h3>
                     Borrow
                 </h3>
                 <section className="borrowHeader">
                     <BorrowItemCard APR={APR} want={collateral_address} marketId={marketId}/>
                 </section>
-            </section>
+            </div>
+            </div>
         </div>
     )
     };
@@ -119,7 +136,7 @@ const CollateralSupplyCard: React.FC = ({
     APY: string
 } => {
     return (
-        <tr className={Styles.collateralSupplyCard}>
+        <tr>
             <td>
                 { symbol }/{ maxLTV }
             </td>
@@ -158,7 +175,7 @@ const BorrowItemCard: React.FC = ({
     }
     return (
         <div className={Styles.BorrowItemCard}>
-            <IconLabel icon={USDCIcon} label={"USDC"} value={"USDC"} small={true}/>
+            <IconLabel icon={USDCIcon} label={"Want"} value={"USDC"} small={true}/>
             <ValueLabel label={"APR"} value={APR} />
             <SecondaryThemeButton {...buttonProps}/>
         </div>
