@@ -23,8 +23,6 @@ import {
 import PortfolioView from '../portfolio/portfolio-view';
 import LiquidityView from '../liquidity/liquidity-view';
 import MarketLiquidityView from '../liquidity/market-liquidity-view';
-import MintView from "../mint/mint";
-import RedeemView from "../redeem/redeem"
 import ProposalsView from '../proposals/proposals-view';
 import ProfileView from "../profile/profile-view";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";

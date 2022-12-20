@@ -390,6 +390,7 @@ export interface CoreInstrumentData {
   description: string;
   address: string;
   type: number;
+  instrument_address?: string;
   maturityDate: string;
   poolData?: CorePoolData;
 }
@@ -437,9 +438,8 @@ export interface VaultInfo {
   r: string,
   asset_limit: string;
   total_asset_limit: string;
-  want: Cash,
-  // dynamic data
-  totalSupply?: string
+  want: Cash;
+  totalShares: string;
 };
 
 export interface VaultInfos {
