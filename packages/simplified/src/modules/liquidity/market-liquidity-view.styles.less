@@ -73,7 +73,96 @@
     }
   }
 }
+.Details {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
 
+  > h4 {
+    .text-20-bold;
+
+    color: var(--primary-text);
+    line-height: @size-24;
+    margin: 0 0 @size-24;
+    margin-bottom: @size-18;
+  }
+
+  > p {
+    .text-14;
+
+    color: var(--primary-text);
+    line-height: @size-22;
+    flex: 1;
+    margin: 0 0 @size-12;
+  }
+
+  > button {
+    .PrimaryBorderRadius;
+    .text-16-bold;
+
+    background: none;
+    border: none;
+    line-height: 140%;
+    padding: 0;
+    text-decoration: underline;
+    color: var(--primary-text);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+
+    &:hover {
+      border: none;
+    }
+  }
+}
+
+.isClosed {
+  > p:not(:first-of-type) {
+    display: none;
+  }
+}
+
+
+.StatsRow {
+  .ThemeBorder;
+
+  background: var(--quaternary-bg);
+  display: flex;
+  flex-flow: row nowrap;
+  width: 100%;
+  height: @size-128;
+
+  > li {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex: 1;
+    grid-gap: @size-8;
+
+    &:not(:last-of-type) {
+      border-right: @size-1 solid var(--theme-border);
+    }
+
+    > span:first-of-type {
+      .text-16;
+
+      color: var(--secondary-text);
+    }
+
+    > span:last-of-type {
+      .text-20-semi-bold;
+
+      color: var(--primary-text);
+    }
+  }
+}
 .BackBar {
   display: flex;
   flex-flow: row nowrap;
@@ -182,7 +271,7 @@
       color: var(--secondary-text);
       white-space: nowrap;
 
-      &:hover,
+     // &:hover,
       &.selected {
         color: var(--primary-text);
         cursor: pointer;
@@ -402,3 +491,4 @@
     }
   }
 }
+

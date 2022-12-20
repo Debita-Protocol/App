@@ -17,8 +17,10 @@ import {
   createBigNumber,
   useAppStatusStore,
   useScrollToTopOnMount,
+  useDataStore2
 } from "@augurproject/comps";
-import { AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
+
+import { InstrumentInfos, VaultInfos, CoreInstrumentData , AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "../stores/simplified";
 import {
   MODAL_CONFIRM_TRANSACTION,
@@ -30,6 +32,8 @@ import {
   SHARES,
   USDC,
 } from "../constants";
+import {InstrumentCard} from "./liquidity-view"; 
+
 const {
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
   LabelComps: { CategoryIcon, WarningBanner },
@@ -49,10 +53,12 @@ const {
   maxWhackedCollateralAmount,
   estimateResetPrices,
   doResetPrices,
+  mintVaultDS,
+
 } = ContractCalls;
 const {
   PathUtils: { makePath, parseQuery },
-  Formatter: { formatSimpleShares, formatEther, formatCash },
+  Formatter: { formatDai,formatSimpleShares, formatEther, formatCash },
   Calculations: { calcPricesFromOdds },
 } = Utils;
 const {
@@ -121,7 +127,10 @@ export const MarketLiquidityView = () => {
   const { markets } = useDataStore();
   const market = markets?.[marketId];
   const [selectedAction, setSelectedAction] = useState(actionType);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+
   useScrollToTopOnMount();
+
   const isRemove = selectedAction === REMOVE;
   const isResetPrices = selectedAction === RESET_PRICES;
   const maxWhackedCollateral = market && maxWhackedCollateralAmount(market?.amm);
@@ -133,10 +142,24 @@ export const MarketLiquidityView = () => {
   const [amount, setAmount] = useState(
     isRemove ? shareBalance : isResetPrices ? maxWhackedCollateral?.collateralUsd : ""
   );
-  if (!market) {
-    return <div className={classNames(Styles.MarketLiquidityView)}>Market Not Found.</div>;
+
+  const vaultId = marketId; 
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  // console.log(Object.keys(instruments))
+  let filteredInstruments = Object.values(instruments).map((instrument:any)=>{
+      return instrument
+  })
+  filteredInstruments = filteredInstruments.filter((instrument)=> instrument.vaultId == vaultId); 
+  // updatedFilteredMarkets.filter((market) =>
+  //   market.hasWinner ? (userMarkets.includes(market.marketId) ? true : false) : true
+  // );
+  // .filter((instrument)=> instrument.vaultId == vaultId); 
+  // console.log('filteredInstruments', filteredInstruments); 
+  const vault = vaults[Number(vaultId)]
+  if (!vault) {
+    return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
-  const { categories } = market;
+  // const { categories } = market;
   const BackToLPPageAction = () => {
     history.push({
       pathname: makePath(LIQUIDITY),
@@ -145,13 +168,69 @@ export const MarketLiquidityView = () => {
   };
   return (
     <div className={classNames(Styles.MarketLiquidityView)}>
-      <BackBar {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, setAmount, maxWhackedCollateral }} />
-      <MarketLink id={marketId} dontGoToMarket={false}>
-        <CategoryIcon {...{ categories }} />
-        <MarketTitleArea {...{ ...market, timeFormat }} />
+      {/*<BackBar {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, setAmount, maxWhackedCollateral }} />*/}
+      <MarketLink id={marketId} dontGoToMarket={true}>
+            
+
+        {/*<CategoryIcon {...{ categories }} />
+        <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </MarketLink>
-      <LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
-      {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}
+ <div
+          className={classNames(Styles.Details, {
+            [Styles.isClosed]: !showMoreDetails,
+          })}
+        >
+          <h4>Market Details</h4>
+            <p>{"DETAILS"}</p>
+          
+          {(
+            <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
+              {showMoreDetails ? "Read Less" : "Read More"}
+            </button> 
+          )}
+          <p>{"DESCRITPTIONS"}</p>
+
+
+
+      <ul className={Styles.StatsRow}>
+<li>
+            <span>Underlying</span>
+            <span>{formatDai(100000000/4.2/1000000  || "0.00").full}</span>
+            <span>{formatDai(100000000/5/1000000 || "0.00").full}</span>
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Vault(s) </span>
+            <span>{formatDai(0.818 || "0.00").full}</span>
+
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Junior Weight</span>
+            <span>{"Resolved"}</span>
+          </li>
+
+          <li>
+            <span>Promised Return</span>
+            <span>{formatDai(100000000/1000000 || "0.00").full}</span>
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
+          </li>
+        {/*inception price,inception time, current value prices, current mark prices*/}
+
+        </ul>
+
+
+     
+
+        </div> 
+      {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
+      {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
+      <LiquidityWarningFooter />
+       <section>
+          {Object.values(filteredInstruments).map((instrument: any) => (
+            <InstrumentCard instrument={instrument} />
+          ))}
+        </section>
     </div>
   );
 };
@@ -276,6 +355,293 @@ const getResetedPricesBreakdown = (outcomes) => {
     svg: null,
   }));
 };
+const confirmMintVault = async({
+  account,  loginAccount, vaultId, amount 
+
+}) => {
+  // await doBulkTrade( loginAccount.library,account, formData)
+  await mintVaultDS(account, loginAccount.library, vaultId, amount); 
+ 
+}
+interface MintFormProps {
+  // market: MarketInfo;
+  selectedAction: string;
+  setSelectedAction: Function;
+  // BackToLPPageAction: () => void;
+  amount: string;
+  setAmount: (string) => void;
+}
+// const MintForm = ({
+//   selectedAction,
+//   setSelectedAction, 
+//   amount, 
+//   setAmount
+// }: MintFormProps) => {
+//   const {
+//     account,
+//     balances,
+//     loginAccount,
+//     actions: { addTransaction },
+//   } = useUserStore();
+//   const {
+//     actions: { setModal },
+//   } = useAppStatusStore();
+//   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+
+//   const isRemove = selectedAction === REMOVE;
+//   const isMint = selectedAction === MINT_SETS;
+
+//     return (
+//     <section
+//       className={classNames(Styles.LiquidityForm, {
+//         [Styles.isRemove]: isRemove,
+//         [Styles.isMint]: isMint,
+//         [Styles.isResetPrices]: isResetPrices,
+//       })}
+//     >
+//       <header>
+//         <button
+//           className={classNames({ [Styles.selected]: !isRemove })}
+//           onClick={() => {
+//             setAmount(amount);
+//             setSelectedAction(true ? ADD : CREATE);
+//           }}
+//         >
+//           {"Mint"}
+//         </button>
+//         { (
+//           <button
+//             className={classNames({ [Styles.selected]: isRemove })}
+//             onClick={() => {
+//               setAmount("0");
+//               setSelectedAction(REMOVE);
+//             }}
+//           >
+//             Redeem
+//           </button>
+//         )}
+//         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
+//       </header>
+//       <main>
+//         <AmountInput
+//           heading="Deposit Amount"
+//           //ammCash={cash}
+//           updateInitialAmount={(amount) => setAmount(amount)}
+//           initialAmount={amount}
+//           maxValue={userMaxAmount}
+//           chosenCash={isRemove ? SHARES : chosenCash}
+//           updateCash={updateCash}
+//           updateAmountError={() => null}
+//           error={hasAmountErrors}
+//         />
+
+//         <div className={Styles.PricesAndOutcomes}>
+//           <span className={Styles.PriceInstructions}>
+//             <span>{mustSetPrices ? "Set the Price" : "Current Prices"}</span>
+//             {mustSetPrices && <span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+//           </span>
+//           <OutcomesGrid
+//             outcomes={outcomes}
+//             selectedOutcome={null}
+//             setSelectedOutcome={() => null}
+//             orderType={BUY}
+//             nonSelectable
+//             editable={mustSetPrices && !hasInitialOdds}
+//             setEditableValue={(price, index) => setPrices(price, index)}
+//             ammCash={cash}
+//             dontFilterInvalid
+//             hasLiquidity={!mustSetPrices || hasInitialOdds}
+//             marketFactoryType={market?.marketFactoryType}
+//             isGrouped={market?.isGrouped}
+//           />
+//         </div>
+//         <section className={Styles.BreakdownAndAction}>
+//           {isResetPrices && (
+//             <>
+//               <div className={Styles.Breakdown}>
+//                 <span>New Prices</span>
+//                 <InfoNumbers infoNumbers={resetPricesInfoNumbers} />
+//               </div>
+//               <div className={Styles.Breakdown}>
+//                 <span>USDC Needed to reset the prices</span>
+//                 <InfoNumbers
+//                   infoNumbers={[
+//                     {
+//                       label: "amount",
+//                       value: `${formatCash(amount, USDC).full}`,
+//                       svg: USDCIcon,
+//                     },
+//                   ]}
+//                 />
+//               </div>
+//             </>
+//           )}
+//           <div className={Styles.Breakdown}>
+//             {isRemove && hasPendingBonus && (
+//               <WarningBanner
+//                 className={CommonStyles.ErrorBorder}
+//                 title="Increasing or removing your liquidity on a market before the bonus time is complete will result in the loss of your bonus rewards."
+//                 subtitle={
+//                   "In order to receive the bonus, your liquidity needs to remain unchanged until the bonus period is over."
+//                 }
+//               />
+//             )}
+//             <span>{isRemove ? "Remove All Liquidity" : "You'll Receive"}</span>
+//             <InfoNumbers infoNumbers={infoNumbers} />
+//           </div>
+//           <div className={Styles.ActionButtons}>
+//             {!isApproved && (
+//               <ApprovalButton
+//                 amm={amm}
+//                 cash={cash}
+//                 actionType={approvalActionType}
+//                 customClass={ButtonStyles.ReviewTransactionButton}
+//                 ds = {true}
+//               />
+//             )}
+//             <SecondaryThemeButton
+//               action={() =>
+//                 setModal({
+//                   type: MODAL_CONFIRM_TRANSACTION,
+//                   title: isRemove
+//                     ? "Remove Liquidity"
+//                     : isMint
+//                     ? "Mint Complete Sets"
+//                     : isResetPrices
+//                     ? "Reset Prices"
+//                     : "Add Liquidity",
+//                   transactionButtonText: isRemove ? "Remove" : isMint ? "Mint" : isResetPrices ? "Reset Prices" : "Add",
+//                   transactionAction: ({ onTrigger = null, onCancel = null }) => {
+//                     onTrigger && onTrigger();
+//                     confirmAction({
+//                       addTransaction,
+//                       breakdown,
+//                       setBreakdown,
+//                       account,
+//                       loginAccount,
+//                       market,
+//                       amount,
+//                       onChainFee,
+//                       outcomes,
+//                       cash,
+//                       amm,
+//                       isRemove,
+//                       estimatedLpAmount,
+//                       afterSigningAction: BackToLPPageAction,
+//                       onCancel,
+//                       isMint,
+//                       isResetPrices,
+//                     });
+//                   },
+//                   targetDescription: {
+//                     market,
+//                     label: isMint ? "Market" : "Pool",
+//                   },
+//                   footer: isRemove
+//                     ? {
+//                         text: REMOVE_FOOTER_TEXT,
+//                       }
+//                     : null,
+//                   breakdowns: isRemove
+//                     ? [
+//                         {
+//                           heading: "What you are removing:",
+//                           infoNumbers: [
+//                             {
+//                               label: "Pooled USDC",
+//                               value: `${formatCash(liquidityUSD, USDC).full}`,
+//                               svg: USDCIcon,
+//                             },
+//                           ],
+//                         },
+//                         {
+//                           heading: "What you'll recieve",
+//                           infoNumbers,
+//                         },
+//                       ]
+//                     : isMint
+//                     ? [
+//                         {
+//                           heading: "What you are depositing",
+//                           infoNumbers: [
+//                             {
+//                               label: "amount",
+//                               value: `${formatCash(amount, USDC).full}`,
+//                               svg: USDCIcon,
+//                             },
+//                           ],
+//                         },
+//                         {
+//                           heading: "What you'll recieve",
+//                           infoNumbers,
+//                         },
+//                       ]
+//                     : isResetPrices
+//                     ? [
+//                         {
+//                           heading: "New Prices",
+//                           infoNumbers: resetPricesInfoNumbers,
+//                         },
+//                         {
+//                           heading: "USDC Needed to reset the prices",
+//                           infoNumbers: [
+//                             {
+//                               label: "amount",
+//                               value: `${formatCash(amount, USDC).full}`,
+//                               svg: USDCIcon,
+//                             },
+//                           ],
+//                         },
+//                         {
+//                           heading: "What you'll recieve",
+//                           infoNumbers,
+//                         },
+//                       ]
+//                     : [
+//                         {
+//                           heading: "What you are depositing",
+//                           infoNumbers: [
+//                             {
+//                               label: "amount",
+//                               value: `${formatCash(amount, USDC).full}`,
+//                               svg: USDCIcon,
+//                             },
+//                           ],
+//                         },
+//                         {
+//                           heading: "What you'll recieve",
+//                           infoNumbers,
+//                         },
+//                         {
+//                           heading: "Pool Details",
+//                           infoNumbers: [
+//                             {
+//                               label: "Trading Fee",
+//                               value: `${amm?.feeInPercent}%`,
+//                             },
+//                           ],
+//                         },
+//                       ],
+//                 })
+//               }
+//               disabled={!isApproved || inputFormError !== ""}
+//               error={buttonError}
+//               text={inputFormError === "" ? (buttonError ? buttonError : actionButtonText) : inputFormError}
+//               subText={
+//                 buttonError === INVALID_PRICE
+//                   ? lessThanMinPrice
+//                     ? INVALID_PRICE_GREATER_THAN_SUBTEXT
+//                     : INVALID_PRICE_ADD_UP_SUBTEXT
+//                   : null
+//               }
+//               customClass={ButtonStyles.ReviewTransactionButton}
+//             />
+//           </div>
+//         </section>
+//       </main>
+//     </section>
+//   );
+// } 
 
 const LiquidityForm = ({
   market,
