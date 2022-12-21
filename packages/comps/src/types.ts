@@ -425,6 +425,10 @@ export interface CoreMarketInfo {
   phase?: MarketPhaseData;
   longZCB?: string;
   shortZCB?: string;
+  longZCBprice:string;
+  longZCBsupply: string;
+  redemptionPrice: string;
+  totalCollateral: string;
   approved_principal?: string;
   approved_yield?: string;
 }
@@ -440,6 +444,7 @@ export interface VaultInfo {
   total_asset_limit: string;
   want: Cash;
   totalShares: string;
+  name: string;
 };
 
 export interface VaultInfos {
@@ -870,8 +875,31 @@ export interface UserState {
   transactions: TransactionDetails[];
   verificationStatus?: boolean;
   passport?: Passport;
-  activePassport?: boolean
+  activePassport?: boolean;
+  ramm: CoreUserState;
 }
+
+// reputation score, vault balances, zcb balances, loans
+export interface CoreUserState {
+  reputationScore: string;
+  vaultBalances: VaultBalances;
+  zcbBalances: ZCBBalances;
+  //loans here idk how to get them though.
+}
+
+export interface VaultBalances {
+  [vaultId: string]: {
+    base: string;
+    shares: string;
+  };
+}
+export interface ZCBBalances {
+  [marketId: string]: {
+    longZCB: string;
+    shortZCB: string;
+  };
+}
+
 
 export interface TransactionDetails {
   chainId: string;

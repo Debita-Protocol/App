@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
-import { DEFAULT_USER_STATE, STUBBED_USER_ACTIONS } from "./constants";
-import { useUser } from "./user-hooks";
+import { DEFAULT_USER_STATE, STUBBED_USER_ACTIONS } from "./constants-2";
+import { useUser } from "./user-hooks-2";
 
 export const UserContext = React.createContext({
   ...DEFAULT_USER_STATE,
@@ -15,6 +15,7 @@ export const UserStore = {
 
 export const UserProvider = ({ children }: any) => {
   const state = useUser();
+  const { updateUserNFTBalances } = state.actions;
 
   if (!UserStore.actionsSet) {
     UserStore.actions = state.actions;

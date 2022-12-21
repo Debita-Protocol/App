@@ -42,6 +42,7 @@ export const STUBBED_USER_ACTIONS = {
   updateTransaction: (hash, updates) => {},
   updateUserBalances: (balances) => {},
   updateUserNFTBalances: (balances) => {},
+  updateRammData: (ramm) => {},
   logout: () => {}
 };
 
@@ -79,6 +80,11 @@ export const DEFAULT_USER_STATE: UserState = {
   loginAccount: null,
   seenPositionWarnings: {},
   transactions: [],
+  ramm: {
+    vaultBalances: {},
+    zcbBalances: {},
+    reputationScore: "0"
+  }
 };
 
 export const USER_KEYS = {
@@ -106,6 +112,7 @@ export const USER_ACTIONS = {
   UPDATE_PASSPORT: "UPDATE_PASSPORT",
   UPDATE_PASSPORT_STATUS: "UPDATE_PASSPORT_STATUS",
   UPDATE_USER_NFT_BALANCES: "UPDATE_USER_NFT_BALANCES",
+  UPDATE_RAMM_DATA: "UPDATE_RAMM_DATA"
 };
 
 export const STUBBED_APP_STATUS_ACTIONS = {

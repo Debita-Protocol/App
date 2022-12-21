@@ -66,6 +66,9 @@ import {
   isMarketFinal,
   useHandleTheming,
 } from "./stores/utils";
+import {
+  useRammData
+} from "./stores/utils-2";
 import * as _ApprovalHooks from "./stores/use-approval-callback";
 import * as _GraphClient from "./apollo/client";
 import ModalConnectWallet from "./components/modal/modal-connect-wallet";
@@ -97,6 +100,7 @@ export const Stores = {
     useScrollToTopOnMount,
     useLocalStorage,
     useApprovalStatus,
+    useRammData,
     ..._ApprovalHooks,
   },
   Utils: {
@@ -178,6 +182,7 @@ export {
   useCanExitCashPosition,
   useCanEnterCashPosition,
   useUserBalances,
+  useRammData,
   useFinalizeUserTransactions,
   useScrollToTopOnMount,
   useApprovalStatus,

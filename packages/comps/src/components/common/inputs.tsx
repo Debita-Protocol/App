@@ -65,7 +65,7 @@ export const TextInput = ({ placeholder, value, onChange }) => {
 export interface AmountInputProps {
   updateInitialAmount: (string) => void;
   initialAmount: string;
-  maxValue: string;
+  maxValue?: string;
   showCurrencyDropdown?: boolean;
   updateCash?: (string) => void;
   chosenCash: string;
@@ -73,7 +73,7 @@ export interface AmountInputProps {
   rate?: React.Fragment | null;
   error?: boolean;
   updateAmountError?: Function;
-  ammCash: Cash;
+  ammCash?: Cash;
   isBuy?: boolean;
   disabled?: boolean;
 }
@@ -84,7 +84,7 @@ export const AmountInput = ({
   maxValue,
   showCurrencyDropdown,
   updateCash,
-  chosenCash,
+  chosenCash="USDC",
   heading = "amount",
   rate,
   error,
@@ -93,6 +93,7 @@ export const AmountInput = ({
   isBuy = true,
   disabled = false,
 }: AmountInputProps) => {
+  console.log("maxVlaue: ", maxValue);
   const { isLogged } = useAppStatusStore();
   const currencyName = chosenCash;
   const [amount, updateAmount] = useState(initialAmount);
@@ -121,7 +122,7 @@ export const AmountInput = ({
       })}
     >
       <span>{heading}</span>
-      <span onClick={setMax}>
+        <span onClick={setMax}>
         {isLogged && (
           <>
             <span>balance:</span>{" "}
@@ -150,7 +151,10 @@ export const AmountInput = ({
           disabled={disabled}
           onWheel={(e: any) => e?.target?.blur()}
         />
-        <TinyThemeButton text="Max" action={setMax} noHighlight />
+        { maxValue && ammCash && (
+          <TinyThemeButton text="Max" action={setMax} noHighlight />
+        )}
+        
         {!!currencyName && chosenCash !== SHARES && !showCurrencyDropdown && (
           // <span className={Styles.CurrencyLabel}>
           //   {icon} {label}

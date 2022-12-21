@@ -99,10 +99,7 @@ const Pools: React.FC = () => {
                     </tbody>
                     
                 ) : (
-                    <tbody>
-                        <tr className={Styles.EmptyMarketsMessage}>No pools to show</tr>
-                    </tbody>
-                    
+                    <tr className={Styles.EmptyMarketsMessage}>No pools to show</tr>
                 )}
             </table>
               {pools.length > 0 && (

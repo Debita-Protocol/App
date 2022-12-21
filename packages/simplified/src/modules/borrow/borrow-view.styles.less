@@ -42,6 +42,9 @@
   flex: 1 1;
   justify-content: center;
   align-items: center;
+  border-color: var(--theme-border);
+  border-width:@size-1;
+  border-style:solid;
   > table {
     border-collapse: separate;
       border-spacing: 0px 16px;
@@ -274,11 +277,8 @@
   height: 30%;
   border-radius: @size-8;
   padding: @size-4;
-  > div:first-of-type {
-    font-size: @size-16;
-    font-weight: @weight-bold;
-    padding: @size-4;
-  }
+  border: @size-1 solid var(--theme-border);
+  background-color: var(--primary-bg);
   >section {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -293,6 +293,9 @@
           .text-16-semi-bold;
     
           color: var(--secondary-text);
+          font-style: normal;
+          font-size: 0.75rem;
+          font-weight:400;
           margin-bottom: @size-8;
           grid-column: 1 / span 2;
         }
