@@ -24,6 +24,12 @@ import { isDataTooOld } from "./date-utils";
 import VaultABI from "../data/vault.json";
 
 
+type NumStrBigNumber = number | BN | string;
+
+function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
+    return new BN(n).dividedBy(new BN(10).pow(new BN(p))).decimalPlaces(d).toString();
+}
+
 export const getContractData = async (account: string, provider: Web3Provider): Promise<{
     vaults: VaultInfos, 
     markets: CoreMarketInfos, 
@@ -66,9 +72,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         let default_params = {} as any;
         for (const [key, value] of Object.entries(vaultBundle.default_params)) {
             if (!isNumeric(key)) {
-                default_params[key] = value.toString();
+                default_params[key] = toDisplay(value.toString());
             }
-            
         }
 
         //let want = structuredClone(vaultBundle.want);
@@ -88,10 +93,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             onlyVerified: vaultBundle.onlyVerified,
             want: want,
             default_params: default_params,
-            r: vaultBundle.r.toString(),
-            asset_limit: vaultBundle.asset_limit.toString(),
-            total_asset_limit: vaultBundle.total_asset_limit.toString(),
-            totalShares: vaultBundle.totalShares.toString(),
+            r: toDisplay(vaultBundle.r.toString()),
+            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
+            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
+            totalShares: toDisplay(vaultBundle.totalShares.toString()),
             name: vaultBundle.name
         });
 
@@ -101,7 +106,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             let parameters = {} as any;
             for (const [key, value] of Object.entries(m.parameters)) {
                 if (!isNumeric(key)) {
-                    parameters[key] = value.toString();
+                    parameters[key] = toDisplay(value.toString());
                 }
             }
 
@@ -116,12 +121,12 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     phase: m.phase,
                     longZCB: m.longZCB,
                     shortZCB: m.shortZCB,
-                    approved_principal: m.approved_principal.toString(),
-                    approved_yield: m.approved_yield.toString(),
-                    longZCBprice: m.longZCBprice.toString(),
-                    longZCBsupply: m.longZCBsupply.toString(),
-                    redemptionPrice: m.redemptionPrice.toString(),
-                    totalCollateral: m.totalCollateral.toString(),
+                    approved_principal: toDisplay(m.approved_principal.toString()),
+                    approved_yield: toDisplay(m.approved_yield.toString()),
+                    longZCBprice: toDisplay(m.longZCBprice.toString()),
+                    longZCBsupply: toDisplay(m.longZCBsupply.toString()),
+                    redemptionPrice: toDisplay(m.redemptionPrice.toString()),
+                    totalCollateral: toDisplay(m.totalCollateral.toString()),
                 }
             );
 
@@ -130,6 +135,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             for (const [key, value] of Object.entries(instr.poolData)) {
                 if (!isNumeric(key)) {
                     poolData[key] = value.toString();
+                    if (key !== "inceptionTime") {
+                        poolData[key] = toDisplay(poolData[key]);
+                    }
                 }
             }
 
@@ -141,10 +149,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     utilizer: instr.utilizer,
                     trusted: instr.trusted,
                     isPool: instr.isPool,
-                    balance: instr.balance.toString(),
-                    faceValue: instr.faceValue.toString(),
-                    principal: instr.principal.toString(),
-                    expectedYield: instr.expectedYield.toString(),
+                    balance: toDisplay(instr.balance.toString()),
+                    faceValue: toDisplay(instr.faceValue.toString()),
+                    principal: toDisplay(instr.principal.toString()),
+                    expectedYield: toDisplay(instr.expectedYield.toString()),
                     duration: instr.duration.toString(),
                     description: instr.description,
                     address: instr.instrument_address,
@@ -184,7 +192,7 @@ export const getRammData = async (
     // console.log("vaults", vaults);
     const controller = new Contract(controller_address, ControllerABI.abi, provider);
     
-    const reputationScore = (await controller.trader_scores(account)).toString();
+    const reputationScore = toDisplay((await controller.trader_scores(account)).toString());
     // console.log("reputationScore", reputationScore);
 
     // get vault balances
@@ -196,8 +204,8 @@ export const getRammData = async (
         const baseBalance = await base.balanceOf(account);
         Object.assign(vaultBalances, {
             [key]: {
-                shares: balance.toString(),
-                base: baseBalance.toString()
+                shares: toDisplay(balance.toString()),
+                base: toDisplay(baseBalance.toString(), value.want.decimals)
             }
         })
     }
@@ -213,14 +221,14 @@ export const getRammData = async (
 
         Object.assign(zcbBalances, {
             [key]: {
-                longZCB: longZCBBalance.toString(),
-                shortZCB: shortZCBBalance.toString()
+                longZCB: toDisplay(longZCBBalance.toString()),
+                shortZCB: toDisplay(shortZCBBalance.toString())
             }
         })
     };
-    console.log("reputationScore", reputationScore);
-    console.log("vaultBalances", vaultBalances);
-    console.log("zcbBalances", zcbBalances);
+    // console.log("reputationScore", reputationScore);
+    // console.log("vaultBalances", vaultBalances);
+    // console.log("zcbBalances", zcbBalances);
     
     return {
         reputationScore,

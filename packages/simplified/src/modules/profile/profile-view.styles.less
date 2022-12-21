@@ -1,14 +1,126 @@
 @import (reference) '~assets/styles/shared';
 
 .ProfileView {
+    display: grid;
+    padding: @size-40 @size-88 @size-48;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows:auto;
+    height:85%;
+    > div {
+        grid-column: span 2;
+        display: flex;
+        width: 100%;
+        flex-flow: column nowrap;
+        justify-content: flex-start;
+        // padding: @size-20 @size-16;
+    }
+}
+
+.UserDetailsView {
+    height: @size-80;
+    
+    padding: 0;    
+    grid-column: span 1;
+    
+
+    > div {
+        background: var(--primary-bg);
+        border: @size-1 solid var(--theme-border);
+        border-radius: @size-8;
+        position: relative;
+        align-items: center;
+        display: flex;
+        flex-flow: column nowrap;
+        padding: @size-10;
+        margin-top: auto;
+        margin-bottom: auto;
+        > span:first-of-type {
+            .text-24-semi-bold;
+            color: var(--secondary-text);
+        }
+        > span:last-of-type {
+            
+            .text-36-semi-bold;
+            color: var(--primary-text);
+      }
+    }
+}
+
+.UserVaultInfo {
     display: flex;
     flex-flow: column nowrap;
-    padding: @size-40 @size-88 @size-48;
-    align-items: center;
-    > span {
-        align-items:center;
-    };
-    div {
-        padding-top: @size-30;
+    align-items: flex-start;
+    width:100%;
+    margin-left: 12%;
+    > h2 {
+        .text-24-semi-bold;
+        color: var(--primary-text);
+        margin-bottom: @size-10;
+        
     }
+    > div {
+        display: flex;
+        flex-flow: column nowrap;
+        width:90%;
+        margin-bottom: @size-22;
+    }
+
+}
+
+.UserMarketInfo {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    padding: @size-20 @size-16;
+    width:100%;
+    > div {
+        border: @size-1 solid var(--theme-border);
+        display: flex;
+        flex-flow: column nowrap;
+        border-radius:@size-8;
+        width:100%;
+    }
+    margin: @size-20 @size-16;
+}
+
+.UserVaultCard {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: @size-20 @size-16;
+    border: @size-1 solid var(--theme-border);
+    border-radius:@size-8;
+    background-color: var(--primary-bg);
+    .HoverDropShadow;
+    
+    > div:first-of-type {
+        > span {
+            color: var(--primary-text);
+            .text-14-semi-bold;
+        }
+    }
+    > div {
+        > span:first-of-type {
+            font-size:@size-26;
+        }
+        >span:last-of-type {
+            font-size:@size-26;
+        }
+    }
+}
+
+.UserMarketCard {
+    display: flex;
+}
+
+.EmptyMarketsMessage {
+    .EmptyMessage;
+  
+    background: var(--primary-bg);
+    padding: @size-20 @size-16;
+    display: flex;
+    text-align: center;
+    border-radius: @size-8;
+    grid-column: span 3;
 }
