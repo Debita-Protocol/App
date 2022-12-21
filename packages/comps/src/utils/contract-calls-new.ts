@@ -41,8 +41,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
     for (let i = 1; i < numVaults.toNumber()+1; i++) {
         const { vaultBundle, marketBundle, instrumentBundle, timestamp } = await fetcher.fetchInitial(
             controller_address, 
-            market_manager_address, 
-            vault_factory_address, 
+            market_manager_address,
             i
         );
         console.log("i: ", i);
@@ -78,7 +77,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         want.displayDecimals = 6;
 
         // add vault
-        let vault: VaultInfo =Object.assign ({}, {
+        let vault: VaultInfo = Object.assign ({}, {
             address: vaultBundle.vault_address,
             vaultId: vaultBundle.vaultId.toString(),
             marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
@@ -88,7 +87,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             r: vaultBundle.r.toString(),
             asset_limit: vaultBundle.asset_limit.toString(),
             total_asset_limit: vaultBundle.total_asset_limit.toString(),
-            totalShares: vaultBundle.totalShares.toString()
+            totalShares: vaultBundle.totalShares.toString(),
+            name: vaultBundle.name
         });
 
         for (let j = 0; j < marketBundle.length; j++) {
@@ -113,7 +113,11 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     longZCB: m.longZCB,
                     shortZCB: m.shortZCB,
                     approved_principal: m.approved_principal.toString(),
-                    approved_yield: m.approved_yield.toString()
+                    approved_yield: m.approved_yield.toString(),
+                    longZCBprice: m.longZCBprice.toString(),
+                    longZCBsupply: m.longZCBsupply.toString(),
+                    redemptionPrice: m.redemptionPrice.toString(),
+                    totalCollateral: m.totalCollateral.toString(),
                 }
             );
 

@@ -12,7 +12,6 @@ export const TabContent: React.FC = ({id, activeTab, children}) => {
 };
 
 export const TabNavItem: React.FC = ({ id, title, activeTab, setActiveTab }) => {
-  console.log("activeTab", activeTab === id);
     const handleClick = () => {
       setActiveTab(id);
     };

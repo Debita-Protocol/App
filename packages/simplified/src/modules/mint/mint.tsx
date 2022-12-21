@@ -87,51 +87,6 @@ const SearchButton = (props) => (
 
 // const MintView= () => {
   
-<<<<<<< HEAD
-  const { account, loginAccount } = useUserStore();
-  const [ amount, setAmount ] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [filteredMarkets, setFilteredMarkets] = useState([]);
-  const [filter, setFilter] = useState("");
-  const [page, setPage] = useQueryPagination({
-    itemsPerPage: PAGE_LIMIT,
-    itemCount: filteredMarkets.length,
-  });
-  const [ balance, setBalance ] = useState("0.0");
-
-  const handleSubmit = async (e: any) => { 
-    //await mintVaultDS(account, loginAccount.library, amount, true);
-  }
-
-  const getBalance = useCallback(async () => {
-    let result = await getVaultTokenBalance(account, loginAccount.library);
-    //console.log("balance: ", result);
-    setBalance(result);
-  });
-
-  useEffect(() => {
-    if (account && loginAccount.library) {
-      getBalance();
-    }
-  }, [account, loginAccount])
-
-  useScrollToTopOnMount(page);
-  // console.log('UI markets', markets)
-
-  let changedFilters = 0;
-
-  return (
-    <div
-      className={classNames(Styles.MintView, {
-      })}
-    >
-      <SEO {...MARKETS_LIST_HEAD_TAGS} />
-      <NetworkMismatchBanner />
-
-      <ul>
-
-      </ul>
-=======
 //   const { account, loginAccount } = useUserStore();
 //   const [ amount, setAmount ] = useState("");
 //   const [loading, setLoading] = useState(true);
@@ -144,7 +99,7 @@ const SearchButton = (props) => (
 //   const [ balance, setBalance ] = useState("0.0");
 
 //   const handleSubmit = async (e: any) => { 
-//     await mintVaultDS(account, loginAccount.library, amount, true);
+//     //await mintVaultDS(account, loginAccount.library, amount, true);
 //   }
 
 //   const getBalance = useCallback(async () => {
@@ -175,23 +130,22 @@ const SearchButton = (props) => (
 //       <ul>
 
 //       </ul>
->>>>>>> 2cbcf7b48d7b06a3bc9205bdda5224f636668a00
  
 
-//      <div className = {styleMint.wrapper}> 
-//         <div>
-//           <SUPER_BUTTON />
-//         </div>
-//         <div className = {formStyles.MintForm}>
-//           <div style={{'fontWeight':'750', 'display':'flex', 'justifyContent':'center', 'fontSize':'20px'}}>
-//             Mint DS for USDC
-//           </div>
-//           <ValueLabel large={true} label="Vault Token Balance" value={balance} />
-//           <div style={{ 'padding-left': '1.5rem', 'padding-right': '1.5rem' }}>
-//           <div className={inputStyles.AmountInput}>
-//             <div className={inputStyles.AmountInputField}>
-//               <span>$</span>
-//               <input 
+// //      <div className = {styleMint.wrapper}> 
+// //         <div>
+// //           <SUPER_BUTTON />
+// //         </div>
+// //         <div className = {formStyles.MintForm}>
+// //           <div style={{'fontWeight':'750', 'display':'flex', 'justifyContent':'center', 'fontSize':'20px'}}>
+// //             Mint DS for USDC
+// //           </div>
+// //           <ValueLabel large={true} label="Vault Token Balance" value={balance} />
+// //           <div style={{ 'padding-left': '1.5rem', 'padding-right': '1.5rem' }}>
+// //           <div className={inputStyles.AmountInput}>
+// //             <div className={inputStyles.AmountInputField}>
+// //               <span>$</span>
+// //               <input 
 //                 type="text"
 //                 placeholder="0.0"
 //                 value={ amount }

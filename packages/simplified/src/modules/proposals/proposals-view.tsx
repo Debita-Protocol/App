@@ -18,18 +18,20 @@ const proposal_types = [
 
 const ProposalsView = () => {
     const ProposalLinks = proposal_types.map((proposal_type) => {
-        return <div>
-            <Link to={
-            {
-                pathname: makePath(["proposal", proposal_type.path])
-            }
-        }> 
-        <h3>
-            {proposal_type.title}
-        </h3>
-        <br />
-        </Link>
-        </div>
+        return (
+            <div>
+            <Link className={Styles.ProposalItem} to={
+                {
+                    pathname: makePath(["proposal", proposal_type.path])
+                }
+                }> 
+                <h3>
+                    {proposal_type.title}
+                </h3>
+            </Link>
+            </div>
+            
+        )
     })
     return (
         <>

@@ -425,6 +425,10 @@ export interface CoreMarketInfo {
   phase?: MarketPhaseData;
   longZCB?: string;
   shortZCB?: string;
+  longZCBprice:string;
+  longZCBsupply: string;
+  redemptionPrice: string;
+  totalCollateral: string;
   approved_principal?: string;
   approved_yield?: string;
 }
@@ -440,6 +444,7 @@ export interface VaultInfo {
   total_asset_limit: string;
   want: Cash;
   totalShares: string;
+  name: string;
 };
 
 export interface VaultInfos {

@@ -12,19 +12,16 @@ import {
     Components,
     getCategoryIconLabel,
   } from "@augurproject/comps";
+
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import Styles from "./creditline-proposal-view.styles.less";
-import MarketStyles from "../markets/markets-view.styles.less";
 import { SUPER_BUTTON } from "../common/super-button";
 import { useHistory } from "react-router-dom"
 //import Calendar from 'react-calendar'; => to do later.
-import { DropdownProps } from "@augurproject/comps/build/components/common/selection";
-
-// ALL CURRENCY ADDRESSES ARE JUST USDC
-import { CURRENCY_ADDRESSES } from "../constants";
 import { utils } from "ethers";
 
+import { useDataStore2 } from "@augurproject/comps";
 
 
 const { formatBytes32String } = utils;
@@ -37,28 +34,8 @@ const {
     MarketCardComps: { LoadingMarketCard, MarketCard },
     PaginationComps: { sliceByPage, useQueryPagination, Pagination },
     InputComps: { SearchInput },
-    LabelComps: { NetworkMismatchBanner },
+    LabelComps: { NetworkMismatchBanner }
   } = Components;
-  
-const {
-    SIDEBAR_TYPES,
-    ALL_CURRENCIES,
-    ALL_MARKETS,
-    // currencyItems,
-    marketStatusItems,
-    OPEN,
-    OTHER,
-    POPULAR_CATEGORIES_ICONS,
-    sortByItems,
-    TOTAL_VOLUME,
-    STARTS_SOON,
-    RESOLVED,
-    IN_SETTLEMENT,
-    LIQUIDITY,
-    MARKET_STATUS,
-    TWENTY_FOUR_HOUR_VOLUME,
-    SPORTS,
-  } = Constants;
 
 
 const { addProposal, createCreditLine } = ContractCalls;
@@ -87,6 +64,7 @@ const CreditLineRequestForm = () => {
     loginAccount,
     actions: { addTransaction },
   } = useUserStore();
+  const { vaults } = useDataStore2();
 
   const [ principal, setPrincipal ] = useState("0.0");
   const [ duration, setDuration ] = useState({
@@ -96,10 +74,8 @@ const CreditLineRequestForm = () => {
     minutes: "0",
   });
   const [ inputError, setInputError ] = useState("");
-  const [ showError, setShowError ] = useState(false);
   const [ interestRate, setInterestRate ] = useState("0.0");
   const [ description, setDescription] = useState("");
-  const history = useHistory();
 
   const checkInput = (
     total_duration: BigNumber,
@@ -142,22 +118,13 @@ const CreditLineRequestForm = () => {
     
     // total interest accrued
     let interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
-    console.log("interestRate", interestRate)
-    console.log(new BN(interestRate).toString())
-    console.log("interest: ", interest)
-    console.log("total_duration: ", total_duration)
+
     if (checkInput(
       new BN(total_duration),
       new BN(interest),
       new BN(principal),
       description
     )) {
-      console.log("submitted!")
-      console.log("principal: ", principal)
-      console.log("interestRate: ", interestRate)
-      console.log("total_duration: ", total_duration)
-      console.log("faceVaule: ", new BN(principal).plus(new BN(interest)).toString())
-      console.log("description: ", description)
       let faceValue = new BN(principal).plus(new BN(interest)).toString()
       let instrument_address = await createCreditLine(account, loginAccount.library, principal, interestRate, total_duration, faceValue)
       console.log("instrument address: ", instrument_address);
@@ -186,13 +153,13 @@ const CreditLineRequestForm = () => {
 
   return (
   <>
-    <div className={Styles.CreditlineProposalView}>
-      <SUPER_BUTTON />
+    <div className={Styles.CreditlineProposalForm}>
+      {/* <SUPER_BUTTON /> */}
       <span>
-        CreditLine Creation/Proposal
+        Creditline Proposal Form
       </span>
-      <div className="principal">
-        <label>Principal: </label> <br />
+      <div>
+        <label>Principal: </label>
         <input 
           type="text"
           placeholder="0.0"
@@ -204,8 +171,8 @@ const CreditLineRequestForm = () => {
           }}
         />
       </div>
-      <div className="interest">
-        <label>Interest Rate (Annual) %: </label> <br />
+      <div>
+        <label>Interest Rate (Annual) %: </label>
         <input 
           type="text"
           placeholder="0.0"
@@ -217,7 +184,7 @@ const CreditLineRequestForm = () => {
           }}
         />
       </div>
-      <div className="duration">
+      <div>
         <label>Credit Line Duration: </label> <br />
         <DurationInput label="years" value={duration.years} onChange={(e)=> {
           if (/^\d*$/.test(e.target.value)) {
@@ -240,7 +207,7 @@ const CreditLineRequestForm = () => {
           }
         }}/>
       </div>
-      <div className="description">
+      <div>
         <label>Description: </label> <br />
         <textarea 
         rows="4" 
@@ -252,6 +219,9 @@ const CreditLineRequestForm = () => {
         }
         value= { description }
         ></textarea>
+      </div>
+      <div>
+
       </div>
       <div>
       { inputError }
@@ -280,7 +250,7 @@ const CreditLineProposalView = () => {
   if (!isLogged) {
     return (
       <>
-      <div className={MarketStyles.MarketsView}>
+      <div className={Styles.CreditLineProposalView}>
         <h2>
           Please connect your account to see this page...
         </h2>
@@ -290,7 +260,7 @@ const CreditLineProposalView = () => {
   } else {
     return (
       <>
-      <div className={MarketStyles.MarketsView}>
+      <div className={Styles.CreditLineProposalView}>
         <CreditLineRequestForm />
       </div>
       </>
