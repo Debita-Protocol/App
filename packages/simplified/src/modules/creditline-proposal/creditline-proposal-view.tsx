@@ -3,14 +3,9 @@ import BigNumber, { BigNumber as BN } from "bignumber.js";
 import { calculateTotalDebt } from "utils/interest";
 import {
     useUserStore,
-    useAppStatusStore,
-    useDataStore,
-    useScrollToTopOnMount,
-    SEO,
-    Constants,
     ContractCalls,
     Components,
-    getCategoryIconLabel,
+    InputComps
   } from "@augurproject/comps";
 
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
@@ -22,6 +17,8 @@ import { useHistory } from "react-router-dom"
 import { utils } from "ethers";
 
 import { useDataStore2 } from "@augurproject/comps";
+import { VaultInfos } from "@augurproject/comps/build/types";
+
 
 
 const { formatBytes32String } = utils;
@@ -30,11 +27,7 @@ const { formatBytes32String } = utils;
 const {
     SelectionComps: { SquareDropdown },
     ButtonComps: { SecondaryThemeButton },
-    Icons: { FilterIcon, SearchIcon },
-    MarketCardComps: { LoadingMarketCard, MarketCard },
-    PaginationComps: { sliceByPage, useQueryPagination, Pagination },
-    InputComps: { SearchInput },
-    LabelComps: { NetworkMismatchBanner }
+    InputComps: { TextInput, AmountInput },
   } = Components;
 
 
@@ -52,7 +45,6 @@ const DurationInput = ({onChange, label, value}) => {
         value={ value }
         onChange={ onChange }
       />
-      <br />
     </>
   );
 }
@@ -71,11 +63,13 @@ const CreditLineRequestForm = () => {
     years: "0",
     weeks: "0",
     days: "0",
-    minutes: "0",
+    months: "0",
   });
   const [ inputError, setInputError ] = useState("");
   const [ interestRate, setInterestRate ] = useState("0.0");
   const [ description, setDescription] = useState("");
+  const [ vaultId, setVaultId ] = useState("");
+  const [ defaultVault, setDefaultVault] = useState("");
 
   const checkInput = (
     total_duration: BigNumber,
@@ -146,8 +140,25 @@ const CreditLineRequestForm = () => {
     }
   })
 
+  
+  let vaultOptions = useMemo(() => {
+    let _vaultOptions = [];
+    for (const [id, vault] of Object.entries(vaults as VaultInfos)) {
+      _vaultOptions.push({
+        label: vault.name,
+        value: id
+      });
+    }
+    if (_vaultOptions.length > 0 ) { 
+      setDefaultVault(_vaultOptions[0].value);
+    }
+    return _vaultOptions;
+  }, [vaults]);
+
+  let chosenCash = "USDC"; // vaults[vaultId].want.name; => TODO.
+
   const buttonProps: BaseThemeButtonProps = {
-    text: "Create Credit Line Proposal",
+    text: "Submit",
     action: submitPropsal
   };
 
@@ -155,11 +166,15 @@ const CreditLineRequestForm = () => {
   <>
     <div className={Styles.CreditlineProposalForm}>
       {/* <SUPER_BUTTON /> */}
-      <span>
+      <h3>
         Creditline Proposal Form
-      </span>
+      </h3>
       <div>
-        <label>Principal: </label>
+        <label>Selected Vault: </label>
+        <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
+      </div>
+      <div>
+        {/* <label>Principal: </label>
         <input 
           type="text"
           placeholder="0.0"
@@ -169,10 +184,22 @@ const CreditLineRequestForm = () => {
               setPrincipal(e.target.value)
             }
           }}
+        /> */}
+        <label>Principal: </label>
+        <AmountInput 
+          updateInitialAmount={
+            (val) => {
+              if (/^\d*\.?\d*$/.test(val)) {
+                setPrincipal(val)
+              }
+            }
+          }
+          initialAmount={principal}
+          chosenCash={chosenCash}
         />
       </div>
       <div>
-        <label>Interest Rate (Annual) %: </label>
+        <label>Annual Interest Rate: </label>
         <input 
           type="text"
           placeholder="0.0"
@@ -183,12 +210,18 @@ const CreditLineRequestForm = () => {
             }
           }}
         />
+        % 
       </div>
-      <div>
-        <label>Credit Line Duration: </label> <br />
+      <div className={Styles.Duration}>
+        <label>Duration: </label>
         <DurationInput label="years" value={duration.years} onChange={(e)=> {
           if (/^\d*$/.test(e.target.value)) {
             setDuration((prev) => { return {...prev, years: e.target.value}})
+          }
+        }}/>
+        <DurationInput label="months" value={duration.months} onChange={(e)=> {
+          if (/^\d*$/.test(e.target.value)) {
+            setDuration((prev) => { return {...prev, months: e.target.value}})
           }
         }}/>
         <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
@@ -201,27 +234,20 @@ const CreditLineRequestForm = () => {
             setDuration((prev) => { return {...prev, days: e.target.value}})
           }
         }}/>
-        <DurationInput label="minutes" value={duration.minutes} onChange={(e)=> {
-          if (/^\d*$/.test(e.target.value)) {
-            setDuration((prev) => { return {...prev, minutes: e.target.value}})
-          }
-        }}/>
+        
       </div>
-      <div>
-        <label>Description: </label> <br />
+      <div className={Styles.Description}>
+        <label>Description: </label>
         <textarea 
         rows="4" 
         cols="15" 
-        placeholder="description of creditline..."
+        placeholder=""
         onChange={(e) => {
             setDescription(e.target.value)
           }
         }
         value= { description }
         ></textarea>
-      </div>
-      <div>
-
       </div>
       <div>
       { inputError }
@@ -243,11 +269,15 @@ const CreditLineProposalView = () => {
     loginAccount,
     actions: { addTransaction },
   } = useUserStore();
-  const {
-    isLogged
-  } = useAppStatusStore();
+  
+  // for testing
+  // const {
+  //   isLogged
+  // } = useAppStatusStore();
 
-  if (!isLogged) {
+
+
+  if (false) {
     return (
       <>
       <div className={Styles.CreditLineProposalView}>
