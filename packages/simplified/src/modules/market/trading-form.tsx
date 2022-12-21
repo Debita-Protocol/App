@@ -15,15 +15,16 @@ import {
   useApprovalStatus,
   ApprovalHooks,
   PARA_CONFIG,
+  useDataStore2
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
-import { Slippage, Budget} from "../common/slippage";
+import { Slippage, LimitOrderSelector} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,
   //estimateZCBBuyTrade, 
   redeemZCB, getTraderBudget, getHedgeQuantity,
-   getERCBalance, getVaultTokenBalance} = ContractCalls;
+   getERCBalance, getVaultTokenBalance, tradeZCB} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -149,6 +150,7 @@ const formatBreakdown = (isBuy: boolean, breakdown: EstimateTradeResult | null, 
 interface TradingFormProps {
   amm: any;
   initialSelectedOutcome: AmmOutcome | any;
+  marketId: string; 
 }
 
 interface CanTradeProps {
@@ -156,8 +158,29 @@ interface CanTradeProps {
   actionText: string;
   subText?: string | null;
 }
+// export interface MarketOutcome {
+//   id: number;
+//   isFinalNumerator?: boolean;
+//   payoutNumerator?: string;
+//   name: string;
+//   symbol?: string;
+//   isInvalid?: boolean;
+//   isWinner?: boolean;
+//   subOutcomes?: SubOutcome[];
+//   marketId?: string;
+// }
 
-const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
+// export interface AmmOutcome extends MarketOutcome {
+//   price: string;
+//   ratioRaw: string;
+//   ratio: string;
+//   balanceRaw: string;
+//   balance: string;
+//   marketId?: string;
+//   shareToken?: string;
+//   defaultPrice?: string;
+// }
+const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const {
@@ -174,16 +197,21 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
   const [orderType, setOrderType] = useState(BUY);
   const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
   const [breakdown, setBreakdown] = useState<EstimateTradeResult | null>(null);
+  // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2()
 
   //
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
 
-  //
+
+  // const outcome = {} as AmmOutcome;
+  // const outcome2 = {} as AmmOutcome; 
+  // const outcomes = [outcome, outcome2];
+  const outcomes = [] 
 
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);
-  const outcomes = amm?.ammOutcomes || [];
+  // const outcomes = amm?.ammOutcomes || [];
   const isBuy = orderType === BUY;
   const approvalAction = isBuy ? ApprovalAction.ENTER_POSITION : ApprovalAction.EXIT_POSITION;
   const outcomeShareToken = selectedOutcome?.shareToken;
@@ -300,8 +328,9 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
       actionText = ENTER_AMOUNT;
       disabled = true;
     } else if (new BN(amount).gt(new BN(userBalance))) {
-      actionText = `Insufficient ${isBuy ? ammCash.name : "Share"} Balance`;
-      disabled = true;
+      // actionText = `Insufficient ${isBuy ? ammCash.name : "Share"} Balance`;
+      actionText = `Insufficient Underlying Balance`; 
+      disabled = false;
     } else if (breakdown?.maxSellAmount && breakdown?.maxSellAmount !== "0") {
       actionText = INSUFFICIENT_LIQUIDITY;
       subText = `Max Shares to Sell ${breakdown?.maxSellAmount}`;
@@ -339,10 +368,15 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
     const direction = isBuy ? TradingDirection.ENTRY : TradingDirection.EXIT;
     setWaitingToSign(false);
     setShowTradingForm(false);
-    doZCBTrade(account, loginAccount.library, amm.turboId, amount).then((response)=>{
+    tradeZCB(account, loginAccount.library, marketId, amount, true ,false ).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
         console.log('Trading Error', error)
       });
+    
+    // doZCBTrade(account, loginAccount.library, amm.turboId, amount).then((response)=>{
+    //   console.log('tradingresponse', response)}).catch((error)=>{
+    //     console.log('Trading Error', error)
+    //   });
     // doTrade(
     //   direction,
     //   loginAccount?.library,
@@ -428,10 +462,13 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
             setAmount("");
           }}
         />
+
         <div>
           <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
         </div>
+              <LimitOrderSelector/>
+
         <div
           onClick={() => {
             setShowTradingForm(false);
@@ -468,8 +505,10 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
           rate={getRate()}
           isBuy={orderType === BUY}
         />
+        <Slippage />
+
         {/* {isBuy && <Slippage />} */}
-        {isBuy && (<Budget 
+        {/*isBuy && (<Budget 
           {...{
             budget:traderBudget, 
             idx:0
@@ -480,7 +519,7 @@ const TradingForm = ({ initialSelectedOutcome, amm }: TradingFormProps) => {
             budget:hedgeQuantity, 
             idx:1
           }}
-          />)}
+          />)*/}
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
         <InfoNumbers infoNumbers={formatBreakdown(isBuy, bondbreakdown, ammCash)} />
 

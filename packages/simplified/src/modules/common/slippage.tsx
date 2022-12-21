@@ -160,7 +160,235 @@ export const Slippage = () => {
   );
 };
 
+export const LimitOrderSelector = ()=> {
+  const {
+    settings: { slippage },
+    actions: { updateSettings },
+  } = useSimplifiedStore();
+  const { account } = useUserStore();
+  const [showSelection, setShowSelection] = useState(false);
 
+  const isSelectedArray = useMemo(() => {
+    let output = [false, false];
+    switch (slippage) {
+      case "Limit": {
+        output[0] = true;
+        break;
+      }
+      case "Taker": {
+        output[1] = true;
+        break;
+      }
+    }
+    return output;
+  }, [slippage]);
+  const [customVal, setCustomVal] = useState(isSelectedArray[4] ? slippage : "");
+  const [error, setError] = useState("");
+  return (
+    <section
+      className={classNames(Styles.Slippage, {
+        [Styles.showSelection]: true,
+        [Styles.HasError]: error,
+      })}
+    >
+     
+      <ul>
+        <div>
+          <li>
+            <TinyThemeButton
+              text="Limit"
+              action={() => {
+                updateSettings({ slippage: "0.5" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[0]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="Taker"
+              action={() => {
+                updateSettings({ slippage: "1" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[1]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+
+          <div
+            className={classNames({
+              [Styles.first]: isSelectedArray[1],
+              [Styles.second]: isSelectedArray[2],
+              [Styles.third]: isSelectedArray[3],
+              [Styles.none]: isSelectedArray[4],
+            })}
+          ></div>
+        </div>
+
+      </ul>
+      {error && <span>{error}</span>}
+    </section>
+  );
+
+
+}
+
+export const Leverage = () => {
+  const {
+    settings: { slippage },
+    actions: { updateSettings },
+  } = useSimplifiedStore();
+  const { account } = useUserStore();
+  const [showSelection, setShowSelection] = useState(false);
+
+  const isSelectedArray = useMemo(() => {
+    let output = [false, false, false, false, false];
+    switch (slippage) {
+      case "0.5": {
+        output[0] = true;
+        break;
+      }
+      case "1": {
+        output[1] = true;
+        break;
+      }
+      case "2": {
+        output[2] = true;
+        break;
+      }
+      case "3": {
+        output[3] = true;
+        break;
+      }
+      default: {
+        output[4] = true;
+        break;
+      }
+    }
+    return output;
+  }, [slippage]);
+  const [customVal, setCustomVal] = useState(isSelectedArray[4] ? slippage : "");
+  const [error, setError] = useState("");
+
+  return (
+    <section
+      className={classNames(Styles.Slippage, {
+        [Styles.showSelection]: showSelection,
+        [Styles.HasError]: error,
+      })}
+    >
+      <label onClick={() => setShowSelection(!showSelection)}>
+        Leverage
+        {generateTooltip(
+          "Amount of leveraged exposure to this vault's instruments. Default Leverage is 1. Any other leverage will mint NFTs instead of ERC20",
+          "slippageToleranceInfo"
+        )}
+        <span>{slippage}%</span>
+        <ChevronFlip pointDown={showSelection} />
+      </label>
+      <ul>
+        <div>
+          <li>
+            <TinyThemeButton
+              text="0.5%"
+              action={() => {
+                updateSettings({ slippage: "0.5" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[0]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="1%"
+              action={() => {
+                updateSettings({ slippage: "1" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[1]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="2%"
+              action={() => {
+                updateSettings({ slippage: "2" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[2]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="3%"
+              action={() => {
+                updateSettings({ slippage: "3" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[3]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <div
+            className={classNames({
+              [Styles.first]: isSelectedArray[1],
+              [Styles.second]: isSelectedArray[2],
+              [Styles.third]: isSelectedArray[3],
+              [Styles.none]: isSelectedArray[4],
+            })}
+          ></div>
+        </div>
+        <li>
+          <div
+            className={classNames({
+              [Styles.Selected]: isSelectedArray[4] === true,
+            })}
+          >
+            <input
+              type="number"
+              step="0.1"
+              value={customVal}
+              onChange={(v) => {
+                const val = v.target.value;
+                setCustomVal(val);
+                if (!(val === "" || isNaN(Number(val)) || Number(val) > 1000 || Number(val) <= 0)) {
+                  setError("");
+                  updateSettings({ slippage: val }, account);
+                } else if (val === "") {
+                  setError("");
+                  updateSettings({ slippage: 0 }, account);
+                } else {
+                  setError("Enter a valid slippage percentage");
+                }
+              }}
+              placeholder="Custom"
+              max="1000"
+              min="0.1"
+            />
+          </div>
+        </li>
+      </ul>
+      {error && <span>{error}</span>}
+    </section>
+  );
+};
 
 
 export const Budget = ({budget, idx}:{budget: string, idx:number  }) => {

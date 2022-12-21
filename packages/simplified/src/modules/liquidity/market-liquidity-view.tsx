@@ -19,6 +19,8 @@ import {
   useScrollToTopOnMount,
   useDataStore2
 } from "@augurproject/comps";
+import {  AddMetaMaskToken } from "../common/labels";
+import { Slippage, Leverage} from "../common/slippage";
 
 import { InstrumentInfos, VaultInfos, CoreInstrumentData , AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -54,7 +56,7 @@ const {
   estimateResetPrices,
   doResetPrices,
   mintVaultDS,
-faucetUnderlying 
+faucetUnderlying , redeemVault
 } = ContractCalls;
 const {
   PathUtils: { makePath, parseQuery },
@@ -159,6 +161,11 @@ export const MarketLiquidityView = () => {
   if (!vault) {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
+  console.log('vault', vault); 
+  const vault_address = vault?.address;
+  const underlying_address = vault?.want.address; 
+  const underlyingSymbol = vault?.want.symbol; 
+
   // const { categories } = market;
   const BackToLPPageAction = () => {
     history.push({
@@ -180,9 +187,10 @@ export const MarketLiquidityView = () => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Market Details</h4>
+          <h4>Vault Details</h4>
             <p>{"DETAILS"}</p>
-          
+          <AddMetaMaskToken tokenSymbol = {"Vault"+vaultId} tokenAddress={vault_address}  />
+          <AddMetaMaskToken tokenSymbol = {underlyingSymbol} tokenAddress={vault_address}  />          
           {(
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
@@ -194,19 +202,46 @@ export const MarketLiquidityView = () => {
 
       <ul className={Styles.StatsRow}>
 <li>
+            <span>TVL</span>
+            <span>{formatDai(100000000/4.2/1000000  || "0.00").full}</span>
+            <span>{formatDai(100000000/5/1000000 || "0.00").full}</span>
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>(Estimated) APR</span>
+            <span>{formatDai(0.818 || "0.00").full}</span>
+
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Number of Instruments</span>
+            <span>{"Resolved"}</span>
+          </li>
+
+          <li>
+            <span>Vault Type</span>
+            <span>{formatDai(100000000/1000000 || "0.00").full}</span>
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
+          </li>
+        {/*inception price,inception time, current value prices, current mark prices*/}
+
+        </ul>
+
+      <ul className={Styles.StatsRow}>
+<li>
             <span>Underlying</span>
             <span>{formatDai(100000000/4.2/1000000  || "0.00").full}</span>
             <span>{formatDai(100000000/5/1000000 || "0.00").full}</span>
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Vault(s) </span>
+            <span>Manager's Leverage</span>
             <span>{formatDai(0.818 || "0.00").full}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Junior Weight</span>
+            <span></span>
             <span>{"Resolved"}</span>
           </li>
 
@@ -219,8 +254,8 @@ export const MarketLiquidityView = () => {
 
         </ul>
 
-
-     
+        <h4></h4>
+     <h4>Vault Performance</h4>
 
         </div> 
         <MintForm {...{vaultId, selectedAction, setSelectedAction, amount, setAmount}}/>
@@ -365,6 +400,12 @@ const confirmMintVault = async({
   await mintVaultDS(account, loginAccount.library, vaultId, amount); 
  
 }
+const confirmRedemVault = async({
+  account, loginAccount, vaultId, amount
+})=>{
+  await  redeemVault(account, loginAccount.library, vaultId, amount); 
+  
+}
 const faucet = async({
   account, loginAccount
 })=>{
@@ -404,7 +445,7 @@ const MintForm = ({
 
   const [outcomes, setOutcomes] = useState<AmmOutcome[]>(orderOutcomesForDisplay(initialOutcomes));
 
-  const [chosenCash, updateCash] = useState<string>(USDC);
+  const [chosenCash, updateCash] = useState<string>(vaults[vaultId].want.name);
   const [breakdown, setBreakdown] = useState(defaultAddLiquidityBreakdown);
   const [estimatedLpAmount, setEstimatedLpAmount] = useState<string>("0");
   const setPrices = (price, index) => {
@@ -412,6 +453,7 @@ const MintForm = ({
     newOutcomes[index].price = price;
     setOutcomes([...newOutcomes]);
   };
+  const amountLabel = !isRemove? "Shares": vaults[vaultId]?.want.symbol; 
     const approvalActionType = ApprovalAction.MINT_SETS
     // isRemove
     // ? ApprovalAction.REMOVE_LIQUIDITY
@@ -489,8 +531,8 @@ const MintForm = ({
 
         </div>
         <section className={Styles.BreakdownAndAction}>
-                 <AmountInput
-          heading="Deposit Amount"
+        <AmountInput
+          heading={!isRemove?"Deposit Amount": "Redeem Amount"}
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
           initialAmount={amount}
@@ -501,20 +543,21 @@ const MintForm = ({
           disabled = {false}
           //error={hasAmountErrors}
         />
+        <Leverage/>
           {isResetPrices && (
             <>
               <div className={Styles.Breakdown}>
-                <span>New Prices</span>
+                <span>Estimated APR</span>
                 {/*<InfoNumbers infoNumbers={resetPricesInfoNumbers} />*/}
               </div>
               <div className={Styles.Breakdown}>
-                <span>USDC Needed to reset the prices</span>
+                <span>You'll receive</span>
                 <InfoNumbers
                   infoNumbers={[
                     {
-                      label: "amount",
-                      value: `${formatCash(amount, USDC).full}`,
-                      svg: USDCIcon,
+                      label: amountLabel,
+                      value:`${formatCash(amount, USDC).full}`,
+                      //svg: USDCIcon,
                     },
                   ]}
                 />
@@ -531,8 +574,8 @@ const MintForm = ({
                 }
               />
             )}
-            <span>{isRemove ? "Remove All Liquidity" : "You'll Receive"}</span>
-            <InfoNumbers infoNumbers={infoNumbers} />
+        { /* <span>{isRemove ? "Remove All Liquidity" : "You'll Receive"}</span>
+                  <InfoNumbers infoNumbers={infoNumbers} /> */}
           </div>
           <div className={Styles.ActionButtons}>
             {!isApproved && (
@@ -549,7 +592,8 @@ const MintForm = ({
               // />
             )}
             <SecondaryThemeButton
-              action={()=> confirmMintVault({account, loginAccount, vaultId, amount}) }
+              action={ ()=> !isRemove? confirmMintVault({account, loginAccount, vaultId, amount}):
+              confirmRedemVault({account, loginAccount, vaultId, amount}) }
 
               // action={() =>
               //   setModal({
@@ -677,7 +721,7 @@ const MintForm = ({
               // }
               disabled={false}//!isApproved || inputFormError !== ""}
               error={inputFormError}//buttonError}
-              text={"Mint"
+              text={!isRemove?"Mint": "Redeem"
                 //inputFormError === "" ? (buttonError ? buttonError : actionButtonText) : inputFormError}
               }
               subText={"subtext"
@@ -934,7 +978,7 @@ const LiquidityForm = ({
           {isResetPrices && (
             <>
               <div className={Styles.Breakdown}>
-                <span>New Prices</span>
+                <span>Estimated APR</span>
                 <InfoNumbers infoNumbers={resetPricesInfoNumbers} />
               </div>
               <div className={Styles.Breakdown}>

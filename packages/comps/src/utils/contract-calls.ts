@@ -181,7 +181,7 @@ export interface CorePoolData_ {
   
 }
 
-export async function setUpManager(
+export async function setUpTestManager(
   account: string, 
   library: Web3Provider
   ) {
@@ -189,6 +189,8 @@ export async function setUpManager(
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
   await controller.testVerifyAddress(); 
+  await controller._incrementScore(account, pp); 
+
 }
 
 export async function tradeZCB(
@@ -203,7 +205,9 @@ export async function tradeZCB(
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
-  await controller.testVerifyAddress(); 
+  // await controller.testVerifyAddress(); 
+  // await controller._incrementScore(account, pp.mul(10)); 
+  await controller._incrementScore("0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e", pp); 
 
   if (underlyingAddress=="") underlyingAddress = cash_address; 
 
@@ -212,9 +216,12 @@ export async function tradeZCB(
     marketmanagerabi["abi"], getProviderOrSigner(library, account));
   const scaledAmount = pp.mul(amount); 
   if (long){
-    await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
+    const budget = await marketmanager.getTraderBudget(marketId, account); 
+    console.log('budget', budget.toString()); 
+
+    // await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
     await marketmanager.buyBond(marketId, scaledAmount, pp.mul(100), 0); 
-    
+
   }
   else{
 
@@ -341,6 +348,23 @@ export const faucetUnderlying = async (account: string, library: Web3Provider) =
   // const collateral = Cash__factory.connect(usdcContract, getProviderOrSigner(library, account));
   // await collateral.faucet(String(amount));
 };
+
+export async function redeemVault(
+  account: string,
+  library: Web3Provider,
+  vaultId: string, 
+  redeemAmount: string //in shares
+  // not_faucet: boolean = false
+  ){
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+  const vaultAd = await controller.getVaultfromId(vaultId); 
+  const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
+  const scaledAmount = pp.mul(redeemAmount);
+   
+  await vault.redeem(scaledAmount, account, account); 
+}
 
 
 export async function mintVaultDS(
