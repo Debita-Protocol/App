@@ -142,6 +142,7 @@ export function UserReducer(state, action) {
     }
     case UPDATE_RAMM_DATA: {
       updatedState["ramm"] = action.ramm;
+      break;
     }
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);

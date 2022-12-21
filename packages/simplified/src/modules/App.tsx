@@ -20,7 +20,8 @@ import {
   PathUtils,
   Constants,
   windowRef,
-  Components
+  Components,
+  useUserStore
 } from "@augurproject/comps";
 import { SimpleFooter } from "./common/simple-footer";
 const { MARKET, PORTFOLIO } = Constants;
@@ -51,7 +52,10 @@ const AppBody = () => {
 
   // RAMM
   const { vaults, markets: _markets } = useDataStore2();
+
   useRammData({blocknumber, vaults, markets: _markets, isWalletRpc});
+  const { ramm } = useUserStore();
+  console.log("ramm", ramm);
 
   useEffect(() => {
     const parsedQueryString = parseQuery(window.location.search);

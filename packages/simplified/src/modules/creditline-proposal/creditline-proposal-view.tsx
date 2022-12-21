@@ -60,10 +60,10 @@ const CreditLineRequestForm = () => {
 
   const [ principal, setPrincipal ] = useState("0.0");
   const [ duration, setDuration ] = useState({
-    years: "0",
-    weeks: "0",
-    days: "0",
-    months: "0",
+    years: "",
+    weeks: "",
+    days: "",
+    months: "",
   });
   const [ inputError, setInputError ] = useState("");
   const [ interestRate, setInterestRate ] = useState("0.0");

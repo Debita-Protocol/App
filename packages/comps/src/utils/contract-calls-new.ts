@@ -179,21 +179,26 @@ export const getRammData = async (
     blocknumber: number
 ): Promise<CoreUserState> => {
     // get reputation score
-    console.log("account", account);
-    console.log("provider", provider);
-    console.log("vaults", vaults);
+    // console.log("account", account);
+    // console.log("provider", provider);
+    // console.log("vaults", vaults);
     const controller = new Contract(controller_address, ControllerABI.abi, provider);
     
     const reputationScore = (await controller.trader_scores(account)).toString();
-    console.log("reputationScore", reputationScore);
+    // console.log("reputationScore", reputationScore);
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
     for (const [key, value] of Object.entries(vaults)) {
         const vault = new Contract(value.address, VaultABI.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
+        const base = new Contract(value.want.address, ERC20ABI.abi, getProviderOrSigner(provider, account));
+        const baseBalance = await base.balanceOf(account);
         Object.assign(vaultBalances, {
-            [key]: balance.toString()
+            [key]: {
+                shares: balance.toString(),
+                base: baseBalance.toString()
+            }
         })
     }
 

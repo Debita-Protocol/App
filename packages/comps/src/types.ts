@@ -888,7 +888,10 @@ export interface CoreUserState {
 }
 
 export interface VaultBalances {
-  [vaultId: string]: string;
+  [vaultId: string]: {
+    base: string;
+    shares: string;
+  };
 }
 export interface ZCBBalances {
   [marketId: string]: {
