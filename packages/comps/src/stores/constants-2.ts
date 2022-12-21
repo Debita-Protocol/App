@@ -92,7 +92,12 @@ export const DEFAULT_USER_STATE: UserState = {
     expiryDate: null,
     stamps: []
   },
-  activePassport: false
+  activePassport: false,
+  ramm: {
+    vaultBalances: {},
+    zcbBalances: {},
+    reputationScore: ""
+  }
 };
 
 export const USER_KEYS = {

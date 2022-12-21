@@ -1,6 +1,7 @@
 import { BigNumber as BN } from "bignumber.js";
 import {
-    CoreMarketInfo, VaultInfos, CoreMarketInfos, InstrumentInfos, VaultInfo, CoreInstrumentData
+    CoreMarketInfo, VaultInfos, CoreMarketInfos, InstrumentInfos, VaultInfo, CoreInstrumentData,
+    CoreUserState, VaultBalances, ZCBBalances
 } from "../types";
 
 import {
@@ -13,12 +14,15 @@ import ControllerABI from "../data/controller.json";
 import MarketManagerABI from "../data/marketmanager.json";
 import VaultFactoryABI from "../data/VaultFactory.json";
 import FetcherABI from "../data/Fetcher.json";
+import ERC20ABI from "../data/ERC20.json";
 import { BigNumber } from "ethers";
 import { getProviderOrSigner } from "../components/ConnectAccount/utils";
 
 import { Contract } from "@ethersproject/contracts";
 import {TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
+import VaultABI from "../data/vault.json";
+
 
 export const getContractData = async (account: string, provider: Web3Provider): Promise<{
     vaults: VaultInfos, 
@@ -44,11 +48,11 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             market_manager_address,
             i
         );
-        console.log("i: ", i);
-        console.log("vaultBundle", vaultBundle);
-        console.log("marketBundle", marketBundle);
-        console.log("instrumentBundle", instrumentBundle);
-        console.log("timestamp", timestamp);
+        // console.log("i: ", i);
+        // console.log("vaultBundle", vaultBundle);
+        // console.log("marketBundle", marketBundle);
+        // console.log("instrumentBundle", instrumentBundle);
+        // console.log("timestamp", timestamp);
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
               "node returned data too old",
@@ -162,7 +166,60 @@ export const getContractData = async (account: string, provider: Web3Provider): 
 }
 
 function isNumeric(str) {
-    if (typeof str != "string") return false // we only process strings!  
+    if (typeof str != "string") return false // we only process strings!
     return !Number.isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
            !Number.isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
   }
+
+export const getRammData = async (
+    account: string, 
+    provider: Web3Provider,
+    vaults: VaultInfos,
+    markets: CoreMarketInfos,
+    blocknumber: number
+): Promise<CoreUserState> => {
+    // get reputation score
+    console.log("account", account);
+    console.log("provider", provider);
+    console.log("vaults", vaults);
+    const controller = new Contract(controller_address, ControllerABI.abi, provider);
+    
+    const reputationScore = (await controller.trader_scores(account)).toString();
+    console.log("reputationScore", reputationScore);
+
+    // get vault balances
+    let vaultBalances: VaultBalances = {};
+    for (const [key, value] of Object.entries(vaults)) {
+        const vault = new Contract(value.address, VaultABI.abi, getProviderOrSigner(provider, account));
+        const balance = await vault.balanceOf(account);
+        Object.assign(vaultBalances, {
+            [key]: balance.toString()
+        })
+    }
+
+    // get zcb balances
+    let zcbBalances: ZCBBalances = {};
+    for (const [key, market] of Object.entries(markets as CoreMarketInfos)) {
+        const { longZCB, shortZCB } = market;
+        const longZCBContract = new Contract(longZCB, ERC20ABI.abi, getProviderOrSigner(provider, account));
+        const shortZCBContract = new Contract(shortZCB, ERC20ABI.abi, getProviderOrSigner(provider, account));
+        const longZCBBalance = await longZCBContract.balanceOf(account);
+        const shortZCBBalance = await shortZCBContract.balanceOf(account);
+
+        Object.assign(zcbBalances, {
+            [key]: {
+                longZCB: longZCBBalance.toString(),
+                shortZCB: shortZCBBalance.toString()
+            }
+        })
+    };
+    console.log("reputationScore", reputationScore);
+    console.log("vaultBalances", vaultBalances);
+    console.log("zcbBalances", zcbBalances);
+    
+    return {
+        reputationScore,
+        vaultBalances,
+        zcbBalances,
+    }
+}

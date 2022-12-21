@@ -15,6 +15,8 @@ import {
   useAppStatusStore,
   useFinalizeUserTransactions,
   useUserBalances,
+  useRammData,
+  useDataStore2,
   PathUtils,
   Constants,
   windowRef,
@@ -46,6 +48,10 @@ const AppBody = () => {
 
   useUserBalances({ ammExchanges, blocknumber, cashes, markets, transactions, isWalletRpc });
   useFinalizeUserTransactions(blocknumber);
+
+  // RAMM
+  const { vaults, markets: _markets } = useDataStore2();
+  useRammData({blocknumber, vaults, markets: _markets, isWalletRpc});
 
   useEffect(() => {
     const parsedQueryString = parseQuery(window.location.search);

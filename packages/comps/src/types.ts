@@ -875,8 +875,28 @@ export interface UserState {
   transactions: TransactionDetails[];
   verificationStatus?: boolean;
   passport?: Passport;
-  activePassport?: boolean
+  activePassport?: boolean;
+  ramm: CoreUserState;
 }
+
+// reputation score, vault balances, zcb balances, loans
+export interface CoreUserState {
+  reputationScore: string;
+  vaultBalances: VaultBalances;
+  zcbBalances: ZCBBalances;
+  //loans here idk how to get them though.
+}
+
+export interface VaultBalances {
+  [vaultId: string]: string;
+}
+export interface ZCBBalances {
+  [marketId: string]: {
+    longZCB: string;
+    shortZCB: string;
+  };
+}
+
 
 export interface TransactionDetails {
   chainId: string;

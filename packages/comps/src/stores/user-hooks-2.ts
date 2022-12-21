@@ -1,7 +1,7 @@
 import { dispatchMiddleware, getSavedUserInfo } from "./utils";
 import { useReducer } from "react";
 import { windowRef } from "../utils/window-ref";
-import { USER_ACTIONS, USER_KEYS, DEFAULT_USER_STATE } from "./constants";
+import { USER_ACTIONS, USER_KEYS, DEFAULT_USER_STATE } from "./constants-2";
 import { UserBalances, TransactionDetails, NFTBalances } from "../types";
 import { TX_STATUS } from "../utils/constants";
 import { Passport } from "@gitcoinco/passport-sdk-types";
@@ -14,9 +14,7 @@ const {
   UPDATE_SEEN_POSITION_WARNING,
   ADD_SEEN_POSITION_WARNINGS,
   SET_LOGIN_ACCOUNT,
-  UPDATE_RAMM_DATA,
   UPDATE_USER_BALANCES,
-  UPDATE_USER_NFT_BALANCES,
   UPDATE_TRANSACTION,
   LOGOUT,
   UPDATE_VERIFICATION_STATUS,
@@ -92,9 +90,6 @@ export function UserReducer(state, action) {
       updatedState[BALANCES] = action.userBalances;
       break;
     }
-    case UPDATE_USER_NFT_BALANCES: {
-      updatedState[BALANCES].NFTs = action.nfts;
-    }
     case UPDATE_TRANSACTION: {
       const transactionIndex = updatedState[TRANSACTIONS].findIndex((transaction) => transaction.hash === action.hash);
       if (transactionIndex >= 0) {
@@ -140,9 +135,6 @@ export function UserReducer(state, action) {
       updatedState[SEEN_POSITION_WARNINGS] = action.seenPositionWarnings;
       break;
     }
-    case UPDATE_RAMM_DATA: {
-      updatedState["ramm"] = action.ramm;
-    }
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);
   }
@@ -164,7 +156,6 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
     actions: {
       updateLoginAccount: (account) => dispatch({ type: SET_LOGIN_ACCOUNT, account }),
       updateUserBalances: (userBalances: UserBalances) => dispatch({ type: UPDATE_USER_BALANCES, userBalances }),
-      updateUserNFTBalances: (nfts: NFTBalances) => dispatch({ type: UPDATE_USER_NFT_BALANCES, nfts }),
       updateTransaction: (hash, updates) => dispatch({ type: UPDATE_TRANSACTION, hash, updates }),
       addTransaction: (transaction: TransactionDetails) => dispatch({ type: ADD_TRANSACTION, transaction }),
       removeTransaction: (hash: string) => dispatch({ type: REMOVE_TRANSACTION, hash }),
@@ -181,8 +172,7 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
       logout: () => dispatch({ type: LOGOUT }),
       updateVerificationStatus: (isVerified: boolean) => dispatch({type: UPDATE_VERIFICATION_STATUS, isVerified}),
       updatePassport: (passport: Passport) => dispatch({type: UPDATE_PASSPORT, passport}),
-      updatePassportStatus: (hasPassport: boolean) => dispatch({type: UPDATE_PASSPORT_STATUS , hasPassport}),
-      updateRammData: (ramm: any) => dispatch({type: UPDATE_RAMM_DATA, ramm}),
+      updatePassportStatus: (hasPassport: boolean) => dispatch({type: UPDATE_PASSPORT_STATUS , hasPassport})
     },
   };
 };
