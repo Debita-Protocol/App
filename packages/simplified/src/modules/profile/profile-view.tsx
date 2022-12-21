@@ -14,6 +14,8 @@ import { PassportReader } from "@gitcoinco/passport-sdk-reader";
 import InstrumentCard from "../common/instrument-card";
 import BigNumber from "bignumber.js";
 import { VaultBalances, ZCBBalances } from "@augurproject/comps/build/types";
+import { Link } from "react-router-dom";
+
 
 const { ValueLabel } = LabelComps;
 const { getFormattedInstrumentData } = ContractCalls
@@ -110,10 +112,15 @@ const VaultCard: React.FC = ({ vaultId, shareBalance, vaults}) => {
     }, [vaults, vaultId]);
 
     return (
+        <Link to={{
+            pathname: makePath("market-liquidity"),
+            search: makeQuery({id: vaultId})
+        }}>
         <div className={Styles.UserVaultCard}>
             <ValueLabel label={""} value={vault.name} />
             <ValueLabel label={"balance"} value={shareBalance} />
         </div>
+        </Link>
     )
 }
 
@@ -123,11 +130,16 @@ const MarketCard: React.FC = ({ marketId, zcbBalance, instruments }) => {
     }, [instruments, marketId]);
 
     return (
+        <Link to={{
+            pathname: makePath("market-liquidity"),
+            search: makeQuery({id: marketId})
+        }}>
         <div className={Styles.UserVaultCard}>
             <ValueLabel label={""} value={instrument.description} />
             <ValueLabel label={"LongZCB balance"} value={zcbBalance.longZCB} />
             <ValueLabel label={"ShortZCB balance"} value={zcbBalance.shortZCB} />
         </div>
+        </Link>
     )
 
 }

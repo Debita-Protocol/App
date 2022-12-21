@@ -4,13 +4,14 @@
   display: flex;
   flex-flow: column nowrap;
   align-items: left;
-  padding: @size-40 @size-72 @size-48;
+  padding: @size-20 @size-88 @size-48;
   > section {
     margin: @size-10;
     &.Nav {
       display: flex;
       flex-flow:row nowrap;
       align-items: center;
+      justify-content:center;
       > div {
         font-weight:@weight-bold;
         font-size: @size-24;
@@ -273,10 +274,8 @@
   display: flex;
   flex-flow: column nowrap;
   align-items:center;
-  width: 30%;
-  height: 30%;
   border-radius: @size-8;
-  padding: @size-4;
+  padding: @size-20;
   border: @size-1 solid var(--theme-border);
   background-color: var(--primary-bg);
   >section {
@@ -307,6 +306,7 @@
 .MyLoansView {
   display: flex;
   flex-flow: column nowrap;
+  align-items: center;
   padding: @size-24;
   border-radius: @size-10;
 }

@@ -37,7 +37,7 @@ const { addProposal, createCreditLine } = ContractCalls;
 
 const DurationInput = ({onChange, label, value}) => {
   return (
-    <>
+    <div>
       <label>{ label }</label>
       <input
         type="text"
@@ -45,7 +45,7 @@ const DurationInput = ({onChange, label, value}) => {
         value={ value }
         onChange={ onChange }
       />
-    </>
+    </div>
   );
 }
 
@@ -58,7 +58,7 @@ const CreditLineRequestForm = () => {
   } = useUserStore();
   const { vaults } = useDataStore2();
 
-  const [ principal, setPrincipal ] = useState("0.0");
+  const [ principal, setPrincipal ] = useState("");
   const [ duration, setDuration ] = useState({
     years: "",
     weeks: "",
@@ -66,7 +66,7 @@ const CreditLineRequestForm = () => {
     months: "",
   });
   const [ inputError, setInputError ] = useState("");
-  const [ interestRate, setInterestRate ] = useState("0.0");
+  const [ interestRate, setInterestRate ] = useState("");
   const [ description, setDescription] = useState("");
   const [ vaultId, setVaultId ] = useState("");
   const [ defaultVault, setDefaultVault] = useState("");
@@ -212,7 +212,7 @@ const CreditLineRequestForm = () => {
         />
         % 
       </div>
-      <div className={Styles.Duration}>
+      <section className={Styles.Duration}>
         <label>Duration: </label>
         <DurationInput label="years" value={duration.years} onChange={(e)=> {
           if (/^\d*$/.test(e.target.value)) {
@@ -235,7 +235,7 @@ const CreditLineRequestForm = () => {
           }
         }}/>
         
-      </div>
+      </section>
       <div className={Styles.Description}>
         <label>Description: </label>
         <textarea 
