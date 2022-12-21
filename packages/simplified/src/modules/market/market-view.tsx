@@ -5,6 +5,8 @@ import ButtonStyles from "../common/buttons.styles.less";
 import classNames from "classnames";
 import SimpleChartSection from "../common/charts";
 import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tables";
+import {  AddMetaMaskToken } from "../common/labels";
+
 import TradingForm from "./trading-form";
 import {
   Constants,
@@ -148,12 +150,10 @@ const MarketView = ({ defaultMarket = null }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
-  const [principal, setPrincipal] = useState("");
   const [Yield, setYield] = useState("");
   const [totalCollateral, setTotalCollateral] = useState("");
 
 
-  const [duration, setDuration] = useState("");
 
   const marketId = useMarketQueryId();
   const { isMobile } = useAppStatusStore();
@@ -179,7 +179,12 @@ const MarketView = ({ defaultMarket = null }) => {
       balances,
       actions: { addTransaction },
     } = useUserStore();
-  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2()
+  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+  const { isPool, poolData, duration, expectedYield, principal} = instruments[marketId] 
+  console.log('poolData', instruments, poolData ); 
+  const longZCB_ad = market_[marketId]?.longZCB
+  const shortZCB_ad = market_[marketId]?.shortZCB; 
+  // console.log('vaults', vaults, instruments, market_[marketId].longZCB)
   // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
   // useEffect(async() =>{
   //   let stored; 
@@ -302,6 +307,7 @@ const MarketView = ({ defaultMarket = null }) => {
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={descriptions[0]} ogTitle={descriptions[0]} twitterTitle={descriptions[0]} />
       <section>
+
         <NetworkMismatchBanner />
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
@@ -319,6 +325,8 @@ const MarketView = ({ defaultMarket = null }) => {
           })}
         >
           <h4>Instrument Overview</h4>
+                <AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
+
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))*/}
@@ -337,8 +345,8 @@ const MarketView = ({ defaultMarket = null }) => {
         <ul className={Styles.StatsRow}>
 <li>
             <span>Net ZCB Bought / Required</span>
-            <span>{formatDai(totalCollateral/4.2/1000000  || "0.00").full}</span>
-            <span>{formatDai(principal/5/1000000 || "0.00").full}</span>
+            <span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+            <span>{formatDai(principal/5/1e18 || "0.00").full}</span>
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
           <li>
@@ -359,16 +367,16 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
         </ul>
-        <ul className={Styles.StatsRow}>
+        {!isPool ? (<ul className={Styles.StatsRow}>
           <li>
             <span>Principal </span>
-            <span>{formatDai(principal/1000000 || "0.00").full}</span>
+            <span>{formatDai(principal/1e18 || "0.00").full}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Expected Tot.Yield</span>
-            <span>{formatDai(Yield /1000000 || "0.00").full}</span>
+            <span>{formatDai(expectedYield /1e18 || "0.00").full}</span>
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
@@ -383,7 +391,35 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
           </li>
 
-        </ul>
+          </ul>)
+          :
+          (<ul className={Styles.StatsRow}>
+          <li>
+            <span>Leverage Factor </span>
+            <span>{formatDai(poolData.leverageFactor/1e18 || "0.00").full}</span>
+
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Senior Promised Return</span>
+            <span>{formatDai(poolData.promisedReturn /1e18 || "0.00").full}</span>
+          {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Manager Sale Amount </span>
+            <span>{poolData.saleAmount}</span>
+          </li>
+
+          <li>
+            <span>Start Date</span>
+              <span>{"8/20/2022"}</span>
+
+           {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
+          </li>
+
+        </ul>)
+      }
+
       <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
@@ -414,6 +450,8 @@ const MarketView = ({ defaultMarket = null }) => {
           })}
         >
           <h4>Market Details</h4>
+          <h4>Price History</h4>
+
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))*/}
@@ -426,8 +464,8 @@ const MarketView = ({ defaultMarket = null }) => {
 
         </div>
         <div className={Styles.TransactionsTable}>
-         {/* <span>Activity</span>
-          <TransactionsTable transactions={marketTransactions} /> */}
+         <span>Activity</span>
+          {/*<TransactionsTable transactions={marketTransactions} /> */}
         </div>
         <SecondaryThemeButton
           text="Buy / Sell"
@@ -451,7 +489,7 @@ const MarketView = ({ defaultMarket = null }) => {
           action={approve_utilizer}
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
-        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} /> 
+        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}/> 
       </section>
     </div>
   );

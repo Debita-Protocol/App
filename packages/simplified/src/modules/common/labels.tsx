@@ -100,6 +100,39 @@ export const AvailableLiquidityRewards = ({ balance }) => {
   );
 };
 
+export const AddMetaMaskToken = ({tokenAddress,tokenSymbol}) => {
+  const AddToken = async () => {
+    try {
+      // @ts-ignore
+      await ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: {
+            address: tokenAddress,
+            symbol: tokenSymbol,
+            decimals: 18,
+            //image: "https://polygonscan.com/token/images/wMatic_32.png",
+          },
+        },
+      });
+    } catch {
+      console.error("MetaMask not installed or locked.");
+    }
+  };
+
+  return (
+    <TinyThemeButton
+      customClass={Styles.AddMetaMaskToken}
+      customContent={
+        <>
+          <img alt="" height={12} src={MetamaskIcon} /> Add {tokenSymbol} to MetaMask
+        </>
+      }
+      action={() => AddToken()}
+    />
+  );
+};
 export const MaticAddMetaMaskToken = () => {
   const AddToken = async () => {
     try {
