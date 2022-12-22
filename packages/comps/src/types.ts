@@ -393,6 +393,7 @@ export interface CoreInstrumentData {
   instrument_address?: string;
   maturityDate: string;
   poolData?: CorePoolData;
+  name?: string;
 }
 
 export interface NFT {
@@ -431,6 +432,19 @@ export interface CoreMarketInfo {
   totalCollateral: string;
   approved_principal?: string;
   approved_yield?: string;
+  validatorData: ValidatorData;
+}
+
+export interface ValidatorData {
+  validators: string[];
+  val_cap: string;
+  avg_price: string;
+  totalSales: string;
+  totalStaked: string;
+  numApproved: string;
+  initialStake: string;
+  finalStake: string;
+  numResolved: string;
 }
 
 export interface VaultInfo {
@@ -445,6 +459,9 @@ export interface VaultInfo {
   want: Cash;
   totalShares: string;
   name: string;
+  totalAssets: string;
+  utilizationRate: string;
+  exchangeRate: string;
 };
 
 export interface VaultInfos {

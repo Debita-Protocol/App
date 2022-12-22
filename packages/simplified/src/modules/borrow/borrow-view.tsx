@@ -195,7 +195,7 @@ const BorrowView: React.FC = () => {
     return (
         <div className={Styles.BorrowView}>
             <section className={Styles.Nav}>
-                <TabNavItem title="Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                <TabNavItem title="NFT Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
                 <TabNavItem title="My Loans" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
             </section>
             

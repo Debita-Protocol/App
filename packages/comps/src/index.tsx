@@ -1,5 +1,6 @@
 import "./assets/styles/shared.less";
 import * as _ContractCalls from "./utils/contract-calls";
+import * as _ContractCalls2 from "./utils/contract-calls-new";
 import * as _Calculations from "./utils/calculations";
 import * as _DerivedMarketData from "./utils/derived-market-data";
 import addCommasToNumber from "./utils/add-commas-to-number";
@@ -77,6 +78,7 @@ import { Toasts } from "./components/toasts/toasts";
 import {MarketCardProvider, MarketCardContext} from "./components/market-card/market-card-context"; 
 
 export const ContractCalls = _ContractCalls;
+export const ContractCalls2 = _ContractCalls2;
 export const Calculations = _Calculations;
 export const DerivedMarketData = _DerivedMarketData;
 export const GraphClient = _GraphClient;
@@ -228,6 +230,7 @@ const AugurComps = {
   Components,
   Constants,
   ContractCalls,
+  ContractCalls2,
   Calculations,
   GraphClient,
   Icons,

@@ -8,26 +8,75 @@ import {
     controller_address,
     market_manager_address,
     vault_factory_address,
-    fetcher_address
+    fetcher_address,
+    reputation_manager_address,
+    usdc
 } from "../data/constants";
-import ControllerABI from "../data/controller.json";
-import MarketManagerABI from "../data/marketmanager.json";
-import VaultFactoryABI from "../data/VaultFactory.json";
-import FetcherABI from "../data/Fetcher.json";
-import ERC20ABI from "../data/ERC20.json";
-import { BigNumber } from "ethers";
-import { getProviderOrSigner } from "../components/ConnectAccount/utils";
+import ReputationManagerData from "../data/ReputationManager.json";
+import ControllerData from "../data/controller.json";
+import MarketManagerData from "../data/marketmanager.json";
+import VaultFactoryData from "../data/VaultFactory.json";
+import FetcherData from "../data/Fetcher.json";
+import ERC20Data from "../data/ERC20.json";
+import CreditlineData from "../data/CreditLine.json";
+import { BigNumber, Transaction } from "ethers";
+import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 
-import { Contract } from "@ethersproject/contracts";
+import { Contract, ContractFactory } from "@ethersproject/contracts";
 import {TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
-import VaultABI from "../data/vault.json";
-
+import VaultData from "../data/vault.json";
 
 type NumStrBigNumber = number | BN | string;
 
+// from wad to display string
 function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
     return new BN(n).dividedBy(new BN(10).pow(new BN(p))).decimalPlaces(d).toString();
+}
+
+export const ContractSetup = async (account: string, provider: Web3Provider) => {
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
+    const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
+    const cash = new Contract(usdc, ERC20Data.abi, signer);
+    let tx;
+    // console.log("A")
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // console.log("B")
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // console.log("C")
+    // tx = await controller.setPoolFactory(vaultFactory.address);
+    // await tx.wait();
+    // console.log("D")
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+
+    // add vault.
+    // console.log("E")
+    // const pp = BigNumber.from(10).pow(18);
+    // tx = await controller.createVault(
+    //     cash.address,
+    //     false,
+    //     0,
+    //     0,
+    //     0,
+    //     {
+    //         N: 1,
+    //         sigma: pp.mul(5).div(100),
+    //         alpha: pp.mul(4).div(10),
+    //         omega: pp.mul(2).div(10),
+    //         delta: pp.mul(2).div(10),
+    //         r:"0",
+    //         s: pp.mul(2),
+    //         steak: pp.div(4)
+    //     }
+    // );
+    // await tx.wait(2);
+    // console.log("F");
 }
 
 export const getContractData = async (account: string, provider: Web3Provider): Promise<{
@@ -37,10 +86,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
     blocknumber: number
 }> => {
     const blocknumber = await provider.getBlockNumber();
-    const controller = new Contract(controller_address, ControllerABI.abi, provider);
-    const marketManager = new Contract(market_manager_address, MarketManagerABI.abi, provider);
-    const vaultFactory = new Contract(vault_factory_address, VaultFactoryABI.abi, provider);
-    const fetcher = new Contract(fetcher_address, FetcherABI.abi, getProviderOrSigner(provider, account));
+    const controller = new Contract(controller_address, ControllerData.abi, provider);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, provider);
+    const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, provider);
+    const fetcher = new Contract(fetcher_address, FetcherData.abi, getProviderOrSigner(provider, account));
 
     const numVaults = await vaultFactory.numVaults();
     console.log("numVaults: ", numVaults.toNumber());
@@ -97,7 +146,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
             total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
             totalShares: toDisplay(vaultBundle.totalShares.toString()),
-            name: vaultBundle.name
+            name: vaultBundle.name,
+            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
+            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
+            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
         });
 
         for (let j = 0; j < marketBundle.length; j++) {
@@ -110,9 +162,22 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 }
             }
 
+            let validatorData = {
+                validators: m.validatorData.validators,
+                val_cap: toDisplay(m.validatorData.val_cap.toString()),
+                avg_price: toDisplay(m.validatorData.avg_price.toString()),
+                totalSales: toDisplay(m.validatorData.totalSales.toString()),
+                totalStaked: toDisplay(m.validatorData.totalStaked.toString()),
+                numApproved: m.validatorData.numApproved.toString(),
+                initialStake: toDisplay(m.validatorData.initialStake.toString()),
+                finalStake: toDisplay(m.validatorData.finalStake.toString()),
+                numResolved: m.validatorData.numResolved.toString(),
+            }
+
             let market: CoreMarketInfo = Object.assign(
                 {},
                 {
+                    name: m.name,
                     bondPool: m.bondPool,
                     marketId: m.marketId.toString(),
                     vaultId: m.vaultId.toString(),
@@ -127,6 +192,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     longZCBsupply: toDisplay(m.longZCBsupply.toString()),
                     redemptionPrice: toDisplay(m.redemptionPrice.toString()),
                     totalCollateral: toDisplay(m.totalCollateral.toString()),
+                    validatorData
                 }
             );
 
@@ -158,7 +224,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     address: instr.instrument_address,
                     type: instr.instrument_type,
                     maturityDate: instr.maturityDate.toString(),
-                    poolData
+                    poolData,
+                    name: instr.name,
                 }
             );
 
@@ -190,7 +257,7 @@ export const getRammData = async (
     // console.log("account", account);
     // console.log("provider", provider);
     // console.log("vaults", vaults);
-    const controller = new Contract(controller_address, ControllerABI.abi, provider);
+    const controller = new Contract(controller_address, ControllerData.abi, provider);
     
     const reputationScore = toDisplay((await controller.trader_scores(account)).toString());
     // console.log("reputationScore", reputationScore);
@@ -198,9 +265,9 @@ export const getRammData = async (
     // get vault balances
     let vaultBalances: VaultBalances = {};
     for (const [key, value] of Object.entries(vaults)) {
-        const vault = new Contract(value.address, VaultABI.abi, getProviderOrSigner(provider, account));
+        const vault = new Contract(value.address, VaultData.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
-        const base = new Contract(value.want.address, ERC20ABI.abi, getProviderOrSigner(provider, account));
+        const base = new Contract(value.want.address, ERC20Data.abi, getProviderOrSigner(provider, account));
         const baseBalance = await base.balanceOf(account);
         Object.assign(vaultBalances, {
             [key]: {
@@ -214,8 +281,8 @@ export const getRammData = async (
     let zcbBalances: ZCBBalances = {};
     for (const [key, market] of Object.entries(markets as CoreMarketInfos)) {
         const { longZCB, shortZCB } = market;
-        const longZCBContract = new Contract(longZCB, ERC20ABI.abi, getProviderOrSigner(provider, account));
-        const shortZCBContract = new Contract(shortZCB, ERC20ABI.abi, getProviderOrSigner(provider, account));
+        const longZCBContract = new Contract(longZCB, ERC20Data.abi, getProviderOrSigner(provider, account));
+        const shortZCBContract = new Contract(shortZCB, ERC20Data.abi, getProviderOrSigner(provider, account));
         const longZCBBalance = await longZCBContract.balanceOf(account);
         const shortZCBBalance = await shortZCBContract.balanceOf(account);
 
@@ -226,13 +293,69 @@ export const getRammData = async (
             }
         })
     };
-    // console.log("reputationScore", reputationScore);
-    // console.log("vaultBalances", vaultBalances);
-    // console.log("zcbBalances", zcbBalances);
     
     return {
         reputationScore,
         vaultBalances,
         zcbBalances,
     }
+}
+
+// called to create the instrument.
+export const createCreditLineInstrument = async (
+    account: string, 
+    provider: Web3Provider  
+): Promise<string> => {
+    const creditlineFactory = new ContractFactory(CreditlineData.abi, CreditlineData.bytecode, getSigner(provider, account));
+    const creditline = await creditlineFactory.deploy();
+    await creditline.deployed();
+    const { address: instrument_address} = creditline;
+    return instrument_address;
+}
+
+// must verify that account is owner of instrument_address?
+// assume direct input from user, so will process data accordingly.
+export const createCreditlineMarket = async (
+    account: string,
+    provider: Web3Provider,
+    name: string,
+    want_address: string,
+    instrument_address: string, 
+    vaultId: string,
+    principal: string, // user input, capped at however many decimals places of the underlying.
+    expectedYield: string,
+    description: string,
+    duration: string
+): Promise<TransactionResponse>  => {
+    const want = new Contract(want_address, ERC20Data.abi, getProviderOrSigner(provider, account));
+    const controller = new Contract(controller_address, ControllerData.abi, getSigner(provider, account));
+    
+    const dec = await want.decimals();
+
+    const faceValue = new BN(principal).plus(new BN(expectedYield)).toString();
+
+    principal =  new BN(principal).decimalPlaces(dec).toString();
+    expectedYield = new BN(expectedYield).decimalPlaces(dec).toString();
+    
+    const tx: TransactionResponse = await controller.initiateMarket(
+        account,
+        {
+            name,
+            isPool: false,
+            trusted: false,
+            balance: 0,
+            faceValue,
+            principal,
+            expectedYield,
+            duration,
+            description,
+            instrument_address,
+            instrument_type: 0,
+            maturityDate: 0,
+            vaultId,
+            marketId: 0,
+        }
+    );
+
+    return tx;
 }
