@@ -7,7 +7,7 @@ import { formatApy, formatLiquidity, formatCashPrice, formatDai } from "../../ut
 import { getMarketEndtimeFull } from "../../utils/date-utils";
 import { CategoryIcon, CategoryLabel, ReportingStateLabel, ValueLabel } from "../common/labels";
 import { MARKET_FACTORY_TYPES, MARKET_STATUS, TWELVE_HOUR_TIME } from "../../utils/constants";
-import { MarketLink } from "../../utils/links/links";
+import { MarketLink,VaultLink } from "../../utils/links/links";
 import { ConfirmedCheck } from "../common/icons";
 import { TinyThemeButton } from "../common/buttons";
 
@@ -141,6 +141,90 @@ export const MarketTitleArea = ({
   </span>
 );
 
+export const VaultCardView = ({
+  vaultId, 
+}) =>{
+   const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot", "USDC lending in Fuse pool #3" ];
+  const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions","Long or Short Isolated Lending Positions"] 
+
+  return (
+    <article
+      className={classNames(Styles.MarketCard, {
+        [Styles.NoLiquidity]: false,
+        [Styles.Popular]: true,
+      })}
+    >
+      <VaultLink id={vaultId} dontGoToMarket={false}>
+        <article
+          className={classNames({
+            [Styles.Trading]: true//reportingState === MARKET_STATUS.TRADING,
+          })}
+        >
+         {/* <CategoryLabel {...{ categories }} />  
+          <ReportingStateLabel {...{ reportingState }} />*/}
+        {/*  <CategoryIcon {...{ categories }} /> */ }
+          <div>
+            {(
+              <TinyThemeButton
+                customClass={Styles.NoLiquidityPill}
+                action={() => {}}
+                text={"text"}
+                disabled
+              />)}
+          <ValueLabel label="Liquidity Provider APR" value={"-"} />
+
+          {/* {marketHasNoLiquidity ? (
+              <TinyThemeButton
+                customClass={Styles.NoLiquidityPill}
+                action={() => {}}
+                text={"Discretionary Loan"}
+                disabled
+              />
+            ) : (
+              <ValueLabel label="Liquidity Provider APR" value={formattedApy || "-"} />
+            )} */}
+
+          </div> 
+
+          {/*<div>
+            {(
+              <ValueLabel label="Short CDS APR" value={formattedApy || "-"} />
+            )} 
+          </div> */}
+    <div>
+            {(
+              <ValueLabel label="Is Approved" value={"true"} />
+            )}
+          </div>
+
+        </article>
+        <section>
+          {/*<MarketTitleArea {...{ ...market, timeFormat }} /> */}
+          <MarketTitleArea title={titles[0]} description={descriptions[0]} />
+
+          <ValueLabel label="Principal" value={"-"} />
+          <ValueLabel label="Projected Return" value={ "-"} />
+          <ValueLabel label="Term" value={ "-"} />
+
+    { /*     <ValueLabel label="Projected Yield" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
+          <ValueLabel label="Term" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} /> */}
+
+         {/* <OutcomesTable {...{ amm }} />
+          {!hasWinner && extraOutcomes > 0 && (
+            <span className={Styles.ExtraOutcomes}>{`+ ${extraOutcomes} more Outcomes`}</span>
+          )} */}
+
+        </section>
+
+      </VaultLink>
+       {/* <button onClick={() => handleChange(market.turboId)} >
+          Select 
+        </button>  */}
+        
+
+    </article>
+  );
+}
 export const MarketCardView = ({
   amm,
   market,

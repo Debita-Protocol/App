@@ -190,7 +190,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   const{marketId} = instrument; 
-  console.log('instrument Id', marketId); 
+  // console.log('instrument', instrument)
  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -628,7 +628,7 @@ const LiquidityView = () => {
       />
       <section>
         <article>
-          <span>Market</span>
+          <span>Instruments</span>
           {Object.keys(POOL_SORT_TYPES).map((sortType) => (
             <SortableHeaderButton
               {...{
@@ -643,12 +643,16 @@ const LiquidityView = () => {
           <span />
         </article>
         <section>
-          {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market: MarketInfo) => (
+          {/*sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market: MarketInfo) => (
             <LiquidityMarketCard market={market} key={market.marketId} />
-          ))}
-          {Object.values(vaults).map((vaultinfo: any) => (
+          )) */}
+          {/*Object.values(vaults).map((vaultinfo: any) => (
             <VaultCard vault={vaultinfo} />
+          ))*/}
+          {Object.values(instruments).map((instrument: any) => (
+            <InstrumentCard instrument={instrument} />
           ))}
+
         </section>
       </section>
       {filteredMarkets.length > 0 && (
@@ -678,7 +682,7 @@ interface SortableHeaderButtonProps {
   key?: string;
 }
 
-const SortableHeaderButton = ({ setSortBy, sortBy, sortType, text }: SortableHeaderButtonProps): React.FC => (
+export const SortableHeaderButton = ({ setSortBy, sortBy, sortType, text }: SortableHeaderButtonProps): React.FC => (
   <button
     className={classNames({
       [Styles.Ascending]: sortBy.direction < 0,

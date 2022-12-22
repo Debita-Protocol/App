@@ -180,9 +180,33 @@ interface CanTradeProps {
 //   shareToken?: string;
 //   defaultPrice?: string;
 // }
+function roundDown(number, decimals) {
+    decimals = decimals || 0;
+    return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+}
+const getOutcomes = (price) =>{
+  const outcome = {} as AmmOutcome
+  outcome.id = 0; 
+  outcome.price = price; 
+  outcome.name = "longZCB"
+  const outcome2 = {} as AmmOutcome
+  outcome2.id = 1; 
+  outcome2.price = roundDown(1-price, 4).toString(); 
+  outcome2.name = "shortZCB"
+  const outcomes = [outcome, outcome2]
+  return outcomes; 
+  // return outcomes.map((o, i) => ({
+  //     ...o,
+  //     price: pools[i].ammOutcomes[OUTCOME_YES_ID].price,
+  //     marketId: o.marketId,
+  //   })),
+
+}
 const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
+  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+
   const {
     showTradingForm,
     actions: { setShowTradingForm },
@@ -197,17 +221,10 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
   const [orderType, setOrderType] = useState(BUY);
   const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
   const [breakdown, setBreakdown] = useState<EstimateTradeResult | null>(null);
-  // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2()
-
-  //
+  const [isLimit, setIsLimit] = useState(false); 
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
 
-
-  // const outcome = {} as AmmOutcome;
-  // const outcome2 = {} as AmmOutcome; 
-  // const outcomes = [outcome, outcome2];
-  const outcomes = [] 
-
+  const outcomes = getOutcomes(market_[marketId]?.longZCBprice);
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);
@@ -251,12 +268,7 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
   // );
 
   useEffect(async() => {
-        // let bal; 
-        // //const vaultad = "0x3C95067507C0346e40439E46dD9FFce3eF4F264E"
-        // //bal =  await getERCBalance(account, loginAccount?.library, vaultad); 
-        // bal = await getVaultTokenBalance(account, loginAccount.library)
-        // console.log('bal', bal.toString(), userBalance); 
-        // setUserBalance(Number(bal.toString())); 
+
           
       }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
@@ -301,10 +313,6 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
 
-  // console.log('canredeem', canRedeem, canbuy);
-  //console.log('bondbreakdown',bondbreakdown); 
-
- // console.log('canbuy?', canbuy); 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || orderType;
     let subText: string | null = null;
@@ -366,9 +374,11 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
     const minOutput = breakdown?.outputValue;
     const outcomeShareTokensIn = breakdown?.outcomeShareTokensIn;
     const direction = isBuy ? TradingDirection.ENTRY : TradingDirection.EXIT;
+    const isClose = orderType==BUY?false: true; 
     setWaitingToSign(false);
     setShowTradingForm(false);
-    tradeZCB(account, loginAccount.library, marketId, amount, true ,false ).then((response)=>{
+    const isShort = selectedOutcomeId ==1? false:true
+    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose ).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
         console.log('Trading Error', error)
       });
@@ -467,7 +477,7 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
         </div>
-              <LimitOrderSelector/>
+              <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
 
         <div
           onClick={() => {
@@ -494,6 +504,7 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           isGrouped={amm?.market?.isGrouped}
         />
         <AmountInput
+          heading={"In Underlying"}
           chosenCash={isBuy ? ammCash?.name : SHARES}
           updateInitialAmount={setAmount}
           initialAmount={amount}
@@ -505,6 +516,35 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           rate={getRate()}
           isBuy={orderType === BUY}
         />
+        <AmountInput
+          heading={"In ZCB"}
+          chosenCash={isBuy ? ammCash?.name : SHARES}
+          updateInitialAmount={setAmount}
+          initialAmount={amount}
+          error={amountError}
+          maxValue={userBalance}
+          ammCash={ammCash}
+          //disabled={!hasLiquidity || hasWinner}
+          disabled = {!canbuy}
+          rate={getRate()}
+          isBuy={orderType === BUY}
+        />
+        {isLimit &&(<AmountInput
+          heading={"Order Price"}
+          chosenCash={isBuy ? ammCash?.name : SHARES}
+          updateInitialAmount={setAmount}
+          initialAmount={amount}
+          error={amountError}
+          maxValue={userBalance}
+          ammCash={ammCash}
+          //disabled={!hasLiquidity || hasWinner}
+          disabled = {!canbuy}
+          rate={getRate()}
+          isBuy={orderType === BUY}
+        />)
+
+
+        }
         <Slippage />
 
         {/* {isBuy && <Slippage />} */}

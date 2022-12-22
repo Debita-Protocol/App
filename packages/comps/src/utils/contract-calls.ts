@@ -138,7 +138,7 @@ import vaultabi from "../data/vault.json";
 import marketmanagerabi from "../data/marketmanager.json"; 
 
 
-
+const precision = 1e6; 
 const pp = BigNumber.from(10).pow(18);
 const { parseBytes32String, formatBytes32String } = utils;
 
@@ -200,6 +200,7 @@ export async function tradeZCB(
   amount: string, 
   long: boolean, 
   close: boolean, 
+  slippageLimit: number = 100, 
   underlyingAddress: string = ""
   ): Promise<TransactionResponse>{
   const controller = new ethers.Contract(controller_address,
@@ -207,24 +208,36 @@ export async function tradeZCB(
     );
   // await controller.testVerifyAddress(); 
   // await controller._incrementScore(account, pp.mul(10)); 
-  await controller._incrementScore("0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e", pp); 
+  // await controller._incrementScore("0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e", pp); 
 
   if (underlyingAddress=="") underlyingAddress = cash_address; 
 
   const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
   const marketmanager = new ethers.Contract(market_manager_address, 
     marketmanagerabi["abi"], getProviderOrSigner(library, account));
-  const scaledAmount = pp.mul(amount); 
+  const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
+
+  await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
+
   if (long){
-    const budget = await marketmanager.getTraderBudget(marketId, account); 
-    console.log('budget', budget.toString()); 
+    if(close){
+      await marketmanager.sellBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+    }
 
-    // await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
-    await marketmanager.buyBond(marketId, scaledAmount, pp.mul(100), 0); 
 
+    else{
+      await marketmanager.buyBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+    }
   }
   else{
+    if(close){
+      await marketmanager.coverBondShort(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+    }
+    else{
+      await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
 
+    }
+    
   }
   let tx; 
   return tx; 

@@ -22,6 +22,7 @@ import {
 import type { MarketInfo } from "@augurproject/comps/build/types";
 
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+import {InstrumentCard} from "../liquidity/liquidity-view"; 
 
 
 const { createMarket,endMarket, estimateAddLiquidityPool, mintCompleteSets_,
@@ -32,7 +33,7 @@ const {
   SelectionComps: { SquareDropdown },
   ButtonComps: { SecondaryThemeButton },
   Icons: { FilterIcon, SearchIcon },
-  MarketCardComps: { LoadingMarketCard, MarketCard },
+  MarketCardComps: { VaultCardView, LoadingMarketCard, MarketCard },
   PaginationComps: { sliceByPage, useQueryPagination, Pagination },
   InputComps: { SearchInput },
   LabelComps: { NetworkMismatchBanner },
@@ -303,6 +304,8 @@ const MarketsView = () => {
     settings: { showLiquidMarkets, timeFormat },
     actions: { setSidebar, updateMarketsViewSettings },
   } = useSimplifiedStore();
+  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+
   // const { ammExchanges, markets, transactions } = useDataStore();
   const { subCategories, sortBy, primaryCategory, reportingState, currency } = marketsViewSettings;
   const [loading, setLoading] = useState(true);
@@ -313,6 +316,7 @@ const MarketsView = () => {
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
+  console.log('vaults', vaults)
   // const marketKeys = Object.keys(markets);
   // const {amm} = markets;
 
@@ -342,6 +346,10 @@ const MarketsView = () => {
   // useEffect(() => {
   //   handleFilterSort();
   // }, [marketKeys.length]);
+  let filteredVaults = Object.values(vaults).map((vault:any)=>{
+      return vault
+  })
+  //filteredVaults = filteredVaults.filter((vault)=> vault.vaultId == vaultId); 
 
   let changedFilters = 0;
   Object.keys(DEFAULT_MARKET_VIEW_SETTINGS).forEach((setting) => {
@@ -446,6 +454,9 @@ const MarketsView = () => {
           primaryCategory,
         }}
       />
+<section>
+      {filteredVaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}     
+</section>
       {loading ? (
         <section>
           {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
@@ -454,6 +465,12 @@ const MarketsView = () => {
         </section>
       ) : filteredMarkets.length > 0 ? (
         <section>
+
+          {Object.values(instruments).map((instrument: any) => (
+            <InstrumentCard instrument={instrument} />
+          ))}   
+          <VaultCardView vaultId = {1}/>)
+            {vaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}     
           {/* {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market, index) => (
             <MarketCard
               key={`${market.marketId}-${index}`}

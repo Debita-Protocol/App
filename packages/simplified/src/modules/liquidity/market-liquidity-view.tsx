@@ -161,7 +161,7 @@ export const MarketLiquidityView = () => {
   if (!vault) {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
-  console.log('vault', vault); 
+  console.log('vault', vault, instruments); 
   const vault_address = vault?.address;
   const underlying_address = vault?.want.address; 
   const underlyingSymbol = vault?.want.symbol; 
@@ -263,7 +263,26 @@ export const MarketLiquidityView = () => {
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
       <LiquidityWarningFooter />
+
+      <section>
+             <h4>Instruments</h4>
+      </section>
        <section>
+        <article>
+          <span>Instruments</span>
+          {/*Object.keys(POOL_SORT_TYPES).map((sortType) => (
+            <SortableHeaderButton
+              {...{
+                sortType,
+                setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
+                sortBy,
+                text: POOL_SORT_TYPE_TEXT[sortType],
+                key: `${sortType}-sortable-button`,
+              }}
+            />
+          ))*/}
+          <span />
+        </article>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
           ))}
@@ -313,6 +332,19 @@ const LiquidityWarningFooter = () => (
     </span>
   </article>
 );
+
+export const ManagerWarning = () => (
+  <article className={Styles.LiquidityWarningFooter}>
+    <span>
+      {WarningIcon} Trade Limited due to: 
+    </span>
+    <span>
+    - ee
+    </span>
+
+  </article>
+);
+
 
 interface LiquidityFormProps {
   market: MarketInfo;

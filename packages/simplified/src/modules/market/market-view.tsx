@@ -6,7 +6,7 @@ import classNames from "classnames";
 import SimpleChartSection from "../common/charts";
 import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tables";
 import {  AddMetaMaskToken } from "../common/labels";
-
+import {ManagerWarning} from "../liquidity/market-liquidity-view"
 import TradingForm from "./trading-form";
 import {
   Constants,
@@ -71,8 +71,8 @@ const WinningOutcomeLabel = ({ winningOutcome }) => (
     <span>Instrument Status</span>
     <span>
       {/*winningOutcome.name*/}
-      {'Success'}
-      {ConfirmedCheck}
+      {winningOutcome==0?'Approved': "Assessment"}
+      {winningOutcome==0 && ConfirmedCheck}
     </span>
   </span>
 );
@@ -179,9 +179,42 @@ const MarketView = ({ defaultMarket = null }) => {
       balances,
       actions: { addTransaction },
     } = useUserStore();
+  const Id = Number(marketId)
+ useEffect(() => {
+    if (!market) {
+      timeoutId = setTimeout(() => {
+        if (!market && marketId) {
+          setMarketNotFound(true);
+        }
+      }, 60 * 1000);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [marketId]);
+
+  useEffect(() => {
+    if (timeoutId && market) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+  }, [market]);
+
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  const { isPool, poolData, duration, expectedYield, principal} = instruments[marketId] 
-  console.log('poolData', instruments, poolData ); 
+  // if (!instruments) {
+  //   return <div >Vault Not Found.</div>;
+  // }
+
+  // const { isPool, poolData, duration, expectedYield, principal} = instruments? instruments[Id]: null
+  const isPool = instruments[Id]?.isPool; 
+  const poolData = instruments[Id]?.isPool
+  const duration = instruments[Id]?.duration
+  const expectedYield = instruments[Id]?.expectedYield
+  const principal = instruments[Id]?.principal
+  const trusted = instruments[Id]?.trusted? 0: 1; 
+  // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
+
   const longZCB_ad = market_[marketId]?.longZCB
   const shortZCB_ad = market_[marketId]?.shortZCB; 
   // console.log('vaults', vaults, instruments, market_[marketId].longZCB)
@@ -233,27 +266,7 @@ const MarketView = ({ defaultMarket = null }) => {
   //   console.log('here')
   // }, [blocknumber, transactions]);
 
-  useEffect(() => {
-    if (!market) {
-      timeoutId = setTimeout(() => {
-        if (!market && marketId) {
-          setMarketNotFound(true);
-        }
-      }, 60 * 1000);
-    }
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [marketId]);
-
-  useEffect(() => {
-    if (timeoutId && market) {
-      clearTimeout(timeoutId);
-      timeoutId = null;
-    }
-  }, [market]);
-
+ 
 
   //Example types 
   const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation"]; 
@@ -280,7 +293,6 @@ const MarketView = ({ defaultMarket = null }) => {
   const startTimestamp = 0; 
   const categories = null; 
   const winner = 0; 
-  const winningOutcome = 0//market.amm?.ammOutcomes?.find((o) => o.id === winner);
   const marketTransactions = null//getCombinedMarketTransactionsFormatted(transactions, market, cashes);
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = false//isMarketFinal(market);
@@ -314,11 +326,11 @@ const MarketView = ({ defaultMarket = null }) => {
           {/*<CategoryIcon big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
         </div>
-        {!!title && <h1>{titles[1]}</h1>}
-        {!!description && <h2>{descriptions[1]}</h2>}
-        {!!startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
-        {isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />}
-
+        {<h1>{titles[0]}</h1>}
+        { <h3>{descriptions[0]}</h3>}
+        {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
+        {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
+        <WinningOutcomeLabel winningOutcome={trusted} />
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
@@ -326,6 +338,7 @@ const MarketView = ({ defaultMarket = null }) => {
         >
           <h4>Instrument Overview</h4>
                 <AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
+                <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
@@ -343,7 +356,7 @@ const MarketView = ({ defaultMarket = null }) => {
         </div>
 
         <ul className={Styles.StatsRow}>
-<li>
+          <li>
             <span>Net ZCB Bought / Required</span>
             <span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
             <span>{formatDai(principal/5/1e18 || "0.00").full}</span>
@@ -451,6 +464,7 @@ const MarketView = ({ defaultMarket = null }) => {
         >
           <h4>Market Details</h4>
           <h4>Price History</h4>
+          <h4>Open Orders</h4>
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
@@ -464,6 +478,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
         </div>
         <div className={Styles.TransactionsTable}>
+
          <span>Activity</span>
           {/*<TransactionsTable transactions={marketTransactions} /> */}
         </div>
@@ -479,7 +494,7 @@ const MarketView = ({ defaultMarket = null }) => {
         })}
       >
         {/*!(isFinalized && winningOutcome )&& <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} />*/}
-        {isFinalized && winningOutcome &&      <SecondaryThemeButton
+        {isFinalized && trusted==0 &&      <SecondaryThemeButton
           text="Redeem All ZCB"
           action={redeem}
           customClass={ButtonStyles.BuySellButton}
@@ -489,6 +504,8 @@ const MarketView = ({ defaultMarket = null }) => {
           action={approve_utilizer}
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
+        <ManagerWarning/>
+
         <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}/> 
       </section>
     </div>

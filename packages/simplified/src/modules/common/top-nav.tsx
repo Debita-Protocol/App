@@ -179,7 +179,7 @@ export const TopNav = () => {
           <ol>
             <li className={classNames({ [Styles.Active]: path === MARKETS })}>
               <Link placeholder="Markets" to={makePath(MARKETS)}>
-                Markets
+                Vaults
               </Link>
             </li>
             <li className={classNames({ [Styles.Active]: path === PORTFOLIO })}>
@@ -196,9 +196,10 @@ export const TopNav = () => {
             </li>
             <li className={classNames({ [Styles.Active]: path === LIQUIDITY })}>
               <Link to={makePath(LIQUIDITY)} placeholder="Pools">
-                Pools
+                Underwrite
               </Link>
             </li>
+
             <li className={classNames({ [Styles.Active]: path === BORROW })}>
               <Link to={makePath(BORROW)} disabled={!isLogged} placeholder="Pools">
                 Borrow

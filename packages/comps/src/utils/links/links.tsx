@@ -43,6 +43,36 @@ export const createMarketAmmId = (id) => {
   return `${id}`;
 };
 
+
+export const VaultLink = ({ id, dontGoToMarket, children }: MarketLinkProps) => {
+  const idString = createMarketAmmId(id);
+  return (
+    <>
+      {!dontGoToMarket ? (
+        <Link
+          data-testid={`link-${idString}`}
+         
+          to={
+            !dontGoToMarket
+              ? {
+                pathname: makePath("market-liquidity"),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: id,
+                  ["market-liquidity"]: "add",
+                }),
+              }
+              : null
+          }
+        >
+          {children}
+        </Link>
+      ) : (
+        <section>{children}</section>
+      )}
+    </>
+  );
+};
+
 export const MarketLink = ({ id, dontGoToMarket, children }: MarketLinkProps) => {
   const idString = createMarketAmmId(id);
   return (

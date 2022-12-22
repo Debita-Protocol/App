@@ -160,7 +160,7 @@ export const Slippage = () => {
   );
 };
 
-export const LimitOrderSelector = ()=> {
+export const LimitOrderSelector = ({isLimit, setIsLimit})=> {
   const {
     settings: { slippage },
     actions: { updateSettings },
@@ -171,11 +171,11 @@ export const LimitOrderSelector = ()=> {
   const isSelectedArray = useMemo(() => {
     let output = [false, false];
     switch (slippage) {
-      case "Limit": {
+      case "Taker": {
         output[0] = true;
         break;
       }
-      case "Taker": {
+      case "Limit": {
         output[1] = true;
         break;
       }
@@ -196,26 +196,28 @@ export const LimitOrderSelector = ()=> {
         <div>
           <li>
             <TinyThemeButton
-              text="Limit"
+              text="Taker"
               action={() => {
-                updateSettings({ slippage: "0.5" }, account);
+                setIsLimit(false); 
+                // updateSettings({ slippage: "0.5" }, account);
                 setCustomVal("");
                 setError("");
               }}
-              selected={isSelectedArray[0]}
+              selected={!isLimit}
               noHighlight
               customClass={ButtonStyles.TinyTransparentButton}
             />
           </li>
           <li>
             <TinyThemeButton
-              text="Taker"
+              text="Limit"
               action={() => {
-                updateSettings({ slippage: "1" }, account);
+                setIsLimit(true); 
+                // updateSettings({ slippage: "1" }, account);
                 setCustomVal("");
                 setError("");
               }}
-              selected={isSelectedArray[1]}
+              selected={isLimit}
               noHighlight
               customClass={ButtonStyles.TinyTransparentButton}
             />
@@ -223,10 +225,10 @@ export const LimitOrderSelector = ()=> {
 
           <div
             className={classNames({
-              [Styles.first]: isSelectedArray[1],
-              [Styles.second]: isSelectedArray[2],
-              [Styles.third]: isSelectedArray[3],
-              [Styles.none]: isSelectedArray[4],
+              [Styles.largefirst]: !isLimit,
+              [Styles.largesecond]: isLimit,
+              // [Styles.third]: isSelectedArray[3],
+              // [Styles.none]: isSelectedArray[4],
             })}
           ></div>
         </div>
