@@ -4,6 +4,7 @@ import {
     LabelComps,
     Stores,
     ContractCalls, 
+    ContractCalls2,
     useUserStore,
     useDataStore2
 } from "@augurproject/comps";
@@ -14,7 +15,9 @@ import { PassportReader } from "@gitcoinco/passport-sdk-reader";
 import InstrumentCard from "../common/instrument-card";
 import BigNumber from "bignumber.js";
 import { VaultBalances, ZCBBalances } from "@augurproject/comps/build/types";
+import { Link } from "react-router-dom";
 
+const { ContractSetup } = ContractCalls2;
 const { ValueLabel } = LabelComps;
 const { getFormattedInstrumentData } = ContractCalls
 
@@ -26,6 +29,8 @@ const ProfileView: React.FC = () => {
     const { ramm: { reputationScore, vaultBalances, zcbBalances}} = useUserStore();
     const { vaults, instruments } = useDataStore2();
     const [loading, setLoading] = useState(true);
+
+    const { account, loginAccount} = useUserStore();
 
     // non-zero vault balances.
     const filterVaults = (balances: VaultBalances) => { 
@@ -56,49 +61,55 @@ const ProfileView: React.FC = () => {
     }, [zcbBalances]);
 
     return (
-        <div className={Styles.ProfileView}>
-            <section className={Styles.UserDetailsView}>
-                <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
-            </section>
-            <div>
-                <section className={Styles.UserVaultInfo}>
-                    <h2>Vaults Balances: </h2>
-                    { vaultIds && vaultIds?.length > 0 ? (
-                        <div>
-                            {vaultIds.map((vaultId) => {
-                            const balance = vaultBalances[vaultId];
-                            return (
-                                <VaultCard key={vaultId} vaultId={vaultId} shareBalance={balance.shares} vaults={vaults} />
-                            );
-
-                        })}
-                        </div>
-                    ) : (
-                        <div>
-                            No Data Available.
-                        </div>
-                    )}
-                    
-                </section>
-                <section className={Styles.UserVaultInfo}>
-                    <h2>ZCB Postions</h2>
-                    { marketIds && marketIds?.length > 0 ? (
-                        <div>
-                            {marketIds.map((marketId) => {
-                        const zcbBalance = zcbBalances[marketId];
-                        return (
-                            <MarketCard key={marketId} marketId={marketId} zcbBalance={zcbBalance} instruments={instruments} />
-                        )
-                    })}
-                    </div>) : (
-                        <div className={Styles.EmptyMarketsMessage}>
-                            No Data Available.
-                        </div>
-                    )
-                    }
-                </section>
-            </div>
+        <div>
+            <button onClick={()=> {ContractSetup(account, loginAccount.library)}}>
+            Click Me
+        </button>
         </div>
+        
+        // <div className={Styles.ProfileView}>
+        //     <section className={Styles.UserDetailsView}>
+        //         <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
+        //     </section>
+        //     <div>
+        //         <section className={Styles.UserVaultInfo}>
+        //             <h2>Vaults Balances: </h2>
+        //             { vaultIds && vaultIds?.length > 0 ? (
+        //                 <div>
+        //                     {vaultIds.map((vaultId) => {
+        //                     const balance = vaultBalances[vaultId];
+        //                     return (
+        //                         <VaultCard key={vaultId} vaultId={vaultId} shareBalance={balance.shares} vaults={vaults} />
+        //                     );
+
+        //                 })}
+        //                 </div>
+        //             ) : (
+        //                 <div>
+        //                     No Data Available.
+        //                 </div>
+        //             )}
+                    
+        //         </section>
+        //         <section className={Styles.UserVaultInfo}>
+        //             <h2>ZCB Postions</h2>
+        //             { marketIds && marketIds?.length > 0 ? (
+        //                 <div>
+        //                     {marketIds.map((marketId) => {
+        //                 const zcbBalance = zcbBalances[marketId];
+        //                 return (
+        //                     <MarketCard key={marketId} marketId={marketId} zcbBalance={zcbBalance} instruments={instruments} />
+        //                 )
+        //             })}
+        //             </div>) : (
+        //                 <div className={Styles.EmptyMarketsMessage}>
+        //                     No Data Available.
+        //                 </div>
+        //             )
+        //             }
+        //         </section>
+        //     </div>
+        // </div>
     )
 }
 
@@ -110,10 +121,15 @@ const VaultCard: React.FC = ({ vaultId, shareBalance, vaults}) => {
     }, [vaults, vaultId]);
 
     return (
+        <Link to={{
+            pathname: makePath("market-liquidity"),
+            search: makeQuery({id: vaultId})
+        }}>
         <div className={Styles.UserVaultCard}>
             <ValueLabel label={""} value={vault.name} />
             <ValueLabel label={"balance"} value={shareBalance} />
         </div>
+        </Link>
     )
 }
 
@@ -123,11 +139,16 @@ const MarketCard: React.FC = ({ marketId, zcbBalance, instruments }) => {
     }, [instruments, marketId]);
 
     return (
+        <Link to={{
+            pathname: makePath("market-liquidity"),
+            search: makeQuery({id: marketId})
+        }}>
         <div className={Styles.UserVaultCard}>
             <ValueLabel label={""} value={instrument.description} />
             <ValueLabel label={"LongZCB balance"} value={zcbBalance.longZCB} />
             <ValueLabel label={"ShortZCB balance"} value={zcbBalance.shortZCB} />
         </div>
+        </Link>
     )
 
 }

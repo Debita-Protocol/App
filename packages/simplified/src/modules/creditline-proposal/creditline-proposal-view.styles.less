@@ -52,6 +52,37 @@
 
 .Duration {
   padding: @size-20;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items:center;
+  > label {
+    font-size: @size-18;
+    font-weight: @weight-bold;
+    color: var(--primary-secondary);
+  }
+  > div {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    > label {
+      font-size: @size-14;
+      font-weight: @weight-semi-bold;
+      color: var(--primary-secondary);
+      padding: @size-8;
+    }
+    > input {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-secondary);
+      padding: @size-16;
+      border: @size-1 solid var(--theme-border);
+      border-radius: @size-10;
+      margin: @size-8;
+    }
+  }
+
+  
 }
 
 .CreditLineProposalView {

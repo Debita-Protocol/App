@@ -266,9 +266,9 @@ export async function setUpExampleController(account: string, library: Web3Provi
   params.alpha = pp.mul(4).div(10); 
   params.omega = pp.mul(2).div(10);
   params.delta = pp.mul(2).div(10); 
-  params.r = "10"; 
+  params.r = "0"; 
   params.s = pp.mul(2);
-  params.steak = pp; 
+  params.steak = pp.div(4); 
 
   await controller.setMarketManager(market_manager_address);
   await controller.setVaultFactory(vault_factory_address);
