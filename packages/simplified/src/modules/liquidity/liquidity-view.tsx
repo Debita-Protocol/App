@@ -195,8 +195,8 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
     <article
       className={classNames(Styles.LiquidityMarketCard, {
         [Styles.HasUserLiquidity]: true,
-        [Styles.Expanded]: true,
-        [Styles.Final]: true,
+        [Styles.Expanded]: false,
+        [Styles.Final]: false,
       })}
     >
 
@@ -583,16 +583,25 @@ const LiquidityView = () => {
 
   return (
     <div className={Styles.LiquidityView}>
-      <AppViewStats small liquidity />
-      <AvailableLiquidityRewards balance={rewardBalance} />
-      <MaticAddMetaMaskToken />
+      {/*<AppViewStats small liquidity /> */}
+      {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
+      {/*<MaticAddMetaMaskToken /> */}
   <button onClick={() => setupExample( { account,loginAccount}
 )}>SetUp</button>
   <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> 
-      <h1>Explore LP Opportunties</h1>
-      <p>
-        Add Market liquidity to earn fees and rewards. <a href=".">Learn more →</a>
-      </p>
+      <span></span>     
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      {<h1>Pariticipate in pricing risks and earn more</h1>}
+      {/*<p>
+              Pariticipate in pricing risks and earn more <a href=".">Learn more →</a>
+            </p>*/}
       <ul>
         <SquareDropdown
           onChange={(value) => {

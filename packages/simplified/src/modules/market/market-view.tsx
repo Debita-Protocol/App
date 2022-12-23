@@ -202,6 +202,7 @@ const MarketView = ({ defaultMarket = null }) => {
   }, [market]);
 
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+  console.log('vaults', vaults, instruments, market_)
   // if (!instruments) {
   //   return <div >Vault Not Found.</div>;
   // }
@@ -328,6 +329,8 @@ const MarketView = ({ defaultMarket = null }) => {
         </div>
         {<h1>{titles[0]}</h1>}
         { <h3>{descriptions[0]}</h3>}
+        <span>Instrument Type: {0}</span>
+  
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
         <WinningOutcomeLabel winningOutcome={trusted} />
@@ -369,7 +372,7 @@ const MarketView = ({ defaultMarket = null }) => {
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Market Phase </span>
+            <span>Esti </span>
             <span>{"Resolved"}</span>
           </li>
 
@@ -383,13 +386,13 @@ const MarketView = ({ defaultMarket = null }) => {
         {!isPool ? (<ul className={Styles.StatsRow}>
           <li>
             <span>Principal </span>
-            <span>{formatDai(principal/1e18 || "0.00").full}</span>
+            <span>{formatDai(principal || "0.00").full}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Expected Tot.Yield</span>
-            <span>{formatDai(expectedYield /1e18 || "0.00").full}</span>
+            <span>{formatDai(expectedYield  || "0.00").full}</span>
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
