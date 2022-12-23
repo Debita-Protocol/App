@@ -62,7 +62,7 @@ const ProfileView: React.FC = () => {
 
     return (
         <div>
-            <button onClick={()=> {ContractSetup(account, loginAccount.library)}}>
+            <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
             Click Me
         </button>
         </div>
