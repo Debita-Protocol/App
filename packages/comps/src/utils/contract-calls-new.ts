@@ -10,7 +10,9 @@ import {
     vault_factory_address,
     fetcher_address,
     reputation_manager_address,
-    usdc
+    pool_factory_address,
+    usdc,
+    creditLine_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -19,13 +21,14 @@ import VaultFactoryData from "../data/VaultFactory.json";
 import FetcherData from "../data/Fetcher.json";
 import ERC20Data from "../data/ERC20.json";
 import CreditlineData from "../data/CreditLine.json";
-import { BigNumber, Transaction } from "ethers";
+import { BigNumber, Transaction, constants, utils } from "ethers";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 
 import { Contract, ContractFactory } from "@ethersproject/contracts";
 import {TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
 import VaultData from "../data/vault.json";
+import { EthersFastSubmitWallet } from "@augurproject/smart";
 
 type NumStrBigNumber = number | BN | string;
 
@@ -33,31 +36,82 @@ type NumStrBigNumber = number | BN | string;
 function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
     return new BN(n).dividedBy(new BN(10).pow(new BN(p))).decimalPlaces(d).toString();
 }
-
+const pp = BigNumber.from(10).pow(18);
 export const ContractSetup = async (account: string, provider: Web3Provider) => {
+    console.log("ContractSetup");
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
     const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
     const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
     const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
+    const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
     const cash = new Contract(usdc, ERC20Data.abi, signer);
     let tx;
-    // console.log("A")
+    tx = await controller.initiateMarket(
+        "0x26373F36f72B6e16F5A7860f957262677B9CB076",
+        {
+            name: utils.formatBytes32String("instrument 1"),
+            isPool: false,
+            trusted: false,
+            balance: 0,
+            faceValue: pp.add(pp.mul(5).div(100)),
+            marketId: 0,
+            principal: pp,
+            expectedYield: pp.mul(5).div(100),
+            duration: 100,
+            description: "description",
+            instrument_address: creditLine_address,
+            instrument_type: 0,
+            maturityDate: 0,
+            poolData: {
+                saleAmount: 0,
+                initPrice: 0,
+                promisedReturn: 0,
+                inceptionTime: 0,
+                inceptionPrice: 0,
+                leverageFactor: 0,
+                managementFee: 0,
+            }
+        },
+        1
+    )
+    tx.wait();
+    console.log("tx");
+    // vault: PromiseOrValue<string>,
+    // _borrower: PromiseOrValue<string>,
+    // _principal: PromiseOrValue<BigNumberish>,
+    // _notionalInterest: PromiseOrValue<BigNumberish>,
+    // _duration: PromiseOrValue<BigNumberish>,
+    // _faceValue: PromiseOrValue<BigNumberish>,
+    // _collateral: PromiseOrValue<string>,
+    // _oracle: PromiseOrValue<string>,
+    // _collateral_balance: PromiseOrValue<BigNumberish>,
+    // _collateral_type: PromiseOrValue<BigNumberish>,
+    // console.log("initiateMarket");
+
+    // tx = await reputationManager.incrementScore("0x6756506A5c263710E5CDb392140DF1f958835e38",pp);
+    // tx.wait();
+    // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2", 10);
+    // tx.wait();
+
+    // console.log("validators: ", await reputationManager.getTraders());
+
+
     // tx = await controller.setMarketManager(marketManager.address);
     // await tx.wait();
     // console.log("B")
     // tx = await controller.setVaultFactory(vaultFactory.address);
     // await tx.wait();
     // console.log("C")
-    // tx = await controller.setPoolFactory(vaultFactory.address);
+    // tx = await controller.setPoolFactory(pool_factory_address);
     // await tx.wait();
     // console.log("D")
     // tx = await controller.setReputationManager(reputation_manager_address);
     // await tx.wait();
 
-    // add vault.
     // console.log("E")
-    // const pp = BigNumber.from(10).pow(18);
+    
+
     // tx = await controller.createVault(
     //     cash.address,
     //     false,
@@ -76,7 +130,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //     }
     // );
     // await tx.wait(2);
-    // console.log("F");
+    console.log("F");
 }
 
 export const getContractData = async (account: string, provider: Web3Provider): Promise<{
@@ -118,12 +172,16 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             throw new Error("contract data too old");
           }
         
-        let default_params = {} as any;
-        for (const [key, value] of Object.entries(vaultBundle.default_params)) {
-            if (!isNumeric(key)) {
-                default_params[key] = toDisplay(value.toString());
-            }
-        }
+        let default_params = {
+            N: vaultBundle.default_params.N.toString(),
+            sigma: toDisplay(vaultBundle.default_params.sigma.toString()),
+            alpha: toDisplay(vaultBundle.default_params.alpha.toString()),
+            omega: toDisplay(vaultBundle.default_params.omega.toString()),
+            delta: toDisplay(vaultBundle.default_params.delta.toString()),
+            r: toDisplay(vaultBundle.default_params.r.toString()),
+            s: toDisplay(vaultBundle.default_params.s.toString()),
+            steak: toDisplay(vaultBundle.default_params.steak.toString()),
+        };
 
         //let want = structuredClone(vaultBundle.want);
         let want = {} as any;
