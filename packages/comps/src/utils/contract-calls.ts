@@ -123,6 +123,7 @@ import {
   cash_address, 
   pool_factory_address, 
   creditLine_address, 
+reputation_manager_address
 } from "../data/constants";
 
 
@@ -136,7 +137,7 @@ import controllerabi from "../data/controller.json" ;
 import cashabi from "../data/cash.json"; 
 import vaultabi from "../data/vault.json"; 
 import marketmanagerabi from "../data/marketmanager.json"; 
-
+import reputationManagerAbi from "../data/ReputationManager.json"; 
 
 const precision = 1e6; 
 const pp = BigNumber.from(10).pow(18);
@@ -190,7 +191,6 @@ export async function setUpTestManager(
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
   await controller.testVerifyAddress(); 
-  await controller._incrementScore(account, pp); 
 
 }
 
@@ -271,9 +271,18 @@ export async function setUpExampleController(account: string, library: Web3Provi
   params.s = pp.mul(2);
   params.steak = pp.div(4); 
 
-  await controller.setMarketManager(market_manager_address);
-  await controller.setVaultFactory(vault_factory_address);
-  await controller.setPoolFactory(pool_factory_address); 
+  // await controller.setMarketManager(market_manager_address);
+  // await controller.setVaultFactory(vault_factory_address);
+  // await controller.setPoolFactory(pool_factory_address); 
+  // await controller.setReputationManager(reputation_manager_address); 
+
+  const reputation = new ethers.Contract(reputation_manager_address, 
+    reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
+  // await reputation.incrementScore(account, pp);
+  // await reputation.incrementScore("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", pp);
+
+    await controller.testVerifyAddress(); 
+
   // await (await controller.setMarketManager(market_manager_address)).wait();
   // console.log("A")
   // await (await controller.setVaultFactory(vault_factory_address)).wait();
@@ -281,10 +290,10 @@ export async function setUpExampleController(account: string, library: Web3Provi
   // await (await controller.setReputationNFT(rep_token_address)).wait();
   // console.log("Completed Reputation")
 
-  await controller.createVault(
-    cash_address, 
-    false, 0, pp.mul(10000000000), pp.mul(10000000000), params
-  )
+  // await controller.createVault(
+  //   cash_address, 
+  //   false, 0, pp.mul(10000000000), pp.mul(10000000000), params
+  // )
 
 }
 
@@ -321,16 +330,16 @@ export async function addProposal(  // calls initiate market
   data.instrument_type = instrument_type;
   data.maturityDate = String(0);
 
-  pooldata.saleAmount = "0"
-  pooldata.initPrice = "0"
-  pooldata.promisedReturn = "0"
-  pooldata.inceptionTime = "0"
-  pooldata.inceptionPrice = "0"
-  pooldata.leverageFactor = "0"
-  pooldata.managementFee = "0"
+  pooldata.saleAmount = "1"
+  pooldata.initPrice = "1"
+  pooldata.promisedReturn = "1"
+  pooldata.inceptionTime = "1"
+  pooldata.inceptionPrice = "1"
+  pooldata.leverageFactor = "1"
+  pooldata.managementFee = "1"
   data.poolData = pooldata; 
   console.log('account', account, Instrument_address); 
-  await controller.initiateMarket(account, data, vaultId,{gasLimit: 10000000})
+  await controller.initiateMarket("0xda96D4256411235c2B61028c689169DcB95105Df", data, vaultId,{gasLimit: 10000000})
   // export interface CorePoolData {
 //   saleAmount: string;
 //   initPrice: string;
@@ -354,8 +363,8 @@ export async function addProposal(  // calls initiate market
     return tx; 
 }
 
-export const faucetUnderlying = async (account: string, library: Web3Provider) => {
-  const collateral = new ethers.Contract(cash_address, cashabi["abi"], getProviderOrSigner(library, account)); 
+export const faucetUnderlying = async (account: string, library: Web3Provider, address:string) => {
+  const collateral = new ethers.Contract(address, cashabi["abi"], getProviderOrSigner(library, account)); 
   await collateral.faucet(pp.mul(100000)); 
   // const { marketFactories } = PARA_CONFIG;
   // const usdcContract = marketFactories[0].collateral;

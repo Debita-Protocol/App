@@ -38,7 +38,7 @@ import {InstrumentCard} from "./liquidity-view";
 
 const {
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
-  LabelComps: { CategoryIcon, WarningBanner },
+  LabelComps: { generateTooltip, CategoryIcon, WarningBanner },
   MarketCardComps: { MarketTitleArea, orderOutcomesForDisplay, unOrderOutcomesForDisplay },
   InputComps: { AmountInput, isInvalidNumber, OutcomesGrid },
   Links: { MarketLink },
@@ -165,8 +165,8 @@ export const MarketLiquidityView = () => {
   const vault_address = vault?.address;
   const underlying_address = vault?.want.address; 
   const underlyingSymbol = vault?.want.symbol; 
+  const exchangeRate = Number(vault.totalShares) ==0? 1: Number(vault.totalAssets)/Number(vault.totalShares); 
 
-  // const { categories } = market;
   const BackToLPPageAction = () => {
     history.push({
       pathname: makePath(LIQUIDITY),
@@ -190,7 +190,7 @@ export const MarketLiquidityView = () => {
           <h4>Vault Details</h4>
             <p>{"DETAILS"}</p>
           <AddMetaMaskToken tokenSymbol = {"Vault"+vaultId} tokenAddress={vault_address}  />
-          <AddMetaMaskToken tokenSymbol = {underlyingSymbol} tokenAddress={vault_address}  />          
+          <AddMetaMaskToken tokenSymbol = {underlyingSymbol} tokenAddress={underlying_address}  />          
           {(
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
@@ -201,21 +201,23 @@ export const MarketLiquidityView = () => {
 
 
       <ul className={Styles.StatsRow}>
-<li>
+        <li>
             <span>TVL</span>
-            <span>{formatDai(100000000/4.2/1000000  || "0.00").full}</span>
-            <span>{formatDai(100000000/5/1000000 || "0.00").full}</span>
-           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+            <span>{"In USD: "}{formatDai(vault.totalAssets|| "0.00").full}</span>
+            <span>{vault.totalAssets}{" Underlying"}</span> 
           </li>
           <li>
             <span>(Estimated) APR</span>
+            {generateTooltip(
+          "APR with 0 leverage, senior exposure to all connected instruments",
+          "slippageToleranceInfo"
+        )}
             <span>{formatDai(0.818 || "0.00").full}</span>
 
-            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Number of Instruments</span>
-            <span>{"Resolved"}</span>
+            <span>{filteredInstruments.length}</span>
           </li>
 
           <li>
@@ -228,26 +230,30 @@ export const MarketLiquidityView = () => {
         </ul>
 
       <ul className={Styles.StatsRow}>
-<li>
-            <span>Underlying</span>
-            <span>{formatDai(100000000/4.2/1000000  || "0.00").full}</span>
-            <span>{formatDai(100000000/5/1000000 || "0.00").full}</span>
-           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
-          </li>
-          <li>
-            <span>Manager's Leverage</span>
-            <span>{formatDai(0.818 || "0.00").full}</span>
+      <li>
+          <span>Total Supply </span>
+          <span>{vault.totalShares}</span>
 
-            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+        </li>
+        <li>
+            <span>Exchange Rate w/ underlying</span>
+            <span>{exchangeRate}</span>
           </li>
+         
           <li>
-            <span></span>
-            <span>{"Resolved"}</span>
+            <span>Vault Utilization Rate</span>
+            <span>{vault.utilizationRate}</span>
           </li>
 
           <li>
-            <span>Promised Return</span>
+            <span>Managers' Leverage</span>
+            {generateTooltip(
+          "Amount of leveraged exposure to this vault's instruments. Default Leverage is 1. Any other leverage will mint NFTs instead of ERC20",
+          "slippageToleranceInfo"
+        )}
             <span>{formatDai(100000000/1000000 || "0.00").full}</span>
+
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
         {/*inception price,inception time, current value prices, current mark prices*/}
@@ -258,7 +264,8 @@ export const MarketLiquidityView = () => {
      <h4>Vault Performance</h4>
 
         </div> 
-        <MintForm {...{vaultId, selectedAction, setSelectedAction, amount, setAmount}}/>
+        <MintForm {...{vaultId, selectedAction, setSelectedAction, amount, setAmount, 
+          underlying_address, exchangeRate}}/>
    
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
@@ -439,9 +446,9 @@ const confirmRedemVault = async({
   
 }
 const faucet = async({
-  account, loginAccount
+  account, loginAccount, underlying_address
 })=>{
-  faucetUnderlying(account, loginAccount.library)
+  faucetUnderlying(account, loginAccount.library, underlying_address)
 }
 interface MintFormProps {
   vaultId: string; 
@@ -451,13 +458,17 @@ interface MintFormProps {
   // BackToLPPageAction: () => void;
   amount: string;
   setAmount: (string) => void;
+  underlying_address: string;
+  exchangeRate : number; 
 }
 const MintForm = ({
   vaultId, 
   selectedAction,
   setSelectedAction, 
   amount, 
-  setAmount
+  setAmount, 
+  underlying_address, 
+  exchangeRate
 }: MintFormProps) => {
   const {
     account,
@@ -470,7 +481,6 @@ const MintForm = ({
   } = useAppStatusStore();
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   // const {vaultId} = vaults; 
-
   const isRemove = selectedAction === REMOVE;
   const isMint = selectedAction === MINT_SETS;
   const initialOutcomes = []
@@ -497,6 +507,8 @@ const MintForm = ({
   const isApproved = false; 
   const infoNumbers = []
   const {inputFormError} = MintRedeemError({account}) 
+    const vault = vaults[Number(vaultId)]
+
   // isMint
   //   ? getMintBreakdown(outcomes, amount)
   //   : isResetPrices
@@ -575,20 +587,22 @@ const MintForm = ({
           disabled = {false}
           //error={hasAmountErrors}
         />
-        <Leverage/>
+        {!isRemove && <Leverage/>}
           {isResetPrices && (
             <>
-              <div className={Styles.Breakdown}>
+              {!isRemove &&(<div className={Styles.Breakdown}>
                 <span>Estimated APR</span>
                 {/*<InfoNumbers infoNumbers={resetPricesInfoNumbers} />*/}
-              </div>
+              </div>)}
               <div className={Styles.Breakdown}>
                 <span>You'll receive</span>
                 <InfoNumbers
                   infoNumbers={[
                     {
                       label: amountLabel,
-                      value:`${formatCash(amount, USDC).full}`,
+                      value: isRemove? (Number(amount)* exchangeRate).toString()
+                      : (Number(amount)/exchangeRate).toString()
+                      //value:`${formatCash(amount, USDC).full}`,
                       //svg: USDCIcon,
                     },
                   ]}
@@ -600,9 +614,9 @@ const MintForm = ({
             {isRemove && (
               <WarningBanner
                 className={CommonStyles.ErrorBorder}
-                title="Increasing or removing your liquidity on a market before the bonus time is complete will result in the loss of your bonus rewards."
+                title="Removing liquidity may not be viable given the utilization rate"
                 subtitle={
-                  "In order to receive the bonus, your liquidity needs to remain unchanged until the bonus period is over."
+                  "In order withdraw, you may have to wait until there is available liquidity"
                 }
               />
             )}
@@ -612,7 +626,7 @@ const MintForm = ({
           <div className={Styles.ActionButtons}>
             {!isApproved && (
               <SecondaryThemeButton
-              action = {()=> faucet({account, loginAccount})}
+              action = {()=> faucet({account, loginAccount, underlying_address})}
               text={"Faucet Underlying"}
               />
               // <ApprovalButton
