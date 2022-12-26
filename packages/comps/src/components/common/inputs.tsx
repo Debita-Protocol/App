@@ -76,6 +76,7 @@ export interface AmountInputProps {
   ammCash?: Cash;
   isBuy?: boolean;
   disabled?: boolean;
+  toggleUnderlying?: Function; 
 }
 
 export const AmountInput = ({
@@ -92,15 +93,14 @@ export const AmountInput = ({
   ammCash,
   isBuy = true,
   disabled = false,
+  toggleUnderlying, 
 }: AmountInputProps) => {
-  console.log("maxVlaue: ", maxValue);
   const { isLogged } = useAppStatusStore();
   const currencyName = chosenCash;
   const [amount, updateAmount] = useState(initialAmount);
   const icon = currencyName === USDC ? UsdIcon : EthIcon;
   const label = currencyName// === USDC ? USDC : ETH;
   const { symbol, prepend } = getCashFormat(chosenCash);
-  console.log("isLogged: ", isLogged);
   const setMax = () => {
     if (new BN(maxValue).lte(DUST_POSITION_AMOUNT)) return;
     updateAmount(maxValue);
@@ -123,7 +123,7 @@ export const AmountInput = ({
     >
       <span>{heading}</span>
         <span onClick={setMax}>
-        {isLogged && (
+        {isLogged && maxValue&&(
           <>
             <span>balance:</span>{" "}
             {isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted}
@@ -154,7 +154,9 @@ export const AmountInput = ({
         { maxValue && ammCash && (
           <TinyThemeButton text="Max" action={setMax} noHighlight />
         )}
-        
+         { toggleUnderlying && (
+          <TinyThemeButton text="switch" action={toggleUnderlying} noHighlight />
+        )}
         {!!currencyName && chosenCash !== SHARES && !showCurrencyDropdown && (
           // <span className={Styles.CurrencyLabel}>
           //   {icon} {label}

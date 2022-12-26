@@ -3,6 +3,7 @@ import classNames from "classnames";
 import Styles from "./market-liquidity-view.styles.less";
 import CommonStyles from "../modal/modal.styles.less";
 import ButtonStyles from "../common/buttons.styles.less";
+import LiqStyles from "./liquidity-view.styles.less"; 
 import { useHistory, useLocation } from "react-router";
 import { InfoNumbers, ApprovalButton } from "../market/trading-form";
 import { BigNumber as BN } from "bignumber.js";
@@ -32,9 +33,11 @@ import {
   ADD,
   REMOVE,
   SHARES,
-  USDC,
+  USDC,POOL_SORT_TYPES,
+  POOL_SORT_TYPE_TEXT,
+  INSTRUMENT_SORT_TYPES, INSTRUMENT_SORT_TYPE_TEXT
 } from "../constants";
-import {InstrumentCard} from "./liquidity-view"; 
+import {InstrumentCard, SortableHeaderButton} from "./liquidity-view"; 
 
 const {
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
@@ -117,11 +120,15 @@ const REMOVE_FOOTER_TEXT = `Removing liquidity may return shares; these shares m
 
 export const MarketLiquidityView = () => {
   const {
+      poolsViewSettings,
+    actions: { updatePoolsViewSettings },
     settings: { timeFormat },
   } = useSimplifiedStore();
   const {
     actions: { closeModal },
   } = useAppStatusStore();
+  const { marketTypeFilter, sortBy, primaryCategory, subCategories, onlyUserLiquidity } = poolsViewSettings;
+
   const { balances } = useUserStore();
   const location = useLocation();
   const history = useHistory();
@@ -271,29 +278,31 @@ export const MarketLiquidityView = () => {
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
       <LiquidityWarningFooter />
 
-      <section>
-             <h4>Instruments</h4>
-      </section>
+      <div className={LiqStyles.LiquidityView}>
+                   <h4>Instruments</h4>
+
        <section>
         <article>
-          <span>Instruments</span>
-          {/*Object.keys(POOL_SORT_TYPES).map((sortType) => (
+          <span>Instrument Name</span>
+
+          {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
             <SortableHeaderButton
               {...{
                 sortType,
                 setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
                 sortBy,
-                text: POOL_SORT_TYPE_TEXT[sortType],
+                text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
                 key: `${sortType}-sortable-button`,
               }}
             />
-          ))*/}
+          ))}
           <span />
         </article>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
           ))}
         </section>
+        </div>
     </div>
   );
 };
@@ -804,6 +813,8 @@ const LiquidityForm = ({
   const {
     actions: { setModal },
   } = useAppStatusStore();
+
+
   const { blocknumber, cashes }: DataState = useDataStore();
   const isRemove = selectedAction === REMOVE;
   const isMint = selectedAction === MINT_SETS;

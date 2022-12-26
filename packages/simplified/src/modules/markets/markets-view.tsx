@@ -455,7 +455,8 @@ const MarketsView = () => {
         }}
       />
 <section>
-      {filteredVaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}     
+      {filteredVaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}   
+        
 </section>
       {loading ? (
         <section>

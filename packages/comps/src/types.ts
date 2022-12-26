@@ -394,6 +394,12 @@ export interface CoreInstrumentData {
   maturityDate: string;
   poolData?: CorePoolData;
   name?: string;
+
+  seniorAPR?: string; 
+  exposurePercentage?: string; 
+  managers_stake?: string; 
+  approvalPrice?: string; 
+
 }
 
 export interface NFT {
@@ -462,6 +468,11 @@ export interface VaultInfo {
   totalAssets: string;
   utilizationRate: string;
   exchangeRate: string;
+
+  totalEstimatedAPR?: string; 
+  goalAPR?: string; 
+  totalProtection?: string; 
+
 };
 
 export interface VaultInfos {

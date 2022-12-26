@@ -13,6 +13,8 @@ import { TinyThemeButton } from "../common/buttons";
 
 import { MarketCardContext } from './market-card-context'; 
 import {useUserStore} from "../../stores/user"; 
+import {useDataStore2} from "../../stores/data-2"; 
+
 // import {isBorrowerApproved} from "../../utils/contract-calls"; 
 
 export const LoadingMarketCard = () => {
@@ -146,7 +148,8 @@ export const VaultCardView = ({
 }) =>{
    const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot", "USDC lending in Fuse pool #3" ];
   const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions","Long or Short Isolated Lending Positions"] 
-
+  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+  console.log('vaults', vaults, instruments, market_)
   return (
     <article
       className={classNames(Styles.MarketCard, {
@@ -164,14 +167,14 @@ export const VaultCardView = ({
           <ReportingStateLabel {...{ reportingState }} />*/}
         {/*  <CategoryIcon {...{ categories }} /> */ }
           <div>
-            {(
+            {/*(
               <TinyThemeButton
                 customClass={Styles.NoLiquidityPill}
                 action={() => {}}
                 text={"text"}
                 disabled
-              />)}
-          <ValueLabel label="Liquidity Provider APR" value={"-"} />
+              />)*/}
+          <ValueLabel label="Estimated APR" value={"-"} />
 
           {/* {marketHasNoLiquidity ? (
               <TinyThemeButton
@@ -193,18 +196,18 @@ export const VaultCardView = ({
           </div> */}
     <div>
             {(
-              <ValueLabel label="Is Approved" value={"true"} />
+              <ValueLabel label="Type" value={"Credit Instruments"} />
             )}
           </div>
 
         </article>
         <section>
           {/*<MarketTitleArea {...{ ...market, timeFormat }} /> */}
-          <MarketTitleArea title={titles[0]} description={descriptions[0]} />
+          <MarketTitleArea title={vaults[vaultId].name} description={"Description"} />
 
-          <ValueLabel label="Principal" value={"-"} />
-          <ValueLabel label="Projected Return" value={ "-"} />
-          <ValueLabel label="Term" value={ "-"} />
+          <ValueLabel label="TVL" value={vaults[vaultId].totalAssets} />
+          <ValueLabel label="Investing Restrictions" value={ vaults[vaultId].onlyVerified? "Only Verified": "None "} />
+          {/*<ValueLabel label="Number of Instruments" value={ "-"} />*/}
 
     { /*     <ValueLabel label="Projected Yield" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
           <ValueLabel label="Term" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} /> */}
@@ -240,6 +243,7 @@ export const MarketCardView = ({
   noLiquidityDisabled?: boolean;
   timeFormat?: string;
 }) => {
+
 
   const[isApproved, setIsApproved] = useState(false)
    const {formData, handleChange} = useContext(MarketCardContext);
@@ -337,7 +341,7 @@ export const MarketCardView = ({
         </article>
         <section>
           {/*<MarketTitleArea {...{ ...market, timeFormat }} /> */}
-          <MarketTitleArea title={titles[amm?.turboId-1]} description={descriptions[amm?.turboId-1]} />
+          <MarketTitleArea title={"s"} description={descriptions[amm?.turboId-1]} />
 
           <ValueLabel label="Principal" value={principals[amm?.turboId-1] || "-"} />
           <ValueLabel label="Projected Return" value={aprs[amm?.turboId-1] || "-"} />

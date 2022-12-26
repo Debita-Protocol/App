@@ -18,20 +18,20 @@ import {
   useDataStore2
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
-import { Slippage, LimitOrderSelector} from "../common/slippage";
+import { Slippage,Leverage, LimitOrderSelector} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,
   //estimateZCBBuyTrade, 
   redeemZCB, getTraderBudget, getHedgeQuantity,
-   getERCBalance, getVaultTokenBalance, tradeZCB} = ContractCalls;
+   getERCBalance, getVaultTokenBalance, tradeZCB, estimateTrade} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
   Icons: { CloseIcon },
   LabelComps: { generateTooltip },
   InputComps: { AmountInput, OutcomesGrid },
-  ButtonComps: { SecondaryThemeButton },
+  ButtonComps: { SecondaryThemeButton, TinyThemeButton },
   SelectionComps: { BuySellToggleSwitch },
 } = Components;
 const { formatCash, formatCashPrice, formatPercent, formatSimpleShares } = Formatter;
@@ -104,10 +104,10 @@ const getEnterBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) =>
       label: "Estimated Tokens returned",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
-    {
-      label: "Estimated Returns",
-      value: !isNaN(Number(breakdown?.maxProfit)) ? formatCash(breakdown?.maxProfit || 0, cash?.name).full : "-",
-    },
+    // {
+    //   label: "Estimated Returns",
+    //   value: !isNaN(Number(breakdown?.maxProfit)) ? formatCash(breakdown?.maxProfit || 0, cash?.name).full : "-",
+    // },
     {
       //label: `Estimated Fees (${cash.name})`,
       label: `Estimated Fees`,
@@ -202,7 +202,7 @@ const getOutcomes = (price) =>{
   //   })),
 
 }
-const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
+export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
@@ -222,6 +222,8 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
   const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
   const [breakdown, setBreakdown] = useState<EstimateTradeResult | null>(null);
   const [isLimit, setIsLimit] = useState(false); 
+  const [isUnderlying, setIsUnderlying] = useState(true); 
+  const [isIssue, setIsIssue] = useState(false); 
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
 
   const outcomes = getOutcomes(market_[marketId]?.longZCBprice);
@@ -270,7 +272,7 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
   useEffect(async() => {
 
           
-      }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
+    }, [ amount, orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
 
   useEffect(() => {
     let isMounted = true;
@@ -292,16 +294,25 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
 
   useEffect(() => {
     let isMounted = true;
-
-    const getEstimate = async () => {
+    const getEstimate = async()=>{
       const breakdown = isBuy
-        ? estimateBuyTrade(amm, amount, selectedOutcomeId, ammCash)
-        : estimateSellTrade(amm, amount, selectedOutcomeId, marketShares);
+        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, true)
+        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, false)
+        isMounted&& setBreakdown(breakdown); 
 
-      isMounted && setBreakdown(breakdown);
-    };
+    }
+    console.log('breakdown', breakdown); 
+    // const getEstimate = async () => {
+    //   const breakdown = isBuy
+    //     ? estimateBuyTrade(amm, amount, selectedOutcomeId, ammCash)
+    //     : estimateSellTrade(amm, amount, selectedOutcomeId, marketShares);
 
-    if (amount && Number(amount) > 0 && new BN(amount).lte(new BN(userBalance))) {
+    //   isMounted && setBreakdown(breakdown);
+    // };
+
+    if (amount && Number(amount) > 0 
+     // && new BN(amount).lte(new BN(userBalance))
+      ) {
       getEstimate();
     } else if (breakdown !== null) {
       isMounted && setBreakdown(null);
@@ -320,6 +331,10 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
     if (!isLogged) {
       actionText = "Connect Wallet";
       disabled = true;
+    } else if(typeof breakdown == "string" ){
+      actionText = breakdown; 
+      disabled = true; 
+
     } else if (hasWinner) {
       actionText = RESOLVED_MARKET;
       disabled = true;
@@ -369,17 +384,25 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
         console.log('Trading Error', error)
       }); 
   }
-
+  const toggleUnderlying = ()=>{
+    setIsUnderlying(!isUnderlying); 
+  }
+  const toggleIssueField = ()=>{
+    setIsIssue(!isIssue); 
+  }
   const makeTrade = () => {
     const minOutput = breakdown?.outputValue;
     const outcomeShareTokensIn = breakdown?.outcomeShareTokensIn;
     const direction = isBuy ? TradingDirection.ENTRY : TradingDirection.EXIT;
     const isClose = orderType==BUY?false: true; 
-    setWaitingToSign(false);
+    setWaitingToSign(true);
     setShowTradingForm(false);
     const isShort = selectedOutcomeId ==1? false:true
     tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose ).then((response)=>{
-      console.log('tradingresponse', response)}).catch((error)=>{
+      console.log('tradingresponse', response)
+      if(response){
+        setWaitingToSign(false); 
+      }}).catch((error)=>{
         console.log('Trading Error', error)
       });
     
@@ -477,6 +500,9 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
         </div>
+        {!instruments[marketId]?.isPool && <TinyThemeButton
+          action={toggleIssueField}
+          text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
               <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
 
         <div
@@ -488,8 +514,9 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           {CloseIcon}
         </div>
       </div>
+
       <div>
-        <OutcomesGrid
+        {!isIssue && <OutcomesGrid
           outcomes={outcomes}
           selectedOutcome={selectedOutcome}
           setSelectedOutcome={(outcome) => {
@@ -502,40 +529,45 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           hasLiquidity={hasLiquidity}
           marketFactoryType={amm?.market?.marketFactoryType}
           isGrouped={amm?.market?.isGrouped}
-        />
-        <AmountInput
+        />}
+        {/*<TinyThemeButton
+          action={toggleUnderlying}
+          text={!isUnderlying?"Specify in Underlying":"Specify in ZCB"}/>*/}
+        {isUnderlying?(<AmountInput
           heading={"In Underlying"}
-          chosenCash={isBuy ? ammCash?.name : SHARES}
+          chosenCash={ammCash?.name}
           updateInitialAmount={setAmount}
           initialAmount={amount}
           error={amountError}
-          maxValue={userBalance}
+          maxValue={null}
           ammCash={ammCash}
           //disabled={!hasLiquidity || hasWinner}
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-        />
-        <AmountInput
+          toggleUnderlying={toggleUnderlying}
+        />):
+        (<AmountInput
           heading={"In ZCB"}
-          chosenCash={isBuy ? ammCash?.name : SHARES}
+          chosenCash={"ZCB"}
           updateInitialAmount={setAmount}
           initialAmount={amount}
           error={amountError}
-          maxValue={userBalance}
+          maxValue={null}
           ammCash={ammCash}
           //disabled={!hasLiquidity || hasWinner}
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-        />
+          toggleUnderlying={toggleUnderlying}
+        />)}
         {isLimit &&(<AmountInput
           heading={"Order Price"}
           chosenCash={isBuy ? ammCash?.name : SHARES}
           updateInitialAmount={setAmount}
           initialAmount={amount}
           error={amountError}
-          maxValue={userBalance}
+          maxValue={null}
           ammCash={ammCash}
           //disabled={!hasLiquidity || hasWinner}
           disabled = {!canbuy}
@@ -545,8 +577,8 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
 
 
         }
-        <Slippage />
-
+        {!isLimit && !isIssue && <Slippage />}
+        <Leverage/>
         {/* {isBuy && <Slippage />} */}
         {/*isBuy && (<Budget 
           {...{
@@ -563,7 +595,9 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
         <InfoNumbers infoNumbers={formatBreakdown(isBuy, bondbreakdown, ammCash)} />
 
-        {isLogged && !isApprovedTrade && (
+        {isLogged && 
+         // !isApprovedTrade && 
+          (
           <ApprovalButton
             {...{
               amm,
@@ -593,13 +627,36 @@ const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps)
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
         />
+
         )}
       </div>
     </div>
   );
 };
+// export default TradingForm;
 
-export default TradingForm;
+export const IssueForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
+   return (
+    <div className={Styles.TradingForm}>
+      <div>
+        <BuySellToggleSwitch
+          toggle={true}
+          setToggle={() => {
+            // if (true) {
+            //   setOrderType(SELL);
+            // } else {
+            //   setOrderType(BUY);
+            // }
+            // setBreakdown(null);
+            // setAmount("");
+          }}
+        />
+
+        </div>
+    </div>
+  );
+}
+
 
 export const ApprovalButton = ({
   amm,
@@ -634,73 +691,73 @@ export const ApprovalButton = ({
     }
   }, [isApproved, loginAccount, isPendingTx]);
   const approve = 
-  //  useCallback(async()=>{
-  //         let approvalAction = approveERC20Contract;
+   useCallback(async()=>{
+          let approvalAction = approveERC20Contract;
 
-  //   let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
-  //   let spender = rewardContractAddress || ammFactory; 
-  //   let text = "Liquidity DS"; 
-  //   const tx = await approvalAction(address, text, spender, loginAccount);
-  //     addTransaction(tx);
-
-  // } ,[cash, loginAccount, shareToken, amm])
-
-  useCallback(async () => {
-    try {
-      setIsPendingTx(true);
-      // defaults for ADD_LIQUIDITY/most used values.
-      let approvalAction = approveERC20Contract;
-      let address = cash?.address;
-      let spender = ammFactory;
-      let text = `Liquidity (${marketCashType})`;
-      console.log('action_tyype!!')
-      switch (actionType) {
-        case ApprovalAction.EXIT_POSITION: {
-          address = shareToken;
-          text = `To Sell (${marketCashType})`;
-          break;
-        }
-        case ApprovalAction.ENTER_POSITION: {
-          text = `To Buy (${marketCashType})`;
-          break;
-        }
-        case ApprovalAction.REMOVE_LIQUIDITY: {
-          address = rewardContractAddress? null : amm?.id;
-          spender = ammFactory;
-          text = `Liquidity (${marketCashType})`;
-          break;
-        }
-        case ApprovalAction.MINT_SETS: {
-          address = amm?.cash?.address;
-          spender = amm?.marketFactoryAddress;
-          text = `Mint Complete Sets`;
-          break;
-        }
-        case ApprovalAction.RESET_PRICES: {
-          const { evenTheOdds } = PARA_CONFIG;
-          address = amm?.cash?.address;
-          spender = evenTheOdds;
-          text = `Reset Prices`;
-          break;
-        }
-        case ApprovalAction.ADD_LIQUIDITY:
-        console.log('spender')
-          spender = rewardContractAddress || ammFactory;
-        break;
-        default: {
-          console.log('default!')
-          break;
-        }
-      }
-      console.log('address!')
-      const tx = await approvalAction(address, text, spender, loginAccount);
-      tx.marketDescription = marketDescription;
+    let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
+    let spender = rewardContractAddress || ammFactory; 
+    let text = "Liquidity DS"; 
+    const tx = await approvalAction(address, text, spender, loginAccount);
       addTransaction(tx);
-    } catch (error) {
-      setIsPendingTx(false);
-      console.error(error);
-    }
-  }, [cash, loginAccount, shareToken, amm]);
+
+  } ,[cash, loginAccount, shareToken, amm])
+
+  // useCallback(async () => {
+  //   try {
+  //     setIsPendingTx(true);
+  //     // defaults for ADD_LIQUIDITY/most used values.
+  //     let approvalAction = approveERC20Contract;
+  //     let address = cash?.address;
+  //     let spender = ammFactory;
+  //     let text = `Liquidity (${marketCashType})`;
+  //     console.log('action_tyype!!')
+  //     switch (actionType) {
+  //       case ApprovalAction.EXIT_POSITION: {
+  //         address = shareToken;
+  //         text = `To Sell (${marketCashType})`;
+  //         break;
+  //       }
+  //       case ApprovalAction.ENTER_POSITION: {
+  //         text = `To Buy (${marketCashType})`;
+  //         break;
+  //       }
+  //       case ApprovalAction.REMOVE_LIQUIDITY: {
+  //         address = rewardContractAddress? null : amm?.id;
+  //         spender = ammFactory;
+  //         text = `Liquidity (${marketCashType})`;
+  //         break;
+  //       }
+  //       case ApprovalAction.MINT_SETS: {
+  //         address = amm?.cash?.address;
+  //         spender = amm?.marketFactoryAddress;
+  //         text = `Mint Complete Sets`;
+  //         break;
+  //       }
+  //       case ApprovalAction.RESET_PRICES: {
+  //         const { evenTheOdds } = PARA_CONFIG;
+  //         address = amm?.cash?.address;
+  //         spender = evenTheOdds;
+  //         text = `Reset Prices`;
+  //         break;
+  //       }
+  //       case ApprovalAction.ADD_LIQUIDITY:
+  //       console.log('spender')
+  //         spender = rewardContractAddress || ammFactory;
+  //       break;
+  //       default: {
+  //         console.log('default!')
+  //         break;
+  //       }
+  //     }
+  //     console.log('address!')
+  //     const tx = await approvalAction(address, text, spender, loginAccount);
+  //     tx.marketDescription = marketDescription;
+  //     addTransaction(tx);
+  //   } catch (error) {
+  //     setIsPendingTx(false);
+  //     console.error(error);
+  //   }
+  // }, [cash, loginAccount, shareToken, amm]);
 
   if (!loginAccount || isApproved) {
     return null;

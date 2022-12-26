@@ -41,7 +41,7 @@ const {
   MarketCardComps: { MarketTitleArea },
   ButtonComps: { PrimaryThemeButton, SecondaryThemeButton },
 } = Components;
-const { canAddLiquidity, getMaticUsdPrice, setUpExampleController, addProposal  } = ContractCalls;
+const { canAddLiquidity, getMaticUsdPrice, setUpExampleController, addProposal ,setUpTestManager } = ContractCalls;
 const {
   DateUtils: { getMarketEndtimeDate },
   Formatter: { formatApy, formatCash, formatToken },
@@ -64,6 +64,11 @@ const setupExample = async({
 
   await setUpExampleController(account, loginAccount.library)
 
+}
+const setUpExampleManager = async({
+  account, loginAccount
+}) => {
+  await setUpTestManager(account, loginAccount.library)
 
 }
 const addExampleProposal = async({
@@ -200,35 +205,12 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       })}
     >
 
-      <MarketLink id={marketId?.toString()} dontGoToMarket={true}>
-        {/*<CategoryIcon {...{ "categories" }} />
-        <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+      <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
 
-        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{marketId?.toString()+" "}{"USDC"}{" Vault"}</p>
+        {/*<CategoryIcon {{ "categories" } }/> */}
+        {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
 
-      </MarketLink>
-
-      <button onClick={() => setExpanded(!expanded)}>
-        {/*<CategoryIcon {...{ categories }} />
-                <MarketTitleArea {...{ ...market, timeFormat }} />*/}
-      </button>
-      <span>{ "-"}</span>
-      <span>{"-"}</span>
-      <span>{"-"}</span>
-      <span>
-        {"$0.00"}
-      </span>
-      <span>
-        {"$0.00"} 
-        {true && <span>{"0"}</span>}
-      </span>
-      <div>
-        <div className={Styles.MobileLabel}>
-          <span>My Liquidity</span>
-          <span>{ "$0.00"}</span>
-          {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
-        </div>
-      <PrimaryThemeButton
+             {<PrimaryThemeButton
             text="Go to Instrument"
             small
             disabled={false}
@@ -241,9 +223,49 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 }),
               })
             }
-          />
+          />}
+                <p style={{ fontWeight: 'bold' }}> {}{marketId?.toString()+" "}</p>
+
+      </MarketLink>
+
+      <button onClick={() => setExpanded(!expanded)}>
+        {/*<CategoryIcon {...{ categories }} />
+                <MarketTitleArea {...{ ...market, timeFormat }} />*/}
+      </button>
+      <span>{ (instrument.isPool? "  true": "  false")}</span>
+      <span>{instrument.trusted }</span>
+      <span>{"-"}</span>
+      <span>
+        {"$0.00"}
+      </span>
+      <span>
+        {(instrument.trusted? "  true": "false")} 
+        {/*true && <span>{"0"}</span>*/}
+      </span>
+      <div>
+        <div className={Styles.MobileLabel}>
+          <span>My Liquidity</span>
+          <span>{ "$0.00"}</span>
+          {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
+        </div>
+
+      {/*<PrimaryThemeButton
+            text="Go to Instrument"
+            small
+            disabled={false}
+            action={() =>
+              history.push({
+                pathname: makePath(MARKET),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: marketId,
+                  
+                }),
+              })
+            }
+          />*/}
         
       </div>
+
     </article>
   );
 }
@@ -588,6 +610,9 @@ const LiquidityView = () => {
       {/*<MaticAddMetaMaskToken /> */}
   <button onClick={() => setupExample( { account,loginAccount}
 )}>SetUp</button>
+  
+  <button onClick={() => setUpExampleManager( { account,loginAccount}
+)}>SetUpManager</button>
   <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> 
       <span></span>     
       <span></span>

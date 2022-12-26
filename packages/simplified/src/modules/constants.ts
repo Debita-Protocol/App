@@ -251,6 +251,21 @@ export const POOL_SORT_TYPES = {
   REWARDS: "REWARDS",
 };
 
+export const INSTRUMENT_SORT_TYPES = {
+  ISPOOL: "ISPOOL", 
+  TVL: "TVL",
+  APR: "APR",
+  PERCENTAGE: "PERCENTAGE", 
+  APPROVED: "APPROVED", 
+}
+export const INSTRUMENT_SORT_TYPE_TEXT = {
+  ISPOOL: "Is Pool", 
+  TVL: "TVL",
+  APR: "Est. APR",
+  PERCENTAGE: "Exposure %", 
+  APPROVED: "Approved", 
+}
+
 export const POOL_SORT_TYPE_TEXT = {
   EXPIRES: "Expires",
   TVL: "TVL",

@@ -190,9 +190,54 @@ export async function setUpTestManager(
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
+  const reputation = new ethers.Contract(reputation_manager_address, 
+    reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
   await controller.testVerifyAddress(); 
+  await reputation.incrementScore(account, pp.mul(10)); 
+}
+
+export async function estimateTrade  (
+  account: string,
+  library: Web3Provider, 
+  marketId: number, 
+  amount: string, 
+  long: boolean, 
+  ) : Promise<EstimateTradeResult|string>{
+  console.log('why??');
+  const marketmanager = new ethers.Contract(
+    market_manager_address, marketmanagerabi["abi"], getProviderOrSigner(library, account)); 
+  let error = null; 
+  const result = await marketmanager.callStatic.buyBond(marketId, amount, pp.mul(100), 0)
+    .catch((e)=>{console.log(e);
+      error= e; 
+    }); 
+  if(error!= null) console.log('error', error.data.message); 
+  return error.data.message
+  const {tokensIn, tokensOut} = result; 
+
+  // const tokensIn
+  const avgPrice = tokensIn.div(tokensOut); 
+
+  console.log('estimates', avgPrice.toString, tokensOut.toString())  
+  let tradeFees
+  let maxProfit; 
+  let ratePerCash; 
+  let priceImpact; 
+  // average price, tokens returned, 
+
+  return {
+    outputValue: "0",
+    tradeFees, 
+    averagePrice: "0",
+    maxProfit, 
+    ratePerCash,
+    priceImpact,
+  };
+
+
 
 }
+
 
 export async function tradeZCB(
   account: string,
@@ -236,14 +281,12 @@ export async function tradeZCB(
     }
     else{
       await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
-
     }
-    
   }
   let tx; 
   return tx; 
-
 }
+
 
 
 export async function setUpExampleController(account: string, library: Web3Provider){

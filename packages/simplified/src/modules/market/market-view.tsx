@@ -7,7 +7,7 @@ import SimpleChartSection from "../common/charts";
 import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tables";
 import {  AddMetaMaskToken } from "../common/labels";
 import {ManagerWarning} from "../liquidity/market-liquidity-view"
-import TradingForm from "./trading-form";
+import {TradingForm,IssueForm} from "./trading-form";
 import {
   Constants,
   useAppStatusStore,
@@ -202,7 +202,7 @@ const MarketView = ({ defaultMarket = null }) => {
   }, [market]);
 
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  console.log('vaults', vaults, instruments, market_)
+  console.log('instruments', instruments, market_); 
   // if (!instruments) {
   //   return <div >Vault Not Found.</div>;
   // }
@@ -329,19 +329,18 @@ const MarketView = ({ defaultMarket = null }) => {
         </div>
         {<h1>{titles[0]}</h1>}
         { <h3>{descriptions[0]}</h3>}
-        <span>Instrument Type: {0}</span>
-  
+        <span>Instrument Type: {instruments[marketId]?.type}</span>
+
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
         <WinningOutcomeLabel winningOutcome={trusted} />
+
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Instrument Overview</h4>
-                <AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
-                <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
+          <h4>Overview</h4>
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
@@ -353,6 +352,7 @@ const MarketView = ({ defaultMarket = null }) => {
           )}
           {details.length === 0 && 
            <div>
+
          { /* <p>ZCB Address</p> 
           <span> {longZCBTokenAddress} </span> */}
            <p>{utilizer_description}</p> </div>}
@@ -507,9 +507,12 @@ const MarketView = ({ defaultMarket = null }) => {
           action={approve_utilizer}
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
-        <ManagerWarning/>
+        {/*<ManagerWarning/>*/}
 
         <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}/> 
+
+<AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
+                <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
       </section>
     </div>
   );
