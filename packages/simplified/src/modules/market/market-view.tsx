@@ -6,6 +6,7 @@ import classNames from "classnames";
 import SimpleChartSection from "../common/charts";
 import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tables";
 import {  AddMetaMaskToken } from "../common/labels";
+import {PositionsView} from "../common/positions"; 
 import {ManagerWarning} from "../liquidity/market-liquidity-view"
 import {TradingForm,IssueForm} from "./trading-form";
 import {
@@ -457,8 +458,10 @@ const MarketView = ({ defaultMarket = null }) => {
           marketFactoryType={amm?.market?.marketFactoryType}
         />
         <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />*/}
-        <PositionsLiquidityViewSwitcher ammExchange={amm} 
-        lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> 
+        {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
+        lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
+        
+        <PositionsView marketId = {marketId}/>
 
         <div
           className={classNames(Styles.Details, {

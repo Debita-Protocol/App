@@ -442,15 +442,18 @@ export async function mintVaultDS(
   // not_faucet: boolean = false
   ) {
 
-  const collateral = new ethers.Contract(cash_address, cashabi["abi"], getProviderOrSigner(library, account)); 
+  // const collateral = new ethers.Contract(cash_address, cashabi["abi"], getProviderOrSigner(library, account)); 
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
-  console.log('colla', collateral, controller, vaultId); 
   const vaultAd = await controller.getVaultfromId(vaultId); 
   console.log('vaultad,', vaultAd); 
 
   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
+  const collateral_address = await vault.UNDERLYING(); 
+  console.log('collateraladdress', collateral_address.toString()); 
+  const collateral = new ethers.Contract(collateral_address.toString(),
+   cashabi["abi"], getProviderOrSigner(library, account))
   const scaledAmount = pp.mul(depositAmount); 
 
   await collateral.approve(vaultAd, scaledAmount); 
