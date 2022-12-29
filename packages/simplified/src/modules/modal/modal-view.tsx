@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import ModalConfirmTransaction from './modal-confirm-transaction';
 import { useHistory } from "react-router";
 import Styles from "./modal.styles.less";
-import { MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "../constants";
+import { MODAL_POOL_BORROWER_ACTION, MODAL_POOL_COLLATERAL_ACTION, MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "../constants";
 import { Constants, Modals, useUserStore, useAppStatusStore } from "@augurproject/comps";
-import ModalNFTPoolBorrow from "./modal-nft-pool-borrow";
-import ModalNFTPoolAction from "./modal-nft-pool";
+import ModalCollateralPoolAction from "./modal-collateral-pool";
+import ModalPoolBorrowerAction from "./modal-pool-borrower";
 
 const { ModalConnectWallet } = Modals;
 
@@ -40,15 +40,25 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
           </div>
         </section>
       );
-    case MODAL_NFT_POOL_ACTION: // borrow and repay, ui are similar.
+    case MODAL_POOL_COLLATERAL_ACTION:
       return (
         <section className={Styles.ModalView}>
-          <ModalNFTPoolAction 
-          {...modal}
-          closeModal={closeModal}
+          <ModalCollateralPoolAction
+            {...modal}
+            closeModal={closeModal}
           />
         </section>
-      )
+      );
+    case MODAL_POOL_BORROWER_ACTION:
+      return (
+        <section className={Styles.ModalView}>
+          <ModalPoolBorrowerAction
+            {...modal}
+            closeModal={closeModal}
+          />
+        </section>
+      );
+
     default:
       return <div />;
   }

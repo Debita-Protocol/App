@@ -128,7 +128,7 @@ reputation_manager_address
 
 
 import {BigNumber, BigNumberish, utils} from "ethers"
-import { Loan, InstrumentData} from "../types"
+import { Loan} from "../types"
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 import tlensabi from "../data/TrustedMarketFactoryV3.json"; 
@@ -358,7 +358,7 @@ export async function addProposal(  // calls initiate market
 
 
   const data = {} as CoreInstrumentData_; 
-  const pooldata = {} as CorePoolData_; 
+  const pooldata = {} as CorePoolData; 
   data.name = formatBytes32String("name"); 
   data.isPool = false; 
   data.trusted = false; 
@@ -379,7 +379,10 @@ export async function addProposal(  // calls initiate market
   pooldata.inceptionTime = "1"
   pooldata.inceptionPrice = "1"
   pooldata.leverageFactor = "1"
-  pooldata.managementFee = "1"
+  // pooldata.managementFee = "1"
+  pooldata.APR = "1"
+  pooldata.totalBorrowedAssets = "1"
+  pooldata.totalSuppliedAssets = "1"
   data.poolData = pooldata; 
   console.log('account', account, Instrument_address); 
   await controller.initiateMarket("0xda96D4256411235c2B61028c689169DcB95105Df", data, vaultId,{gasLimit: 10000000})

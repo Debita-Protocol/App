@@ -24,7 +24,9 @@ const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress,
   canBuy,doZCBTrade,
   //estimateZCBBuyTrade, 
   redeemZCB, getTraderBudget, getHedgeQuantity,
-   getERCBalance, getVaultTokenBalance, tradeZCB, estimateTrade} = ContractCalls;
+   getERCBalance, getVaultTokenBalance, tradeZCB, 
+  // estimateTrade
+  } = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -296,8 +298,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
     let isMounted = true;
     const getEstimate = async()=>{
       const breakdown = isBuy
-        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, true)
-        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, false)
+        // ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, true)
+        // : await estimateTrade(account, loginAccount.library, Number(marketId), amount, false)
         isMounted&& setBreakdown(breakdown); 
 
     }
@@ -545,7 +547,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-          toggleUnderlying={toggleUnderlying}
+          //ßtoggleUnderlying={toggleUnderlying}
         />):
         (<AmountInput
           heading={"In ZCB"}
@@ -559,7 +561,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-          toggleUnderlying={toggleUnderlying}
+          // toggleUnderlying={toggleUnderlying}
         />)}
         {isLimit &&(<AmountInput
           heading={"Order Price"}

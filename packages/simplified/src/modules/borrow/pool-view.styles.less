@@ -1,0 +1,175 @@
+@import (reference) '~assets/styles/shared';
+
+
+.PoolView {
+    display: grid;
+    padding: @size-40 @size-60 @size-48;
+    grid-template-columns: 1fr 1fr 1fr;
+    > div:first-of-type {
+        grid-column: span 3;
+        > h3 {
+            padding-left: @size-40;
+            padding-bottom: @size-16;
+            font-size: @size-28;
+            font-weight: @weight-bold;
+        }
+        > div {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-around;
+            border: @size-1 solid var(--theme-border);
+            border-radius: @size-16;
+            margin-bottom: @size-36;
+            background: var(--primary-bg);
+            > div {
+                padding: @size-16;
+            }
+        }
+    }
+    > div:nth-of-type(2) {
+        grid-column: span 2;
+        >h3 {
+            font-size: @size-24;
+            font-weight: @weight-bold;
+            padding-left: @size-40;
+        }
+        > table {
+            width: 100%;
+            border-collapse:separate;
+            border-spacing:0 @size-24;
+            table-layout:fixed;
+            overflow:auto;
+            > thead{
+                > tr {
+                    > th {
+                        font-size: @size-14;
+                        font-weight: @weight-bold;
+                        color: var(--secondary-text);
+                    }
+                }
+            }
+            > tbody {
+                > tr {
+                  .HoverDropShadow;
+                  border-radius: @size-8;
+                  > td:first-of-type {
+                    > div {
+                      flex-direction: column;
+                      justify-content: center;
+                      align-items: center;
+                    }
+                    border-left: @size-1 solid var(--theme-border);
+                    border-top-left-radius: @size-8;
+                    border-bottom-left-radius: @size-8;
+                  }
+                  >td:last-of-type {
+                    border-right: @size-1 solid var(--theme-border);
+                    border-top-right-radius: @size-8;
+                    border-bottom-right-radius: @size-8;
+                     > div {
+                        display: flex;
+                        flex-flow: row nowrap;
+                        justify-content: space-evenly;
+                        align-items: center;
+                        > button {
+                            border: 0;
+                            min-height: @size-16;
+                            height: @size-16;
+                            min-width: @size-20;
+                            width: @size-20;
+                            color: var(--primary-bg);
+                        }
+                       
+                        > button:first-of-type {
+                            color: var(--buy); 
+                            &:hover {
+                                background-color: var( --secondary-button-background-hover);
+                              }
+                        }
+                        > button:last-of-type {
+                            color: var(--sell);
+                            &:hover {
+                                background-color: var(--secondary-button-background-hover);
+                              }
+                        }
+                     }
+                  }
+                  > td {
+                    background-color: var(--primary-bg);
+                    vertical-align: middle;
+                    text-align: center;
+                    position: relative;
+                    box-sizing:border-box;
+                    padding: @size-8;
+                    border-top: @size-1 solid var(--theme-border);
+                    border-bottom: @size-1 solid var(--theme-border);
+                    //border-right: @size-1 solid var(--theme-border);
+                    > span {
+                      font-size: @size-24;
+                      font-weight: @weight-semi-bold;
+                      color: var(--primary-text);
+                    }
+                    > div {
+                      &.TokenList {
+                        display: flex;
+                        flex-wrap: wrap;
+                        justify-content: center;
+                        align-items:center;
+                        word-break:break-all;
+                        > div {
+                          margin: @size-8;
+                        }
+                      }
+          
+                    }
+                  }
+                }
+              }
+        }
+    }
+
+    >div:nth-of-type(3) {
+        padding-left: @size-20;
+        display:flex;
+        flex-flow: column nowrap;
+        align-items:center;
+        > h3 {
+            font-size: @size-24;
+            // padding-left: @size-40;
+            font-weight: @weight-bold;
+            padding-bottom: @size-16;
+        }
+        > section {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-start;
+            > div { // labels
+                padding-left: @size-20;
+                padding-bottom:@size-16;
+                > span:first-of-type {
+                    font-size: @size-14;
+                    font-weight: @weight-bold;
+                    color: var(--secondary-text);
+                }
+            }
+
+            > div:last-of-type { // buttons
+                display: flex;
+                flex-flow: column nowrap;
+                > button {   
+                    margin-bottom: @size-8;
+                }
+            }
+            
+        }
+    }
+}
+  
+.BorrowItemCard {
+    display: flex;
+    padding: @size-8;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    border-radius: @size-10;
+    background-color:var(--primary-bg);
+}

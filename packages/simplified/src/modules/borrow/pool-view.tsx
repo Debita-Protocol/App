@@ -7,15 +7,19 @@ import {
     LabelComps,
     ButtonComps,
     Icons,
-    useAppStatusStore
+    useAppStatusStore,
+    ContractCalls2
 } from "@augurproject/comps"
 
 import { useLocation, useHistory } from "react-router";
-import Styles from "./borrow-view.styles.less";
+import Styles from "./pool-view.styles.less";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
-import { MODAL_ADD_LIQUIDITY, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
+import { MODAL_ADD_LIQUIDITY, MODAL_POOL_COLLATERAL_ACTION, MODAL_POOL_BORROWER_ACTION } from "@augurproject/comps/build/utils/constants";
 import { LoadingPoolCard } from "./PoolCard";
 
+import {vaults, instruments, userPoolData, emptyPoolInstrument } from "./fakedata";
+
+const { poolBorrow, poolRepay, poolAddInterest, addPoolCollateral, removePoolCollateral } = ContractCalls2;
 const TokenIconMap = {
     "USDC": "../../assets/images/usdc.png",
     "DAI": "../../assets/images/dai.png",
@@ -33,34 +37,33 @@ const { MARKET_ID_PARAM_NAME, } = Constants;
 const PoolView: React.FC = () => {
     const location = useLocation();
     const { [MARKET_ID_PARAM_NAME]: marketId } = parseQuery(location.search);
-    // const { 
-    //     balances: { NFTs: NFTBalances }, 
-    // } = useUserStore();
-    const { vaults, instruments } = useDataStore2();
+    // const { vaults, instruments } = useDataStore2();
     const [loading, setLoading] = useState(true);
-    const NFTBalances = {
-        "0x1": {
-            name: "NFT 1",
-            symbol: "NFT1",
-            balance: "1",
-            usdValue: "100"
-        },
-        "0x2": {
-            name: "NFT 2",
-            symbol: "NFT2",
-            balance: "2",
-            usdValue: "200"
-        }
-      };
+
+    const { actions: { setModal } } = useAppStatusStore();
+    const {cashes} = useDataStore2();
+    
+    // get user pool data, based on marketId + instrument_address.
+    const {supplyBalances, walletBalances, borrowBalance, accountLiquidity, remainingBorrowAmount} = userPoolData;
+    const {amount: borrowAmount} = borrowBalance;
+
+
+    // grab id from query, then get pool data from instruments
+    const { 
+        address: poolAddress, auctions, name,  poolLeverageFactor, totalBorrowedAssets, totalSuppliedAssets, APR, collaterals
+    } = emptyPoolInstrument;
+
+    // grab underlying asset from vaults object
+    const { want, name: vaultName } = vaults[marketId];
 
     useEffect(() => {
         if (Object.keys(vaults).length > 0 &&
-            Object.keys(instruments).length > 0 &&
-            Object.keys(NFTBalances).length > 0
+            Object.keys(instruments).length > 0
         ) {
             setLoading(false);
         }
-    }, [vaults, instruments, NFTBalances]);
+    }, [vaults, instruments]);
+    
     if (loading) {
         return (
             <div>
@@ -69,42 +72,155 @@ const PoolView: React.FC = () => {
         )
     }
 
-    const { poolData: {
-        NFTs,
-        APR
-    }} = instruments[marketId];
-    const { collateral_address } = vaults[instruments[marketId].vaultId];
-    
+    const borrowAction = () => {
+        setModal({
+            type: MODAL_POOL_BORROWER_ACTION,
+            action: async (amount: string, afterAction: Function) => {
+                let tx = await poolBorrow(
+                    amount,
+                    want.decimals,
+                    poolAddress
+                );
+                tx.wait();
+                afterAction();
+            },
+            isAdd: true,
+            maxValue: remainingBorrowAmount,
+            symbol: want.symbol
+        });
+    };
 
-    return (
-        <div className={Styles.poolView}>
+    const repayAction = () => {
+        setModal({
+            type: MODAL_POOL_BORROWER_ACTION,
+            action: async (amount: string, afterAction: Function) => {
+                let tx = await poolRepay(
+                    amount,
+                    want.decimals,
+                    poolAddress
+                );
+                tx.wait();
+                afterAction();
+            },
+            isAdd: false,
+            maxValue: borrowAmount,
+            symbol: want.symbol
+        });
+    };
+
+    const addInterestAction = () => {
+        poolAddInterest(poolAddress);
+    };
+
+
+    return (// first div is header
+        <div className={Styles.PoolView}>
             <div>
+                <h3>
+                    { name }
+                </h3>
                 <div>
+                    <ValueLabel label={"Vault"} large={true} value={vaultName + "/" + want.symbol}/>
+                    <ValueLabel label={"Total Borrowed Assets"} large={true} value={"$" + totalBorrowedAssets}/>
+                    <ValueLabel label={"Total Supplied Assets"} large={true} value={"$" + totalSuppliedAssets}/>
+                    <ValueLabel label={"Pool Leverage Factor"} large={true} value={poolLeverageFactor}/>
+                </div>
+                
+            </div>
+            <div>
                 <h3>
                     Supply
                 </h3>
                 <table>
                     <thead>
                         <tr>
-                            <td>Asset/LTV</td>
-                            <td>APY</td>
-                            <td>Wallet</td>
+                            <th>Asset</th>
+                            <th>Borrow Liquidity</th>
+                            <th>Max Liquidity</th>
+                            <th>Supplied</th>
+                            <th>Wallet</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {NFTs.map((nft, i) => {
-                            const { symbol, address, name, APY, maxLTV } = nft;
-                            const balance = !!NFTBalances && NFTBalances[address] ? NFTBalances[address].balance : "0";
-                            return (
-                                <CollateralSupplyCard
-                                    key={i.toString() + "-" + marketId.toString()}
-                                    symbol={symbol}
-                                    maxLTV={maxLTV}
-                                    balance={balance}
-                                    APY={APY}
-                                />
-                            )
-                        })}
+                        { userPoolData && userPoolData.walletBalances && collaterals.length > 0? (
+                            collaterals.map((asset, i) => { // className CollateralSupplyCard, error handling.
+                                console.log(asset);
+                                const supplyBalance = supplyBalances[asset.address][asset.tokenId];
+                                const walletBalance = walletBalances[asset.address][asset.tokenId];
+                                const { borrowAmount, maxAmount } = asset;
+                                const addAction = () => {
+                                    setModal({
+                                        type: MODAL_POOL_COLLATERAL_ACTION,
+                                        action: async (amount: string, afterAction: Function) => {
+                                            // let tx = await addPoolCollateral(
+                                            //     asset.address,
+                                            //     asset.tokenId,
+                                            //     amount,
+                                            //     poolAddress,
+                                            //     asset.isERC20,
+                                            //     asset.decimals
+                                            // );
+                                            // tx.wait();
+                                            afterAction();
+                                        },
+                                        isAdd: true,
+                                        maxValue: walletBalance,
+                                        symbol: asset.symbol,
+                                        isERC20: asset.isERC20
+                                    });
+                                }
+                                const removeAction = () => {
+                                    setModal({
+                                        type: MODAL_POOL_COLLATERAL_ACTION,
+                                        action: async (amount: string, afterAction: Function) => {
+                                            // let tx = await removePoolCollateral(
+                                            //     asset.address,
+                                            //     asset.tokenId,
+                                            //     amount,
+                                            //     poolAddress,
+                                            //     asset.decimals
+                                            // );
+                                            // tx.wait();
+                                            afterAction();
+                                        },
+                                        isAdd: false,
+                                        maxValue: supplyBalance,
+                                        symbol: asset.symbol,
+                                        isERC20: asset.isERC20
+                                    });
+                                }
+
+                                return (<tr>
+                                    <td>
+                                        {/* <img src={TokenIconMap[asset.symbol]} /> */}
+                                        { asset.symbol }
+                                    </td>
+                                    <td>
+                                        ${ borrowAmount }
+                                    </td>
+                                    <td>
+                                        ${ maxAmount }
+                                    </td>
+                                    <td>
+                                        ${ supplyBalance }
+                                    </td>
+                                    <td>
+                                        ${ walletBalance }
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <SecondaryThemeButton small={true} text={"+"} action={addAction}/>
+                                            <SecondaryThemeButton small={true} text={"-"} action={removeAction}/>
+                                        </div>
+                                    </td>
+                                </tr>)
+                            })
+                        ) : (
+                            <div>
+                                loading...
+                            </div>
+                        )
+                        }
                     </tbody>
                     
                 </table>
@@ -114,11 +230,49 @@ const PoolView: React.FC = () => {
                 <h3>
                     Borrow
                 </h3>
-                <section className="borrowHeader">
-                    <BorrowItemCard APR={APR} want={collateral_address} marketId={marketId}/>
+                <section>
+                    {/* <IconLabel icon={USDCIcon} label={"Want"} value={"USDC"} small={true}/> */}
+                    <ValueLabel label={"APR"} value={APR + "%"} />
+                    <ValueLabel label={"Remaining Borrow Liquidity"} value={"$" + accountLiquidity}/>
+                    <ValueLabel label={"Amount Borrowed: "} value={"$" + borrowAmount}/>
+                    <div>
+                        <SecondaryThemeButton small={true} text="Borrow" action={borrowAction}/>
+                        <SecondaryThemeButton small={true} text={"Repay"} action={repayAction}/>
+                        <SecondaryThemeButton small={true} text={"Accrue Interest"} action={addInterestAction}/>
+                    </div>
                 </section>
             </div>
-            </div>
+            {/* <div>
+                <h3>
+                    Auctions
+                </h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Current Price</th>
+                            <th>Start Time</th>
+                            <th>Collateral</th>
+                            <th>Wallet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { auctions.length > 0 &&
+                            auctions.map((auction, i) => {
+                                const {currentPrice, tokenId, startTime, tokenAddress} = auction;
+                                return (
+                                    <tr>
+                                        <td>
+                                            {}
+                                        </td>
+                                    </tr>
+                                )
+                            })
+                        }
+                    </tbody>
+                    
+                </table>
+            </div> */}
         </div>
     )
     };
@@ -150,36 +304,5 @@ const CollateralSupplyCard: React.FC = ({
     );
 }
 
-const BorrowItemCard: React.FC = ({
-    APR,
-    want,
-    marketId
-}) => {
-    const { actions: { setModal } } = useAppStatusStore();
-    const {cashes} = useDataStore2();
-    //TODO: get this from somewhere instead of assuming USDC
-    const USDC_addr = "0xC9a5FfC14d68c511e83E758d186C249580d5f111";
-    const USDC = cashes[USDC_addr];
-    // cashes[want]
-    // get icon related to want.
-    const buttonProps = {
-        action: () => {
-            setModal({
-                type: MODAL_NFT_POOL_ACTION,
-                buttonAction: () => {},
-                buttonText: "borrow",
-                asset: USDC
-            });
-        },
-        text: "Borrow"
-    }
-    return (
-        <div className={Styles.BorrowItemCard}>
-            <IconLabel icon={USDCIcon} label={"Want"} value={"USDC"} small={true}/>
-            <ValueLabel label={"APR"} value={APR} />
-            <SecondaryThemeButton {...buttonProps}/>
-        </div>
-    )
-}
 
 export default PoolView;

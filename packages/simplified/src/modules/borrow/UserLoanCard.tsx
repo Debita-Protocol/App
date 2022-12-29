@@ -13,7 +13,7 @@ import {
     LabelComps
 } from "@augurproject/comps";
 import { InstrumentInfos, CoreInstrumentData, VaultInfos } from "@augurproject/comps/build/types";
-import { MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
+//import { MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 
 const {
@@ -45,16 +45,16 @@ export const LoanCard: React.FC = (
     const USDC = cashes[want];
     const buttonProps ={
         text: "Repay",
-        action: () => {
-            setModal({
-                type: MODAL_NFT_POOL_ACTION,
-                buttonText: "repay",
-                buttonAction: () => {
-                    console.log("repay");
-                },
-                asset: USDC
-            })
-        },
+        // action: () => {
+        //     setModal({
+        //         type: MODAL_NFT_POOL_ACTION,
+        //         buttonText: "repay",
+        //         buttonAction: () => {
+        //             console.log("repay");
+        //         },
+        //         asset: USDC
+        //     })
+        // },
 
     }
 

@@ -41,13 +41,13 @@ const Routes = p => {
       <Route path={makePath(MARKETS)} component={MarketsView} />
       <Route path={makePath(MARKET)} component={MarketView} />
       <Route path={makePath(LIQUIDITY)} component={LiquidityView} />
-      <Route path={makePath([PROPOSAL, CREDITLINE])} component={CreditLineProposalView} />
+      {/* <Route path={makePath([PROPOSAL, CREDITLINE])} component={CreditLineProposalView} /> */}
       <Route path={makePath([PROPOSAL, "other"])} component={InstrumentProposalView} />
       <Route path={makePath(PROPOSAL)} component={ProposalsView} />
       <Route path={makePath(MARKET_LIQUIDITY)} component={MarketLiquidityView} />
       <Route path={makePath(PROFILE)} component={ProfileView} />
       <Route path={makePath("pool")} component={PoolView} />
-      <Route path={makePath(CREDITLINE)} component={CreditlineView} />
+      {/* <Route path={makePath(CREDITLINE)} component={CreditlineView} /> */}
       <Route path={makePath("invest")} component={InvestView} />
       <Route path={makePath("borrow")} component={BorrowView} />
       

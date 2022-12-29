@@ -457,7 +457,7 @@ const confirmRedemVault = async({
 const faucet = async({
   account, loginAccount, underlying_address
 })=>{
-  faucetUnderlying(account, loginAccount.library, underlying_address)
+  // faucetUnderlying(account, loginAccount.library, underlying_address)
 }
 interface MintFormProps {
   vaultId: string; 

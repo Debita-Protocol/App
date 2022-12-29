@@ -174,17 +174,6 @@ const CreditLineRequestForm = () => {
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
       </div>
       <div>
-        {/* <label>Principal: </label>
-        <input 
-          type="text"
-          placeholder="0.0"
-          value={ principal }
-          onChange={(e) => {
-            if (/^\d*\.?\d*$/.test(e.target.value)) {
-              setPrincipal(e.target.value)
-            }
-          }}
-        /> */}
         <label>Principal: </label>
         <AmountInput 
           updateInitialAmount={

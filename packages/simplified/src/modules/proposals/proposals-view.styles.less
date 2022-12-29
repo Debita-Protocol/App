@@ -2,28 +2,27 @@
 
 .ProposalsView {
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: column nowrap;
     padding: @size-40 @size-88 @size-48;
-    justify-content: center;
-    > div {
-        > .ProposalItem {
-            h3 {
-                color: var(--primary-text);
-                padding: @size-20 @size-16;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: @size-25;
-                background-color: var(--primary-bg);
-                border:@size-1 solid var(--theme-border);
-                border-radius: @size-10;
-                padding: @size-16;
-                margin: @size-16;
-                &:hover {
-                    background-color: var(--secondary-bg);
-                }
-                .HoverDropShadow;
-            }   
+    align-items: center;
+
+    > section:first-of-type {
+        display: flex;
+        flex-flow: row nowrap;
+        width: 90%;
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: flex-start;
+        border-bottom: @size-2 solid var(--theme-border);
+        margin-bottom:@size-16;
+        > div {
+            padding:@size-8;
+            .text-14-semi-bold;
+            height:100%;
+            border-bottom: @size-2 solid var(--theme-border);
+            &.Active {
+                border-bottom: @size-2 solid var(--color-brand);
+              }
         }
         
     }

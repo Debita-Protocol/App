@@ -61,55 +61,55 @@ const ProfileView: React.FC = () => {
     }, [zcbBalances]);
 
     return (
-        <div>
-            <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
-            Click Me
-        </button>
-        </div>
-        
-        // <div className={Styles.ProfileView}>
-        //     <section className={Styles.UserDetailsView}>
-        //         <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
-        //     </section>
-        //     <div>
-        //         <section className={Styles.UserVaultInfo}>
-        //             <h2>Vaults Balances: </h2>
-        //             { vaultIds && vaultIds?.length > 0 ? (
-        //                 <div>
-        //                     {vaultIds.map((vaultId) => {
-        //                     const balance = vaultBalances[vaultId];
-        //                     return (
-        //                         <VaultCard key={vaultId} vaultId={vaultId} shareBalance={balance.shares} vaults={vaults} />
-        //                     );
-
-        //                 })}
-        //                 </div>
-        //             ) : (
-        //                 <div>
-        //                     No Data Available.
-        //                 </div>
-        //             )}
-                    
-        //         </section>
-        //         <section className={Styles.UserVaultInfo}>
-        //             <h2>ZCB Postions</h2>
-        //             { marketIds && marketIds?.length > 0 ? (
-        //                 <div>
-        //                     {marketIds.map((marketId) => {
-        //                 const zcbBalance = zcbBalances[marketId];
-        //                 return (
-        //                     <MarketCard key={marketId} marketId={marketId} zcbBalance={zcbBalance} instruments={instruments} />
-        //                 )
-        //             })}
-        //             </div>) : (
-        //                 <div className={Styles.EmptyMarketsMessage}>
-        //                     No Data Available.
-        //                 </div>
-        //             )
-        //             }
-        //         </section>
-        //     </div>
+        // <div>
+        //     <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
+        //     Click Me
+        // </button>
         // </div>
+        
+        <div className={Styles.ProfileView}>
+            <section className={Styles.UserDetailsView}>
+                <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
+            </section>
+            <div>
+                <section className={Styles.UserVaultInfo}>
+                    <h2>Vaults Balances: </h2>
+                    { vaultIds && vaultIds?.length > 0 ? (
+                        <div>
+                            {vaultIds.map((vaultId) => {
+                            const balance = vaultBalances[vaultId];
+                            return (
+                                <VaultCard key={vaultId} vaultId={vaultId} shareBalance={balance.shares} vaults={vaults} />
+                            );
+
+                        })}
+                        </div>
+                    ) : (
+                        <div>
+                            No Data Available.
+                        </div>
+                    )}
+                    
+                </section>
+                <section className={Styles.UserVaultInfo}>
+                    <h2>ZCB Postions</h2>
+                    { marketIds && marketIds?.length > 0 ? (
+                        <div>
+                            {marketIds.map((marketId) => {
+                        const zcbBalance = zcbBalances[marketId];
+                        return (
+                            <MarketCard key={marketId} marketId={marketId} zcbBalance={zcbBalance} instruments={instruments} />
+                        )
+                    })}
+                    </div>) : (
+                        <div className={Styles.EmptyMarketsMessage}>
+                            No Data Available.
+                        </div>
+                    )
+                    }
+                </section>
+            </div>
+        </div>
     )
 }
 
