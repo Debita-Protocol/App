@@ -22,6 +22,8 @@ import {
   MARKET_TYPE_OPTIONS,
   POOL_SORT_TYPES,
   POOL_SORT_TYPE_TEXT,
+  INSTRUMENT_SORT_TYPE_TEXT, 
+  INSTRUMENT_SORT_TYPES
 } from "../constants";
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -608,7 +610,7 @@ const LiquidityView = () => {
       {/*<AppViewStats small liquidity /> */}
       {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
       {/*<MaticAddMetaMaskToken /> */}
-  <button onClick={() => setupExample( { account,loginAccount}
+ <button onClick={() => setupExample( { account,loginAccount}
 )}>SetUp</button>
   
   <button onClick={() => setUpExampleManager( { account,loginAccount}
@@ -623,18 +625,18 @@ const LiquidityView = () => {
       <span></span>
       <span></span>
       <span></span>
-      {<h1>Pariticipate in pricing risks and earn more</h1>}
+      {<h1>Earn by pricing risks</h1>}
       {/*<p>
               Pariticipate in pricing risks and earn more <a href=".">Learn more →</a>
             </p>*/}
       <ul>
-        <SquareDropdown
+        {/*<SquareDropdown
           onChange={(value) => {
             updatePoolsViewSettings({ primaryCategory: value, subCategories: [] });
           }}
           options={categoryItems}
           defaultValue={primaryCategory}
-        />
+        />*/}
         <SquareDropdown
           onChange={(value) => {
             updatePoolsViewSettings({ marketTypeFilter: value });
@@ -649,7 +651,18 @@ const LiquidityView = () => {
             clean
             setToggle={() => updatePoolsViewSettings({ onlyUserLiquidity: !onlyUserLiquidity })}
           />
-          {`My Liquidity Positions ${userMarkets.length > 0 ? `(${userMarkets.length})` : ''}`}
+          {"My Positions"}
+          {/*`My Liquidity Positions ${userMarkets.length > 0 ? `(${userMarkets.length})` : ''}`*/}
+        </label>
+       <label html-for="toggleOnlyUserLiquidity">
+          <ToggleSwitch
+            id="toggleOnlyUserLiquidity"
+            toggle={onlyUserLiquidity}
+            clean
+            setToggle={() => updatePoolsViewSettings({ onlyUserLiquidity: !onlyUserLiquidity })}
+          />
+          {"Approved"}
+          {/*`My Liquidity Positions ${userMarkets.length > 0 ? `(${userMarkets.length})` : ''}`*/}
         </label>
         <SearchInput value={filter} onChange={(e) => setFilter(e.target.value)} clearValue={() => setFilter("")} />
       </ul>
@@ -662,19 +675,21 @@ const LiquidityView = () => {
       />
       <section>
         <article>
-          <span>Instruments</span>
-          {Object.keys(POOL_SORT_TYPES).map((sortType) => (
+          <span>Instrument Name</span>
+
+          {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
             <SortableHeaderButton
               {...{
                 sortType,
                 setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
                 sortBy,
-                text: POOL_SORT_TYPE_TEXT[sortType],
+                text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
                 key: `${sortType}-sortable-button`,
               }}
             />
           ))}
           <span />
+
         </article>
         <section>
           {/*sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market: MarketInfo) => (

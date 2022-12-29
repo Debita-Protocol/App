@@ -24,7 +24,8 @@ const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress,
   canBuy,doZCBTrade,
   //estimateZCBBuyTrade, 
   redeemZCB, getTraderBudget, getHedgeQuantity,
-   getERCBalance, getVaultTokenBalance, tradeZCB, estimateTrade} = ContractCalls;
+   getERCBalance, getVaultTokenBalance, tradeZCB, estimateTrade,
+    approveERC20, setUpManager} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
@@ -90,7 +91,7 @@ export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
   );
 };
 
-const getEnterBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) => {
+const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult | null, cash: Cash) => {
   return [
     {
       label: "Average Price",
@@ -101,7 +102,7 @@ const getEnterBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) =>
       tooltipKey: "averagePrice",
     },
     {
-      label: "Estimated Tokens returned",
+      label: isUnderlying? "Estimated ZCB returned": "Estimated Underlying required",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
     // {
@@ -143,14 +144,15 @@ const getExitBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) => 
   ];
 };
 
-const formatBreakdown = (isBuy: boolean, breakdown: EstimateTradeResult | null, cash: Cash) =>
-  isBuy ? getEnterBreakdown(breakdown, cash) : getExitBreakdown(breakdown, cash);
+const formatBreakdown = (isUnderlying:boolean, isBuy: boolean, breakdown: EstimateTradeResult | null, cash: Cash) =>
+  isBuy ? getEnterBreakdown(isUnderlying, breakdown, cash) : getExitBreakdown(breakdown, cash);
 
 
 interface TradingFormProps {
   amm: any;
   initialSelectedOutcome: AmmOutcome | any;
   marketId: string; 
+  isApproved: boolean; 
 }
 
 interface CanTradeProps {
@@ -202,13 +204,14 @@ const getOutcomes = (price) =>{
   //   })),
 
 }
-export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFormProps) => {
+
+
+export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}: TradingFormProps) => {
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
   const vaultId = market_[marketId]?.vaultId; 
   const underlying_address = vaults[vaultId]?.want.address; 
-
   const {
     showTradingForm,
     actions: { setShowTradingForm },
@@ -226,6 +229,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
   const [isLimit, setIsLimit] = useState(false); 
   const [isUnderlying, setIsUnderlying] = useState(true); 
   const [isIssue, setIsIssue] = useState(false); 
+  const [isApprovedTrade, setIsApprovedTrade] = useState(true); 
+  const [isNotVerified, setIsNotVerified] = useState(false); 
+
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
 
   const outcomes = getOutcomes(market_[marketId]?.longZCBprice);
@@ -244,7 +250,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
   //   actionType: approvalAction,
   //   outcomeShareToken,
   // });
-  let isApprovedTrade =true// approvalStatus === ApprovalState.APPROVED;
+
+
  // const { hasLiquidity } = amm;
   const hasLiquidity = true; 
   const selectedOutcomeId = selectedOutcome?.id;
@@ -297,13 +304,14 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
   useEffect(() => {
     let isMounted = true;
     const getEstimate = async()=>{
+      const isShort = selectedOutcomeId ==0? false:true
+
       const breakdown = isBuy
-        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, true)
-        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, false)
+        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort,true)
+        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort, false)
         isMounted&& setBreakdown(breakdown); 
 
     }
-    console.log('breakdown', breakdown); 
     // const getEstimate = async () => {
     //   const breakdown = isBuy
     //     ? estimateBuyTrade(amm, amount, selectedOutcomeId, ammCash)
@@ -316,6 +324,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
      // && new BN(amount).lte(new BN(userBalance))
       ) {
       getEstimate();
+      console.log('breakdown', breakdown); 
+
     } else if (breakdown !== null) {
       isMounted && setBreakdown(null);
     }
@@ -336,9 +346,20 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
     } else if(typeof breakdown == "string" ){
       console.log('breakdown', breakdown); 
       if(breakdown == "execution reverted: ERC20: transfer amount exceeds allowance"){
-        actionText = "Approve";
-        disabled = false;  
-        isApprovedTrade = false; 
+        actionText = "Not approved";
+        disabled = true;  
+        setIsApprovedTrade(false); 
+      }
+      else if(breakdown == "execution reverted: budget"){
+        actionText = "Not manager or not enough budget"
+        subText = "Try verifing or increase reputation score to increase budget"
+        disabled = true; 
+        setIsNotVerified(true)
+      }
+      else if (breakdown == "execution reverted: ERC20: insufficient allowance"){
+        actionText = "Not approved";
+        disabled = true;  
+        setIsApprovedTrade(false); 
       }
       else{
         actionText = breakdown; 
@@ -361,10 +382,10 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
     else if (Number(amount) === 0 || isNaN(Number(amount)) || amount === "") {
       actionText = ENTER_AMOUNT;
       disabled = true;
-    } else if (new BN(amount).gt(new BN(userBalance))) {
-      // actionText = `Insufficient ${isBuy ? ammCash.name : "Share"} Balance`;
-      actionText = `Insufficient Underlying Balance`; 
-      disabled = false;
+    // } else if (new BN(amount).gt(new BN(userBalance))) {
+    //   // actionText = `Insufficient ${isBuy ? ammCash.name : "Share"} Balance`;
+    //   actionText = `Insufficient Underlying Balance`; 
+    //   disabled = false;
     } else if (breakdown?.maxSellAmount && breakdown?.maxSellAmount !== "0") {
       actionText = INSUFFICIENT_LIQUIDITY;
       subText = `Max Shares to Sell ${breakdown?.maxSellAmount}`;
@@ -378,6 +399,10 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
       actionText = INSUFFICIENT_LIQUIDITY;
       disabled = true;
     }
+    else if(!isApproved && isIssue){
+      actionText = "Instrument Not Approved"; 
+      disabled = true; 
+    }
     // else {
     //  actionText = "Trade Restricted"
     //   disabled = ;     }
@@ -387,8 +412,13 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
       actionText,
       subText,
     };
-  }, [orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, hasWinner]);
+  }, [isIssue, orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, hasWinner]);
 
+  const testVerify = ()=>{
+    setUpManager(account, loginAccount.library).then((response)=>{
+
+    })
+  }
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, amm.turboId).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
@@ -411,7 +441,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
     const isShort = selectedOutcomeId ==1? false:true
     tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose ).then((response)=>{
       console.log('tradingresponse', response)
+      setWaitingToSign(false); 
       if(response){
+        console.log('??response'); 
         setWaitingToSign(false); 
       }}).catch((error)=>{
         console.log('Trading Error', error)
@@ -511,11 +543,12 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
           <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
         </div>
-        {!instruments[marketId]?.isPool && <TinyThemeButton
+
+        {instruments[marketId]?.isPool && <TinyThemeButton
           action={toggleIssueField}
           text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
-              <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
 
+        <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
         <div
           onClick={() => {
             setShowTradingForm(false);
@@ -604,10 +637,10 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
           }}
           />)*/}
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
-        <InfoNumbers infoNumbers={formatBreakdown(isBuy, bondbreakdown, ammCash)} />
+        <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, ammCash)} />
 
         {isLogged && 
-         // !isApprovedTrade && 
+          !isApprovedTrade && 
           (
           <ApprovalButton
             {...{
@@ -618,9 +651,16 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
               shareToken: outcomeShareToken,
               underlyingAddress: underlying_address, 
               amount: amount,
+              setIsApprovedTrade: setIsApprovedTrade, 
             }}
           />
         )}
+        {isLogged && isNotVerified &&(
+          <TinyThemeButton 
+          text = {"Test Verify"}
+          action = {testVerify}
+          />
+          )}
         
         {!canRedeem &&(<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
@@ -680,6 +720,7 @@ export const ApprovalButton = ({
   customClass = null,
   ds = false, 
   underlyingAddress,
+  setIsApprovedTrade = null,
 }: {
   amm?: AmmExchange;
   cash: Cash;
@@ -691,6 +732,7 @@ export const ApprovalButton = ({
   shareToken?: string;
   customClass?: any;
   ds?: boolean; 
+  setIsApprovedTrade?: Function
 }) => {
   const [isPendingTx, setIsPendingTx] = useState(false);
   const {
@@ -707,16 +749,17 @@ export const ApprovalButton = ({
       setIsPendingTx(false);
     }
   }, [isApproved, loginAccount, isPendingTx]);
-  console.log('?????', marketManager, underlyingAddress); 
+  // console.log('?????', marketManager, underlyingAddress); 
   const approve = 
    useCallback(async()=>{
-          let approvalAction = approveERC20Contract;
+          let approvalAction = approveERC20;
           console.log('underlyingAddress', underlyingAddress)
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
     let spender = marketManager//rewardContractAddress || ammFactory; 
     let text = "Liquidity DS"; 
     const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
       addTransaction(tx);
+      setIsApprovedTrade(true)
 
   } ,[cash, loginAccount, shareToken, amm])
 

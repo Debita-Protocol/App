@@ -152,7 +152,6 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
-  const [totalCollateral, setTotalCollateral] = useState("");
 
 
 
@@ -165,15 +164,15 @@ const MarketView = ({ defaultMarket = null }) => {
   } = useSimplifiedStore();
   const { cashes, markets, ammExchanges, blocknumber,transactions } = useDataStore();
   useScrollToTopOnMount();
-  const market: MarketInfo = !!defaultMarket ? defaultMarket : markets[marketId];
+  //let market: MarketInfo//!!defaultMarket ? defaultMarket : markets[marketId];
+  const market = {} as MarketInfo;
   const amm: AmmExchange = ammExchanges[marketId];
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
-  const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
+  // const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
+  const selectedOutcome = DefaultMarketOutcomes[1];
+
   // console.log('amm', amm, amm?.ammOutcomes)
-  const longZCBTokenAddress = market?.shareTokens[0]; 
-  const shortZCBTokenAddress = market?.shareTokens[1]; 
-  const [longBalance, setLongBalance] = useState("0");
-  const [shortBalance, setShortBalance] = useState("0"); 
+
   const {
       account,
       loginAccount,
@@ -209,12 +208,19 @@ const MarketView = ({ defaultMarket = null }) => {
   // }
 
   // const { isPool, poolData, duration, expectedYield, principal} = instruments? instruments[Id]: null
-  const isPool = instruments[Id]?.isPool; 
-  const poolData = instruments[Id]?.isPool
+  const isPool = instruments[Id]?.isPool? true:false; 
+  const poolData = instruments[Id]?.poolData
   const duration = instruments[Id]?.duration
   const expectedYield = instruments[Id]?.expectedYield
   const principal = instruments[Id]?.principal
   const trusted = instruments[Id]?.trusted? 0: 1; 
+  const totalCollateral = market_[Id]?.totalCollateral; 
+  const alpha = market_[Id]?.parameters.alpha; 
+  const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
+  const canbeApproved = false//(!market_[Id]?.); 
+
+  console.log('isApproved', isApproved)
+
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
   const longZCB_ad = market_[marketId]?.longZCB
@@ -299,6 +305,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = false//isMarketFinal(market);
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
+  console.log('transactions,', transactions); 
 
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
@@ -313,7 +320,6 @@ const MarketView = ({ defaultMarket = null }) => {
       }); 
   }
 
-  const canbeApproved = true; 
   const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
@@ -343,6 +349,7 @@ const MarketView = ({ defaultMarket = null }) => {
         >
           <h4>Overview</h4>
 
+
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))*/}
@@ -351,35 +358,42 @@ const MarketView = ({ defaultMarket = null }) => {
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
           )}
-          {details.length === 0 && 
+          {showMoreDetails && 
            <div>
 
-         { /* <p>ZCB Address</p> 
-          <span> {longZCBTokenAddress} </span> */}
-           <p>{utilizer_description}</p> </div>}
+           <p>{"Details"}</p> 
+ 
+
+           </div>
+
+         }
+
         </div>
 
         <ul className={Styles.StatsRow}>
           <li>
-            <span>Net ZCB Bought / Required</span>
-            <span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-            <span>{formatDai(principal/5/1e18 || "0.00").full}</span>
+            <span>Net ZCB Bought </span>
+            <span>{totalCollateral}{" underlying"}</span> 
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>ZCB Start Price </span>
+            <span>Required Net ZCB</span>
+            <span>{isPool?poolData.saleAmount:Number(principal)*Number(alpha) }{" underlying"}</span> 
+          </li>
+
+          <li>
+            <span>longZCB Start Price </span>
             <span>{formatDai(0.818 || "0.00").full}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
-          <li>
-            <span>Esti </span>
-            <span>{"Resolved"}</span>
-          </li>
+
 
           <li>
-            <span>Hedge Price</span>
-            <span>{formatDai(storedCollateral/1000000 || "0.00").full}</span>
+            <span>Number of Managers</span>
+            <span>1</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
 
@@ -403,7 +417,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>Start Date</span>
-              <span>{"8/20/2022"}</span>
+              <span>{"12/20/2022"}</span>
 
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
           </li>
@@ -413,13 +427,14 @@ const MarketView = ({ defaultMarket = null }) => {
           (<ul className={Styles.StatsRow}>
           <li>
             <span>Leverage Factor </span>
-            <span>{formatDai(poolData.leverageFactor/1e18 || "0.00").full}</span>
+            <span>{poolData.leverageFactor}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{formatDai(poolData.promisedReturn /1e18 || "0.00").full}</span>
+            <span>{poolData.promisedReturn}</span>
+
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
@@ -457,7 +472,7 @@ const MarketView = ({ defaultMarket = null }) => {
           hasLiquidity={amm?.hasLiquidity}
           marketFactoryType={amm?.market?.marketFactoryType}
         />
-        <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />*/}
+        <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
         {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
         lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
         
@@ -468,9 +483,9 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Market Details</h4>
-          <h4>Price History</h4>
           <h4>Open Orders</h4>
+          <h4>Price History</h4>
+          <h4>Details</h4>
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
@@ -486,7 +501,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <div className={Styles.TransactionsTable}>
 
          <span>Activity</span>
-          {/*<TransactionsTable transactions={marketTransactions} /> */}
+          {/*<TransactionsTable transactions={marketTransactions} />*/ }
         </div>
         <SecondaryThemeButton
           text="Buy / Sell"
@@ -512,10 +527,16 @@ const MarketView = ({ defaultMarket = null }) => {
         /> */}
         {/*<ManagerWarning/>*/}
 
-        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}/> 
+        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}
+        isApproved = {isApproved}/> 
 
 <AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
                 <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
+        {<SecondaryThemeButton
+          text="Approve Instrument"
+          action={() => setShowTradingForm(true)}
+          customClass={ButtonStyles.BuySellButton}
+        />}
       </section>
     </div>
   );

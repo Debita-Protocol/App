@@ -491,8 +491,11 @@ const MintForm = ({
   } = useAppStatusStore();
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   // const {vaultId} = vaults; 
-  const isRemove = selectedAction === REMOVE;
-  const isMint = selectedAction === MINT_SETS;
+  const isAdd = selectedAction === ADD; 
+  const isRemove = selectedAction === REMOVE ;
+  const isMint = selectedAction === "mint";
+  const isResetPrices = selectedAction === RESET_PRICES;
+
   const initialOutcomes = []
 
   const [outcomes, setOutcomes] = useState<AmmOutcome[]>(orderOutcomesForDisplay(initialOutcomes));
@@ -505,7 +508,7 @@ const MintForm = ({
     newOutcomes[index].price = price;
     setOutcomes([...newOutcomes]);
   };
-  const amountLabel = !isRemove? "Shares": vaults[vaultId]?.want.symbol; 
+  const amountLabel = !isMint? "Shares": vaults[vaultId]?.want.symbol; 
     const approvalActionType = ApprovalAction.MINT_SETS
     // isRemove
     // ? ApprovalAction.REMOVE_LIQUIDITY
@@ -524,27 +527,36 @@ const MintForm = ({
   //   : isResetPrices
   //   ? getResetBreakdown(breakdown, market)
   //   : getCreateBreakdown(breakdown, market, balances, isRemove);
-  const isResetPrices = true; 
   let cash: Cash; 
   const userMaxAmount = "10000"
     return (
     <section
       className={classNames(Styles.LiquidityForm, {
-        [Styles.isRemove]: isRemove,
-        [Styles.isMint]: isMint,
+        [Styles.isRemove]: false,
+        [Styles.isMint]: isMint ||isAdd,
         [Styles.isResetPrices]: isResetPrices,
       })}
     >
       <header>
         <button
-          className={classNames({ [Styles.selected]: !isRemove })}
+          className={classNames({ [Styles.selected]: isAdd })}
           onClick={() => {
             setAmount(amount);
-            setSelectedAction(true ? ADD : CREATE);
+            setSelectedAction(ADD);
           }}
         >
           {"Mint"}
         </button>
+
+          <button
+            className={classNames({ [Styles.selected]: isMint  })}
+            onClick={() => {
+              setAmount("0");
+              setSelectedAction("mint");
+            }}
+          >
+            Redeem
+          </button>
         { (
           <button
             className={classNames({ [Styles.selected]: isRemove })}
@@ -553,7 +565,7 @@ const MintForm = ({
               setSelectedAction(REMOVE);
             }}
           >
-            Redeem
+            Manage Leverage
           </button>
         )}
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
@@ -564,12 +576,36 @@ const MintForm = ({
         <div className={Styles.PricesAndOutcomes}>
 
           <span className={Styles.PriceInstructions}>
-            <span>{ "Current Prices"}</span>
-            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
-          </span>
+            <span>{ "Leverage Position Info"}</span>
+            {<p>My shares: {"3"}</p>}
+            {<p>Borrowed shares: {"3"}</p>}
+            {<p>My underlying: {"3"}</p>}
+            {<p>Borrowed underlying: {"3"}</p>}
 
+          </span>
+        <span className={Styles.PriceInstructions}>
+            <span>{ "P&L"}</span>
+            {<p>Borrowed Amount: {"3"}</p>}
+
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+
+          </span>
+     <AmountInput
+          heading={"Rewind Amount"}
+          ammCash={cash}
+          updateInitialAmount={(amount) => setAmount(amount)}
+          initialAmount={amount}
+          maxValue={userMaxAmount}
+          chosenCash={isRemove ? SHARES : chosenCash}
+          updateCash={updateCash}
+          updateAmountError={() => null}
+          disabled = {false}
+          //error={hasAmountErrors}
+        />
           <OutcomesGrid
-            outcomes={outcomes}
+            outcomes={[]}
             selectedOutcome={null}
             setSelectedOutcome={() => null}
             orderType={BUY}
@@ -584,9 +620,10 @@ const MintForm = ({
           />
 
         </div>
+
         <section className={Styles.BreakdownAndAction}>
-        <AmountInput
-          heading={!isRemove?"Deposit Amount": "Redeem Amount"}
+        {!isRemove && (<AmountInput
+          heading={!isMint?"Deposit Amount": "Redeem Amount"}
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
           initialAmount={amount}
@@ -596,11 +633,11 @@ const MintForm = ({
           updateAmountError={() => null}
           disabled = {false}
           //error={hasAmountErrors}
-        />
-        {!isRemove && <Leverage/>}
-          {isResetPrices && (
+        />)}
+        {isAdd &&  <Leverage/>}
+          {true &&(
             <>
-              {!isRemove &&(<div className={Styles.Breakdown}>
+              {isAdd &&(<div className={Styles.Breakdown}>
                 <span>Estimated APR</span>
                 {/*<InfoNumbers infoNumbers={resetPricesInfoNumbers} />*/}
               </div>)}
