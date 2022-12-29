@@ -173,6 +173,7 @@ export const MarketLiquidityView = () => {
   const underlying_address = vault?.want.address; 
   const underlyingSymbol = vault?.want.symbol; 
   const exchangeRate = Number(vault.totalShares) ==0? 1: Number(vault.totalAssets)/Number(vault.totalShares); 
+console.log('??', vault.totalAssets, vault.totalShares); 
 
   const BackToLPPageAction = () => {
     history.push({

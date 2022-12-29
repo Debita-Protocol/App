@@ -30,7 +30,7 @@ const handleValue = (value, cashName = USDC) =>
     bigUnitPostfix: true,
   }).full;
 
-export const AppViewStats = ({ small = false, liquidity = false, trading = false }) => {
+export const AppViewStats = ({ portfolioPage = false, small = false, liquidity = false, trading = false }) => {
   const { isLogged } = useAppStatusStore();
   const { balances } = useUserStore();
   const totalAccountValue = useMemo(
@@ -65,14 +65,22 @@ export const AppViewStats = ({ small = false, liquidity = false, trading = false
 
   return (
     <div className={classNames(Styles.AppStats, { [Styles.small]: small, [Styles.full]: liquidity && trading, [Styles.LPOnly]: liquidity && !trading })}>
-      <ValueLabel large={!small} label="Current Vault APR" light={!isLogged} value={"13%"} small={small} />
-      {trading && (
+      {portfolioPage &&(
+      <ValueLabel large={!small} label="Total Vault Positions/Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
+      {portfolioPage &&(
+      <ValueLabel large={!small} label="Number of Invested Vaults" light={!isLogged} value={"13%"} small={small} />)}
+      {portfolioPage &&(
+      <ValueLabel large={!small} label="Total Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
+
+
+      {!portfolioPage && (<ValueLabel large={!small} label="Current Vault APR" light={!isLogged} value={"13%"} small={small} />)}
+      {!portfolioPage &&trading && (
         <ValueLabel large={!small} label="My USDC Vault" light={!isLogged} value={usdValueUSDC} small={small} />
       )}
       {/*{liquidity && <ValueLabel large={!small} small={small} label="Liquidity Positions" value={usdValueLP} />} */}
-      <ValueLabel large={!small} small={small} label="My Bond Positions" value={usdValueLP} />
+      {!portfolioPage &&(<ValueLabel large={!small} small={small} label="My Bond Positions" value={usdValueLP} />)}
 
-      <ValueLabel large={!small} small={small} label="Is Verified/REPU Score" value={isVerified} />
+      {(<ValueLabel large={!small} small={small} label="Is Verified/REPU Score" value={isVerified} />)}
 
     </div>
   );

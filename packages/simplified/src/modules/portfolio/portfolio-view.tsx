@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Styles from "./portfolio-view.styles.less";
 import Activity from "./activity";
 import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher } from "../common/tables";
+import { PositionsView } from "../common/positions"
 import { AppViewStats } from "../common/labels";
 import {
   ContractCalls,
@@ -226,13 +227,13 @@ export const PortfolioView = () => {
   useEffect(() => {
     if (!isMobile) setView(TABLES);
   }, [isMobile]);
-
+//zcb, vaults, 
   return (
     <div className={Styles.PortfolioView}>
       <SEO {...PORTFOLIO_HEAD_TAGS} />
       <section>
         <NetworkMismatchBanner />
-        <AppViewStats small trading />
+        <AppViewStats portfolioPage = {true} small trading />
         <ClaimWinningsSection />
         <PositionsLiquidityViewSwitcher
           showActivityButton={isMobile}
@@ -241,12 +242,10 @@ export const PortfolioView = () => {
           claimableFirst
         />
         {view === ACTIVITY && <Activity />}
-        <NFTPositionsLiquidityViewSwitcher
-          showActivityButton={isMobile}
-          setTables={() => setView(TABLES)}
-          setActivity={() => setView(ACTIVITY)}
-          claimableFirst
-        />
+        <PositionsView portfolioPage = {true} />
+
+
+
         {view === ACTIVITY && <Activity />}
       </section>
 

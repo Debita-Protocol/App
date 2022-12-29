@@ -15,7 +15,7 @@ import {
   useApprovalStatus,
   ApprovalHooks,
   PARA_CONFIG,
-  useDataStore2
+  useDataStore2, marketManager
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
 import { Slippage,Leverage, LimitOrderSelector} from "../common/slippage";
@@ -208,6 +208,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+  const vaultId = market_[marketId]?.vaultId; 
+  const underlying_address = vaults[vaultId]?.want.address; 
 
   const {
     showTradingForm,
@@ -244,7 +246,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
   //   actionType: approvalAction,
   //   outcomeShareToken,
   // });
-  const isApprovedTrade =true// approvalStatus === ApprovalState.APPROVED;
+  let isApprovedTrade =true// approvalStatus === ApprovalState.APPROVED;
  // const { hasLiquidity } = amm;
   const hasLiquidity = true; 
   const selectedOutcomeId = selectedOutcome?.id;
@@ -334,8 +336,17 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
       actionText = "Connect Wallet";
       disabled = true;
     } else if(typeof breakdown == "string" ){
-      actionText = breakdown; 
-      disabled = true; 
+      console.log('breakdown', breakdown); 
+      if(breakdown == "execution reverted: ERC20: transfer amount exceeds allowance"){
+        actionText = "Approve";
+        disabled = false;  
+        isApprovedTrade = false; 
+      }
+      else{
+        actionText = breakdown; 
+        disabled = false; 
+      }
+
 
     } else if (hasWinner) {
       actionText = RESOLVED_MARKET;
@@ -607,6 +618,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId}: TradingFor
               actionType: approvalAction,
               isApproved: isApprovedTrade,
               shareToken: outcomeShareToken,
+              underlyingAddress: underlying_address, 
+              amount: amount,
             }}
           />
         )}
@@ -668,9 +681,13 @@ export const ApprovalButton = ({
   shareToken = null,
   customClass = null,
   ds = false, 
+  underlyingAddress,
 }: {
   amm?: AmmExchange;
   cash: Cash;
+  spender_?: string; 
+  underlyingAddress?: string; 
+  amount?: string; 
   actionType: string | number;
   isApproved?: boolean;
   shareToken?: string;
@@ -692,14 +709,15 @@ export const ApprovalButton = ({
       setIsPendingTx(false);
     }
   }, [isApproved, loginAccount, isPendingTx]);
+  console.log('?????', marketManager, underlyingAddress); 
   const approve = 
    useCallback(async()=>{
           let approvalAction = approveERC20Contract;
-
+          console.log('underlyingAddress', underlyingAddress)
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
-    let spender = rewardContractAddress || ammFactory; 
+    let spender = marketManager//rewardContractAddress || ammFactory; 
     let text = "Liquidity DS"; 
-    const tx = await approvalAction(address, text, spender, loginAccount);
+    const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
       addTransaction(tx);
 
   } ,[cash, loginAccount, shareToken, amm])
