@@ -7,7 +7,7 @@ import {
     Constants,
     Components
 } from "@augurproject/comps";
-import { InstrumentInfos, CoreInstrumentData, VaultInfos, NFT } from "@augurproject/comps/build/types";
+import { InstrumentInfos, VaultInfo, VaultInfos, PoolInstrument, Collateral } from "@augurproject/comps/build/types";
 
 const { 
     LabelComps: {ValueLabel} 
@@ -18,91 +18,85 @@ const {
 
 export const PoolCard: React.FC = ({
     marketId,
+    vaultId,
     instruments,
     vaults,
     ...props
 }): {
     marketId: string,
+    vaultId: string,
     instruments: InstrumentInfos,
     vaults: VaultInfos
 } => {
-    const instrument: CoreInstrumentData = useMemo(() => instruments[marketId], [marketId, instruments]);
+    const instrument: PoolInstrument = useMemo(() => instruments[marketId], [marketId, instruments]);
+    const vault: VaultInfo = useMemo(() => vaults[vaultId], [vaultId, vaults]);
     if (!instrument) {
         return <LoadingPoolCard/>;
     }
-    const { vaultId, utilizer, poolData: {leverageFactor, NFTs: acceptedNFTs } } = instrument;
+    const { utilizer } = instrument as PoolInstrument;
+
 
     return (
         <PoolCardView
-            marketId={marketId}
-            vaultId={vaultId}
-            utilizer={utilizer}
-            collateral={acceptedNFTs}
-            leverageFactor={leverageFactor}
+            vault={vault}
+            instrument={instrument}
             {...props}
         />
     )
 }
 
-const NFTItem: React.FC = ({nft}: {nft: NFT})  => {
-    const { address, name, symbol, tokenURI } = nft;
-    return (
-        <td className={Styles.nftItem}>
-            <ul className="nftSymbol">
-                { symbol }
-            </ul>
-            {/* <ul className="nftName">
-                { name }
-            </ul> */}
-            {/* <ul className="nftAddress">
-                { address }
-            </ul> */}
-        </td>
-    );
-}
-
 const PoolCardView: React.FC = ({
-    marketId,
-    vaultId,
-    utilizer,
-    collateral,
-    leverageFactor,
+    vault,
+    instrument,
     dontGoToMarket=false
 }: {
-    marketId: string,
-    vaultId: string,
-    utilizer: string,
-    collateral: NFT[],
-    leverageFactor: string,
+    vault: VaultInfo,
+    instrument: PoolInstrument,
     dontGoToMarket?: boolean
 }) => {
+    const { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, APR } = instrument;
+    const { name: vaultName, want } = vault;
 
     return (<tr>
             <td>
-                { marketId }
+                <ValueLabel value={want.symbol} label={vaultName}/>
             </td>
             <td>
-                { vaultId }
+                <div className={Styles.TokenList}>
+                    { (collaterals && collaterals.length > 0) ?(
+                    collaterals.map((collateral: Collateral) => {
+                        return (
+                            <div className={Styles.CollateralItem}>
+                                <span>
+                                    { collateral.symbol }
+                                </span>
+                            </div>
+                        )
+                    }) 
+                ) : (
+                    null
+                )}
+                </div>
             </td>
             <td>
-                { utilizer }
+                <span>
+                    { APR }%
+                </span>
             </td>
             <td>
-                { leverageFactor }
+                <span>
+                    { poolLeverageFactor }
+                </span>
             </td>
             <td>
-            { (collateral && collateral.length > 0) ?(
-                collateral.map((nft: NFT) => {
-                    return (
-                        <NFTItem
-                            key={nft.name}
-                            nft={nft}
-                        />
-                    )
-                }) 
-            ) : (
-                null
-            )}
+                <span>
+                    { totalBorrowedAssets }$
+                </span>
+            </td>
+            <td>
+                <span>
+                    { totalSuppliedAssets }$
+                </span>
             </td>
             
             <td>

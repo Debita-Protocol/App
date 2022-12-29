@@ -5,19 +5,6 @@ import { ethers, BigNumber, BytesLike } from "ethers";
 import { MarketFactory } from "@augurproject/smart";
 import {Passport} from "@gitcoinco/passport-sdk-types"
 
-// deprecated
-export interface InstrumentData {
-  trusted: boolean; 
-  balance: BigNumber; 
-  faceValue: BigNumber;
-  marketId: BigNumber; 
-  principal: BigNumber; 
-  expectedYield: BigNumber; 
-  duration: BigNumber;
-  description: string; 
-  Instrument_address: string;
-  instrument_type: BigNumber;
-}; 
 
 export interface Loan {
   id: BytesLike;
@@ -350,7 +337,7 @@ export interface MarketInfos {
 }
 
 export interface  InstrumentInfos {
-  [marketId: string]: CoreInstrumentData;
+  [marketId: string]: Instrument;
 }
 
 export interface ParameterInfo {
@@ -376,6 +363,41 @@ export interface CoreMarketInfos {
   [marketId: string]: CoreMarketInfo;
 }
 
+export type Instrument = BaseInstrument | PoolInstrument;
+
+export interface BaseInstrument {
+  name: string;
+  marketId: string;
+  vaultId: string;
+  utilizer: string;
+  trusted: boolean;
+  description: string;
+  balance: string;
+  principal: string;
+  yield: string;
+  address: string;
+  duration?: string;
+  maturityDate?: string;
+  seniorAPR?: string; 
+  exposurePercentage?: string; 
+  managerStake?: string; 
+  approvalPrice?: string; 
+}
+
+export interface PoolInstrument extends BaseInstrument {
+  saleAmount: string;
+  initPrice: string;
+  promisedReturn: string;
+  inceptionTime: string;
+  inceptionPrice: string;
+  poolLeverageFactor: string;
+  totalBorrowedAssets: string;
+  totalSuppliedAssets: string;
+  APR: string;
+  collaterals: Collateral[]; 
+  auctions: Auction[];
+}
+
 export interface CoreInstrumentData {
   marketId: string;
   vaultId: string;
@@ -394,7 +416,6 @@ export interface CoreInstrumentData {
   maturityDate: string;
   poolData?: CorePoolData;
   name?: string;
-
   seniorAPR?: string; 
   exposurePercentage?: string; 
   managers_stake?: string; 
@@ -402,14 +423,68 @@ export interface CoreInstrumentData {
 
 }
 
-export interface NFT {
-  name: string,
-  symbol: string,
-  tokenURI: string,
-  address: string,
-  maxLTV: string,
-  APY: string
-};
+// export interface NFT {
+//   name: string,
+//   symbol: string,
+//   tokenURI: string,
+//   address: string,
+//   maxLTV: string,
+//   APY: string
+// };
+
+export interface Asset {
+  name: string;
+  symbol: string;
+  address: string;
+  decimals?: number;
+  usdPrice?: string;
+  displayDecimals?: number;
+  balance?: string;
+  icon?: string;
+}
+
+// calculate user shares + collateral on the spot ig.
+export interface Collateral extends Asset {
+  borrowAmount: string;
+  maxAmount: string;
+  tokenId?: string;
+  balance?: string;
+  isERC20?: boolean;
+}
+
+export interface Auction {
+  auctionId: string;
+  tokenAddress: string;
+  tokenId: string;
+  startTime: string;
+  decayConstant: string;
+  initialPrice: string;
+  currentPrice?: string;
+  elapsedTime?: string;
+}
+
+// user pool data
+export interface UserPoolData {
+  marketId: string;
+  vaultId: string;
+  supplyBalances: {
+    [address: string]: {
+      [tokenId: string]: string;
+    };
+  };
+  walletBalances? : {
+    [address: string]: {
+      [tokenId: string]: string;
+    };
+  };
+  borrowBalance: {
+    shares: string;
+    amount: string;
+  };
+  accountLiquidity: string;
+  remainingBorrowAmount: string;
+}
+
 
 // can make more modular in future
 export interface CorePoolData {
@@ -419,8 +494,11 @@ export interface CorePoolData {
   inceptionTime: string;
   inceptionPrice: string;
   leverageFactor: string;
-  APR?: string;
-  NFTs?: NFT[];
+  totalBorrowedAssets: string;
+  totalSuppliedAssets: string;
+  APR: string;
+  collaterals: Collateral[];
+  auctions?: Auction[];
 }
 
 export interface CoreMarketInfo {
@@ -462,7 +540,7 @@ export interface VaultInfo {
   r: string,
   asset_limit: string;
   total_asset_limit: string;
-  want: Cash;
+  want: Asset;
   totalShares: string;
   name: string;
   totalAssets: string;

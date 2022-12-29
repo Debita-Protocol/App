@@ -129,7 +129,7 @@ reputation_manager_address
 
 
 import {BigNumber, BigNumberish, utils} from "ethers"
-import { Loan, InstrumentData,LoginAccount} from "../types"
+import { Loan,LoginAccount} from "../types"
 
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
@@ -161,7 +161,7 @@ export interface CoreInstrumentData_ {
   instrument_address: string;
   instrument_type: number;
   maturityDate: string;
-  poolData?: CorePoolData;
+  poolData?: CorePoolData_;
 }
 
 // export interface NFT {

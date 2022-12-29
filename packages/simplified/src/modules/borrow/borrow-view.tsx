@@ -3,9 +3,10 @@ import { useDataStore2, useUserStore } from "@augurproject/comps"
 import Styles from "./borrow-view.styles.less";
 import classNames from "classnames";
 import {TabContent, TabNavItem} from "./Tabs";
-import { InstrumentInfos, VaultInfos, CoreInstrumentData} from "@augurproject/comps/build/types"
+import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument} from "@augurproject/comps/build/types"
 import { PoolCard, LoadingPoolCard } from "./PoolCard";
 import { LoanCard } from "./UserLoanCard";
+import {vaults, instruments} from "./fakedata";
 
 import {
     Components,
@@ -24,8 +25,10 @@ const PAGE_LIMIT = 5;
 
 const Pools: React.FC = () => {
     // retrieve all the pools ever created.
-    const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-    const [ pools, setPools ] = useState([]);
+    //const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+    console.log("vaults", vaults);
+    console.log("instruments", instruments);
+    const [ pools, setPools ] = useState<PoolInstrument[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -38,8 +41,7 @@ const Pools: React.FC = () => {
     const getPools = (_instruments: InstrumentInfos) => {
         let _pools = [];
         for (const [id, instr] of Object.entries(_instruments)) {
-            if (instr.isPool) {
-
+            if ("poolLeverageFactor" in instr) {
                 _pools.push(instr);
             }
         }
@@ -64,21 +66,26 @@ const Pools: React.FC = () => {
         <div className={Styles.PoolsView}>
             <table>
                 <thead>
-                    <td>
-                        Market Id
-                    </td>
-                    <td>
-                        Vault Id
-                    </td>
-                    <td>
-                        Utilizer
-                    </td>
-                    <td>
-                        Leverage Factor
-                    </td>
-                    <td>
-                        Collateral
-                    </td>
+                    <tr>
+                        <th>
+                            Vault
+                        </th>
+                        <th>
+                            Collateral
+                        </th>
+                        <th>
+                            APR
+                        </th>
+                        <th>
+                            Leverage Factor
+                        </th>
+                        <th>
+                            Total Borrowed Assets
+                        </th>
+                        <th>
+                            Total Available Assets
+                        </th>
+                    </tr>
                 </thead>
                 { loading ? (
                     <tbody>
@@ -88,12 +95,13 @@ const Pools: React.FC = () => {
                 ) : pools.length > 0 ? (
 
                     <tbody>
-                        {sliceByPage(pools, page, PAGE_LIMIT).map((pool, index) => (
+                        {sliceByPage(pools, page, PAGE_LIMIT).map((pool: PoolInstrument, index) => (
                         <PoolCard
-                        key={`${pool.marketId}-${index}`}
-                        marketId={pool.marketId}
-                        instruments={pools}
-                        vaults={vaults}
+                            key={`${pool.marketId}-${index}`}
+                            marketId={pool.marketId}
+                            vaultId={pool.vaultId}
+                            instruments={pools}
+                            vaults={vaults}
                         />
                       ))}
                     </tbody>
@@ -195,7 +203,7 @@ const BorrowView: React.FC = () => {
     return (
         <div className={Styles.BorrowView}>
             <section className={Styles.Nav}>
-                <TabNavItem title="NFT Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                <TabNavItem title="Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
                 <TabNavItem title="My Loans" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
             </section>
             

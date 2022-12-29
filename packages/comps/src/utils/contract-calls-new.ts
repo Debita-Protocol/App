@@ -1,9 +1,9 @@
 import { BigNumber as BN } from "bignumber.js";
 import {
     CoreMarketInfo, VaultInfos, CoreMarketInfos, InstrumentInfos, VaultInfo, CoreInstrumentData,
-    CoreUserState, VaultBalances, ZCBBalances
+    CoreUserState, VaultBalances, ZCBBalances, Instrument, UserPoolData, Collateral
 } from "../types";
-
+import {useMemo} from "react";
 import {
     controller_address,
     market_manager_address,
@@ -20,7 +20,10 @@ import MarketManagerData from "../data/marketmanager.json";
 import VaultFactoryData from "../data/VaultFactory.json";
 import FetcherData from "../data/Fetcher.json";
 import ERC20Data from "../data/ERC20.json";
+import ERC721Data from "../data/ERC721.json";
 import CreditlineData from "../data/CreditLine.json";
+import PoolInstrumentData from "../data/poolInstrument.json";
+
 import { BigNumber, Transaction, constants, utils } from "ethers";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 
@@ -29,6 +32,7 @@ import {TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
 import VaultData from "../data/vault.json";
 import { EthersFastSubmitWallet } from "@augurproject/smart";
+import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 
 type NumStrBigNumber = number | BN | string;
 
@@ -265,24 +269,24 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 }
             }
 
-            let instrument: CoreInstrumentData = Object.assign(
+            let instrument: Instrument = Object.assign(
                 {},
                 {
                     marketId: instr.marketId.toString(),
                     vaultId: instr.vaultId.toString(),
                     utilizer: instr.utilizer,
                     trusted: instr.trusted,
-                    isPool: instr.isPool,
+                    // isPool: instr.isPool,
                     balance: toDisplay(instr.balance.toString()),
-                    faceValue: toDisplay(instr.faceValue.toString()),
+                    // faceValue: toDisplay(instr.faceValue.toString()),
                     principal: toDisplay(instr.principal.toString()),
-                    expectedYield: toDisplay(instr.expectedYield.toString()),
-                    duration: instr.duration.toString(),
+                    yield: toDisplay(instr.expectedYield.toString()),
+                    // duration: instr.duration.toString(),
                     description: instr.description,
                     address: instr.instrument_address,
-                    type: instr.instrument_type,
+                    // type: instr.instrument_type,
                     maturityDate: instr.maturityDate.toString(),
-                    poolData,
+                    // poolData,
                     name: instr.name,
                 }
             );
@@ -318,7 +322,7 @@ export const getRammData = async (
     const controller = new Contract(controller_address, ControllerData.abi, provider);
     
     const reputationScore = toDisplay((await controller.trader_scores(account)).toString());
-    // console.log("reputationScore", reputationScore);
+    console.log("reputationScore", reputationScore);
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
@@ -415,5 +419,166 @@ export const createCreditlineMarket = async (
         }
     );
 
+    return tx;
+}
+
+// export const getUserPoolData = async (
+//     account: string, 
+//     provider: Web3Provider,
+//     instrument_address: string,
+//     collaterals: Collateral[]
+//     ): Promise<UserPoolData> => {
+    
+// }
+
+
+/// POOL ACTIONS
+
+export const useIsERC20ApprovedSpender = async (
+    tokenAddress: string,
+    spenderAddress: string,
+    amount: string
+): Promise<boolean> => {
+    const { account, library } = useActiveWeb3React();
+
+    
+    return useMemo(async () => {
+        const token = new Contract(tokenAddress, ERC20Data.abi, getProviderOrSigner(library, account));
+        const decimals = await token.decimals();
+        const allowance = await token.allowance(account, spenderAddress);
+        return allowance && new BN(allowance.toString()).gt(new BN(amount).shiftedBy(decimals.toString())) ? true : false;
+    }, [account, library, tokenAddress, spenderAddress]);
+}
+
+export const useIsERC721ApprovedSpender = async (
+    tokenAddress: string,
+    tokenId: string,
+    spenderAddress: string
+): Promise<boolean> => {
+    const { account, library } = useActiveWeb3React();
+    
+    return useMemo(async () => {
+        const token = new Contract(tokenAddress, ERC721Data.abi, getProviderOrSigner(library, account));
+        const approval = await token.getApproved(tokenId);
+        return approval === spenderAddress ? true : false;
+    }, [account, library, tokenAddress, spenderAddress]);
+}
+
+export const approveERC20 = async (
+    tokenAddress: string,
+    amount: string,
+    spenderAddress: string
+): Promise<TransactionResponse> => {
+    const { account, library } = useActiveWeb3React();
+    const token = new Contract(tokenAddress, ERC20Data.abi, getSigner(library, account));
+    const decimals = await token.decimals();
+    const tx: TransactionResponse = await token.approve(spenderAddress, new BN(amount).shiftedBy(decimals).toString());
+    tx.wait();
+    return tx;
+}
+
+export const approveERC721 = async (
+    tokenAddress: string,
+    tokenId: string,
+    spenderAddress: string
+): Promise<TransactionResponse> => {
+    const { account, library } = useActiveWeb3React();
+    const token = new Contract(tokenAddress, ERC721Data.abi, getSigner(library, account));
+    const tx: TransactionResponse = await token.approve(spenderAddress, tokenId);
+    tx.wait();
+    return tx;
+}
+
+export const addPoolCollateral = async (
+    tokenAddress: string,
+    tokenId="0",
+    amount: string,
+    poolAddress: string,
+    isERC20: boolean,
+    decimals?: number // decimals of collaterl token
+) => {
+    const { account, library } = useActiveWeb3React();
+    const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    if (isERC20) {
+        const approved = await useIsERC20ApprovedSpender(tokenAddress, poolAddress, amount);
+        if (!approved) {
+            await approveERC20(tokenAddress, amount, poolAddress);
+        }
+    } else {
+        const approved = await useIsERC721ApprovedSpender(tokenAddress, tokenId, poolAddress);
+        if (!approved) {
+            await approveERC721(tokenAddress, tokenId, poolAddress);
+        }
+    }
+    const tx: TransactionResponse = await pool.addCollateral(
+        tokenAddress, 
+        tokenId,
+        new BN(amount).shiftedBy(decimals).toString(),
+        account
+    );
+    tx.wait();
+    return tx;
+}
+
+export const removePoolCollateral = async (
+    tokenAddress: string,
+    tokenId="0",
+    amount="0",
+    poolAddress: string,
+    decimals?: number
+) => {
+    const { account, library } = useActiveWeb3React();
+    const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    const tx: TransactionResponse = await pool.removeCollateral(
+        tokenAddress, 
+        tokenId,
+        new BN(amount).shiftedBy(decimals).toString(),
+        account
+    );
+    tx.wait();
+    return tx;
+}
+
+export const poolBorrow = async (
+    amount: string,
+    decimals: number,
+    poolAddress: string
+) => {
+    const { account, library } = useActiveWeb3React();
+    const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    const tx: TransactionResponse = await pool.borrow(
+        new BN(amount).shiftedBy(decimals).toString(),
+        0,
+        0,
+        0,
+        account
+    );
+    tx.wait();
+    return tx;
+}
+
+
+// repay is not ready yet.
+export const poolRepay = async (
+    amount: string,
+    decimals: number,
+    poolAddress: string
+) => {
+    const { account, library } = useActiveWeb3React();
+    const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    const tx: TransactionResponse = await pool.repay(
+        new BN(amount).shiftedBy(decimals).toString()
+    );
+    tx.wait();
+    return tx;
+}
+
+export const poolAddInterest = async (
+    poolAddress: string
+) => {
+    const { account, library } = useActiveWeb3React();
+    const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    const tx: TransactionResponse = await pool.addInterest();
+    tx.wait();
     return tx;
 }

@@ -3,15 +3,14 @@
 .BorrowView {
   display: flex;
   flex-flow: column nowrap;
-  align-items: left;
-  padding: @size-20 @size-88 @size-48;
+  padding: @size-40 @size-88 @size-48;
   > section {
-    margin: @size-10;
+    margin-bottom: @size-10;
     &.Nav {
       display: flex;
       flex-flow:row nowrap;
-      align-items: center;
-      justify-content:center;
+      justify-content:flex-start;
+      padding-left:@size-36;
       > div {
         font-weight:@weight-bold;
         font-size: @size-24;
@@ -36,67 +35,76 @@
 .PoolsView {
   display: flex;
   flex-flow: column nowrap;
-  background-color: var(--primary-bg);
-  padding: @size-24;
-  border-radius: @size-10;
+  
   position: relative;
   flex: 1 1;
   justify-content: center;
   align-items: center;
-  border-color: var(--theme-border);
-  border-width:@size-1;
-  border-style:solid;
+  // border-color: var(--theme-border);
+  // border-width:@size-1;
+  // border-style:solid;
+  // background-color: var(--primary-bg);
+  // border-radius: @size-10;
   > table {
-    border-collapse: separate;
-      border-spacing: 0px 16px;
-      width: 100%;
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0 @size-24;
+    table-layout:fixed;
     > thead {
-      border-collapse: separate;
-      border-spacing: 0px 16px;
-      > td {
-        vertical-align: middle;
-        text-align: center;
-        font-weight: @weight-bold;
-        font-size: @size-18;
-        padding: @size-8;
-        background-color: var(--primary-bg);
-        margin: auto;
+      > tr {
+        > th {
+          font-size: @size-14;
+          font-weight: @weight-bold;
+          color: var(--secondary-text);
+        }
       }
     }
     > tbody {
-     
       > tr {
-        border-collapse: separate;
-        border-spacing: 0px 16px;
+        .HoverDropShadow;
+        border-radius: @size-8;
+        > td:first-of-type {
+          > div {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+          border-left: @size-1 solid var(--theme-border);
+          border-top-left-radius: @size-8;
+          border-bottom-left-radius: @size-8;
+        }
+        >td:last-of-type {
+          border-right: @size-1 solid var(--theme-border);
+          border-top-right-radius: @size-8;
+          border-bottom-right-radius: @size-8;
+        }
         > td {
-          border-bottom:@size-1 solid var(--tertiary-text);
-          padding-bottom: @size-10;
-          border-top: @size-1 solid var(--tertiary-text);
-          padding-top: @size-10;
+          background-color: var(--primary-bg);
           vertical-align: middle;
           text-align: center;
-          padding: @size-5;
           position: relative;
-          font-weight: @weight-semi-bold;
-          color: var(--secondary-text);
-          border-color:var(--theme-border);
-        }
-        > td:first-of-type {
-          border-left: @size-1 solid var(--theme-border);
-          border-top-left-radius: @size-5;
-          border-bottom-left-radius: @size-5;
-        }
-        > td:last-of-type {
+          box-sizing:border-box;
+          padding:@size-14 0;
+          border-top: @size-1 solid var(--theme-border);
+          border-bottom: @size-1 solid var(--theme-border);
           border-right: @size-1 solid var(--theme-border);
-          border-top-right-radius: @size-5;
-          border-bottom-right-radius: @size-5;
-          > div {
+          > span {
+            font-size: @size-24;
             font-weight: @weight-semi-bold;
-            font-size: @size-18;
-            color: var(--primary-button-text-color);
-            &:hover {
-              color: var(--primary-button-text-color-hover);
+            color: var(--primary-text);
+          }
+          > div {
+            &.TokenList {
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: center;
+              align-items:center;
+              word-break:break-all;
+              > div {
+                margin: @size-8;
+              }
             }
+
           }
         }
       }
@@ -104,14 +112,8 @@
   }
 }
 
-.NFTItem {
+.CollateralItem {
   display: flex;
-  flex-flow: row nowrap;
-  justify-content: center;
-    >ul {
-        display: flex;
-        padding-top: @size-5;
-    }
 }
 
 .LoadingMarketCard {
@@ -192,80 +194,7 @@
     grid-column: span 3;
 }
 
-.PoolView {
-  display: flex;
-  flex-flow: row nowrap;
-  position: relative;
-  flex: 1 1;
-  padding: @size-12 @size-24 @size-36;
-  > div {
-    margin-top:0;
-    margin-left: 2%;
-    margin-right: 2%;
-    display: flex;
-    flex-flow: row nowrap;
-    position: relative;
-    flex: 1 1;
-    padding: @size-12 @size-40 0;
-    > div{
-      width:100%;
-      border-radius: @size-8;
-      margin-left: 2%;
-      margin-right: 2%;
-      margin-bottom: 0;
-      position: relative;
-      > h3 {
-        font-size: @size-24;
-        font-weight: @weight-bold;
-        padding: @size-8;
-      }
-      > table {
-        background-color:var(--primary-bg);
-        border-radius: @size-6;
-        width: 100%;
-        border: none;
-        text-align: left;
-        border-collapse: collapse;
-        > thead  {
-          > tr {
-            > td {
-              font-size: @size-12;
-              font-weight: @weight-bold;
-              padding: @size-8;
-              color: var(--secondary-text);
-            }
-          }
-        }
-        > tbody {
-          > tr {
-            > td {
-              font-size: @size-14;
-              font-weight: @weight-semi-bold;
-              padding: @size-8;
-              color: var(--primary-text);
-            }
-            border-top: @size-1 solid var(--theme-border);
-            border-bottom: @size-1 solid var(--theme-border);
-          }
-          > tr:last-of-type {
-            border-width: 0;
-          }
-        }
-      }
-    }
 
-  }
-
-}
-
-.BorrowItemCard {
-  display: flex;
-  padding: @size-8;
-  flex-flow: row nowrap;
-  justify-content: space-between;
-  border-radius: @size-10;
-  background-color:var(--primary-bg);
-}
 
 // marketcard
 .LoanCard {

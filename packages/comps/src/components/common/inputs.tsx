@@ -151,7 +151,7 @@ export const AmountInput = ({
           disabled={disabled}
           onWheel={(e: any) => e?.target?.blur()}
         />
-        { maxValue && ammCash && (
+        { maxValue && (
           <TinyThemeButton text="Max" action={setMax} noHighlight />
         )}
          { toggleUnderlying && (
