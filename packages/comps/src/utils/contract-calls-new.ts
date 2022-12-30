@@ -41,6 +41,41 @@ function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
     return new BN(n).dividedBy(new BN(10).pow(new BN(p))).decimalPlaces(d).toString();
 }
 const pp = BigNumber.from(10).pow(18);
+
+/// CALL AS VALIDATOR
+export const approveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
+    const signer = getSigner(provider, account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+
+    // get validator
+    // const validators = await controller.viewValidators(marketId);
+    // const validator = validators[0];
+
+    const initialStake = (await controller.getInitialStake(marketId)).toString();
+    const requiredCollateral = (await controller.getValidatorRequiredCollateral(marketId)).toString();
+
+
+    // need to make sure the validator has enough funds to stake.
+    const vault_id = (await controller.id_parent(marketId)).toString();
+    const vault_address = await controller.vaults(vault_id);
+    const vault = new Contract(vault_address, VaultData.abi, signer);
+    const assetToMint = (await vault.convertToAsset(initialStake)).toString();
+    const cash = new Contract(usdc, ERC20Data.abi, signer);
+    cash.faucet(assetToMint);
+    cash.approve(vault.address, assetToMint);
+    let tx = await vault.mint(initialStake);
+    tx.wait();
+    tx = await vault.approve(controller.address, initialStake);
+    tx.wait();
+
+    tx = await cash.approve(marketManager.address, requiredCollateral);
+    tx.wait();
+
+    tx = await controller.approveMarket(marketId);
+    await tx.wait();
+}
+
 export const ContractSetup = async (account: string, provider: Web3Provider) => {
     console.log("ContractSetup");
     const signer = getSigner(provider, account);
@@ -51,67 +86,61 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
     const cash = new Contract(usdc, ERC20Data.abi, signer);
     let tx;
-    tx = await controller.initiateMarket(
-        "0x26373F36f72B6e16F5A7860f957262677B9CB076",
-        {
-            name: utils.formatBytes32String("instrument 1"),
-            isPool: false,
-            trusted: false,
-            balance: 0,
-            faceValue: pp.add(pp.mul(5).div(100)),
-            marketId: 0,
-            principal: pp,
-            expectedYield: pp.mul(5).div(100),
-            duration: 100,
-            description: "description",
-            instrument_address: creditLine_address,
-            instrument_type: 0,
-            maturityDate: 0,
-            poolData: {
-                saleAmount: 0,
-                initPrice: 0,
-                promisedReturn: 0,
-                inceptionTime: 0,
-                inceptionPrice: 0,
-                leverageFactor: 0,
-                managementFee: 0,
-            }
-        },
-        1
-    )
+
+    tx = await reputationManager.incrementScore("0x6756506A5c263710E5CDb392140DF1f958835e38",pp); // account 1
     tx.wait();
-    console.log("tx");
-    // vault: PromiseOrValue<string>,
-    // _borrower: PromiseOrValue<string>,
-    // _principal: PromiseOrValue<BigNumberish>,
-    // _notionalInterest: PromiseOrValue<BigNumberish>,
-    // _duration: PromiseOrValue<BigNumberish>,
-    // _faceValue: PromiseOrValue<BigNumberish>,
-    // _collateral: PromiseOrValue<string>,
-    // _oracle: PromiseOrValue<string>,
-    // _collateral_balance: PromiseOrValue<BigNumberish>,
-    // _collateral_type: PromiseOrValue<BigNumberish>,
+    console.log("A1")
+
+    tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2", 10); // 
+    tx.wait();
+    console.log("A2")
+
+
+
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    console.log("B")
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    console.log("C")
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    console.log("D")
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    console.log("E");
+    
+    // tx = await controller.initiateMarket(
+    //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
+    //     {
+    //         name: utils.formatBytes32String("instrument 1"),
+    //         isPool: false,
+    //         trusted: false,
+    //         balance: 0,
+    //         faceValue: pp.add(pp.mul(5).div(100)),
+    //         marketId: 0,
+    //         principal: pp,
+    //         expectedYield: pp.mul(5).div(100),
+    //         duration: 100,
+    //         description: "description",
+    //         instrument_address: creditLine_address,
+    //         instrument_type: 0,
+    //         maturityDate: 0,
+    //         poolData: {
+    //             saleAmount: 0,
+    //             initPrice: 0,
+    //             promisedReturn: 0,
+    //             inceptionTime: 0,
+    //             inceptionPrice: 0,
+    //             leverageFactor: 0,
+    //             managementFee: 0,
+    //         }
+    //     },
+    //     1
+    // )
+    // tx.wait();
+    // console.log("tx");
     // console.log("initiateMarket");
-
-    // tx = await reputationManager.incrementScore("0x6756506A5c263710E5CDb392140DF1f958835e38",pp);
-    // tx.wait();
-    // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2", 10);
-    // tx.wait();
-
-    // console.log("validators: ", await reputationManager.getTraders());
-
-
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // console.log("B")
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // console.log("C")
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // console.log("D")
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
 
     // console.log("E")
     
@@ -161,11 +190,11 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             market_manager_address,
             i
         );
-        // console.log("i: ", i);
-        // console.log("vaultBundle", vaultBundle);
-        // console.log("marketBundle", marketBundle);
-        // console.log("instrumentBundle", instrumentBundle);
-        // console.log("timestamp", timestamp);
+        console.log("i: ", i);
+        console.log("vaultBundle", vaultBundle);
+        console.log("marketBundle", marketBundle);
+        console.log("instrumentBundle", instrumentBundle);
+        console.log("timestamp", timestamp);
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
               "node returned data too old",
@@ -254,42 +283,72 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     longZCBsupply: toDisplay(m.longZCBsupply.toString()),
                     redemptionPrice: toDisplay(m.redemptionPrice.toString()),
                     totalCollateral: toDisplay(m.totalCollateral.toString()),
-                    validatorData
+                    validatorData,
+                    marketConditionMet: m.marketConditionMet,
+                    initialLongZCBPrice: toDisplay(m.initialLongZCBPrice.toString())
                 }
             );
 
             let instr = instrumentBundle[j];
             let poolData = {} as any;
-            for (const [key, value] of Object.entries(instr.poolData)) {
-                if (!isNumeric(key)) {
-                    poolData[key] = value.toString();
-                    if (key !== "inceptionTime") {
-                        poolData[key] = toDisplay(poolData[key]);
-                    }
-                }
-            }
-
             let instrument: Instrument = Object.assign(
                 {},
                 {
+                    name: instr.name,
                     marketId: instr.marketId.toString(),
                     vaultId: instr.vaultId.toString(),
                     utilizer: instr.utilizer,
                     trusted: instr.trusted,
-                    // isPool: instr.isPool,
+                    description: instr.description,
                     balance: toDisplay(instr.balance.toString()),
-                    // faceValue: toDisplay(instr.faceValue.toString()),
                     principal: toDisplay(instr.principal.toString()),
                     yield: toDisplay(instr.expectedYield.toString()),
-                    // duration: instr.duration.toString(),
-                    description: instr.description,
                     address: instr.instrument_address,
-                    // type: instr.instrument_type,
+                    duration: instr.duration.toString(),
                     maturityDate: instr.maturityDate.toString(),
-                    // poolData,
-                    name: instr.name,
+                    seniorAPR: toDisplay(instr.seniorAPR.toString()),
+                    exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
+                    managerStake: toDisplay(instr.managerStake.toString()),
+                    approvalPrice: toDisplay(instr.approvalPrice.toString()),
                 }
-            );
+            )
+
+            if (instr.isPool) {
+                let l = instr.poolData.collaterals.length;
+                let collaterals: Collateral[] = [];
+                for (let z=0; z < l; z++) {
+                    let _c = instr.poolData.collaterals[z];
+                    let c = Object.assign({}, {
+                        address: _c.tokenAddress,
+                        tokenId: _c.tokenId,
+                        name: _c.name,
+                        symbol: _c.symbol,
+                        isERC20: _c.isERC20,
+                        decimals: _c.decimals,
+                        borrowAmount: toDisplay(_c.borrowAmount.toString()),
+                        maxAmount: toDisplay(_c.maxAmount.toString()),
+                    })
+                    collaterals.push(c);
+                }
+                instrument = Object.assign(
+                    instrument,
+                    {
+                        saleAmount: toDisplay(instr.poolData.saleAmount.toString()),
+                        initPrice: toDisplay(instr.poolData.initPrice.toString()),
+                        promisedReturn: toDisplay(instr.poolData.promisedReturn.toString()),
+                        inceptionTime: instr.poolData.inceptionTime.toString(),
+                        inceptionPrice: toDisplay(instr.poolData.inceptionPrice.toString()),
+                        poolLeverageFactor: toDisplay(instr.poolData.leverageFactor.toString()),
+                        managementFee: toDisplay(instr.poolData.managementFee.toString()),
+                        pju: toDisplay(instr.poolData.pju.toString()),
+                        psu: toDisplay(instr.poolData.psu.toString()),
+                        totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
+                        totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
+                        APR: toDisplay(instr.poolData.APR.toString()),
+                        collaterals
+                    }
+                )
+            }
 
             markets[market.marketId] = market;
             instruments[instrument.marketId] = instrument;

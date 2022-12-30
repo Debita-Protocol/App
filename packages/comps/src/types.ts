@@ -394,8 +394,11 @@ export interface PoolInstrument extends BaseInstrument {
   totalBorrowedAssets: string;
   totalSuppliedAssets: string;
   APR: string;
+  managementFee?: string;
   collaterals: Collateral[]; 
-  auctions: Auction[];
+  auctions?: Auction[];
+  psu?: string;
+  pju?: string;
 }
 
 export interface CoreInstrumentData {
@@ -449,7 +452,7 @@ export interface Collateral extends Asset {
   maxAmount: string;
   tokenId?: string;
   balance?: string;
-  isERC20?: boolean;
+  isERC20: boolean;
 }
 
 export interface Auction {
@@ -517,6 +520,8 @@ export interface CoreMarketInfo {
   approved_principal?: string;
   approved_yield?: string;
   validatorData: ValidatorData;
+  marketConditionMet: boolean;
+  initialLongZCBPrice: string;
 }
 
 export interface ValidatorData {
@@ -546,7 +551,6 @@ export interface VaultInfo {
   totalAssets: string;
   utilizationRate: string;
   exchangeRate: string;
-
   totalEstimatedAPR?: string; 
   goalAPR?: string; 
   totalProtection?: string; 

@@ -335,7 +335,7 @@ export const approveERC20Contract = async (
   try {
     console.log('spender,amount,tokenAddress', spender,amount, tokenAddress); 
     const response: TransactionResponse = await tokenContract.approve(spender, amount, {
-      gasLimit: estimatedGas,
+      // gasLimit: estimatedGas,
     });
     const { hash } = response;
     return {
