@@ -11,7 +11,7 @@ import {
     fetcher_address,
     reputation_manager_address,
     pool_factory_address,
-    usdc,
+    cash_address,
     creditLine_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
@@ -84,31 +84,27 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
     const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
-    const cash = new Contract(usdc, ERC20Data.abi, signer);
+    const cash = new Contract(cash_address, ERC20Data.abi, signer);
     let tx;
 
-    tx = await reputationManager.incrementScore("0x6756506A5c263710E5CDb392140DF1f958835e38",pp); // account 1
-    tx.wait();
-    console.log("A1")
-
-    tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2", 10); // 
-    tx.wait();
-    console.log("A2")
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
+    // console.log("A1")
 
 
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    console.log("B")
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    console.log("C")
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    console.log("D")
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    console.log("E");
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // console.log("B")
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // console.log("C")
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // console.log("D")
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // console.log("E");
     
     // tx = await controller.initiateMarket(
     //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
@@ -163,7 +159,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //     }
     // );
     // await tx.wait(2);
-    console.log("F");
+    // console.log("F");
 }
 
 export const getContractData = async (account: string, provider: Web3Provider): Promise<{

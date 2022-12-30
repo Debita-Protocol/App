@@ -44,7 +44,9 @@ let emptyMarket: CoreMarketInfo = {
     longZCBprice: "0",
     longZCBsupply: "0",
     redemptionPrice: "0",
-    totalCollateral: "0"
+    totalCollateral: "0",
+    marketConditionMet: false,
+    initialLongZCBPrice: "0"
 };
 
 let emptyInstrument: Instrument = {

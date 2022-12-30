@@ -61,13 +61,10 @@ const ProfileView: React.FC = () => {
     }, [zcbBalances]);
 
     return (
-        // <div>
-        //     <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
-        //     Click Me
-        // </button>
-        // </div>
-        
         <div className={Styles.ProfileView}>
+            <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
+                Click Me
+            </button>
             <section className={Styles.UserDetailsView}>
                 <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
             </section>
