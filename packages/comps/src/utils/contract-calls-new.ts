@@ -76,6 +76,21 @@ export const approveMarket = async (account: string, provider: Web3Provider, mar
     await tx.wait();
 }
 
+/// TEST FUNCTIONS
+export const testApproveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+    let tx = await controller.testApproveMarket(marketId);
+    await tx.wait();
+}
+
+export const testResolveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+    let tx = await controller.testResolveMarket(marketId);
+    await tx.wait();
+}
+
 export const ContractSetup = async (account: string, provider: Web3Provider) => {
     console.log("ContractSetup");
     const signer = getSigner(provider, account);
