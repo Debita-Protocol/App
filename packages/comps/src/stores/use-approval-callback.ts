@@ -327,15 +327,20 @@ export const approveERC20Contract = async (
     console.error("no spender");
     return null;
   }
+    console.log("?????????FEFEFEFEFEFEFEFE"); 
+
   const tokenContract = getErc20Contract(tokenAddress, library, account);
+  let estimatedGas = 10000000
   // const estimatedGas = await tokenContract.estimateGas.approve(spender, amount).catch((e) => {
   //   // general fallback for tokens who restrict approval amounts
   //   return tokenContract.estimateGas.approve(spender, amount);
   // });
+  console.log('spender,amount,tokenAddress', spender,amount, tokenAddress); 
+
   try {
     console.log('spender,amount,tokenAddress', spender,amount, tokenAddress); 
     const response: TransactionResponse = await tokenContract.approve(spender, amount, {
-      // gasLimit: estimatedGas,
+      gasLimit: 1000000,
     });
     const { hash } = response;
     return {

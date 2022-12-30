@@ -372,7 +372,8 @@ const MarketsView = () => {
     >
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
       <NetworkMismatchBanner />
-      {isLogged ? <AppViewStats small liquidity trading /> : <TopBanner />}
+      <AppViewStats small liquidity trading /> 
+      {/*isLogged ? <AppViewStats small liquidity trading /> : <TopBanner />*/}
       {isMobile && (
         <div>
           <SecondaryThemeButton
@@ -409,7 +410,9 @@ const MarketsView = () => {
                       
                   */  }
 
-       {/* <SquareDropdown
+
+
+       {/*<SquareDropdown
           onChange={(value) => {
             updateMarketsViewSettings({ primaryCategory: value, subCategories: [] });
           }}
@@ -458,7 +461,7 @@ const MarketsView = () => {
       {filteredVaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}   
         
 </section>
-      {loading ? (
+      {loading ?false&& (
         <section>
           {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
             <LoadingMarketCard key={index} />

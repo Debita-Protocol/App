@@ -71,7 +71,8 @@ import {
   POLYGON_PRICE_FEED_MATIC,
   MAX_LAG_BLOCKS,
   WMATIC_TOKEN_ADDRESS,
-  REWARDS_AMOUNT_CUTOFF
+  REWARDS_AMOUNT_CUTOFF, 
+  TX_STATUS
 } from "./constants";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
 import { createBigNumber } from "./create-big-number";
@@ -128,7 +129,8 @@ reputation_manager_address
 
 
 import {BigNumber, BigNumberish, utils} from "ethers"
-import { Loan} from "../types"
+import { Loan,LoginAccount} from "../types"
+
 import createIdentity from "@interep/identity"
 import createProof from "@interep/proof"
 import tlensabi from "../data/TrustedMarketFactoryV3.json"; 
@@ -139,7 +141,7 @@ import vaultabi from "../data/vault.json";
 import marketmanagerabi from "../data/marketmanager.json"; 
 import reputationManagerAbi from "../data/ReputationManager.json"; 
 
-const precision = 1e6; 
+const precision = 1e10; 
 const pp = BigNumber.from(10).pow(18);
 const { parseBytes32String, formatBytes32String } = utils;
 
@@ -159,7 +161,7 @@ export interface CoreInstrumentData_ {
   instrument_address: string;
   instrument_type: number;
   maturityDate: string;
-  poolData?: CorePoolData;
+  poolData?: CorePoolData_;
 }
 
 // export interface NFT {
@@ -183,6 +185,50 @@ export interface CorePoolData_ {
   
 }
 
+export const approveERC20 = async (
+  tokenAddress: string,
+  approvingName: string,
+  spender: string,
+  loginAccount: LoginAccount,
+  amount: string = pp.mul(10000000000000).toString()
+) => {
+  const { chainId, account, library } = loginAccount;
+  if (!spender) {
+    console.error("no spender");
+    return null;
+  }
+
+  const tokenContract = getErc20Contract(tokenAddress, library, account);
+  let estimatedGas = 10000000
+  // const estimatedGas = await tokenContract.estimateGas.approve(spender, amount).catch((e) => {
+  //   // general fallback for tokens who restrict approval amounts
+  //   return tokenContract.estimateGas.approve(spender, amount);
+  // });
+  console.log('spender,amount,tokenAddress', spender,amount, tokenAddress); 
+
+  try {
+    console.log('spender,amount,tokenAddress', spender,amount, tokenAddress); 
+    const response: TransactionResponse = await tokenContract.approve(spender, amount, {
+      gasLimit: 1000000,
+    });
+    const { hash } = response;
+    return {
+      hash,
+      chainId: String(chainId),
+      addedTime: new Date().getTime(),
+      seen: false,
+      status: TX_STATUS.PENDING,
+      marketDescription: null,
+      from: account,
+      message: `Approve ${approvingName || "for use"}`,
+      approval: { tokenAddress: tokenAddress, spender: spender },
+    };
+  } catch (error) {
+    console.debug("Failed to approve token", error);
+    throw error;
+  }
+};
+
 export async function setUpTestManager(
   account: string, 
   library: Web3Provider
@@ -196,47 +242,127 @@ export async function setUpTestManager(
   await reputation.incrementScore(account, pp.mul(10)); 
 }
 
+export async function approveInstrument(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string
+  ){
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+  await controller.validatorApprove(marketId); 
+}
+export async function redeemPoolZCB(
+  account: string, 
+  library: Web3Provider, 
+  marketId: string, 
+  amount: number, 
+  ){
+  const marketmanager = new ethers.Contract(market_manager_address, 
+  marketmanagerabi["abi"], getProviderOrSigner(library, account));
+  const scaledAmount = pp.mul(amount * precision).div(precision)
+  await marketmanager.redeemPoolLongZCB(
+    marketId, scaledAmount); 
+}
+export async function redeemZCB(
+  account: string,
+  library: Web3Provider, 
+  marketId: string 
+  ){
+  const marketmanager = new ethers.Contract(market_manager_address, 
+  marketmanagerabi["abi"], getProviderOrSigner(library, account));  
+
+}
 export async function estimateTrade  (
   account: string,
   library: Web3Provider, 
   marketId: number, 
   amount: string, 
-  long: boolean, 
+  isUnderlying: boolean = false, 
+  isShort: boolean, 
+  open: boolean
   ) : Promise<EstimateTradeResult|string>{
-  console.log('why??');
+
   const marketmanager = new ethers.Contract(
     market_manager_address, marketmanagerabi["abi"], getProviderOrSigner(library, account)); 
   let error = null; 
-  const result = await marketmanager.callStatic.buyBond(marketId, amount, pp.mul(100), 0)
-    .catch((e)=>{console.log(e);
-      error= e; 
-    }); 
-  if(error!= null) console.log('error', error.data.message); 
-  return error.data.message
-  const {tokensIn, tokensOut} = result; 
+  let result; 
+
+  var scaledAmount = isUnderlying? pp.mul(Number(amount) * precision).div(precision)
+                      : pp.mul(Number(-amount) * precision).div(precision); 
+  if(isShort){
+    if(open){
+         result = await marketmanager.callStatic.shortBond(marketId, scaledAmount, 0, 0) 
+            .catch((e)=>{
+              console.log(e);
+              error= e }); 
+        if(error!= null) {
+        console.log('error', error?.data?.message); 
+        return error?.data?.message
+      }
+    }
+    else{
+         result = await marketmanager.callStatic.coverBondShort(marketId, scaledAmount, pp.mul(100), 0) 
+            .catch((e)=>{
+              console.log(e);
+              error= e }); 
+        if(error!= null) {
+        console.log('error', error.data.message); 
+        return error.data.message
+      }
+    }
+  }
+  else{
+    if(open){
+        // if(isUnderlying) scaledAmount = -scaledAmount; 
+       result = await marketmanager.callStatic.buyBond(marketId,scaledAmount, pp.mul(100), 0)
+        .catch((e)=>{console.log(e);
+          error= e; 
+        }); 
+      if(error!= null) {console.log('error', error.data.message); 
+      return error.data.message
+      }
+    }
+    else{
+       result = await marketmanager.callStatic.sellBond(marketId,scaledAmount, 0, 0)
+        .catch((e)=>{console.log(e);
+          error= e; 
+        }); 
+      if(error!= null) {console.log('error', error.data.message); 
+      return error.data.message
+      }
+
+    }
+  }
+
+
+
+  const tokensIn = result[0]; 
+  const tokensOut = result[1]; 
 
   // const tokensIn
-  const avgPrice = tokensIn.div(tokensOut); 
+  const avgPrice = tokensIn.mul(pp).div(tokensOut); 
 
-  console.log('estimates', avgPrice.toString, tokensOut.toString())  
+  console.log('estimates', tokensIn.toString(), avgPrice.toString(), tokensOut.toString(),
+    trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0")))) 
   let tradeFees
   let maxProfit; 
   let ratePerCash; 
   let priceImpact; 
   // average price, tokens returned, 
 
+  const output = isUnderlying? tokensOut: tokensIn; 
+
   return {
-    outputValue: "0",
-    tradeFees, 
-    averagePrice: "0",
+    outputValue: trimDecimalValue(sharesOnChainToDisplay(String(output.toString() || "0"))),
+    tradeFees: "0", 
+    averagePrice: trimDecimalValue(sharesOnChainToDisplay(String(avgPrice.toString() || "0"))),
     maxProfit, 
     ratePerCash,
     priceImpact,
   };
-
-
-
 }
+
 
 
 export async function tradeZCB(
@@ -247,47 +373,66 @@ export async function tradeZCB(
   long: boolean, 
   close: boolean, 
   slippageLimit: number = 100, 
-  underlyingAddress: string = ""
+  underlyingAddress: string = "", 
+  issue:boolean = false,
   ): Promise<TransactionResponse>{
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
-  // await controller.testVerifyAddress(); 
-  // await controller._incrementScore(account, pp.mul(10)); 
-  // await controller._incrementScore("0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e", pp); 
 
   if (underlyingAddress=="") underlyingAddress = cash_address; 
 
   const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
   const marketmanager = new ethers.Contract(market_manager_address, 
-    marketmanagerabi["abi"], getProviderOrSigner(library, account));
+  marketmanagerabi["abi"], getProviderOrSigner(library, account));
   const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
+  await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
 
-  await (await collateral.approve(market_manager_address, scaledAmount)).wait(); 
-
-  if (long){
-    if(close){
-      await marketmanager.sellBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
-    }
-
-
-    else{
-      await marketmanager.buyBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
-    }
+  if(issue){
+    await marketmanager.issuePoolBond( marketId, scaledAmount); 
+    
   }
+
   else{
-    if(close){
-      await marketmanager.coverBondShort(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+
+    if (long){
+      if(close){
+        await marketmanager.sellBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+      }
+
+
+      else{
+
+        await marketmanager.buyBond(marketId, scaledAmount, pp.mul(slippageLimit*100), 0); 
+      }
     }
     else{
-      await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+      if(close){
+
+        await marketmanager.coverBondShort(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+      }
+      else{
+                    console.log('????')
+
+        await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+      }
     }
+
   }
+
   let tx; 
   return tx; 
 }
 
 
+export async function setUpManager(
+  account: string, library: Web3Provider
+  ) {
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+  await controller.testVerifyAddress(); 
+}
 
 export async function setUpExampleController(account: string, library: Web3Provider){
   interface DefaultParams {
@@ -321,16 +466,12 @@ export async function setUpExampleController(account: string, library: Web3Provi
 
   const reputation = new ethers.Contract(reputation_manager_address, 
     reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
-  // await reputation.incrementScore(account, pp);
+  await reputation.incrementScore(account, pp);
   // await reputation.incrementScore("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", pp);
 
-    await controller.testVerifyAddress(); 
+  // await controller.testVerifyAddress(); 
 
-  // await (await controller.setMarketManager(market_manager_address)).wait();
-  // console.log("A")
-  // await (await controller.setVaultFactory(vault_factory_address)).wait();
-  // console.log("B")
-  // await (await controller.setReputationNFT(rep_token_address)).wait();
+  // // await controller.setReputationNFT(rep_token_address);
   // console.log("Completed Reputation")
 
   // await controller.createVault(
@@ -343,9 +484,9 @@ export async function setUpExampleController(account: string, library: Web3Provi
 export async function addProposal(  // calls initiate market
   account: string, 
   library: Web3Provider,
-  faceValue: string = "11000", 
-  principal: string= "10000", 
-  expectedYield: string= "1000", // this should be amount of collateral yield to be collected over the duration, not percentage
+  faceValue: string = "110", 
+  principal: string= "100", 
+  expectedYield: string= "10", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
   description: string= "Test Description", 
   Instrument_address: string = creditLine_address, //need to have been created before
@@ -358,9 +499,9 @@ export async function addProposal(  // calls initiate market
 
 
   const data = {} as CoreInstrumentData_; 
-  const pooldata = {} as CorePoolData; 
+  const pooldata = {} as CorePoolData_; 
   data.name = formatBytes32String("name"); 
-  data.isPool = false; 
+  data.isPool = true; 
   data.trusted = false; 
   data.balance = new BN(0).toFixed(); 
   data.faceValue = pp.mul(faceValue); //new BN(faceValue).shiftedBy(decimals).toFixed(); 
@@ -373,16 +514,13 @@ export async function addProposal(  // calls initiate market
   data.instrument_type = instrument_type;
   data.maturityDate = String(0);
 
-  pooldata.saleAmount = "1"
-  pooldata.initPrice = "1"
-  pooldata.promisedReturn = "1"
+  pooldata.saleAmount = data.principal.div(4).toString()
+  pooldata.initPrice = String(7e17)
+  pooldata.promisedReturn = String(3000000000)
   pooldata.inceptionTime = "1"
-  pooldata.inceptionPrice = "1"
-  pooldata.leverageFactor = "1"
-  // pooldata.managementFee = "1"
-  pooldata.APR = "1"
-  pooldata.totalBorrowedAssets = "1"
-  pooldata.totalSuppliedAssets = "1"
+  pooldata.inceptionPrice = String(8e17)
+  pooldata.leverageFactor = String(3e18)
+  pooldata.managementFee = "1"
   data.poolData = pooldata; 
   console.log('account', account, Instrument_address); 
   await controller.initiateMarket("0xda96D4256411235c2B61028c689169DcB95105Df", data, vaultId,{gasLimit: 10000000})
@@ -1014,14 +1152,7 @@ export async function getVaultTokenBalance(
   return new BN(amount.toString()).div(10**(decimals)).toString();
 }
 
-export async function redeemZCB(
-  account: string,
-  library: Web3Provider, 
-  marketId: string 
-  ){
-  const MM = MarketManager__factory.connect(market_manager_address, getProviderOrSigner(library, account));
-  //await MM.redeem(marketId, account);
-}
+
 
 export async function getZCBBalances(
   account :string, 
