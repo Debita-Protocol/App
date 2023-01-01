@@ -7,6 +7,7 @@ import Styles from "./proposals-view.styles.less";
 import {TabNavItem, TabContent} from "./tabs";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
 import GeneralInstrumentForm from "./general-instrument-form";
+import PoolProposalView from "../pool-proposal/pool-proposal-view";
 
 
 const ProposalsView = () => {
@@ -18,6 +19,7 @@ const ProposalsView = () => {
                     <TabNavItem title="General" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
                     <TabNavItem title="Creditline" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
                     <TabNavItem title="Options" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="Pool" id="3" activeTab={activeTab} setActiveTab={setActiveTab}/>
             </section>
             <section>
                 <TabContent id="0" activeTab={activeTab}>
@@ -33,6 +35,9 @@ const ProposalsView = () => {
                     <h3>
                         Options Form
                     </h3>
+                </TabContent>
+                <TabContent id="3" activeTab={activeTab}>
+                    <PoolProposalView />
                 </TabContent>
             </section>
 

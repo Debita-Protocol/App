@@ -5,7 +5,8 @@ import {
     useUserStore,
     ContractCalls,
     Components,
-    InputComps
+    InputComps,
+    ContractCalls2
   } from "@augurproject/comps";
 
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
@@ -14,14 +15,13 @@ import Styles from "./creditline-proposal-view.styles.less";
 import { SUPER_BUTTON } from "../common/super-button";
 import { useHistory } from "react-router-dom"
 //import Calendar from 'react-calendar'; => to do later.
-import { utils } from "ethers";
+import { utils, constants } from "ethers";
 
 import { useDataStore2 } from "@augurproject/comps";
 import { VaultInfos } from "@augurproject/comps/build/types";
+import { SingleCheckbox } from "@augurproject/comps/build/components/common/selection";
 
-
-
-const { formatBytes32String } = utils;
+const { formatBytes32String, isAddress } = utils;
 
 
 const {
@@ -31,7 +31,7 @@ const {
   } = Components;
 
 
-const { addProposal, createCreditLine } = ContractCalls;
+const { createCreditLineInstrument, createCreditlineMarket } = ContractCalls2;
 
 
 
@@ -70,12 +70,23 @@ const CreditLineRequestForm = () => {
   const [ description, setDescription] = useState("");
   const [ vaultId, setVaultId ] = useState("");
   const [ defaultVault, setDefaultVault] = useState("");
+  const [name, setName] = useState("");
+  const [collateralType, setCollateralType] = useState("0");
+  const [collateral, setCollateral] = useState("");
+  const [collateralBalance, setCollateralBalance] = useState("");
+  // const [createdContract, setCreatedContract] = useState(false);
+  // const [instrumentAddress, setInstrumentAddress] = useState("");
 
   const checkInput = (
     total_duration: BigNumber,
     interest: BigNumber,
     principal: BigNumber,
-    description: string
+    description: string,
+    name: string,
+    collateralType: string,
+    collateral: string,
+    collateralBalance: string,
+    // instrumentAddress: string
   ) : boolean => {
     if (total_duration.isEqualTo(new BigNumber(0))) {
       setInputError("Duration must be greater than 0")
@@ -88,6 +99,20 @@ const CreditLineRequestForm = () => {
       return false
     } else if (description === "") {
       setInputError("Must have a description")
+      return false
+    } else if (name === "") {
+      setInputError("Must have a name")
+      return false
+    } else if (collateralType === "0") {
+      if (!isAddress(collateral) || Number(collateralBalance) === 0) {
+        setInputError("Collateral must be a valid address and have a balance")
+        return false
+      }
+    }
+    try {
+      let _name = formatBytes32String(name);
+    } catch (err) {
+      setInputError("Name must be a valid string")
       return false
     }
     return true;
@@ -105,10 +130,10 @@ const CreditLineRequestForm = () => {
     setDescription("")
   }
 
-  const submitPropsal = useCallback(async (e)=> {
+  const submitProposal = useCallback(async (e)=> {
     e.preventDefault()
 
-    let total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 60*Number(duration.minutes)).toString();
+    let total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 30*24*60*60*Number(duration.months)).toString();
     
     // total interest accrued
     let interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
@@ -117,26 +142,56 @@ const CreditLineRequestForm = () => {
       new BN(total_duration),
       new BN(interest),
       new BN(principal),
-      description
+      description,
+      name,
+      collateralType,
+      collateral,
+      collateralBalance
+      // instrumentAddress
     )) {
-      let faceValue = new BN(principal).plus(new BN(interest)).toString()
-      let instrument_address = await createCreditLine(account, loginAccount.library, principal, interestRate, total_duration, faceValue)
-      console.log("instrument address: ", instrument_address);
-      
-      let tx = await addProposal(
-        account,
-        loginAccount.library,
-        faceValue,
-        principal,
-        interest,
-        total_duration,
-        description,
-        instrument_address
-      )
-      console.log("PROPOSAL ADDED")
       reset();
-      await tx.wait();
       
+    }
+  })
+
+  const createCreditline = useCallback(async (e) => {
+    e.preventDefault();
+    console.log("A");
+    let total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 30*24*60*60*Number(duration.months)).toString();
+    
+    // total interest accrued
+    let interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
+    if (checkInput(
+      new BN(total_duration),
+      new BN(interest),
+      new BN(principal),
+      description,
+      name,
+      collateralType,
+      collateral,
+      collateralBalance,
+      // instrumentAddress
+    )) {
+      console.log("creating instrument");
+      let _principal = new BN(principal).shiftedBy(18).toFixed();
+      console.log("principal: ", _principal);
+      let _interest = new BN(interest).shiftedBy(18).toFixed();
+      console.log("interes: ", _interest);
+      if (collateralType === "3") {
+        try {
+          let instrument_address = await createCreditLineInstrument(
+            account, loginAccount.library, vaults[vaultId].address , _principal, _interest, total_duration, constants.AddressZero, "0", collateralType
+            );
+          console.log("instrument address: ", instrument_address);
+          await createCreditlineMarket(
+            account, loginAccount.library, formatBytes32String(name), instrument_address, vaultId, _principal, _interest, description, total_duration
+          );
+          console.log("done");
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
     }
   })
 
@@ -151,16 +206,41 @@ const CreditLineRequestForm = () => {
     }
     if (_vaultOptions.length > 0 ) { 
       setDefaultVault(_vaultOptions[0].value);
+      setVaultId(_vaultOptions[0].value);
     }
     return _vaultOptions;
   }, [vaults]);
+  let chosenCash = vaultId !== "" ? vaults[vaultId].want.name : "";
 
-  let chosenCash = "USDC"; // vaults[vaultId].want.name; => TODO.
+  let collateralOptions = [
+    {
+      label: "Liquid",
+      value: "0"
+    },
+    {
+      label: "NonLiquid",
+      value: "1"
+    },
+    {
+      label: "Ownership",
+      value: "2"
+    },
+    {
+      label: "None",
+      value: "3"
+    }
+  ]
 
+  
+
+  // const buttonProps: BaseThemeButtonProps = {
+  //   text: createdContract ? "Submit" : "Create Contract",
+  //   action: createdContract ? submitProposal : createCreditline 
+  // };
   const buttonProps: BaseThemeButtonProps = {
     text: "Submit",
-    action: submitPropsal
-  };
+    action: createCreditline
+  }
 
   return (
   <>
@@ -172,6 +252,38 @@ const CreditLineRequestForm = () => {
       <div>
         <label>Selected Vault: </label>
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
+      </div>
+      
+      <div>
+        <label>Collateral Type: </label>
+        <SquareDropdown options={collateralOptions} onChange={(val) => setCollateralType(val)} defaultValue={collateralType}/>
+      </div>
+      {collateralType === "0" && (
+        <>
+          <div>
+            <label>Collateral Address: </label>
+            <TextInput placeholder="" value={collateral} onChange={(val) => setCollateral(val)}/>
+          </div>
+          <div>
+            <label>Collateral Balance: </label>
+            <AmountInput 
+              updateInitialAmount={
+                (val) => {
+                  if (/^\d*\.?\d*$/.test(val)) {
+                    setCollateralBalance(val)
+                  }
+                }
+              }
+              initialAmount={collateralBalance}
+              chosenCash=""
+            />
+          </div>
+        </>
+        
+      )}
+      <div>
+        <label>Name: </label>
+        <TextInput placeholder="" value={name} onChange={(val) => setName(val)}/>
       </div>
       <div>
         <label>Principal: </label>
@@ -241,6 +353,15 @@ const CreditLineRequestForm = () => {
       <div>
       { inputError }
       </div>
+      {/* <div>
+        <SingleCheckbox label={"Existing Address"} initialSelected={false} updateSelected={setCreatedContract}/>
+      </div>
+      {createdContract && (
+        <div>
+          <label>Contract Address: </label>
+          <TextInput placeholder="" value={instrumentAddress} onChange={(val) => setInstrumentAddress(val)}/>
+        </div>
+      )} */}
       <div>
         <SecondaryThemeButton {... buttonProps} />
       </div>
