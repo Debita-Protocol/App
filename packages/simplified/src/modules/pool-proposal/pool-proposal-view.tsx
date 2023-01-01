@@ -42,7 +42,7 @@ const PoolProposalView: React.FC = () => {
 
     const [ vaultId, setVaultId ] = useState("");
     const [ defaultVault, setDefaultVault] = useState("");
-
+    console.log("vaultId: ", vaultId);
     let vaultOptions = useMemo(() => {
         let _vaultOptions = [];
         for (const [id, vault] of Object.entries(vaults as VaultInfos)) {
@@ -68,10 +68,10 @@ const PoolProposalView: React.FC = () => {
 
     const submitProposal = useCallback(async () => {
 
-        console.log("vault address: ", vaults[vaultId].address)
-        console.log("want: ", vaults[vaultId].want.address);  
-        console.log("poolData: ", poolData);
-        console.log("collateralInfos: ", collateralInfos);
+        // console.log("vault address: ", vaults[vaultId].address)
+        // console.log("want: ", vaults[vaultId].want.address);  
+        // console.log("poolData: ", poolData);
+        // console.log("collateralInfos: ", collateralInfos);
 
         const saleAmount = new BN(poolData.saleAmount).shiftedBy(18).toFixed();
         const initPrice = new BN(poolData.initPrice).shiftedBy(18).toFixed();
@@ -89,29 +89,28 @@ const PoolProposalView: React.FC = () => {
             poolData.name,
             poolData.symbol
         );
-        console.log("Address of the pool instrument: ", poolInstrumentAddress);
+
         // using poolData createPoolMarket
-        // const marketId = await createPoolMarket(
-        //     account,
-        //     loginAccount.library,
-        //     vaultId,
-        //     poolData.name,
-        //     poolData.description,
-        //     saleAmount,
-        //     initPrice,
-        //     promisedReturn,
-        //     inceptionPrice,
-        //     leverageFactor,
-        //     poolInstrumentAddress
-        // );
+        const marketId = await createPoolMarket(
+            account,
+            loginAccount.library,
+            vaultId,
+            poolData.name,
+            poolData.description,
+            saleAmount,
+            initPrice,
+            promisedReturn,
+            inceptionPrice,
+            leverageFactor,
+            poolInstrumentAddress
+        );
 
-        // await addAcceptedCollaterals(
-        //     account,
-        //     loginAccount.library,
-        //     marketId,
-        //     collateralInfos
-        // )
-
+        await addAcceptedCollaterals(
+            account,
+            loginAccount.library,
+            marketId,
+            collateralInfos
+        );
     }, [poolData, collateralInfos, vaultId, vaults]);
 
 

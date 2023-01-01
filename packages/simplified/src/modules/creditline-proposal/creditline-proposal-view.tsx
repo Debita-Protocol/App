@@ -31,7 +31,7 @@ const {
   } = Components;
 
 
-const { createCreditLineInstrument, createCreditlineMarket } = ContractCalls2;
+const { createCreditLineInstrument,   createCreditlineMarket } = ContractCalls2;
 
 
 
@@ -183,6 +183,7 @@ const CreditLineRequestForm = () => {
             account, loginAccount.library, vaults[vaultId].address , _principal, _interest, total_duration, constants.AddressZero, "0", collateralType
             );
           console.log("instrument address: ", instrument_address);
+          // log all the arguments
           await createCreditlineMarket(
             account, loginAccount.library, formatBytes32String(name), instrument_address, vaultId, _principal, _interest, description, total_duration
           );
@@ -210,6 +211,8 @@ const CreditLineRequestForm = () => {
     }
     return _vaultOptions;
   }, [vaults]);
+
+  console.log("vaultId: ", vaultId);
   let chosenCash = vaultId !== "" ? vaults[vaultId].want.name : "";
 
   let collateralOptions = [

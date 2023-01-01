@@ -13,9 +13,7 @@ import {
     pool_factory_address,
     cash_address,
     creditLine_address,
-    variable_interest_rate_address,
-    _abi,
-    _bytecode,
+    variable_interest_rate_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -28,6 +26,9 @@ import CreditlineData from "../data/CreditLine.json";
 import PoolInstrumentData from "../data/poolInstrument.json";
 import VariableInterestRateData from "../data/VariableInterestRate.json";
 import PRBTestData from "../data/PRBTest.json";
+import VaultData from "../data/vault.json";
+import CashData from "../data/cash.json";
+import TestNFTData from "../data/TestNFT.json";
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
@@ -35,7 +36,6 @@ import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/uti
 import { Contract, ContractFactory } from "@ethersproject/contracts";
 import {TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
-import VaultData from "../data/vault.json";
 import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 import { formatBytes32String } from "ethers/lib/utils";
@@ -97,12 +97,15 @@ export const createPoolMarket = async (
         }
     }
 
+    console.log("instrumentData: ", instrumentData);
+    console.log("vaultId: ", vaultId);
+
     const tx = await controller.initiateMarket(
         account,
         instrumentData,
         vaultId
     );
-    await tx.wait();
+    await tx.wait(1);
     const marketCount = await marketManager.marketCount();
     const marketId = new BN(marketCount.toString()).minus(1).toString();
 
@@ -118,30 +121,29 @@ export const createPoolInstrument = async (
     name: string,
     symbol: string,
 ): Promise<string> => {
-    console.log("poolInstrumentABI: ", PoolInstrumentData.abi);
-    const poolInstrumentFactory = new ContractFactory(_abi, _bytecode, provider.getSigner(account));
-    console.log("vault: ", vault);
-    console.log("controller_address: ", controller_address);
-    console.log("account: ", account);
-    console.log("asset: ", asset);
-    console.log("name: ", name);
-    console.log("symbol: ", symbol);
-    console.log("variable_interest_rate_address: ", variable_interest_rate_address);
+    // console.log("poolInstrumentABI: ", PoolInstrumentData.abi);
+    const poolInstrumentFactory = new ContractFactory(PoolInstrumentData.abi, PoolInstrumentData.bytecode, provider.getSigner(account));
+    // console.log("vault: ", vault);
+    // console.log("controller_address: ", controller_address);
+    // console.log("account: ", account);
+    // console.log("asset: ", asset);
+    // console.log("name: ", name);
+    // console.log("symbol: ", symbol);
+    // console.log("variable_interest_rate_address: ", variable_interest_rate_address);
 
-    // const poolInstrument = await poolInstrumentFactory.deploy(  
-    //     vault,
-    //     controller_address,
-    //     account,
-    //     asset,
-    //     name,
-    //     symbol,
-    //     variable_interest_rate_address,
-    //     []
-    // );
-    // await poolInstrument.deployed();
-    // console.log("poolInstrument deployed to:", poolInstrument.address);
-    // return poolInstrument.address;
-    return "string";
+    const poolInstrument = await poolInstrumentFactory.deploy(  
+        vault,
+        controller_address,
+        account,
+        asset,
+        name,
+        symbol,
+        variable_interest_rate_address,
+        []
+    );
+    await poolInstrument.deployed();
+    console.log("poolInstrument deployed to:", poolInstrument.address);
+    return poolInstrument.address;
 }
 
 export const addAcceptedCollaterals = async (
@@ -155,33 +157,18 @@ export const addAcceptedCollaterals = async (
     
     const multicall = new Multicall({ ethersProvider: provider });
 
-    const calls = collateralItems.map((item, i) => {
-        return {
-            reference: "Call " + i,
-            methodName: "addAcceptedCollateral",
-            methodParameters: [
-                marketId,
-                item.tokenAddress,
-                item.isERC20 ? 0 : item.tokenId,
-                new BN(item.maxAmount).shiftedBy(18).toFixed(),
-                new BN(item.borrowAmount).shiftedBy(18).toFixed(),
-                item.isERC20
-            ]
-        }});
-
-
-    const contractCallContext: ContractCallContext[] = [
-        {
-            reference: "Controller",
-            contractAddress: controller_address,
-            abi: ControllerData.abi,
-            calls
-        }
-    ]
-
-    const results: ContractCallResults = await multicall.call(contractCallContext);
-
-    console.log("done");
+    // for each collateralInfo item, call controller.addAcceptedCollateral
+    collateralItems.forEach(async (collateralInfo) => {
+        const tx = await controller.addAcceptedCollateral(
+            marketId,
+            collateralInfo.tokenAddress,
+            collateralInfo.isERC20 ? "0" : collateralInfo.tokenId,
+            new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(),
+            new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(),
+            collateralInfo.isERC20
+        )
+        await tx.wait(1);
+    });
 }
 
 
@@ -254,8 +241,43 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
     const cash = new Contract(cash_address, ERC20Data.abi, signer);
-    let tx;
+    const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
+    const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
 
+    // const cash1 = await cashFactory.deploy(
+    //     "Cash1",
+    //     "CASH1",
+    //     18
+    // );
+    // await cash1.deployed();
+    // console.log("cash1 deployed to:", cash1.address);
+    // const cash2 = await cashFactory.deploy(
+    //     "Cash2",
+    //     "CASH2",
+    //     18
+    // );
+    // await cash2.deployed();
+    // console.log("cash2 deployed to:", cash2.address);
+    // const nft1 = await nftFactroy.deploy(
+    //     "NFT1",
+    //     "NFT1"
+    // );
+    // await nft1.deployed();
+    // console.log("nft1 deployed to:", nft1.address);
+    // const nft2 = await nftFactroy.deploy(
+    //     "NFT2",
+    //     "NFT2"
+    // );
+    // await nft2.deployed();
+    // console.log("nft2 deployed to:", nft2.address);
+
+
+
+    const pool1 = new Contract("0x55e08cff64B0659E5bBd5645D24f591446316c2e", PoolInstrumentData.abi, signer);
+    console.log((await pool1.getAcceptedCollaterals()));
+    // const vault1 = new Contract("0xEbd3bc7CD466c262Dfe4fFA7b4Fc25fC8719Beb2", VaultData.abi, signer);
+    let tx;
+    // console.log(await fetcher.fetchInitial(controller_address, market_manager_address, 1));
     // const variableInterestRateFactory = new ContractFactory(VariableInterestRateData.abi, VariableInterestRateData.bytecode, provider.getSigner(account));
     // const variableInterestRate = await variableInterestRateFactory.deploy();
     // console.log("variableInterestRate", variableInterestRate.address);
@@ -478,7 +500,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     maturityDate: instr.maturityDate.toString(),
                     seniorAPR: toDisplay(instr.seniorAPR.toString()),
                     exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
-                    managerStake: toDisplay(instr.managerStake.toString()),
+                    managerStake: toDisplay(instr.managers_stake.toString()),
                     approvalPrice: toDisplay(instr.approvalPrice.toString()),
                 }
             )
@@ -642,7 +664,7 @@ export const createCreditlineMarket = async (
     duration: string
 ): Promise<TransactionResponse>  => {
     const controller = new Contract(controller_address, ControllerData.abi, provider.getSigner(account));
-    const faceValue = new BN(principal).plus(new BN(expectedYield)).toString();
+    const faceValue = new BN(principal).plus(new BN(expectedYield)).toFixed();
     const tx: TransactionResponse = await controller.initiateMarket(
         account,
         {
@@ -660,8 +682,19 @@ export const createCreditlineMarket = async (
             maturityDate: 0,
             vaultId,
             marketId: 0,
-        }
+            poolData: {
+                saleAmount: 0,
+                initPrice: 0,
+                promisedReturn: 0,
+                inceptionTime: 0,
+                inceptionPrice: 0,
+                leverageFactor: 0,
+                managementFee: 0
+            }
+        },
+        vaultId
     );
+    await tx.wait(1);
 
     return tx;
 }
