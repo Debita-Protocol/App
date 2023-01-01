@@ -20,7 +20,7 @@ export const useRammData = ({markets, blocknumber, vaults, isWalletRpc}) => {
         if (loginAccount?.library && loginAccount?.account) {
             fetchRammData(loginAccount.library, loginAccount.account, vaults, markets)
               .then((ramm) => updateRammData(ramm))
-              .catch((e) => console.error("error fetching user balances, will try again"));
+              .catch((e) => console.error(e, "error fetching user balances, will try again"));
           }
           console.log('blocknumber', blocknumber); 
       }, [loginAccount?.account, loginAccount?.library, blocknumber]);

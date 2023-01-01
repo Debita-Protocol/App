@@ -124,7 +124,8 @@ import {
   cash_address, 
   pool_factory_address, 
   creditLine_address, 
-reputation_manager_address
+  reputation_manager_address, 
+  leverageModule_address
 } from "../data/constants";
 
 
@@ -140,7 +141,7 @@ import cashabi from "../data/cash.json";
 import vaultabi from "../data/vault.json"; 
 import marketmanagerabi from "../data/marketmanager.json"; 
 import reputationManagerAbi from "../data/ReputationManager.json"; 
-
+import leverageModuleAbi from "../data/leverageModule.json"; 
 const precision = 1e10; 
 const pp = BigNumber.from(10).pow(18);
 const { parseBytes32String, formatBytes32String } = utils;
@@ -228,6 +229,7 @@ export const approveERC20 = async (
     throw error;
   }
 };
+
 
 export async function setUpTestManager(
   account: string, 
@@ -372,9 +374,9 @@ export async function tradeZCB(
   amount: string, 
   long: boolean, 
   close: boolean, 
+  issue:boolean ,
   slippageLimit: number = 100, 
   underlyingAddress: string = "", 
-  issue:boolean = false,
   ): Promise<TransactionResponse>{
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
@@ -386,11 +388,12 @@ export async function tradeZCB(
   const marketmanager = new ethers.Contract(market_manager_address, 
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
   const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
+  console.log('issue', issue); 
   await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
 
   if(issue){
+    console.log('issue'); 
     await marketmanager.issuePoolBond( marketId, scaledAmount); 
-    
   }
 
   else{
@@ -432,6 +435,9 @@ export async function setUpManager(
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
   await controller.testVerifyAddress(); 
+  const reputation = new ethers.Contract(reputation_manager_address, 
+    reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
+  await reputation.setTraderScore(account, pp); 
 }
 
 export async function setUpExampleController(account: string, library: Web3Provider){
@@ -574,16 +580,22 @@ export async function redeemVault(
   await vault.redeem(scaledAmount, account, account); 
 }
 
-
 export async function mintVaultDS(
   account: string,
   library: Web3Provider,
   vaultId: string, 
-  depositAmount: string = "0" 
+  depositAmount: string, 
+  leverageFactor: number = 0, 
   // not_faucet: boolean = false
-  ) {
+  ) : Promise<TransactionResponse>{
+  const scaledAmount = pp.mul(Number(depositAmount)* precision).div(precision); 
 
-  // const collateral = new ethers.Contract(cash_address, cashabi["abi"], getProviderOrSigner(library, account)); 
+  if(leverageFactor!=0) {
+    const leverageModule = new ethers.Contract(
+      leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) ); 
+    return await leverageModule.mintWithLeverage(vaultId, scaledAmount,leverageFactor); 
+  }
+
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
@@ -592,13 +604,11 @@ export async function mintVaultDS(
 
   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
   const collateral_address = await vault.UNDERLYING(); 
-  console.log('collateraladdress', collateral_address.toString()); 
   const collateral = new ethers.Contract(collateral_address.toString(),
    cashabi["abi"], getProviderOrSigner(library, account))
-  const scaledAmount = pp.mul(depositAmount); 
 
   await collateral.approve(vaultAd, scaledAmount); 
-  await vault.deposit(scaledAmount, account); 
+  return await vault.deposit(scaledAmount, account); 
 
   // const collateral = Cash__factory.connect(collateral_address, library.getSigner(account));
   // const decimals = await collateral.decimals()

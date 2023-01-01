@@ -266,6 +266,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const [hedgeQuantity, setHedgeQuantity] = useState("1"); 
   const [traderBudget, setTraderBudget] = useState("1");
   const [userBalance, setUserBalance] = useState("1"); 
+  const [leverageFactor, setLeverageFactor] = useState(0); 
   // const userBalance = String(
   //   useMemo(() => {
   //     return isBuy
@@ -416,8 +417,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
 
   const testVerify = ()=>{
     setUpManager(account, loginAccount.library).then((response)=>{
-
+    setIsNotVerified(false)
     })
+    setIsNotVerified(false)
   }
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, amm.turboId).then((response)=>{
@@ -439,7 +441,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     setWaitingToSign(true);
     setShowTradingForm(false);
     const isShort = selectedOutcomeId ==1? false:true
-    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose ).then((response)=>{
+    console.log('isissue', isIssue); 
+    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue ).then((response)=>{
       console.log('tradingresponse', response)
       setWaitingToSign(false); 
       if(response){
@@ -622,7 +625,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
 
         }
         {!isLimit && !isIssue && <Slippage />}
-        <Leverage/>
+        <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>
         {/* {isBuy && <Slippage />} */}
         {/*isBuy && (<Budget 
           {...{
@@ -665,7 +668,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         {!canRedeem &&(<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
           action={makeTrade}
-          text={canMakeTrade.actionText}
+          text={isIssue? "Issue New longZCB": canMakeTrade.actionText}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}

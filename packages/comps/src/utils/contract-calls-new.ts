@@ -60,8 +60,9 @@ export const approveMarket = async (account: string, provider: Web3Provider, mar
     const vault_id = (await controller.id_parent(marketId)).toString();
     const vault_address = await controller.vaults(vault_id);
     const vault = new Contract(vault_address, VaultData.abi, signer);
+    const underlying = await vault.UNDERLYING(); 
     const assetToMint = (await vault.convertToAsset(initialStake)).toString();
-    const cash = new Contract(usdc, ERC20Data.abi, signer);
+    const cash = new Contract(underlying.toString(), ERC20Data.abi, signer);
     cash.faucet(assetToMint);
     cash.approve(vault.address, assetToMint);
     let tx = await vault.mint(initialStake);
@@ -196,6 +197,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
     let instruments: InstrumentInfos = {};
 
     for (let i = 1; i < numVaults.toNumber()+1; i++) {
+        console.log('fetching')
         const { vaultBundle, marketBundle, instrumentBundle, timestamp } = await fetcher.fetchInitial(
             controller_address, 
             market_manager_address,
@@ -252,7 +254,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
             utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
             totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
-        });
+            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
+            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
+            totalProtection: toDisplay(vaultBundle.totalProtection.toString())
+        });  
 
         for (let j = 0; j < marketBundle.length; j++) {
             // add market
@@ -319,8 +324,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     maturityDate: instr.maturityDate.toString(),
                     seniorAPR: toDisplay(instr.seniorAPR.toString()),
                     exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
-                    managerStake: toDisplay(instr.managerStake.toString()),
-                    approvalPrice: toDisplay(instr.approvalPrice.toString()),
+                    managerStake: toDisplay(instr.managerStake?.toString()),
+                    approvalPrice: toDisplay(instr.approvalPrice?.toString()),
+                    isPool: instr.isPool, 
                 }
             )
 
@@ -343,7 +349,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 }
                 instrument = Object.assign(
                     instrument,
-                    {
+                    {  
                         saleAmount: toDisplay(instr.poolData.saleAmount.toString()),
                         initPrice: toDisplay(instr.poolData.initPrice.toString()),
                         promisedReturn: toDisplay(instr.poolData.promisedReturn.toString()),
@@ -390,21 +396,24 @@ export const getRammData = async (
     // console.log("provider", provider);
     // console.log("vaults", vaults);
     const controller = new Contract(controller_address, ControllerData.abi, provider);
-    
-    const reputationScore = toDisplay((await controller.trader_scores(account)).toString());
-    console.log("reputationScore", reputationScore);
+    const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, provider);
+
+    const reputationScore = toDisplay((await reputationManager.trader_scores(account)).toString());
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
+    console.log('getting user balances')
     for (const [key, value] of Object.entries(vaults)) {
         const vault = new Contract(value.address, VaultData.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
         const base = new Contract(value.want.address, ERC20Data.abi, getProviderOrSigner(provider, account));
         const baseBalance = await base.balanceOf(account);
+            console.log('getting user balances', key,value, balance.toString(),baseBalance.toString() )
+
         Object.assign(vaultBalances, {
             [key]: {
                 shares: toDisplay(balance.toString()),
-                base: toDisplay(baseBalance.toString(), value.want.decimals)
+                base: toDisplay(baseBalance.toString())
             }
         })
     }
@@ -417,7 +426,7 @@ export const getRammData = async (
         const shortZCBContract = new Contract(shortZCB, ERC20Data.abi, getProviderOrSigner(provider, account));
         const longZCBBalance = await longZCBContract.balanceOf(account);
         const shortZCBBalance = await shortZCBContract.balanceOf(account);
-
+        console.log('zcbbalances', longZCBBalance.toS)
         Object.assign(zcbBalances, {
             [key]: {
                 longZCB: toDisplay(longZCBBalance.toString()),

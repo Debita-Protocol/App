@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Styles from "./portfolio-view.styles.less";
 import Activity from "./activity";
 import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher } from "../common/tables";
-import { PositionsView } from "../common/positions"
+import { PositionsView } from "../common/portfolio"
 import { AppViewStats } from "../common/labels";
 import {
   ContractCalls,

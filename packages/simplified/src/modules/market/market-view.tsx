@@ -20,6 +20,7 @@ import {
   ProcessData,
   Stores,
   ContractCalls, 
+  ContractCalls2, 
   useUserStore, useDataStore2
 } from "@augurproject/comps";
 import type { MarketInfo, AmmOutcome, MarketOutcome, AmmExchange, 
@@ -51,6 +52,7 @@ const{ fetchTradeData, getHedgePrice, getInstrumentData_,
   // getTotalCollateral, 
   redeemZCB, getZCBBalances, approveUtilizer, 
 canApproveUtilizer, getERCBalance} = ContractCalls; 
+const{testApproveMarket} = ContractCalls2; 
 
 let timeoutId = null;
 
@@ -72,8 +74,9 @@ const WinningOutcomeLabel = ({ winningOutcome }) => (
     <span>Instrument Status</span>
     <span>
       {/*winningOutcome.name*/}
-      {winningOutcome==0?'Approved': "Assessment"}
-      {winningOutcome==0 && ConfirmedCheck}
+
+      {winningOutcome==0?'Assessment': winningOutcome==1? "Approval Condition Met": "Approved"}
+      {winningOutcome==2 && ConfirmedCheck}
     </span>
   </span>
 );
@@ -209,7 +212,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
   // const { isPool, poolData, duration, expectedYield, principal} = instruments? instruments[Id]: null
   const isPool = instruments[Id]?.isPool? true:false; 
-  const poolData = instruments[Id]?.poolData
+  const poolData = instruments[Id]
   const duration = instruments[Id]?.duration
   const expectedYield = instruments[Id]?.expectedYield
   const principal = instruments[Id]?.principal
@@ -217,9 +220,11 @@ const MarketView = ({ defaultMarket = null }) => {
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
   const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
-  const canbeApproved = false//(!market_[Id]?.); 
-
-  console.log('isApproved', isApproved)
+  const canbeApproved = !market_[Id]?.marketConditionMet 
+  const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
+  const longZCBSupply = market_[Id]?.longZCBsupply; 
+  const instrumentBalance = instruments[Id]?.balance; 
+  console.log('isApproved', isApproved, canbeApproved)
 
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
@@ -319,6 +324,11 @@ const MarketView = ({ defaultMarket = null }) => {
         console.log('Trading Error', error)
       }); 
   }
+  const testapprovemarket = ()=>{
+    testApproveMarket(account, loginAccount.library, marketId).then((response)=>{
+      console.log("testApproved")
+    })
+  }
 
   const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
@@ -336,11 +346,11 @@ const MarketView = ({ defaultMarket = null }) => {
         </div>
         {<h1>{titles[0]}</h1>}
         { <h3>{descriptions[0]}</h3>}
-        <span>Instrument Type: {instruments[marketId]?.type}</span>
+        <span>Instrument Type: {instruments[marketId]?.isPool? "Pool Instrument": "Fixed Rate/Term Instrument"}</span>
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
-        <WinningOutcomeLabel winningOutcome={trusted} />
+        <WinningOutcomeLabel winningOutcome={outcomeLabel} />
 
         <div
           className={classNames(Styles.Details, {
@@ -380,7 +390,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Required Net ZCB</span>
-            <span>{isPool?poolData.saleAmount:Number(principal)*Number(alpha) }{" underlying"}</span> 
+            <span>{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }{" underlying"}</span> 
           </li>
 
           <li>
@@ -427,19 +437,19 @@ const MarketView = ({ defaultMarket = null }) => {
           (<ul className={Styles.StatsRow}>
           <li>
             <span>Leverage Factor </span>
-            <span>{poolData.leverageFactor}</span>
+            <span>{poolData?.poolLeverageFactor}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{poolData.promisedReturn}</span>
+            <span>{poolData?.promisedReturn}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Manager Sale Amount </span>
-            <span>{poolData.saleAmount}</span>
+            <span>{poolData?.saleAmount}</span>
           </li>
 
           <li>
@@ -451,6 +461,35 @@ const MarketView = ({ defaultMarket = null }) => {
 
         </ul>)
       }
+      {isPool && isApproved&& (<h4>Pool Info</h4>) }
+      {isPool && isApproved && 
+        (
+
+          <ul className={Styles.StatsRow}>
+          <li>
+            <span>longZCB Issued </span>
+            <span>{longZCBSupply}</span>
+
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>Senior Capital Supplied </span>
+            <span>{instrumentBalance}</span>
+          {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          </li>
+          <li>
+            <span>- </span>
+            <span>-</span>
+          </li>
+
+          <li>
+            <span>-</span>
+              <span>-</span>
+
+           {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
+          </li>
+
+          </ul>)}
 
       <div
           className={classNames(Styles.Details, {
@@ -534,7 +573,9 @@ const MarketView = ({ defaultMarket = null }) => {
                 <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
         {<SecondaryThemeButton
           text="Approve Instrument"
-          action={() => setShowTradingForm(true)}
+          action={testapprovemarket
+            //() => setShowTradingForm(true)
+          }
           customClass={ButtonStyles.BuySellButton}
         />}
       </section>

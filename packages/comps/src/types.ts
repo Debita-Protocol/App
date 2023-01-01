@@ -382,6 +382,7 @@ export interface BaseInstrument {
   exposurePercentage?: string; 
   managerStake?: string; 
   approvalPrice?: string; 
+  isPool?: boolean; 
 }
 
 export interface PoolInstrument extends BaseInstrument {
@@ -994,7 +995,17 @@ export interface CoreUserState {
   reputationScore: string;
   vaultBalances: VaultBalances;
   zcbBalances: ZCBBalances;
+  leveragePosition?: LeveragePosition
   //loans here idk how to get them though.
+}
+
+export interface LeveragePosition{
+  vaultAd: string; 
+  totalShares: string ; 
+  suppliedCapital: string; 
+  borrowedCapital: string; 
+  borrowTimeStamp: string; 
+  endStateBalance: string; 
 }
 
 export interface VaultBalances {

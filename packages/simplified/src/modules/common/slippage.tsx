@@ -237,11 +237,9 @@ export const LimitOrderSelector = ({isLimit, setIsLimit})=> {
       {error && <span>{error}</span>}
     </section>
   );
-
-
 }
 
-export const Leverage = () => {
+export const Leverage = ({leverageFactor, setLeverageFactor}) => {
   const {
     settings: { slippage },
     actions: { updateSettings },
@@ -251,20 +249,20 @@ export const Leverage = () => {
 
   const isSelectedArray = useMemo(() => {
     let output = [false, false, false, false, false];
-    switch (slippage) {
-      case "0.5": {
+    switch (leverageFactor) {
+      case 0: {
         output[0] = true;
         break;
       }
-      case "1": {
+      case 1: {
         output[1] = true;
         break;
       }
-      case "2": {
+      case 2: {
         output[2] = true;
         break;
       }
-      case "3": {
+      case 3: {
         output[3] = true;
         break;
       }
@@ -274,7 +272,7 @@ export const Leverage = () => {
       }
     }
     return output;
-  }, [slippage]);
+  }, [leverageFactor]);
   const [customVal, setCustomVal] = useState(isSelectedArray[4] ? slippage : "");
   const [error, setError] = useState("");
 
@@ -286,21 +284,22 @@ export const Leverage = () => {
       })}
     >
       <label onClick={() => setShowSelection(!showSelection)}>
-        Leverage
+        Leverage Multiplier
         {generateTooltip(
-          "Amount of leveraged exposure to this vault's instruments. Default Leverage is 1. Any other leverage will mint NFTs instead of ERC20",
+          "Amount of leveraged exposure to this vault's instruments. Default Leverage is 0. Any large leverage multiplier will mint NFTs instead of ERC20",
           "slippageToleranceInfo"
         )}
-        <span>{slippage}%</span>
+        <span>{leverageFactor}x</span>
         <ChevronFlip pointDown={showSelection} />
       </label>
       <ul>
         <div>
           <li>
             <TinyThemeButton
-              text="0.5%"
+              text=" 0.00"
               action={() => {
-                updateSettings({ slippage: "0.5" }, account);
+                setLeverageFactor(0)
+                // updateSettings({ slippage: "0.00" }, account);
                 setCustomVal("");
                 setError("");
               }}
@@ -311,9 +310,10 @@ export const Leverage = () => {
           </li>
           <li>
             <TinyThemeButton
-              text="1%"
+              text="1.0"
               action={() => {
-                updateSettings({ slippage: "1" }, account);
+                setLeverageFactor(1)
+                // updateSettings({ slippage: "1" }, account);
                 setCustomVal("");
                 setError("");
               }}
@@ -324,9 +324,10 @@ export const Leverage = () => {
           </li>
           <li>
             <TinyThemeButton
-              text="2%"
+              text="2.0"
               action={() => {
-                updateSettings({ slippage: "2" }, account);
+                setLeverageFactor(2)
+                // updateSettings({ slippage: "2" }, account);
                 setCustomVal("");
                 setError("");
               }}
@@ -337,9 +338,10 @@ export const Leverage = () => {
           </li>
           <li>
             <TinyThemeButton
-              text="3%"
+              text="3.0"
               action={() => {
-                updateSettings({ slippage: "3" }, account);
+                setLeverageFactor(3)
+                // updateSettings({ slippage: "3" }, account);
                 setCustomVal("");
                 setError("");
               }}
@@ -352,7 +354,7 @@ export const Leverage = () => {
             className={classNames({
               [Styles.first]: isSelectedArray[1],
               [Styles.second]: isSelectedArray[2],
-              [Styles.third]: isSelectedArray[3],
+              [Styles.third]:isSelectedArray[3]  ,
               [Styles.none]: isSelectedArray[4],
             })}
           ></div>
@@ -370,18 +372,20 @@ export const Leverage = () => {
               onChange={(v) => {
                 const val = v.target.value;
                 setCustomVal(val);
-                if (!(val === "" || isNaN(Number(val)) || Number(val) > 1000 || Number(val) <= 0)) {
+                if (!(val === "" || isNaN(Number(val)) || Number(val) > 10 || Number(val) <= 0)) {
                   setError("");
-                  updateSettings({ slippage: val }, account);
+                  setLeverageFactor(val);
+                  // updateSettings({ slippage: val }, account);
                 } else if (val === "") {
                   setError("");
-                  updateSettings({ slippage: 0 }, account);
+                  setLeverageFactor(0); 
+                  // updateSettings({ slippage: 0 }, account);
                 } else {
-                  setError("Enter a valid slippage percentage");
+                  setError("Enter a valid leverage multiplier");
                 }
               }}
               placeholder="Custom"
-              max="1000"
+              max="10"
               min="0.1"
             />
           </div>

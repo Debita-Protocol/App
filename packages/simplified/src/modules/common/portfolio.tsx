@@ -71,6 +71,25 @@ const MarketTableHeader = ({
   </div>
 );
 
+const PortfolioTableHeader = ({
+  marketId, 
+}) => {
+
+  return(
+  <div className={Styles.MarketTableHeader}>
+    <MarketLink id={1}>
+      <span className={Styles.MarketTitle}>
+        {<span>{"Vault #"}{"1"}</span>}
+        {<span>{"Direct to vault"}</span>}
+      </span>
+ 
+    { <h4>{"  My Underlying : "}{"0 "}{"     My Shares : "}{" 0"}</h4>}
+
+    </MarketLink> 
+  </div> 
+    )
+}
+
 const PortfolioHeader = ()=>{
 return (
     <ul className={Styles.PositionHeader}>
@@ -429,6 +448,44 @@ export const PositionFooter = ({
   );
 };
 
+const PortfolioFooter = ({
+
+}) =>{
+  return (
+    <div className={Styles.PositionFooter}>
+      <span>
+        <p> dd</p>
+        <p> dd</p>
+      </span>
+      {(
+        <PrimaryThemeButton
+          text={"Cash Out Shares"}
+          // action={cashOut}
+          // subText={pendingCashOut && AWAITING_CONFIRM_SUBTEXT}
+          // disabled={disableCashOut}
+        />
+      )}
+      {(
+        <>
+          <PrimaryThemeButton
+            text={
+              "text"
+            }
+            // subText={pendingClaim && AWAITING_CONFIRM_SUBTEXT}
+            // action={claim}
+            // disabled={disableClaim}
+          />
+        </>
+      )}
+      {(
+        <MarketLink id={1} >
+          <SecondaryThemeButton text={"trade"} />
+        </MarketLink>
+      )}
+    </div>
+  );
+}
+
 const applyFiltersAndSort = (passedInPositions, filter, setFilteredMarketPositions, claimableFirst) => {
   let updatedFilteredPositions = passedInPositions;
   if (filter !== "") {
@@ -454,40 +511,7 @@ const applyFiltersAndSort = (passedInPositions, filter, setFilteredMarketPositio
 
 
 
-// TODO: the "40%"" below should be replaced with a real rewards calc to
-// provide a 0%-100% string value to fill the progress bar.
-export const BonusReward = ({
-  pendingBonusRewards,
-  rewardsInfo,
-}: {
-  pendingBonusRewards: PendingUserReward;
-  rewardsInfo: RewardsInfo;
-}) => {
-  const DONE = 100;
-  const bonusAmount = formatToken(pendingBonusRewards?.pendingBonusRewards || "0")?.formatted;
-  const { beginTimestamp } = rewardsInfo;
-  const now = Math.floor(new Date().getTime() / 1000);
-  const endTimestamp: number = pendingBonusRewards?.endBonusTimestamp || 0;
-  const secondsRemaining = endTimestamp - now;
-  const totalSeconds = endTimestamp - beginTimestamp;
-  let filled = (1 - secondsRemaining / totalSeconds) * 100;
-  if (now > endTimestamp) filled = DONE;
-  const dateOnly = getMarketEndtimeDate(endTimestamp);
-  const countdownDuration = timeTogo(endTimestamp);
-  return (
-    <article className={Styles.BonusReward}>
-      <h4>Bonus Reward</h4>
-      <p>Keep your liquidity in the pool until the unlock period to get a bonus on top of your rewards</p>
-      <span>
-        <span style={{ width: `${filled}%` }} />
-      </span>
-      <h4>
-        {filled === DONE ? `Bonus Unlocked` : `Bonus Locked`}: {bonusAmount} {MaticIcon}
-      </h4>
-      <p>{filled !== DONE ? `${dateOnly} (${countdownDuration})` : "Remove liquidity to claim"}</p>
-    </article>
-  );
-};
+
 
 interface PositionsLiquidityViewSwitcherProps {
   ammExchange?: AmmExchange;
@@ -529,12 +553,8 @@ export const PositionTable = ({
     settings: { timeFormat },
   } = useSimplifiedStore();
 
-
-  // let vaultIds ; 
-  // let marketIds; 
  
   
-
 
   let position; 
   return (
@@ -542,20 +562,25 @@ export const PositionTable = ({
       <div className={Styles.PositionTable}>
         {/*!singleMarket && 
           <MarketTableHeader timeFormat={timeFormat} market={market} ammExchange={ammExchange} />*/}
-        {!portfolioPage? (<PositionHeader />):
-        <PortfolioHeader/>}
-        {/*positions.length === 0 && <span>No positions to show</span>*/}
-        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} claimable = {true} key={String(0)} hasLiquidity={true} outcome={"longZCB"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
-        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
         
-        {!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
 
+           <PortfolioTableHeader marketId = {vaultId}/>
+            { /*<span>No zcb positions to show</span>*/}
+            <PortfolioHeader/>
+
+            {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
+            outcome={marketId} />}
+            {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
+             outcome={marketId} />}
+
+            <PortfolioFooter/>
         {/*{positions &&
           positions
             .filter((p) => p.visible)
             .map((position, id) => <PositionRow key={String(id)} position={position} hasLiquidity={hasLiquidity} />)} */}
         {/*<PositionFooter showTradeButton={!singleMarket} market={market} claimableWinnings={claimableWinnings} />*/}
       </div>
+
       {/*!seenMarketPositionWarningAdd &&
         singleMarket &&
         positions.filter((position) => position.positionFromAddLiquidity).length > 0 && (
@@ -568,21 +593,15 @@ export const PositionTable = ({
             onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
           />
         )*/}
-      {/*!seenMarketPositionWarningRemove &&
-        singleMarket &&
-        positions.filter((position) => position.positionFromRemoveLiquidity).length > 0 && (
-          <WarningBanner
-            className={Styles.MarginTop}
-            title="Why do I have a position after removing liquidity?"
-            subtitle={`To give liquidity providers the most options available to manage their positions. Shares can be sold for ${market?.amm?.cash?.name}.`}
-            onClose={() => updateSeenPositionWarning(marketAmmId, true, REMOVE)}
-          />
-        )*/}
+  
     </>
   );
 };
 
 const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPage}) => {
+  const {
+    ramm: { reputationScore, vaultBalances, zcbBalances}
+  } = useUserStore();
   const {
     balances: { marketShares },
   }: UserState = useUserStore();
@@ -591,7 +610,40 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
   } = useSimplifiedStore();
   const [filter, setFilter] = useState("");
   const [filteredMarketPositions, setFilteredMarketPositions] = useState([1,1]);
+ // non-zero vault balances.
+  const filterVaults = (balances: VaultBalances) => { 
+      let vaultIds = [];
+      for (const [vaultId, val] of Object.entries(balances)) {
+          // if (val.shares !== "0") {
+          //     vaultIds.push(vaultId);
+          // }
+          vaultIds.push(vaultId)
+      }
+      return vaultIds;
+  }
 
+  const filterMarkets = (zcbBalances: ZCBBalances) => {
+      let marketIds = [];
+      for (const [marketId, val] of Object.entries(zcbBalances)) {
+          if (val.longZCB !== "0" || val.shortZCB !== "0") {
+              marketIds.push(marketId);
+          }
+      }
+      return marketIds;
+  }
+  // let vaultIds ; 
+  // let marketIds; 
+  
+  const vaultIds = useMemo(() => {
+      return filterVaults(vaultBalances);
+  }, [vaultBalances]);
+  const marketIds = useMemo(() => {
+      return filterMarkets(zcbBalances);
+  }, [zcbBalances]);
+
+
+  console.log('vaultIds', vaultIds); 
+ 
   // const positions = marketShares 
   //   ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
   //       ammExchange: AmmExchange;
@@ -620,6 +672,7 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
 
   const positionVis = sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT).map((position) => {
     return (
+      vaultIds.map((vaultId)=>{
       <PositionTable
         marketId = {marketId}
         portfolioPage = {portfolioPage}
@@ -629,6 +682,9 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
         // positions={position.positions}
         // claimableWinnings={position.claimableWinnings}
       />  
+
+      })
+ 
     ) ;
   });
 

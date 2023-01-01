@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Styles from "./modal.styles.less";
 import ButtonStyles from "../common/buttons.styles.less";
 import { Header } from "./common";
-import { Components } from "@augurproject/comps";
+import { Components, InputComps } from "@augurproject/comps";
 import { InfoNumbers, InfoNumberType } from "../market/trading-form";
 import { MarketInfo } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "modules/stores/simplified";
@@ -10,6 +10,7 @@ const {
   ButtonComps: { SecondaryThemeButton },
   MarketCardComps: { MarketTitleArea },
 } = Components;
+const {AmountInput} = InputComps;
 
 export interface ModalConfirmTransactionProps {
   transactionButtonText: string;
@@ -28,6 +29,8 @@ export interface ModalConfirmTransactionProps {
     text: string;
     emphasize: string;
   };
+  setAmount?: Function; 
+  includeInput?: boolean; 
 }
 
 const ModalConfirmTransaction = ({
@@ -37,12 +40,25 @@ const ModalConfirmTransaction = ({
   targetDescription,
   title,
   footer = null,
+  setAmount = null, 
+  includeInput = false, 
 }: ModalConfirmTransactionProps) => {
   const [buttonText, setButtonText] = useState(transactionButtonText);
   return (
     <section className={Styles.ModalConfirmTransaction}>
       <Header title={title} />
       <main>
+        {includeInput&& 
+            (<AmountInput 
+                chosenCash={"symbol"}
+                heading="Amount"
+                updateInitialAmount={(val) => {
+                    setAmount(val);
+                }}
+                initialAmount={"0"}
+                maxValue={"100"}
+            />)
+        }
         <TargetDescription {...{ targetDescription }} />
         {breakdowns.length > 0 &&
           breakdowns.map(({ heading, infoNumbers }) => (
@@ -51,6 +67,7 @@ const ModalConfirmTransaction = ({
               <InfoNumbers {...{ infoNumbers }} />
             </section>
           ))}
+
         <SecondaryThemeButton
           action={() => {
             transactionAction({
@@ -62,6 +79,7 @@ const ModalConfirmTransaction = ({
           disabled={buttonText !== transactionButtonText}
           customClass={ButtonStyles.ReviewTransactionButton}
         />
+   
         {footer && (
           <div className={Styles.FooterText}>
             {footer.text}

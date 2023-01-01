@@ -33,7 +33,8 @@ export const creditLine_address = "0x4be7805A2b35ce177F802D88A01Fecfc686fFB38";
 export const pool_factory_address = "0x156EfAc1B3765a680236308Cc6451ECEDA1497e4"; 
 export const cash_address = "0xd6A5640De726a89A54ca724ac12BCc5E89600720"; 
 export const reputation_manager_address = "0x5CeD3af8781B18ae686ED469D0B485e438C74E6c";
-export const fetcher_address =  "0x161587Ec83BfC707ac5704Cc74102E82cFc81CcA";
+export const fetcher_address =  "0xcDbaA2A71854090B4CfD3BdC98d6b34d0323Ce51";
+export const leverageModule_address = "0xf9c6A04026c30dFC56FdB72A4B8cd00fB922823b"; 
 
 // deploying "Controller" (tx: 0x32d655ca1af2296cdcb8feb57e8e9202a633bc3bcfbf0c9496dbfecc6a43f858)...: deployed at 0xA91a3aEEAE258ca64E4ec0e0aCE1E0eb791885e0 with 5062096 gas
 // deploying "ReputationNFT" (tx: 0x0027515616a965e440972e858f17930c8ad59a35b5c4be2e0407fb8cd41e2164)...: deployed at 0x506C5Ab3064b34AC2134395fE77c2815976059E0 with 1664587 gas

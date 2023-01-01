@@ -116,6 +116,45 @@ const TRADING_FEE_OPTIONS = [
   },
 ];
 
+
+const getLeverageBreakdown = (
+  // totalVaultExposure: string, 
+
+  ) => {
+            // {<p>Total Vault Exposure: {"3"}</p>}
+            // {<p>Borrowed shares: {"3"}</p>}
+            // {<p>My underlying: {"3"}</p>}
+            // {<p>Borrowed underlying: {"3"}</p>}
+  return [
+    {
+      label: "Total Vault Exposure",
+      value: "0", 
+      tooltipText: "Tooltip",
+      tooltipKey: "tooltip",
+    },
+    {
+      label: "Underlying supplied",
+      value: "0", 
+      tooltipText: "Tooltip",
+      tooltipKey: "tooltip",
+    },
+    {
+      label: "Underlying borrowed",
+      value: "0", 
+      tooltipText: "Tooltip",
+      tooltipKey: "tooltip",
+    },
+    {
+      label: "Vault Shares Owed",
+      value: "0", 
+      tooltipText: "Amount of shares needed to repay to pay all debt",
+      tooltipKey: "tooltip",
+    },
+  ];
+};
+
+
+
 const REMOVE_FOOTER_TEXT = `Removing liquidity may return shares; these shares may be sold for USDC if there is still liquidity in the pool. Winning shares can be redeemed for USDC after the market has finalized.`;
 
 export const MarketLiquidityView = () => {
@@ -220,8 +259,7 @@ console.log('??', vault.totalAssets, vault.totalShares);
           "APR with 0 leverage, senior exposure to all connected instruments",
           "slippageToleranceInfo"
         )}
-            <span>{formatDai(0.818 || "0.00").full}</span>
-
+            <span>{vaults[vaultId].goalAPR}{"%"}</span>
           </li>
           <li>
             <span>Number of Instruments</span>
@@ -230,7 +268,7 @@ console.log('??', vault.totalAssets, vault.totalShares);
 
           <li>
             <span>Vault Type</span>
-            <span>{formatDai(100000000/1000000 || "0.00").full}</span>
+            <span>Pool Instruments</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
         {/*inception price,inception time, current value prices, current mark prices*/}
@@ -442,11 +480,37 @@ const getResetedPricesBreakdown = (outcomes) => {
   }));
 };
 const confirmMintVault = async({
-  account,  loginAccount, vaultId, amount 
+  account,  loginAccount, vaultId, amount, leverageFactor, addTransaction
 
 }) => {
-  // await doBulkTrade( loginAccount.library,account, formData)
-  await mintVaultDS(account, loginAccount.library, vaultId, amount); 
+  
+  mintVaultDS(account, loginAccount.library, vaultId, amount, leverageFactor)
+    .then((response)=> {
+      const {hash} = response; 
+      addTransaction({
+          hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Mint Vault`,
+          marketDescription: `Description`,
+      });
+    }).catch((error)=> {
+      console.log("minting failure", error?.message); 
+        addTransaction({
+          hash: "Mint failed",
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Mint Vault`,
+          marketDescription: `description`,
+        });
+    })
+    ; 
  
 }
 const confirmRedemVault = async({
@@ -491,6 +555,7 @@ const MintForm = ({
   } = useAppStatusStore();
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   // const {vaultId} = vaults; 
+  console.log('vaults', vaults[vaultId], instruments); 
   const isAdd = selectedAction === ADD; 
   const isRemove = selectedAction === REMOVE ;
   const isMint = selectedAction === "mint";
@@ -503,6 +568,7 @@ const MintForm = ({
   const [chosenCash, updateCash] = useState<string>(vaults[vaultId].want.name);
   const [breakdown, setBreakdown] = useState(defaultAddLiquidityBreakdown);
   const [estimatedLpAmount, setEstimatedLpAmount] = useState<string>("0");
+  const [leverageFactor, setLeverageFactor] = useState(0); 
   const setPrices = (price, index) => {
     const newOutcomes = outcomes;
     newOutcomes[index].price = price;
@@ -571,28 +637,8 @@ const MintForm = ({
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
       </header>
       <main>
-        
 
-        <div className={Styles.PricesAndOutcomes}>
-
-          <span className={Styles.PriceInstructions}>
-            <span>{ "Leverage Position Info"}</span>
-            {<p>My shares: {"3"}</p>}
-            {<p>Borrowed shares: {"3"}</p>}
-            {<p>My underlying: {"3"}</p>}
-            {<p>Borrowed underlying: {"3"}</p>}
-
-          </span>
-        <span className={Styles.PriceInstructions}>
-            <span>{ "P&L"}</span>
-            {<p>Borrowed Amount: {"3"}</p>}
-
-            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
-            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
-            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
-
-          </span>
-     <AmountInput
+     {isRemove && (<AmountInput
           heading={"Rewind Amount"}
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
@@ -603,7 +649,31 @@ const MintForm = ({
           updateAmountError={() => null}
           disabled = {false}
           //error={hasAmountErrors}
-        />
+        />)}
+
+        <div className={Styles.PricesAndOutcomes}>
+  
+          <span className={Styles.PriceInstructions}>
+
+            <span>{ "Leverage Position Info"}</span>
+                   
+                   <InfoNumbers
+
+            infoNumbers={getLeverageBreakdown()}
+                />
+
+
+          </span>
+        {/*<span className={Styles.PriceInstructions}>
+            <span>{ "P&L"}</span>
+            {<p>Borrowed Amount: {"3"}</p>}
+
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+            {<span>(between 0.02 - 1.0). Total price of all outcomes must add up to 1.</span>}
+
+          </span>*/}
+
           <OutcomesGrid
             outcomes={[]}
             selectedOutcome={null}
@@ -634,26 +704,68 @@ const MintForm = ({
           disabled = {false}
           //error={hasAmountErrors}
         />)}
-        {isAdd &&  <Leverage/>}
+        {isAdd &&  <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>}
+         {
+              isAdd && leverageFactor>0 &&(
+                  <WarningBanner
+                className={CommonStyles.ErrorBorder}
+                title="Not enough liquidity in lendingpool to borrow"
+                subtitle={
+                  "Not enough liquidity"
+                }
+                />
+                )
+            }
           {true &&(
             <>
               {isAdd &&(<div className={Styles.Breakdown}>
-                <span>Estimated APR</span>
-                {/*<InfoNumbers infoNumbers={resetPricesInfoNumbers} />*/}
+                <InfoNumbers
+                  infoNumbers={[
+                    {
+                      label: "Underlying Borrowing",
+                      value: (Number(leverageFactor) * Number(amount)).toString()
+                    }, 
+                    {
+                      label: "Total Underlying Exposure", 
+                      value: ((Number(leverageFactor) +1 )* Number(amount)).toString()
+                    }, 
+                    {
+                      label: "Current borrow rate", 
+                      value: "2.3% APR", 
+                      tooltipText: "Only applicable with non 0 leverage", 
+                      tooltipKey: "borrowrate",
+                    }, 
+
+                    {
+                      label: "Estimated APR",
+                      value: (leverageFactor +1 ) * vaults[vaultId].goalAPR  , 
+                      tooltipText: "(Vault Estimated APR - borrow rate) * leverage multiplier ",
+                      tooltipKey: "estimatedapr",
+                      // isRemove? (Number(amount)* exchangeRate).toString()
+                      // : (Number(amount)/exchangeRate).toString()
+                      //value:`${formatCash(amount, USDC).full}`,
+                      //svg: USDCIcon,
+                    },
+
+                  ]}
+                />
               </div>)}
               <div className={Styles.Breakdown}>
-                <span>You'll receive</span>
+                <span>{!isRemove ? "You'll receive": "Debt remaining after"}</span>
                 <InfoNumbers
                   infoNumbers={[
                     {
                       label: amountLabel,
-                      value: isRemove? (Number(amount)* exchangeRate).toString()
+                      value: isMint
+                      ? (Number(amount)* exchangeRate).toString()
+                      :isRemove ? (Number(amount)/exchangeRate).toString()
                       : (Number(amount)/exchangeRate).toString()
                       //value:`${formatCash(amount, USDC).full}`,
                       //svg: USDCIcon,
                     },
                   ]}
                 />
+
               </div>
             </>
           )}
@@ -685,8 +797,11 @@ const MintForm = ({
               // />
             )}
             <SecondaryThemeButton
-              action={ ()=> !isRemove? confirmMintVault({account, loginAccount, vaultId, amount}):
-              confirmRedemVault({account, loginAccount, vaultId, amount}) }
+              action={ ()=> isAdd
+                ? confirmMintVault({account, loginAccount, vaultId, amount,leverageFactor, addTransaction})
+                : isMint
+                ? confirmRedemVault({account, loginAccount, vaultId, amount}) 
+                : confirmRedemVault({account, loginAccount, vaultId, amount})}
 
               // action={() =>
               //   setModal({
@@ -814,10 +929,10 @@ const MintForm = ({
               // }
               disabled={false}//!isApproved || inputFormError !== ""}
               error={inputFormError}//buttonError}
-              text={!isRemove?"Mint": "Redeem"
+              text={isAdd?"Mint" : isMint?"Redeem" :  "Rewind"
                 //inputFormError === "" ? (buttonError ? buttonError : actionButtonText) : inputFormError}
               }
-              subText={"subtext"
+              subText={""
                 // buttonError === INVALID_PRICE
                 //   ? lessThanMinPrice
                 //     ? INVALID_PRICE_GREATER_THAN_SUBTEXT
@@ -1091,6 +1206,17 @@ const LiquidityForm = ({
             </>
           )}
           <div className={Styles.Breakdown}>
+            {
+              isAdd && true &&(
+                  <WarningBanner
+                className={CommonStyles.ErrorBorder}
+                title="Not enough liquidity in lendingpool to borrow"
+                subtitle={
+                  "Not enough liquidity"
+                }
+                />
+                )
+            }
             {isRemove && hasPendingBonus && (
               <WarningBanner
                 className={CommonStyles.ErrorBorder}
