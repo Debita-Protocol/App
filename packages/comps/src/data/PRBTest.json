@@ -1,0 +1,647 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "int256",
+          "name": "x",
+          "type": "int256"
+        }
+      ],
+      "name": "PRBMathSD59x18__ToSD59x18Overflow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "int256",
+          "name": "x",
+          "type": "int256"
+        }
+      ],
+      "name": "PRBMathSD59x18__ToSD59x18Underflow",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "test",
+      "outputs": [
+        {
+          "internalType": "int256",
+          "name": "",
+          "type": "int256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x608060405234801561001057600080fd5b50610165806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063f8a8fd6d14610030575b600080fd5b61003861004a565b60405190815260200160405180910390f35b6000610056600161005b565b905090565b6000610073670de0b6b3a7640000600160ff1b6100e5565b82121561009b57604051634a78131f60e01b8152600481018390526024015b60405180910390fd5b6100b4670de0b6b3a76400006001600160ff1b036100e5565b8213156100d757604051632f36878760e01b815260048101839052602401610092565b50670de0b6b3a76400000290565b60008261010257634e487b7160e01b600052601260045260246000fd5b600160ff1b82146000198414161561012a57634e487b7160e01b600052601160045260246000fd5b50059056fea2646970667358221220ae09ea899755c56ac4ac9a04c3a460284ecad717f97e5f40e2c5b06d5b24e9bc64736f6c63430008110033",
+    "sourceMap": "58:123:0:-:0;;;;;;;;;;;;;;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c8063f8a8fd6d14610030575b600080fd5b61003861004a565b60405190815260200160405180910390f35b6000610056600161005b565b905090565b6000610073670de0b6b3a7640000600160ff1b6100e5565b82121561009b57604051634a78131f60e01b8152600481018390526024015b60405180910390fd5b6100b4670de0b6b3a76400006001600160ff1b036100e5565b8213156100d757604051632f36878760e01b815260048101839052602401610092565b50670de0b6b3a76400000290565b60008261010257634e487b7160e01b600052601260045260246000fd5b600160ff1b82146000198414161561012a57634e487b7160e01b600052601160045260246000fd5b50059056fea2646970667358221220ae09ea899755c56ac4ac9a04c3a460284ecad717f97e5f40e2c5b06d5b24e9bc64736f6c63430008110033",
+    "sourceMap": "58:123:0:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;82:97;;;:::i;:::-;;;158:25:3;;;146:2;131:18;82:97:0;;;;;;;;119:6;159:12;169:1;159:9;:12::i;:::-;137:35;;82:97;:::o;32500:309:2:-;32543:14;32573:20;4938:4;-1:-1:-1;;;32573:20:2;:::i;:::-;32569:1;:24;32565:91;;;32612:37;;-1:-1:-1;;;32612:37:2;;;;;158:25:3;;;131:18;;32612:37:2;;;;;;;;32565:91;32669:20;4938:4;-1:-1:-1;;;;;32669:20:2;:::i;:::-;32665:1;:24;32661:90;;;32708:36;;-1:-1:-1;;;32708:36:2;;;;;158:25:3;;;131:18;;32708:36:2;14:175:3;32661:90:2;-1:-1:-1;4938:4:2;32790:9;;32500:309::o;194:387:3:-;233:1;259;249:132;;303:10;298:3;294:20;291:1;284:31;338:4;335:1;328:15;366:4;363:1;356:15;249:132;-1:-1:-1;;;397:18:3;;-1:-1:-1;;417:13:3;;393:38;390:161;;;473:10;468:3;464:20;461:1;454:31;508:4;505:1;498:15;536:4;533:1;526:15;390:161;-1:-1:-1;565:10:3;;194:387::o",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "test()": "f8a8fd6d"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"int256\",\"name\":\"x\",\"type\":\"int256\"}],\"name\":\"PRBMathSD59x18__ToSD59x18Overflow\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"int256\",\"name\":\"x\",\"type\":\"int256\"}],\"name\":\"PRBMathSD59x18__ToSD59x18Underflow\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"test\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"errors\":{\"PRBMathSD59x18__ToSD59x18Overflow(int256)\":[{\"notice\":\"Emitted when converting a basic integer to the fixed-point format overflows SD59x18.\"}],\"PRBMathSD59x18__ToSD59x18Underflow(int256)\":[{\"notice\":\"Emitted when converting a basic integer to the fixed-point format underflows SD59x18.\"}]},\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/instruments/prbtest.sol\":\"PRBTest\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@prb/math/=lib/prb-math/src/\",\":@prb/test/=lib/prb-math/lib/prb-test/src/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":forge-std/=lib/forge-std/src/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/\",\":prb-math/=lib/prb-math/src/\",\":prb-test/=lib/prb-math/lib/prb-test/src/\",\":solmate/=lib/solmate/src/\",\":src/=lib/prb-math/src/\"]},\"sources\":{\"contracts/instruments/prbtest.sol\":{\"keccak256\":\"0x4a16fd7a98b87ea8ddba09ba5b0609f1f45bb761a2716becb44285f20f56ce6c\",\"urls\":[\"bzz-raw://2cb3140ce97f1b47a837ab28d4460221a271e108f71df805b9bdb4b2518dabc0\",\"dweb:/ipfs/QmRhNRayTj32X9e5gvB6GXcXuW81LpLjfyUMF9DJiKY6YU\"]},\"lib/prb-math/src/Core.sol\":{\"keccak256\":\"0xd9bf37732247227a79bfb841feeecf6d2034757148339cc767360ddecc6a0e76\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://1afab013adfcf6bf71209f50db687e3cb1795b71eea91469c99a8c2928c823fc\",\"dweb:/ipfs/Qmai1k6DxQEYqb522CfdBdhAKs3smC82Lx2ZCKpTJaTypo\"]},\"lib/prb-math/src/SD59x18.sol\":{\"keccak256\":\"0x37c8375109bc4a021f4d914af78606c593c122fc9dc874250a9f1a3c40b34680\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://7d41460931006ccc0d37083f192c1358e7e94739e7d9c36aead727d8e6cf7f1c\",\"dweb:/ipfs/Qmc8r4c9EFHMCGWRP2SL7bFNDCJf14NFy4RgESEmRn8hud\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.17+commit.8df45f5f"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "int256",
+              "name": "x",
+              "type": "int256"
+            }
+          ],
+          "type": "error",
+          "name": "PRBMathSD59x18__ToSD59x18Overflow"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "int256",
+              "name": "x",
+              "type": "int256"
+            }
+          ],
+          "type": "error",
+          "name": "PRBMathSD59x18__ToSD59x18Underflow"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "test",
+          "outputs": [
+            {
+              "internalType": "int256",
+              "name": "",
+              "type": "int256"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":@prb/math/=lib/prb-math/src/",
+        ":@prb/test/=lib/prb-math/lib/prb-test/src/",
+        ":ds-test/=lib/forge-std/lib/ds-test/src/",
+        ":forge-std/=lib/forge-std/src/",
+        ":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+        ":prb-math/=lib/prb-math/src/",
+        ":prb-test/=lib/prb-math/lib/prb-test/src/",
+        ":solmate/=lib/solmate/src/",
+        ":src/=lib/prb-math/src/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/instruments/prbtest.sol": "PRBTest"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/instruments/prbtest.sol": {
+        "keccak256": "0x4a16fd7a98b87ea8ddba09ba5b0609f1f45bb761a2716becb44285f20f56ce6c",
+        "urls": [
+          "bzz-raw://2cb3140ce97f1b47a837ab28d4460221a271e108f71df805b9bdb4b2518dabc0",
+          "dweb:/ipfs/QmRhNRayTj32X9e5gvB6GXcXuW81LpLjfyUMF9DJiKY6YU"
+        ],
+        "license": null
+      },
+      "lib/prb-math/src/Core.sol": {
+        "keccak256": "0xd9bf37732247227a79bfb841feeecf6d2034757148339cc767360ddecc6a0e76",
+        "urls": [
+          "bzz-raw://1afab013adfcf6bf71209f50db687e3cb1795b71eea91469c99a8c2928c823fc",
+          "dweb:/ipfs/Qmai1k6DxQEYqb522CfdBdhAKs3smC82Lx2ZCKpTJaTypo"
+        ],
+        "license": "MIT"
+      },
+      "lib/prb-math/src/SD59x18.sol": {
+        "keccak256": "0x37c8375109bc4a021f4d914af78606c593c122fc9dc874250a9f1a3c40b34680",
+        "urls": [
+          "bzz-raw://7d41460931006ccc0d37083f192c1358e7e94739e7d9c36aead727d8e6cf7f1c",
+          "dweb:/ipfs/Qmc8r4c9EFHMCGWRP2SL7bFNDCJf14NFy4RgESEmRn8hud"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "contracts/instruments/prbtest.sol",
+    "id": 17,
+    "exportedSymbols": {
+      "E": [
+        1849
+      ],
+      "HALF_UNIT": [
+        1860
+      ],
+      "LOG2_10": [
+        1871
+      ],
+      "LOG2_E": [
+        1882
+      ],
+      "MAX_SD59x18": [
+        1893
+      ],
+      "MAX_WHOLE_SD59x18": [
+        1904
+      ],
+      "MIN_SD59x18": [
+        1916
+      ],
+      "MIN_WHOLE_SD59x18": [
+        1928
+      ],
+      "PI": [
+        1936
+      ],
+      "PRBMathSD59x18__AbsMinSD59x18": [
+        1739
+      ],
+      "PRBMathSD59x18__CeilOverflow": [
+        1745
+      ],
+      "PRBMathSD59x18__DivInputTooSmall": [
+        1748
+      ],
+      "PRBMathSD59x18__DivOverflow": [
+        1757
+      ],
+      "PRBMathSD59x18__Exp2InputTooBig": [
+        1769
+      ],
+      "PRBMathSD59x18__ExpInputTooBig": [
+        1763
+      ],
+      "PRBMathSD59x18__FloorUnderflow": [
+        1775
+      ],
+      "PRBMathSD59x18__GmNegativeProduct": [
+        1784
+      ],
+      "PRBMathSD59x18__GmOverflow": [
+        1793
+      ],
+      "PRBMathSD59x18__LogInputTooSmall": [
+        1799
+      ],
+      "PRBMathSD59x18__MulInputTooSmall": [
+        1802
+      ],
+      "PRBMathSD59x18__MulOverflow": [
+        1811
+      ],
+      "PRBMathSD59x18__PowuOverflow": [
+        1819
+      ],
+      "PRBMathSD59x18__SqrtNegativeInput": [
+        1825
+      ],
+      "PRBMathSD59x18__SqrtOverflow": [
+        1831
+      ],
+      "PRBMathSD59x18__ToSD59x18Overflow": [
+        1836
+      ],
+      "PRBMathSD59x18__ToSD59x18Underflow": [
+        1841
+      ],
+      "PRBTest": [
+        16
+      ],
+      "SD59x18": [
+        1736
+      ],
+      "UNIT": [
+        1944
+      ],
+      "ZERO": [
+        1955
+      ],
+      "abs": [
+        2012
+      ],
+      "add": [
+        3338
+      ],
+      "and": [
+        3359
+      ],
+      "avg": [
+        2071
+      ],
+      "ceil": [
+        2135
+      ],
+      "div": [
+        2263
+      ],
+      "eq": [
+        3382
+      ],
+      "exp": [
+        2314
+      ],
+      "exp2": [
+        2394
+      ],
+      "floor": [
+        2458
+      ],
+      "frac": [
+        2479
+      ],
+      "fromSD59x18": [
+        3186
+      ],
+      "gm": [
+        2563
+      ],
+      "gt": [
+        3405
+      ],
+      "gte": [
+        3428
+      ],
+      "inv": [
+        2584
+      ],
+      "isZero": [
+        3446
+      ],
+      "ln": [
+        2610
+      ],
+      "log10": [
+        2660
+      ],
+      "log2": [
+        2799
+      ],
+      "lshift": [
+        3469
+      ],
+      "lt": [
+        3492
+      ],
+      "lte": [
+        3515
+      ],
+      "mod": [
+        3541
+      ],
+      "msb": [
+        73
+      ],
+      "mul": [
+        2923
+      ],
+      "mulDiv": [
+        199
+      ],
+      "mulDiv18": [
+        242
+      ],
+      "neq": [
+        3564
+      ],
+      "or": [
+        3590
+      ],
+      "pow": [
+        2985
+      ],
+      "powu": [
+        3110
+      ],
+      "prbExp2": [
+        1505
+      ],
+      "prbSqrt": [
+        1726
+      ],
+      "rshift": [
+        3613
+      ],
+      "sd": [
+        3202
+      ],
+      "sd59x18": [
+        3218
+      ],
+      "sqrt": [
+        3168
+      ],
+      "sub": [
+        3639
+      ],
+      "toSD59x18": [
+        3259
+      ],
+      "uHALF_UNIT": [
+        1853
+      ],
+      "uLOG2_10": [
+        1864
+      ],
+      "uLOG2_E": [
+        1875
+      ],
+      "uMAX_SD59x18": [
+        1886
+      ],
+      "uMAX_WHOLE_SD59x18": [
+        1897
+      ],
+      "uMIN_SD59x18": [
+        1909
+      ],
+      "uMIN_WHOLE_SD59x18": [
+        1921
+      ],
+      "uUNIT": [
+        1947
+      ],
+      "uncheckedAdd": [
+        3666
+      ],
+      "uncheckedDiv": [
+        3772
+      ],
+      "uncheckedMul": [
+        3799
+      ],
+      "uncheckedSub": [
+        3693
+      ],
+      "uncheckedUnary": [
+        3714
+      ],
+      "unwrap": [
+        3276
+      ],
+      "wrap": [
+        3293
+      ],
+      "xor": [
+        3740
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "0:181:0",
+    "nodes": [
+      {
+        "id": 1,
+        "nodeType": "PragmaDirective",
+        "src": "0:24:0",
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".16"
+        ]
+      },
+      {
+        "id": 2,
+        "nodeType": "ImportDirective",
+        "src": "25:31:0",
+        "absolutePath": "lib/prb-math/src/SD59x18.sol",
+        "file": "@prb/math/SD59x18.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 17,
+        "sourceUnit": 3800,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 16,
+        "nodeType": "ContractDefinition",
+        "src": "58:123:0",
+        "nodes": [
+          {
+            "id": 15,
+            "nodeType": "FunctionDefinition",
+            "src": "82:97:0",
+            "body": {
+              "id": 14,
+              "nodeType": "Block",
+              "src": "127:52:0",
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [
+                          {
+                            "hexValue": "31",
+                            "id": 10,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": true,
+                            "kind": "number",
+                            "lValueRequested": false,
+                            "nodeType": "Literal",
+                            "src": "169:1:0",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_rational_1_by_1",
+                              "typeString": "int_const 1"
+                            },
+                            "value": "1"
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_rational_1_by_1",
+                              "typeString": "int_const 1"
+                            }
+                          ],
+                          "id": 9,
+                          "name": "toSD59x18",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3259,
+                          "src": "159:9:0",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_internal_pure$_t_int256_$returns$_t_userDefinedValueType$_SD59x18_$1736_$",
+                            "typeString": "function (int256) pure returns (SD59x18)"
+                          }
+                        },
+                        "id": 11,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "functionCall",
+                        "lValueRequested": false,
+                        "nameLocations": [],
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "159:12:0",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_userDefinedValueType$_SD59x18_$1736",
+                          "typeString": "SD59x18"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_userDefinedValueType$_SD59x18_$1736",
+                          "typeString": "SD59x18"
+                        }
+                      ],
+                      "expression": {
+                        "id": 7,
+                        "name": "SD59x18",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1736,
+                        "src": "144:7:0",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_userDefinedValueType$_SD59x18_$1736_$",
+                          "typeString": "type(SD59x18)"
+                        }
+                      },
+                      "id": 8,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "lValueRequested": false,
+                      "memberLocation": "152:6:0",
+                      "memberName": "unwrap",
+                      "nodeType": "MemberAccess",
+                      "src": "144:14:0",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_unwrap_pure$_t_userDefinedValueType$_SD59x18_$1736_$returns$_t_int256_$",
+                        "typeString": "function (SD59x18) pure returns (int256)"
+                      }
+                    },
+                    "id": 12,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "nameLocations": [],
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "144:28:0",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int256",
+                      "typeString": "int256"
+                    }
+                  },
+                  "functionReturnParameters": 6,
+                  "id": 13,
+                  "nodeType": "Return",
+                  "src": "137:35:0"
+                }
+              ]
+            },
+            "functionSelector": "f8a8fd6d",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "test",
+            "nameLocation": "91:4:0",
+            "parameters": {
+              "id": 3,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "95:2:0"
+            },
+            "returnParameters": {
+              "id": 6,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 5,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 15,
+                  "src": "119:6:0",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int256",
+                    "typeString": "int256"
+                  },
+                  "typeName": {
+                    "id": 4,
+                    "name": "int256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "119:6:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int256",
+                      "typeString": "int256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "118:8:0"
+            },
+            "scope": 16,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "public"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "PRBTest",
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          16
+        ],
+        "name": "PRBTest",
+        "nameLocation": "67:7:0",
+        "scope": 17,
+        "usedErrors": [
+          1836,
+          1841
+        ]
+      }
+    ]
+  },
+  "id": 0
+}

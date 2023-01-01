@@ -57,7 +57,7 @@ const PoolCardView: React.FC = ({
     const { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, APR } = instrument;
     const { name: vaultName, want } = vault;
 
-    return (<tr>
+    return (<tr key={marketId}>
             <td>
                 <ValueLabel value={want.symbol} label={vaultName}/>
             </td>

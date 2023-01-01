@@ -738,7 +738,7 @@ const MintForm = ({
 
                     {
                       label: "Estimated APR",
-                      value: (leverageFactor +1 ) * vaults[vaultId].goalAPR  , 
+                      value: String((leverageFactor +1 ) * Number(vaults[vaultId].goalAPR) ) , 
                       tooltipText: "(Vault Estimated APR - borrow rate) * leverage multiplier ",
                       tooltipKey: "estimatedapr",
                       // isRemove? (Number(amount)* exchangeRate).toString()
@@ -1207,7 +1207,7 @@ const LiquidityForm = ({
           )}
           <div className={Styles.Breakdown}>
             {
-              isAdd && true &&(
+              true && true &&(
                   <WarningBanner
                 className={CommonStyles.ErrorBorder}
                 title="Not enough liquidity in lendingpool to borrow"

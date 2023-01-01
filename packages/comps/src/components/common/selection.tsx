@@ -216,6 +216,24 @@ const Checkbox = ({ key, item, initialSelected, updateSelected }) => {
   );
 };
 
+export const SingleCheckbox = ({ label, initialSelected, updateSelected }) => {
+  const [selected, setSelected] = useState(initialSelected);
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        setSelected(!selected);
+        updateSelected(!selected);
+      }}
+      className={classNames(Styles.Checkbox, { [Styles.Selected]: selected })}
+    >
+      {selected ? FilledCheckbox : EmptyCheckbox}
+
+      <span>{label}</span>
+    </div>
+  );
+};
+
 export const CheckboxGroup = ({ title, items }) => {
   const [selectedItems, setSelectedItems] = useState(items);
 

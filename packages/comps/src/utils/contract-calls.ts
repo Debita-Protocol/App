@@ -2324,7 +2324,7 @@ export const getUserBalances = async (
 
   const supportRewards = rewardsSupported(ammFactoryAddresses);
   const rewardsUnsupportedExchanges = exchanges.filter((f) => !supportRewards.includes(f.ammFactoryAddress));
-    console.log("AMMMEXCHANGE", rewardsUnsupportedExchanges)
+    // console.log("AMMMEXCHANGE", rewardsUnsupportedExchanges)
 
   const supportRewardsExchanges = exchanges.filter((f) => supportRewards.includes(f.ammFactoryAddress));
   // const ammFactoryAbi =

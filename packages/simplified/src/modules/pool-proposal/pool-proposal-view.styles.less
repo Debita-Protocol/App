@@ -1,0 +1,167 @@
+@import (reference) '~assets/styles/shared';
+
+.PoolProposalForm {
+  display: flex;
+  flex-flow: column wrap;
+  align-items: normal;
+  margin: @size-10;
+  background-color: var(--primary-bg);
+  border: @size-1 solid var(--theme-border);
+  border-radius: @size-10;
+  
+  > h3 {
+    font-size: @size-20;
+    font-weight: @weight-bold;
+    padding: @size-16;
+    border-bottom: @size-1 solid var(--theme-border);
+    margin: @size-10;
+  }
+  > div {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: @size-20;
+    > label {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-secondary);
+      padding: @size-16;
+    }
+    > input {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-secondary);
+      padding: @size-16;
+      border: @size-1 solid var(--theme-border);
+      border-radius: @size-10;
+      width: 50%;
+    }
+
+    &.PoolCollaterals {
+      display: flex;
+      flex-flow: column nowrap;
+      > div:first-of-type {
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: center;
+        width: 80%;
+        padding: @size-20;
+        > label {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--primary-secondary);
+          padding: @size-16;
+        }
+        > button {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--primary-secondary);
+          padding: @size-16;
+          border: @size-1 solid var(--theme-border);
+          border-radius: @size-10;
+        }
+      }
+      > section {
+        display: flex;
+        flex-flow: column nowrap;
+        width:100%;
+        > div {
+          display: flex;
+          flex-flow: column nowrap;
+          justify-content: center;
+
+          align-items: flex-start;
+          padding-bottom:@size-30;
+
+          > div { // collateral items
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            border: @size-1 solid var(--theme-border);
+            border-radius: @size-8;
+
+
+            > div {
+              
+              &.TokenAddress {
+                display: flex;
+                flex-flow: column nowrap;
+                padding: @size-8;
+                > input {
+                  font-size: @size-18;
+                  font-weight: @weight-bold;
+                  color: var(--primary-secondary);
+                  padding: @size-16;
+                  border: @size-1 solid var(--theme-border);
+                  border-radius: @size-10;
+                  width: 100%;
+                }
+              }
+              &.TokenId {
+                display: flex;
+                flex-flow: column nowrap;
+                padding: @size-8;
+                > input {
+                  font-size: @size-18;
+                  font-weight: @weight-bold;
+                  color: var(--primary-secondary);
+                  padding: @size-16;
+                  border: @size-1 solid var(--theme-border);
+                  border-radius: @size-10;
+                  width: 100%;
+                }
+              }
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+
+
+.Description {
+
+  padding: @size-20;
+  > textarea {
+    border: @size-1 solid var(--theme-border);
+    border-radius: @size-10;
+  }
+}
+
+.Duration {
+  padding: @size-20;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items:center;
+  > label {
+    font-size: @size-18;
+    font-weight: @weight-bold;
+    color: var(--primary-secondary);
+  }
+  > div {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    > label {
+      font-size: @size-14;
+      font-weight: @weight-semi-bold;
+      color: var(--primary-secondary);
+      padding: @size-8;
+    }
+    > input {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-secondary);
+      padding: @size-16;
+      border: @size-1 solid var(--theme-border);
+      border-radius: @size-10;
+      margin: @size-8;
+    }
+  } 
+}

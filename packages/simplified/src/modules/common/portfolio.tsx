@@ -77,7 +77,7 @@ const PortfolioTableHeader = ({
 
   return(
   <div className={Styles.MarketTableHeader}>
-    <MarketLink id={1}>
+    <MarketLink id={"1"}>
       <span className={Styles.MarketTitle}>
         {<span>{"Vault #"}{"1"}</span>}
         {<span>{"Direct to vault"}</span>}
@@ -163,12 +163,12 @@ const PositionRow = ({
   claimable?: boolean
   limitOrder?: number; 
   // position?: PositionBalance;
-  hasLiquidity: boolean;
+  hasLiquidity?: boolean;
   key?: string;
   outcome: string;
-  quantity: string; 
-  averagePricePurchased:string; 
-  address: string; 
+  quantity?: string; 
+  averagePricePurchased?:string; 
+  address?: string; 
   portfolio?: boolean; 
 
 }) => {
@@ -478,7 +478,7 @@ const PortfolioFooter = ({
         </>
       )}
       {(
-        <MarketLink id={1} >
+        <MarketLink id={"1"} >
           <SecondaryThemeButton text={"trade"} />
         </MarketLink>
       )}
@@ -564,14 +564,14 @@ export const PositionTable = ({
           <MarketTableHeader timeFormat={timeFormat} market={market} ammExchange={ammExchange} />*/}
         
 
-           <PortfolioTableHeader marketId = {vaultId}/>
+           <PortfolioTableHeader marketId = {"1"}/>
             { /*<span>No zcb positions to show</span>*/}
             <PortfolioHeader/>
 
-            {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
-            outcome={marketId} />}
-            {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
-             outcome={marketId} />}
+            {<PositionRow  marketId = {"1"} portfolio = {portfolioPage} 
+            outcome={"1"} />}
+            {<PositionRow  marketId = {"1"} portfolio = {portfolioPage} 
+             outcome={"1"} />}
 
             <PortfolioFooter/>
         {/*{positions &&
@@ -611,7 +611,7 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
   const [filter, setFilter] = useState("");
   const [filteredMarketPositions, setFilteredMarketPositions] = useState([1,1]);
  // non-zero vault balances.
-  const filterVaults = (balances: VaultBalances) => { 
+  const filterVaults = (balances) => { 
       let vaultIds = [];
       for (const [vaultId, val] of Object.entries(balances)) {
           // if (val.shares !== "0") {
@@ -622,24 +622,24 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
       return vaultIds;
   }
 
-  const filterMarkets = (zcbBalances: ZCBBalances) => {
-      let marketIds = [];
-      for (const [marketId, val] of Object.entries(zcbBalances)) {
-          if (val.longZCB !== "0" || val.shortZCB !== "0") {
-              marketIds.push(marketId);
-          }
-      }
-      return marketIds;
-  }
+  // const filterMarkets = (zcbBalances) => {
+  //     let marketIds = [];
+  //     for (const [marketId, val] of Object.entries(zcbBalances)) {
+  //         if (val?.longZCB !== "0" || val.shortZCB !== "0") {
+  //             marketIds.push(marketId);
+  //         }
+  //     }
+  //     return marketIds;
+  // }
   // let vaultIds ; 
   // let marketIds; 
   
   const vaultIds = useMemo(() => {
       return filterVaults(vaultBalances);
   }, [vaultBalances]);
-  const marketIds = useMemo(() => {
-      return filterMarkets(zcbBalances);
-  }, [zcbBalances]);
+  // const marketIds = useMemo(() => {
+  //     return filterMarkets(zcbBalances);
+  // }, [zcbBalances]);
 
 
   console.log('vaultIds', vaultIds); 

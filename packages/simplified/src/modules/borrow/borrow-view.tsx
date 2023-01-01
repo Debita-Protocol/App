@@ -26,8 +26,8 @@ const PAGE_LIMIT = 5;
 const Pools: React.FC = () => {
     // retrieve all the pools ever created.
     //const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-    console.log("vaults", vaults);
-    console.log("instruments", instruments);
+    // console.log("vaults", vaults);
+    // console.log("instruments", instruments);
     const [ pools, setPools ] = useState<PoolInstrument[]>([]);
     const [loading, setLoading] = useState(true);
 
