@@ -616,7 +616,14 @@ export const PositionTable = ({
             onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
           />
         )*/}
-  
+   <WarningBanner
+            className={Styles.MarginTop}
+            title="Why do I have a position after adding liquidity?"
+            subtitle={
+              "To maintain the Yes to No percentage ratio, a number of shares are returned to the liquidity provider."
+            }
+            //onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
+          />
     </>
   );
 };

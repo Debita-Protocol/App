@@ -282,7 +282,9 @@ export async function estimateTrade  (
   amount: string, 
   isUnderlying: boolean = false, 
   isShort: boolean, 
-  open: boolean
+  open: boolean, 
+  issue:boolean = false ,
+
   ) : Promise<EstimateTradeResult|string>{
 
   const marketmanager = new ethers.Contract(
@@ -292,6 +294,36 @@ export async function estimateTrade  (
 
   var scaledAmount = isUnderlying? pp.mul(Number(amount) * precision).div(precision)
                       : pp.mul(Number(-amount) * precision).div(precision); 
+  let tradeFees
+  let maxProfit; 
+  let ratePerCash; 
+  let priceImpact; 
+  if(issue){
+    console.log('isissue', issue)
+    result = await marketmanager.callStatic.issuePoolBond(marketId,scaledAmount)
+      .catch((e)=>{
+        console.log(e); 
+        error = e
+      }); 
+      if(error!=null){
+        return error?.data?.message
+      }else{
+        const issueQty = result.toString(); 
+        const avgPrice_ = scaledAmount.mul(pp).div(result) ;
+
+        return {
+        outputValue: trimDecimalValue(sharesOnChainToDisplay(String(issueQty || "0"))),
+        tradeFees: "0", 
+        averagePrice: trimDecimalValue(sharesOnChainToDisplay(String(avgPrice_.toString() || "0"))),
+        maxProfit, 
+        ratePerCash,
+        priceImpact,
+      };
+      }
+
+
+
+  }
   if(isShort){
     if(open){
          result = await marketmanager.callStatic.shortBond(marketId, scaledAmount, 0, 0) 
@@ -304,7 +336,7 @@ export async function estimateTrade  (
       }
     }
     else{
-         result = await marketmanager.callStatic.coverBondShort(marketId, scaledAmount, pp.mul(100), 0) 
+         result = await marketmanager.callStatic.coverBondShort(marketId, scaledAmount, pp.mul(1), 0) 
             .catch((e)=>{
               console.log(e);
               error= e }); 
@@ -317,7 +349,7 @@ export async function estimateTrade  (
   else{
     if(open){
         // if(isUnderlying) scaledAmount = -scaledAmount; 
-       result = await marketmanager.callStatic.buyBond(marketId,scaledAmount, pp.mul(100), 0)
+       result = await marketmanager.callStatic.buyBond(marketId,scaledAmount, pp.mul(1), 0)
         .catch((e)=>{console.log(e);
           error= e; 
         }); 
@@ -347,10 +379,7 @@ export async function estimateTrade  (
 
   console.log('estimates', tokensIn.toString(), avgPrice.toString(), tokensOut.toString(),
     trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0")))) 
-  let tradeFees
-  let maxProfit; 
-  let ratePerCash; 
-  let priceImpact; 
+
   // average price, tokens returned, 
 
   const output = isUnderlying? tokensOut: tokensIn; 
@@ -375,7 +404,7 @@ export async function tradeZCB(
   long: boolean, 
   close: boolean, 
   issue:boolean ,
-  slippageLimit: number = 100, 
+  slippageLimit: number = 1, 
   underlyingAddress: string = "", 
   ): Promise<TransactionResponse>{
   const controller = new ethers.Contract(controller_address,
@@ -389,7 +418,7 @@ export async function tradeZCB(
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
   const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
   console.log('issue', issue); 
-  await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
+  // await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
 
   if(issue){
     console.log('issue'); 

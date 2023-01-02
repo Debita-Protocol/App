@@ -231,10 +231,11 @@ export interface WarningBannerProps {
 export const WarningBanner = ({ title, subtitle, className, onClose }: WarningBannerProps) => {
   return (
     <section className={classNames(Styles.WarningBanner, className)}>
-      {WarningIcon}
+      {HelpIcon}
       <div>
         <span>{title}</span>
         <span>{subtitle}</span>
+
       </div>
       {onClose && <div onClick={() => onClose()}>{XIcon}</div>}
     </section>

@@ -32,7 +32,7 @@ import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 const {
   SEO,
-  LabelComps: { CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
+  LabelComps: { WarningBanner, CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
   Icons: { ConfirmedCheck },
   ButtonComps: { SecondaryThemeButton },
   InputComps: { OutcomesGrid },
@@ -181,6 +181,8 @@ const MarketView = ({ defaultMarket = null }) => {
       loginAccount,
       balances,
       actions: { addTransaction },
+    ramm: { reputationScore, vaultBalances, zcbBalances}
+
     } = useUserStore();
   const Id = Number(marketId)
  useEffect(() => {
@@ -329,7 +331,6 @@ const MarketView = ({ defaultMarket = null }) => {
       console.log("testApproved")
     })
   }
-
   const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
@@ -339,6 +340,8 @@ const MarketView = ({ defaultMarket = null }) => {
       <section>
 
         <NetworkMismatchBanner />
+          {!(reputationScore >0) && <ManagerWarning/>}
+
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
           {/*<CategoryIcon big categories={categories} />
@@ -483,7 +486,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
           <li>
-            <span>-</span>
+            <span>Price of longZCB</span>
               <span>-</span>
 
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
@@ -565,7 +568,14 @@ const MarketView = ({ defaultMarket = null }) => {
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
         {/*<ManagerWarning/>*/}
-
+          <WarningBanner
+            //className={Styles.MarginTop}
+            title="Reputation Gains  "
+            subtitle={
+              "Expected incremented reputation scores if instrument is profitable : 1"
+            }
+           //onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
+          />
         <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}
         isApproved = {isApproved}/> 
 

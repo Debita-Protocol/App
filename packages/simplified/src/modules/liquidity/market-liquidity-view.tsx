@@ -394,10 +394,7 @@ const LiquidityWarningFooter = () => (
 export const ManagerWarning = () => (
   <article className={Styles.LiquidityWarningFooter}>
     <span>
-      {WarningIcon} Trade Limited due to: 
-    </span>
-    <span>
-    - ee
+      {WarningIcon} Account is not a verified manager, first verify in profile page.
     </span>
 
   </article>

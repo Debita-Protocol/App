@@ -617,6 +617,7 @@ const LiquidityView = () => {
   <button onClick={() => setUpExampleManager( { account,loginAccount}
 )}>SetUpManager</button>
   <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> */}
+
       <span></span>     
       <span></span>
       <span></span>
@@ -631,6 +632,10 @@ const LiquidityView = () => {
               Pariticipate in pricing risks and earn more <a href=".">Learn more →</a>
             </p>*/}
       <ul>
+        <SecondaryThemeButton
+  action = {()=> addExampleProposal({account, loginAccount})}
+  text = {"Example Proposal"}
+     />
         {/*<SquareDropdown
           onChange={(value) => {
             updatePoolsViewSettings({ primaryCategory: value, subCategories: [] });
