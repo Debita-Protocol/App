@@ -235,12 +235,12 @@ export const PortfolioView = () => {
         <NetworkMismatchBanner />
         <AppViewStats portfolioPage = {true} small trading />
         <ClaimWinningsSection />
-        <PositionsLiquidityViewSwitcher
+        {/*<PositionsLiquidityViewSwitcher
           showActivityButton={isMobile}
           setTables={() => setView(TABLES)}
           setActivity={() => setView(ACTIVITY)}
           claimableFirst
-        />
+        />*/}
         {view === ACTIVITY && <Activity />}
         <PositionsView portfolioPage = {true} />
 

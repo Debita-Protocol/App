@@ -478,7 +478,7 @@ const MarketView = ({ defaultMarket = null }) => {
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>- </span>
+            <span>First Loss Capital</span>
             <span>-</span>
           </li>
 

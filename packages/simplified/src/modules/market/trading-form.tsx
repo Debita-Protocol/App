@@ -652,6 +652,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
               actionType: approvalAction,
               isApproved: isApprovedTrade,
               shareToken: outcomeShareToken,
+              spender_: marketManager, 
               underlyingAddress: underlying_address, 
               amount: amount,
               setIsApprovedTrade: setIsApprovedTrade, 
@@ -721,16 +722,16 @@ export const ApprovalButton = ({
   isApproved = false,
   shareToken = null,
   customClass = null,
-  ds = false, 
+  spender_, 
   underlyingAddress,
   setIsApprovedTrade = null,
 }: {
   amm?: AmmExchange;
-  cash: Cash;
+  cash?: Cash;
   spender_?: string; 
   underlyingAddress?: string; 
   amount?: string; 
-  actionType: string | number;
+  actionType?: string | number;
   isApproved?: boolean;
   shareToken?: string;
   customClass?: any;
@@ -758,11 +759,12 @@ export const ApprovalButton = ({
           let approvalAction = approveERC20;
           console.log('underlyingAddress', underlyingAddress)
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
-    let spender = marketManager//rewardContractAddress || ammFactory; 
+    // let spender = marketManager//rewardContractAddress || ammFactory; 
+    let spender = spender_; 
     let text = "Liquidity DS"; 
     const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
       addTransaction(tx);
-      setIsApprovedTrade(true)
+      setIsApprovedTrade && setIsApprovedTrade(true)
 
   } ,[cash, loginAccount, shareToken, amm])
 
@@ -844,7 +846,7 @@ export const ApprovalButton = ({
       break;
     }
     default:
-      buttonText = `Approve ${marketCashType}`;
+      buttonText = `Approve Underlying`;
       break;
   }
   console.log('buttontext', buttonText)

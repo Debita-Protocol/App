@@ -191,7 +191,7 @@ export const approveERC20 = async (
   approvingName: string,
   spender: string,
   loginAccount: LoginAccount,
-  amount: string = pp.mul(10000000000000).toString()
+  amount: string = String(new BN(2 ** 255).minus(1).toFixed())
 ) => {
   const { chainId, account, library } = loginAccount;
   if (!spender) {
@@ -607,7 +607,7 @@ export async function mintVaultDS(
   const collateral = new ethers.Contract(collateral_address.toString(),
    cashabi["abi"], getProviderOrSigner(library, account))
 
-  await collateral.approve(vaultAd, scaledAmount); 
+  // await collateral.approve(vaultAd, scaledAmount); 
   return await vault.deposit(scaledAmount, account); 
 
   // const collateral = Cash__factory.connect(collateral_address, library.getSigner(account));
@@ -3159,9 +3159,15 @@ export const getERC20Allowance = async (
   account: string,
   spender: string
 ): Promise<string> => {
-  const contract = getErc20Contract(tokenAddress, provider, account);
+  console.log('tokenAddress', tokenAddress, account, spender)
+  if(tokenAddress==null ) return "0"; 
+  console.log('tokenAddress', tokenAddress, account, spender)
+  const contract = new ethers.Contract(tokenAddress, cashabi["abi"], getProviderOrSigner(provider, account)); 
+  // const contract = getErc20Contract(tokenAddress, provider, account);
   const result = await contract.allowance(account, spender);
+  console.log('allowance result', result.toString()); 
   const allowanceAmount = String(new BN(String(result)));
+
   return allowanceAmount;
 };
 

@@ -126,7 +126,8 @@ export const AmountInput = ({
         {isLogged && maxValue&&(
           <>
             <span>balance:</span>{" "}
-            {isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted}
+            {maxValue}
+            {/*isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted*/}
           </>
         )}
       </span>

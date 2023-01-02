@@ -245,6 +245,27 @@ export const MARKET_TYPE_OPTIONS = [
   },
 ];
 
+export const INSTRUMENT_TYPE_OPTIONS = [
+  {
+    label: "LendingPool",
+    value: "lendingpool",
+    disabled: false,
+  },
+  {
+    label: "Creditline",
+    value: "creditline",
+    disabled: false,
+  },
+  {
+    label: "Option sells",
+    value: "options",
+    disabled: false,
+  },
+
+
+
+]
+
 export const POOL_SORT_TYPES = {
   EXPIRES: "EXPIRES",
   TVL: "TVL",
