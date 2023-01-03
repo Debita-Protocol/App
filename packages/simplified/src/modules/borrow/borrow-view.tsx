@@ -6,7 +6,7 @@ import {TabContent, TabNavItem} from "./Tabs";
 import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument} from "@augurproject/comps/build/types"
 import { PoolCard, LoadingPoolCard } from "./PoolCard";
 import { LoanCard } from "./UserLoanCard";
-import {vaults, instruments} from "./fakedata";
+// import {vaults, instruments} from "./fakedata";
 
 import {
     Components,
@@ -25,7 +25,7 @@ const PAGE_LIMIT = 5;
 
 const Pools: React.FC = () => {
     // retrieve all the pools ever created.
-    //const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+    const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
     // console.log("vaults", vaults);
     // console.log("instruments", instruments);
     const [ pools, setPools ] = useState<PoolInstrument[]>([]);
@@ -67,24 +67,13 @@ const Pools: React.FC = () => {
             <table>
                 <thead>
                     <tr>
-                        <th>
-                            Vault
-                        </th>
-                        <th>
-                            Collateral
-                        </th>
-                        <th>
-                            APR
-                        </th>
-                        <th>
-                            Leverage Factor
-                        </th>
-                        <th>
-                            Total Borrowed Assets
-                        </th>
-                        <th>
-                            Total Available Assets
-                        </th>
+                        <th>Name</th>
+                        <th>Vault</th>
+                        <th>Collateral</th>
+                        <th>APR</th>
+                        <th>Leverage Factor</th>
+                        <th>Total Borrowed Assets</th>
+                        <th>Total Available Assets</th>
                     </tr>
                 </thead>
                 { loading ? (
@@ -92,22 +81,25 @@ const Pools: React.FC = () => {
                         <tr className={Styles.EmptyMarketsMessage}>Loading</tr>
                     </tbody>
                     
-                ) : pools.length > 0 ? (
+                ) : pools.length > 0 && (
 
                     <tbody>
-                        {sliceByPage(pools, page, PAGE_LIMIT).map((pool: PoolInstrument, index) => (
-                        <PoolCard
-                            key={`${pool.marketId}-${index}`}
-                            marketId={pool.marketId}
-                            vaultId={pool.vaultId}
-                            instruments={pools}
-                            vaults={vaults}
-                        />
-                      ))}
+                        {sliceByPage(pools, page, PAGE_LIMIT).map((pool: PoolInstrument, index) => 
+                            {
+                                // console.log("pool", pool);
+                                return (
+                                    <PoolCard
+                                        key={`${pool.marketId}-${index}`}
+                                        marketId={pool.marketId}
+                                        vaultId={pool.vaultId}
+                                        instruments={instruments}
+                                        vaults={vaults}
+                                        />
+                                )
+                            }
+                        
+                      )}
                     </tbody>
-                    
-                ) : (
-                    <tr className={Styles.EmptyMarketsMessage}>No pools to show</tr>
                 )}
             </table>
               {pools.length > 0 && (

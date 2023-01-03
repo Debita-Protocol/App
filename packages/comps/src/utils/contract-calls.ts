@@ -434,7 +434,7 @@ export async function setUpManager(
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
-  await controller.testVerifyAddress(); 
+  await controller.testVerifyAddress();
   const reputation = new ethers.Contract(reputation_manager_address, 
     reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
   await reputation.setTraderScore(account, pp); 

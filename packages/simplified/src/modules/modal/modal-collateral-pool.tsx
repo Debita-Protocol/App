@@ -3,9 +3,10 @@ import { ContractCalls2, useDataStore2, useAppStatusStore, InputComps, Icons, Bu
 import Styles from "./modal.styles.less";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 import { assertType } from "graphql";
+import { Header } from "./common";
 
 
-const {AmountInput} = InputComps;
+const {ModalAmountInput} = InputComps;
 const {CloseIcon} = Icons;
 const {PrimaryThemeButton} = ButtonComps;
 const {ValueLabel} = LabelComps;
@@ -36,21 +37,23 @@ const ModalCollateralPool = (
 
     return (
         <div className={Styles.ModalPoolView}>
-            <button onClick={() => closeModal()}>{CloseIcon}</button>
-            {isERC20 ? <AmountInput 
+            <Header
+                title={symbol}
+            />
+            {isERC20 ? <ModalAmountInput 
                 chosenCash={symbol}
                 heading="Amount"
                 updateInitialAmount={(val) => {
                     setAmount(val);
                 }}
-                initialAmount={"0"}
+                initialAmount={""}
                 maxValue={maxValue}
             /> : (
                 <ValueLabel label={""} value={symbol}/>
             )}
             <PrimaryThemeButton 
                 text={isAdd ? "Add Collateral" : "Remove Collateral"}
-                action={(amount) => action(amount, closeModal)}
+                action={() => action(amount, closeModal)}
             />
         </div>
     )

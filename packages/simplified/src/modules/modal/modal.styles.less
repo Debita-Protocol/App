@@ -44,6 +44,11 @@
 
 .ModalPoolView {
   display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-evenly;
+  > button {
+    margin-bottom: @size-20;
+  }
 }
 
 :root[theme="DARK"] {

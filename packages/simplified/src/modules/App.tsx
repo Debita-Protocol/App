@@ -47,13 +47,14 @@ const AppBody = () => {
   const path = parsePath(location.pathname)[0];
   const sidebarOut = sidebarType && isMobile;
 
+
   useUserBalances({ ammExchanges, blocknumber, cashes, markets, transactions, isWalletRpc });
   useFinalizeUserTransactions(blocknumber);
 
   // RAMM
-  const { vaults, markets: _markets } = useDataStore2();
+  const { vaults, markets: _markets, instruments } = useDataStore2();
 
-  useRammData({blocknumber, vaults, markets: _markets, isWalletRpc});
+  useRammData({blocknumber, vaults, markets: _markets, instruments, isWalletRpc});
   const { ramm } = useUserStore();
   // console.log("ramm: ", ramm);
 

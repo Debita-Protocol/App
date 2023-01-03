@@ -10,7 +10,7 @@
         > h3 {
             padding-left: @size-40;
             padding-bottom: @size-16;
-            font-size: @size-28;
+            font-size: @size-30;
             font-weight: @weight-bold;
         }
         > div {
@@ -21,8 +21,13 @@
             border-radius: @size-16;
             margin-bottom: @size-36;
             background: var(--primary-bg);
+            .HoverDropShadow;
             > div {
                 padding: @size-16;
+                > span:nth-of-type(2) {
+                    font-size: @size-24;
+                    font-weight: @weight-bold;
+                }
             }
         }
     }
@@ -140,6 +145,11 @@
             padding-bottom: @size-16;
         }
         > section {
+            .HoverDropShadow;
+            background-color: var(--primary-bg);
+            padding: @size-8;
+            border-radius: @size-10;
+            border: @size-1 solid var(--theme-border);
             display: flex;
             flex-flow: column nowrap;
             align-items: flex-start;

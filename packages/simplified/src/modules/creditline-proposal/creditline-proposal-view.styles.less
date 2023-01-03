@@ -3,40 +3,46 @@
 .CreditlineProposalForm {
   display: flex;
   flex-flow: column wrap;
-  align-items: normal;
+  align-items: space-between;
   margin: @size-10;
-  background-color: var(--primary-bg);
+  width:70%;
+  background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
-  width:70%;
-  
-  > h3 {
-    font-size: @size-20;
-    font-weight: @weight-bold;
-    padding: @size-16;
+  .HoverDropShadow;
+  > div:first-of-type {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
     border-bottom: @size-1 solid var(--theme-border);
-    margin: @size-10;
+    width: 100%;
+    > h3 {
+      font-size: @size-20;
+      font-weight: @weight-bold;
+    }
   }
+
   > div {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
     padding: @size-20;
     > label {
       font-size: @size-18;
       font-weight: @weight-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-16;
     }
     > input {
       font-size: @size-18;
       font-weight: @weight-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-16;
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
       width: 50%;
+      background-color: var(--primary-bg);
     }
   }
 }
@@ -47,6 +53,9 @@
   > textarea {
     border: @size-1 solid var(--theme-border);
     border-radius: @size-10;
+    &:hover {
+      border-color: var(--secondary-text);
+    }
   }
 }
 
@@ -79,6 +88,9 @@
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
       margin: @size-8;
+      &:hover {
+        border-color: var(--secondary-text);
+      }
     }
   }
 
@@ -89,5 +101,4 @@
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
-  padding: @size-40 @size-80 @size-48;
 }

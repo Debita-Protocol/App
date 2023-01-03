@@ -27,7 +27,7 @@ const ProposalsView = () => {
                         General Form
                     </h3>
                 </TabContent>
-                <TabContent id="1" activeTab={activeTab}> 
+                <TabContent id="1" activeTab={activeTab} className={Styles.poolTab}> 
                     <CreditLineProposalView />
                 </TabContent>
                 
@@ -36,7 +36,7 @@ const ProposalsView = () => {
                         Options Form
                     </h3>
                 </TabContent>
-                <TabContent id="3" activeTab={activeTab}>
+                <TabContent id="3" activeTab={activeTab} className={Styles.PoolTab}>
                     <PoolProposalView />
                 </TabContent>
             </section>

@@ -5,49 +5,59 @@
   flex-flow: column wrap;
   align-items: normal;
   margin: @size-10;
-  background-color: var(--primary-bg);
+  background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
+  width: 70%;
+  height: fit-content;
+  .HoverDropShadow;
   
-  > h3 {
-    font-size: @size-20;
-    font-weight: @weight-bold;
-    padding: @size-16;
+  > div:first-of-type { // header
     border-bottom: @size-1 solid var(--theme-border);
-    margin: @size-10;
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    > h3 {
+      font-size: @size-20;
+      font-weight: @weight-bold;
+    }
   }
+
   > div {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
     padding: @size-20;
     > label {
       font-size: @size-18;
       font-weight: @weight-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-16;
     }
     > input {
       font-size: @size-18;
       font-weight: @weight-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-16;
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
       width: 50%;
+      background-color: var(--primary-bg);
     }
 
     &.PoolCollaterals {
       display: flex;
       flex-flow: column nowrap;
+      align-items: flex-start;
+      justify-content: flex-start;
       > div:first-of-type {
         display: flex;
-        flex-flow: row nowrap;
-        align-items: center;
-        justify-content: center;
+        // flex-flow: row nowrap;
+        // align-items: center;
+        // justify-content: center;
         width: 80%;
-        padding: @size-20;
         > label {
           font-size: @size-18;
           font-weight: @weight-bold;
@@ -61,6 +71,9 @@
           padding: @size-16;
           border: @size-1 solid var(--theme-border);
           border-radius: @size-10;
+          &:hover {
+            border-color: var(--secondary-text);
+          }
         }
       }
       > section {
@@ -68,49 +81,48 @@
         flex-flow: column nowrap;
         width:100%;
         > div {
+
           display: flex;
-          flex-flow: column nowrap;
-          justify-content: center;
+          flex-flow: column wrap;
 
-          align-items: flex-start;
-          padding-bottom:@size-30;
-
-          > div { // collateral items
-            display: flex;
-            flex-flow: row nowrap;
-            align-items: center;
+          &.PoolCollateralItem {
+            .HoverDropShadow;
             border: @size-1 solid var(--theme-border);
-            border-radius: @size-8;
-
-
-            > div {
-              
-              &.TokenAddress {
-                display: flex;
-                flex-flow: column nowrap;
-                padding: @size-8;
+            border-radius: @size-10;
+            display: flex;
+            flex-flow: row nowrap; 
+            justify-content: space-evenly;
+            align-items: center;
+            width:90%;
+            margin-bottom:@size-20;
+            > div:first-of-type {
+              > div:first-of-type {
+                border-width: 0;
+              }
+              > div {
+                padding-bottom:@size-8;
+                > label {
+                  color: var(--secondary-text);
+                  font-size: @size-16;
+                  font-weight: @weight-semi-bold;
+                }
                 > input {
-                  font-size: @size-18;
-                  font-weight: @weight-bold;
-                  color: var(--primary-secondary);
-                  padding: @size-16;
                   border: @size-1 solid var(--theme-border);
                   border-radius: @size-10;
-                  width: 100%;
                 }
               }
-              &.TokenId {
-                display: flex;
-                flex-flow: column nowrap;
+            }
+            > div:nth-of-type(2) {
+              display: flex;
+              flex-flow: column nowrap;
+              justify-content: center;
+              align-items: center;
+              > div {
                 padding: @size-8;
-                > input {
-                  font-size: @size-18;
-                  font-weight: @weight-bold;
-                  color: var(--primary-secondary);
-                  padding: @size-16;
-                  border: @size-1 solid var(--theme-border);
-                  border-radius: @size-10;
-                  width: 100%;
+                > label {
+                  color: var(--secondary-text);
+                  font-size: @size-16;
+                  font-weight: @weight-semi-bold;
                 }
               }
             }
@@ -122,6 +134,84 @@
   }
 }
 
+
+
+.FormAmountInput {
+  .text-20-bold;
+
+  grid-column: 1 / span 2;
+  margin-top: @size-14;
+  background-color: var(--primary-bg);
+  border-radius: @size-8;
+  display: flex;
+  flex-flow: row nowrap;
+  height: @size-56;
+  min-height: @size-56;
+  border: @size-1 solid var(--theme-border);
+  outline: 0;
+  color: var(--secondary-text);
+  align-items: center;
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
+
+  > button {
+    margin-right: @size-8;
+  }
+
+  // &:focus-within {
+  //   border: @size-1 solid var(--theme-border);
+  //   outline: 0;
+  // }
+
+  > span {
+    flex: 0 auto;
+  }
+
+  > input {
+    .text-20-bold;
+
+    min-width: @size-64;
+    width: @size-80;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    border-radius: @size-8;
+    border: 0;
+    outline: 0;
+    flex: 1 100%;
+    padding: @size-14 0;
+    margin-right: @size-8;
+    text-overflow: ellipsis;
+
+    &:focus {
+      border: 0;
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--primary-bg);
+    }
+  }
+
+  > span:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin-right: @size-2;
+    margin-left: @size-16;
+  }
+
+  &.Edited {
+    color: var(--primary-text);
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+  }
+  
+}
 
 
 .Description {

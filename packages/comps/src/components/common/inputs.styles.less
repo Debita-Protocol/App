@@ -155,6 +155,127 @@
   }
 }
 
+.ModalAmountInput {
+
+  display: flex;
+  padding: @size-24 @size-24 @size-40;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+
+  > span:first-of-type {
+    .text-16-bold;
+
+    text-transform: capitalize;
+    color: var(--secondary-text);
+    align-items: center;
+    display: flex;
+  }
+
+  > span:nth-of-type(2) {
+    .text-14-semi-bold;
+
+    display: flex;
+    justify-content: flex-end;
+    text-transform: capitalize;
+    color: var(--primary-text);
+    cursor: pointer;
+    text-align: right;
+
+    > span {
+      .text-14;
+
+      color: var(--secondary-text);
+      margin-right: @size-4;
+    }
+  }
+
+  > span.RateLabel {
+    display: none;
+  }
+
+  &.Rate {
+    padding-bottom: @size-12;
+
+    > span.RateLabel {
+      display: block;
+    }
+  }
+}
+
+.ModalAmountInputField {
+  .text-20-bold;
+  .ThemeBorder;
+
+  grid-column: 1 / span 2;
+  margin-top: @size-14;
+  background-color: var(--primary-bg);
+  border-radius: @size-8;
+  display: flex;
+  flex-flow: row nowrap;
+  height: @size-56;
+  min-height: @size-56;
+  // border: @size-1 solid transparent;
+  outline: 0;
+  color: var(--secondary-text);
+  align-items: center;
+
+  > button {
+    margin-right: @size-8;
+  }
+
+  &:focus-within {
+    border: @size-1 solid var(--theme-border);
+    outline: 0;
+  }
+
+  > span {
+    flex: 0 auto;
+  }
+
+  > input {
+    .text-20-bold;
+
+    width: @size-64;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    border-radius: @size-8;
+    border: 0;
+    outline: 0;
+    flex: 1 100%;
+    padding: @size-14 0;
+    margin-right: @size-8;
+    text-overflow: ellipsis;
+
+    &:focus {
+      border: 0;
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--primary-bg);
+    }
+  }
+
+  > span:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin-right: @size-2;
+    margin-left: @size-16;
+  }
+
+  &.Edited {
+    color: var(--primary-text);
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+  }
+}
+
 .AmountInputField {
   .text-20-bold;
 
@@ -286,6 +407,9 @@
   &:focus {
     .ThemeBorder;
     outline: 0;
+  }
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
   }
 }
 

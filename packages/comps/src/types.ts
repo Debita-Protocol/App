@@ -468,9 +468,7 @@ export interface Auction {
 }
 
 // user pool data
-export interface UserPoolData {
-  marketId: string;
-  vaultId: string;
+export interface UserPoolInfo {
   supplyBalances: {
     [address: string]: {
       [tokenId: string]: string;
@@ -486,7 +484,6 @@ export interface UserPoolData {
     amount: string;
   };
   accountLiquidity: string;
-  remainingBorrowAmount: string;
 }
 
 
@@ -996,7 +993,12 @@ export interface CoreUserState {
   vaultBalances: VaultBalances;
   zcbBalances: ZCBBalances;
   leveragePosition?: LeveragePosition
+  poolInfos: UserPoolInfos;
   //loans here idk how to get them though.
+}
+
+export interface UserPoolInfos{
+  [marketId: string]: UserPoolInfo;
 }
 
 export interface LeveragePosition{

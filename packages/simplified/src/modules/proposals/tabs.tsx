@@ -3,10 +3,11 @@ import React from "react"
 import classNames from "classnames";
 import Styles from "./proposals-view.styles.less";
 
-export const TabContent: React.FC = ({id, activeTab, children}) => {
+export const TabContent: React.FC = ({id, activeTab, children, className}) => {
  return (
-   activeTab === id ? <div className="TabContent">
-     { children }
+   activeTab === id ?
+   <div className={className}>
+    { children }
    </div>
    : null
  );

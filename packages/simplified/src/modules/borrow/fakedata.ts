@@ -1,4 +1,4 @@
-import { UserPoolData, VaultInfo, VaultInfos, InstrumentInfos, Instrument, CoreMarketInfo, PoolInstrument } from "@augurproject/comps/build/types";
+import { UserPoolInfo, VaultInfo, VaultInfos, InstrumentInfos, Instrument, CoreMarketInfo, PoolInstrument } from "@augurproject/comps/build/types";
 
 export let vaults: VaultInfos = {};
 export let instruments: InstrumentInfos = {};
@@ -173,9 +173,7 @@ let emptyVault: VaultInfo = {
     totalEstimatedAPR: "0",
 };
 
-export let userPoolData: UserPoolData = {
-    marketId: "1",
-    vaultId: "1",
+export let userPoolData: UserPoolInfo = {
     supplyBalances: {
         "0xUSDC": {
             "0": "100"
@@ -202,8 +200,7 @@ export let userPoolData: UserPoolData = {
         shares: "5.221",
         amount: "10.6"
     },
-    accountLiquidity: "50",
-    remainingBorrowAmount: "5"
+    accountLiquidity: "50"
 }
 
 let _markets = {};

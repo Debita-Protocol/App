@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ContractCalls2, useDataStore2, useAppStatusStore, InputComps, Icons, ButtonComps } from "@augurproject/comps";
+import { ContractCalls2, useDataStore2, useAppStatusStore, InputComps, Icons, ButtonComps, LabelComps } from "@augurproject/comps";
 import Styles from "./modal.styles.less";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
+import { assertType } from "graphql";
+import { Header } from "./common";
 
 
-const {AmountInput} = InputComps;
+const {ModalAmountInput} = InputComps;
 const {CloseIcon} = Icons;
 const {PrimaryThemeButton} = ButtonComps;
+const {ValueLabel} = LabelComps;
+const { useIsERC20ApprovedSpender, useIsERC721ApprovedSpender, approveERC20, approveERC721 } = ContractCalls2;
 
 
 const ModalPoolBorrowerAction = (
@@ -31,19 +35,21 @@ const ModalPoolBorrowerAction = (
 
     return (
         <div className={Styles.ModalPoolView}>
-            <button onClick={() => closeModal()}>{CloseIcon}</button>
-            <AmountInput 
+            <Header
+                title={symbol}
+            />
+            <ModalAmountInput 
                 chosenCash={symbol}
                 heading="Amount"
                 updateInitialAmount={(val) => {
                     setAmount(val);
                 }}
-                initialAmount={"0"}
+                initialAmount={""}
                 maxValue={maxValue}
-            />
+            /> 
             <PrimaryThemeButton 
                 text={isBorrow ? "Borrow" : "Repay"}
-                action={(amount) => action(amount, closeModal)}
+                action={() => action(amount, closeModal)}
             />
         </div>
     )

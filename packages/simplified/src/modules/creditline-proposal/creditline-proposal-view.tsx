@@ -20,6 +20,7 @@ import { utils, constants } from "ethers";
 import { useDataStore2 } from "@augurproject/comps";
 import { VaultInfos } from "@augurproject/comps/build/types";
 import { SingleCheckbox } from "@augurproject/comps/build/components/common/selection";
+import {FormAmountInput} from "../pool-proposal/pool-proposal-view";
 
 const { formatBytes32String, isAddress } = utils;
 
@@ -60,10 +61,7 @@ const CreditLineRequestForm = () => {
 
   const [ principal, setPrincipal ] = useState("");
   const [ duration, setDuration ] = useState({
-    years: "",
-    weeks: "",
-    days: "",
-    months: "",
+    days: ""
   });
   const [ inputError, setInputError ] = useState("");
   const [ interestRate, setInterestRate ] = useState("");
@@ -157,7 +155,7 @@ const CreditLineRequestForm = () => {
   const createCreditline = useCallback(async (e) => {
     e.preventDefault();
     console.log("A");
-    let total_duration = new BN(365*24*60*60*Number(duration.years) + 7*24*60*60*Number(duration.weeks) + 24*60*60*Number(duration.days) + 30*24*60*60*Number(duration.months)).toString();
+    let total_duration = new BN(24*60*60*Number(duration.days)).toString();
     
     // total interest accrued
     let interest = new BN(total_duration).div(365*24*60*60).multipliedBy(new BN(interestRate).div(100).multipliedBy(principal)).toString()
@@ -192,7 +190,6 @@ const CreditLineRequestForm = () => {
           console.log(err);
         }
       }
-
     }
   })
 
@@ -246,12 +243,13 @@ const CreditLineRequestForm = () => {
   }
 
   return (
-  <>
     <div className={Styles.CreditlineProposalForm}>
       {/* <SUPER_BUTTON /> */}
-      <h3>
-        Creditline Proposal Form
-      </h3>
+      <div>
+        <h3>
+          Creditline Proposal Form
+        </h3>
+      </div>
       <div>
         <label>Selected Vault: </label>
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
@@ -269,16 +267,16 @@ const CreditLineRequestForm = () => {
           </div>
           <div>
             <label>Collateral Balance: </label>
-            <AmountInput 
-              updateInitialAmount={
+            <FormAmountInput 
+              updateAmount={
                 (val) => {
                   if (/^\d*\.?\d*$/.test(val)) {
                     setCollateralBalance(val)
                   }
                 }
               }
-              initialAmount={collateralBalance}
-              chosenCash=""
+              amount={collateralBalance}
+              prepend="$"
             />
           </div>
         </>
@@ -290,49 +288,33 @@ const CreditLineRequestForm = () => {
       </div>
       <div>
         <label>Principal: </label>
-        <AmountInput 
-          updateInitialAmount={
+
+        <FormAmountInput 
+          updateAmount={
             (val) => {
               if (/^\d*\.?\d*$/.test(val)) {
                 setPrincipal(val)
               }
             }
           }
-          initialAmount={principal}
-          chosenCash={chosenCash}
+          amount={principal}
+          prepend={"$"}
         />
       </div>
       <div>
         <label>Annual Interest Rate: </label>
-        <input 
-          type="text"
-          placeholder="0.0"
-          value={ interestRate }
-          onChange={(e) => {
+        <FormAmountInput 
+          amount={ interestRate }
+          updateAmount={(e) => {
             if (/^\d*\.?\d*$/.test(e.target.value)) {
               setInterestRate(e.target.value);
             }
           }}
+          prepend={"%"}
         />
-        % 
       </div>
       <section className={Styles.Duration}>
         <label>Duration: </label>
-        <DurationInput label="years" value={duration.years} onChange={(e)=> {
-          if (/^\d*$/.test(e.target.value)) {
-            setDuration((prev) => { return {...prev, years: e.target.value}})
-          }
-        }}/>
-        <DurationInput label="months" value={duration.months} onChange={(e)=> {
-          if (/^\d*$/.test(e.target.value)) {
-            setDuration((prev) => { return {...prev, months: e.target.value}})
-          }
-        }}/>
-        <DurationInput label="weeks" value={duration.weeks} onChange={(e)=> {
-          if (/^\d*$/.test(e.target.value)) {
-            setDuration((prev) => { return {...prev, weeks: e.target.value}})
-          }
-        }}/>
         <DurationInput label="days" value={duration.days} onChange={(e)=> {
           if (/^\d*$/.test(e.target.value)) {
             setDuration((prev) => { return {...prev, days: e.target.value}})
@@ -369,7 +351,6 @@ const CreditLineRequestForm = () => {
         <SecondaryThemeButton {... buttonProps} />
       </div>
     </div>
-    </>
   );
 }
 
@@ -402,11 +383,7 @@ const CreditLineProposalView = () => {
     );
   } else {
     return (
-      <>
-      <div className={Styles.CreditLineProposalView}>
-        <CreditLineRequestForm />
-      </div>
-      </>
+      <CreditLineRequestForm />
       );
   }
   

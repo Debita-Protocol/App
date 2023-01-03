@@ -27,6 +27,7 @@ const { PathUtils: { makePath, makeQuery, parseQuery } } = Utils;
 // reputation score + profile, vault balances, zcb balances,
 const ProfileView: React.FC = () => {
     const { ramm: { reputationScore, vaultBalances, zcbBalances}} = useUserStore();
+    console.log("Vault Balances: ", vaultBalances);
     const { vaults, instruments } = useDataStore2();
     const [loading, setLoading] = useState(true);
 

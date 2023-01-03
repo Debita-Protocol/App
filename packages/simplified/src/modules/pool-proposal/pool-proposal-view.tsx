@@ -4,12 +4,17 @@ import { Collateral, VaultInfos } from '@augurproject/comps/build/types';
 import Styles from "./pool-proposal-view.styles.less";
 import _ from "lodash";
 import { BigNumber as BN } from "bignumber.js";
+import classNames from "classnames";
+import { PoolLeverageFactor } from "../common/slippage";
+import { isAddress } from '@ethersproject/address';
+
 
 const { createPoolMarket, createPoolInstrument, addAcceptedCollaterals} = ContractCalls2;
 const {
     SelectionComps: {SquareDropdown, SingleCheckbox},
     ButtonComps: { SecondaryThemeButton, TinyThemeButton },
-    InputComps: { TextInput, AmountInput }
+    InputComps: { TextInput, AmountInput },
+    
 } = Components;
 
 interface CollateralItem {
@@ -19,6 +24,30 @@ interface CollateralItem {
     maxAmount: string;
     isERC20: boolean;
 }
+
+export const FormAmountInput = ({amount, updateAmount, prepend }) => {
+  
+  return (
+    <div className={classNames(Styles.FormAmountInput, {
+      [Styles.Edited]: amount !== ""
+    })}>
+      <span>
+        {prepend}
+      </span>
+      <input
+        type="number"
+        value={amount}
+        placeholder={"0"}
+        onChange={(e) => {
+          updateAmount(e.target.value);
+        }} 
+      />
+    </div>
+    
+  )
+}
+
+
 const PoolProposalView: React.FC = () => {
     const {
         account,
@@ -40,6 +69,9 @@ const PoolProposalView: React.FC = () => {
     });
     const [ collateralInfos, setCollateralInfos] = useState<CollateralItem[]>([]);
 
+    const {inputError, inputMessage} = usePoolFormInputValdiation(poolData, collateralInfos); 
+    
+
     const [ vaultId, setVaultId ] = useState("");
     const [ defaultVault, setDefaultVault] = useState("");
     console.log("vaultId: ", vaultId);
@@ -58,13 +90,6 @@ const PoolProposalView: React.FC = () => {
         return _vaultOptions;
       }, [vaults]);
       let chosenCash = vaultId !== "" ? vaults[vaultId].want.name : "";
-    // poolData.saleAmount = principal/4; 
-    // poolData.initPrice = 7e17; 
-    // poolData.promisedReturn = 3000000000; 
-    // poolData.inceptionTime = block.timestamp; 
-    // poolData.inceptionPrice = 8e17; 
-    // poolData.leverageFactor = 3e18; 
-    // /^0x[a-fA-F0-9]{40}$/.test(e.target.value)
 
     const submitProposal = useCallback(async () => {
 
@@ -78,6 +103,13 @@ const PoolProposalView: React.FC = () => {
         const promisedReturn = new BN(poolData.promisedReturn).shiftedBy(18).toFixed();
         const inceptionPrice = new BN(poolData.inceptionPrice).shiftedBy(18).toFixed();
         const leverageFactor = new BN(poolData.leverageFactor).shiftedBy(18).toFixed();
+
+        // console.log("saleAmount: ", saleAmount);
+        // console.log("initPrice: ", initPrice);
+        // console.log("promisedReturn: ", promisedReturn);
+        // console.log("inceptionPrice: ", inceptionPrice);
+        // console.log("leverageFactor: ", leverageFactor);
+
 
         
         // first create a pool instrument
@@ -137,9 +169,11 @@ const PoolProposalView: React.FC = () => {
         <>
           <div className={Styles.PoolProposalForm}>
             {/* <SUPER_BUTTON /> */}
-            <h3>
-              Pool Proposal Form
-            </h3>
+            <div>
+              <h3>
+                Pool Proposal Form
+              </h3>
+            </div>
             <div>
               <label>Selected Vault: </label>
               <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
@@ -162,24 +196,23 @@ const PoolProposalView: React.FC = () => {
             </div>
             <div>
               <label>Sale Amount: </label>
-              <AmountInput 
-                updateInitialAmount={
-                  (val) => {
-                    if (/^\d*\.?\d*$/.test(val)) {
-                      setPoolData(prevData => {
-                        return {...prevData, saleAmount: val}
-                      })
-                    }
+              <FormAmountInput
+                updateAmount={(val) => {
+                  console.log("val: ", val);
+                  if (/^\d*\.?\d*$/.test(val)) {
+                    setPoolData(prevData => {
+                      return {...prevData, saleAmount: val}
+                    })
                   }
-                }
-                initialAmount={poolData.saleAmount}
-                chosenCash={chosenCash}
+                }}
+                prepend={"$"}
+                amount={poolData.saleAmount}
               />
             </div>
             <div>
               <label>Initial Price: </label>
-              <AmountInput 
-                updateInitialAmount={
+              <FormAmountInput 
+                updateAmount={
                   (val) => {
                     if (/^\d*\.?\d*$/.test(val)) {
                       setPoolData(prevData => {
@@ -188,14 +221,14 @@ const PoolProposalView: React.FC = () => {
                     }
                   }
                 }
-                initialAmount={poolData.initPrice}
-                chosenCash={chosenCash}
+                amount={poolData.initPrice}
+                prepend={"$"}
               />
             </div>
             <div>
               <label>Inception Price: </label>
-              <AmountInput 
-                updateInitialAmount={
+              <FormAmountInput 
+                updateAmount={
                   (val) => {
                     if (/^\d*\.?\d*$/.test(val)) {
                       setPoolData(prevData => {
@@ -204,14 +237,14 @@ const PoolProposalView: React.FC = () => {
                     }
                   }
                 }
-                initialAmount={poolData.inceptionPrice}
-                chosenCash={chosenCash}
+                amount={poolData.inceptionPrice}
+                prepend={"$"}
               />
             </div>
             <div>
               <label>Promised Return: </label>
-              <AmountInput 
-                updateInitialAmount={
+              <FormAmountInput 
+                updateAmount={
                   (val) => {
                     if (/^\d*\.?\d*$/.test(val)) {
                       setPoolData(prevData => {
@@ -220,22 +253,21 @@ const PoolProposalView: React.FC = () => {
                     }
                   }
                 }
-                initialAmount={poolData.promisedReturn}
-                chosenCash={chosenCash}
+                amount={poolData.promisedReturn}
+                prepend={"$"}
               />
             </div>
             <div>
                 <label>Leverage Factor: </label>
-                <input 
-                type="text"
-                placeholder="0.0"
-                value={ poolData.leverageFactor }
-                onChange={(e) => {
-                    if (/^\d*\.?\d*$/.test(e.target.value)) {
-                        setPoolData(prevData => {
-                            return {...prevData, leverageFactor: e.target.value}
-                        })
-                    }
+                <PoolLeverageFactor 
+                leverageFactor={poolData.leverageFactor}
+                setLeverageFactor={
+                  (val) => {
+                    if (/^\d*\.?\d*$/.test(val)) {
+                      setPoolData(prevData => {
+                        return {...prevData, leverageFactor: val}
+                      })
+                  }
                 }}
                 />
             </div>
@@ -247,112 +279,111 @@ const PoolProposalView: React.FC = () => {
                 <section>
                 {collateralInfos.map((collateralInfo, index) => { // address, isERC20, borrowAmount, maxAmount what are the decimals? decimals used in address of the collateral.
                     return (
-                    <div  key={vaultId + "-" + index}>
-                        <SingleCheckbox label={"ERC20"} initialSelected={collateralInfo.isERC20} updateSelected={(val) => {
-                            setCollateralInfos(prevData => {
-                                return prevData.map((collateralInfo, i) => {
-                                    if (i === index) {
-                                        return {...collateralInfo, isERC20: val}
-                                    } else {
-                                        return collateralInfo;
-                                    }
-                                })
-                            })
-                        }}/>
-                        <div>           
-                            <div className={Styles.TokenAddress}>
-                                <label>Collateral Address: </label>
-                                <input
-                                type="text"
-                                placeholder=""
-                                value={ collateralInfo.tokenAddress }
-                                onChange={(e) => {
-                                    setCollateralInfos(prevData => {
-                                        return prevData.map((collateralInfo, i) => {
-                                            if (i === index) {
-                                                return {...collateralInfo, tokenAddress: e.target.value}
-                                            } else {
-                                                return collateralInfo;
-                                            }
-                                        })
-                                    })
-                                }}
-                                />
-                            </div>
-                            {! collateralInfo.isERC20 && (
-                                <div className={Styles.TokenId}>
-                                    <label>Token ID: </label>
-                                    <input
-                                    type="number"
-                                    placeholder=""
-                                    size={5}
-                                    value={ collateralInfo.tokenId }
-                                    onChange={(e) => {
-                                        if (/^\d*$/.test(e.target.value)) {
-                                            setCollateralInfos(prevData => {
-                                                return prevData.map((collateralInfo, i) => {
-                                                    if (i === index) {
-                                                        return {...collateralInfo, tokenId: e.target.value}
-                                                    } else {
-                                                        return collateralInfo;
-                                                    }
-                                                })
-                                            })
-                                        }
-                                    }}
-                                    />
-                                </div>
-                            )}
-                            <div>
-                                <AmountInput 
-                                    updateInitialAmount={
-                                    (val) => {
-                                        if (/^\d*\.?\d*$/.test(val)) {
-                                            setCollateralInfos(prevData => {
-                                                return prevData.map((collateralInfo, i) => {
-                                                    if (i === index) {
-                                                        return {...collateralInfo, borrowAmount: val}
-                                                    } else {
-                                                        return collateralInfo;
-                                                    }
-                                                })
-                                            })
-                                        }
-                                    }
-                                    }
-                                    initialAmount={collateralInfo.borrowAmount}
-                                    chosenCash={chosenCash}
-                                    heading={"Asset Borrow Liquidity"}
-                                />
-                            </div>
-                            <div>
-                                <AmountInput 
-                                    updateInitialAmount={
-                                    (val) => {
-                                        if (/^\d*\.?\d*$/.test(val)) {
-                                            setCollateralInfos(prevData => {
-                                                return prevData.map((collateralInfo, i) => {
-                                                    if (i === index) {
-                                                        return {...collateralInfo, maxAmount: val}
-                                                    } else {
-                                                        return collateralInfo;
-                                                    }
-                                                })
-                                            })
-                                        }
-                                    }
-                                    }
-                                    initialAmount={collateralInfo.maxAmount}
-                                    chosenCash={chosenCash}
-                                    heading={"Asset Max Liquidity"}
-                                />
-                            </div>
-                            <TinyThemeButton text="-" action={() => removeCollateral(index)} small={true}/>
+                    <div  className={Styles.poolCollateralItem} key={vaultId + "-" + index} c>
+                        <div>
+                          <SingleCheckbox label={"ERC20"} initialSelected={collateralInfo.isERC20} updateSelected={(val) => {
+                              setCollateralInfos(prevData => {
+                                  return prevData.map((collateralInfo, i) => {
+                                      if (i === index) {
+                                          return {...collateralInfo, isERC20: val}
+                                      } else {
+                                          return collateralInfo;
+                                      }
+                                  })
+                              })
+                          }}/>
+                          <div>
+                              <label>Collateral Address: </label>
+                              <input
+                              type="text"
+                              placeholder=""
+                              value={ collateralInfo.tokenAddress }
+                              onChange={(e) => {
+                                  setCollateralInfos(prevData => {
+                                      return prevData.map((collateralInfo, i) => {
+                                          if (i === index) {
+                                              return {...collateralInfo, tokenAddress: e.target.value}
+                                          } else {
+                                              return collateralInfo;
+                                          }
+                                      })
+                                  })
+                              }}
+                              />
+                          </div>
+                          {! collateralInfo.isERC20 && (
+                          <div>
+                              <label>Token ID: </label>
+                              <input
+                              type="number"
+                              placeholder=""
+                              size={5}
+                              value={ collateralInfo.tokenId }
+                              onChange={(e) => {
+                                  if (/^\d*$/.test(e.target.value)) {
+                                      setCollateralInfos(prevData => {
+                                          return prevData.map((collateralInfo, i) => {
+                                              if (i === index) {
+                                                  return {...collateralInfo, tokenId: e.target.value}
+                                              } else {
+                                                  return collateralInfo;
+                                              }
+                                          })
+                                      })
+                                  }
+                              }}
+                              />
+                          </div>
+                          )}
                         </div>
-                    </div>
-                    
-                        )
-
+                        <div>
+                          <div>
+                            <label>Asset Max Liquidity</label>
+                            <FormAmountInput 
+                              amount={collateralInfo.borrowAmount}
+                              prepend="$"
+                              updateAmount={
+                                (val) => {
+                                    if (/^\d*\.?\d*$/.test(val)) {
+                                        setCollateralInfos(prevData => {
+                                            return prevData.map((collateralInfo, i) => {
+                                                if (i === index) {
+                                                    return {...collateralInfo, borrowAmount: val}
+                                                } else {
+                                                    return collateralInfo;
+                                                }
+                                            })
+                                        })
+                                    }
+                                }
+                              }
+                            />
+                          </div>
+                          <div>
+                          <label>Asset Borrow Liquidity</label>
+                            <FormAmountInput 
+                              amount={collateralInfo.maxAmount}
+                              prepend="$"
+                              updateAmount={
+                                (val) => {
+                                    if (/^\d*\.?\d*$/.test(val)) {
+                                        setCollateralInfos(prevData => {
+                                            return prevData.map((collateralInfo, i) => {
+                                                if (i === index) {
+                                                    return {...collateralInfo, maxAmount: val}
+                                                } else {
+                                                    return collateralInfo;
+                                                }
+                                            })
+                                        })
+                                    }
+                                }
+                              }
+                            />
+                          </div>
+                        </div>
+                        <TinyThemeButton text="X" action={() => removeCollateral(index)} small={true}/>
+                    </div>)
                 })}
                 </section>
                 
@@ -373,7 +404,9 @@ const PoolProposalView: React.FC = () => {
               ></textarea>
             </div>
             <div>
-              <SecondaryThemeButton text="submit" action={submitProposal} />
+              <SecondaryThemeButton 
+              text={inputError ? inputMessage : "Submit Proposal"}
+              action={inputError ? null : submitProposal} />
             </div>
             </div>
           </>
@@ -381,3 +414,63 @@ const PoolProposalView: React.FC = () => {
 }
 
 export default PoolProposalView;
+
+const usePoolFormInputValdiation = ({
+  description,
+  name,
+  symbol,
+  saleAmount,
+  initPrice,
+  promisedReturn,
+  inceptionPrice,
+  leverageFactor
+}, collateralInfos) => {
+  let inputError = false;
+  let inputMessage = "";
+  if (description.length === 0) {
+    inputError = true;
+    inputMessage = "Description is required";
+  } else if (name.length === 0) {
+    inputError = true;
+    inputMessage = "Name is required";
+  } else if (symbol.length === 0) {
+    inputError = true;
+    inputMessage = "Symbol is required";
+  } else if (new BN(saleAmount).isZero()) {
+    inputError = true;
+    inputMessage = "Sale Amount is required";
+  } else if (new BN(initPrice).isZero()) { // must be greater than 1 but less than 0.
+    inputError = true;
+    inputMessage = "Initial Price is required";
+  } else if (new BN(promisedReturn).isZero()) {
+    inputError = true;
+    inputMessage = "Promised Return is required";
+  } else if (new BN(inceptionPrice).isZero()) {
+    inputError = true;
+    inputMessage = "Inception Price is required";
+  } else if (new BN(leverageFactor).isZero()) {
+    inputError = true;
+    inputMessage = "Leverage Factor is required";
+  } else if (collateralInfos.length === 0) {
+    inputError = true;
+    inputMessage = "Collateral is required";
+  } else {
+    collateralInfos.forEach((collateralInfo) => {
+      // check whether collateral address is valid
+      if (collateralInfo.tokenAddress.length === 0 || !isAddress(collateralInfo.tokenAddress)) {
+        inputError = true;
+        inputMessage = "Collateral Address is required";
+      } else if (!collateralInfo.isERC20 && collateralInfo.tokenId.length > 0) {
+        inputError = true;
+        inputMessage = "Token ID is required";
+      } else if (new BN(collateralInfo.borrowAmount).isZero()) {
+        inputError = true;
+        inputMessage = "Asset Borrow Liquidity is required";
+      } else if (new BN(collateralInfo.maxAmount).isZero()) {
+        inputError = true;
+        inputMessage = "Asset Max Liquidity is required";
+      }
+    });
+  }
+  return {inputError, inputMessage};
+}

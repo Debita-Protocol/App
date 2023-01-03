@@ -21,7 +21,8 @@ const {
   LOGOUT,
   UPDATE_VERIFICATION_STATUS,
   UPDATE_PASSPORT,
-  UPDATE_PASSPORT_STATUS
+  UPDATE_PASSPORT_STATUS,
+  UPDATE_USER_POOL_DATA
 } = USER_ACTIONS;
 const { ACCOUNT, BALANCES, LOGIN_ACCOUNT, SEEN_POSITION_WARNINGS, TRANSACTIONS } = USER_KEYS;
 
@@ -144,6 +145,9 @@ export function UserReducer(state, action) {
       updatedState["ramm"] = action.ramm;
       break;
     }
+    case UPDATE_USER_POOL_DATA: {
+      updatedState["userPoolData"] = action.userPoolData;
+    }
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);
   }
@@ -184,6 +188,7 @@ export const useUser = (defaultState = DEFAULT_USER_STATE) => {
       updatePassport: (passport: Passport) => dispatch({type: UPDATE_PASSPORT, passport}),
       updatePassportStatus: (hasPassport: boolean) => dispatch({type: UPDATE_PASSPORT_STATUS , hasPassport}),
       updateRammData: (ramm: any) => dispatch({type: UPDATE_RAMM_DATA, ramm}),
+      updateUserPoolData: (userPoolData: any) => dispatch({type: UPDATE_USER_POOL_DATA, userPoolData})
     },
   };
 };

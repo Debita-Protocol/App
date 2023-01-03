@@ -176,6 +176,103 @@ export const AmountInput = ({
   );
 };
 
+export const ModalAmountInput = ({
+  updateInitialAmount,
+  initialAmount,
+  maxValue,
+  showCurrencyDropdown,
+  updateCash,
+  chosenCash="USDC",
+  heading = "amount",
+  rate,
+  error,
+  updateAmountError = () => {},
+  ammCash,
+  isBuy = true,
+  disabled = false,
+  toggleUnderlying, 
+}: AmountInputProps) => {
+  const { isLogged } = useAppStatusStore();
+  const currencyName = chosenCash;
+  const [amount, updateAmount] = useState(initialAmount);
+  const icon = currencyName === USDC ? UsdIcon : EthIcon;
+  const label = currencyName// === USDC ? USDC : ETH;
+  const { symbol, prepend } = getCashFormat(chosenCash);
+  const setMax = () => {
+    if (new BN(maxValue).lte(DUST_POSITION_AMOUNT)) return;
+    updateAmount(maxValue);
+    updateInitialAmount(maxValue);
+  };
+  const errorCheck = (value) => {
+    let returnError = "";
+    if (value !== "" && (isNaN(value) || Number(value) === 0 || Number(value) < 0)) {
+      returnError = ERROR_AMOUNT;
+    }
+    updateAmountError(returnError);
+  };
+  useEffect(() => updateAmount(initialAmount), [initialAmount]);
+  useEffect(() => errorCheck(amount), [amount, maxValue]);
+  return (
+    <div
+      className={classNames(Styles.ModalAmountInput, {
+        [Styles.Rate]: Boolean(rate),
+      })}
+    >
+      <span>{heading}</span>
+        <span onClick={setMax}>
+        {isLogged && maxValue&&(
+          <>
+            <span>balance:</span>{" "}
+            {isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted}
+          </>
+        )}
+      </span>
+      <div
+        className={classNames(Styles.ModalAmountInputField, {
+          [Styles.Edited]: amount !== "",
+          [Styles.showCurrencyDropdown]: showCurrencyDropdown,
+          [Styles.Error]: error,
+        })}
+      >
+        <span>{chosenCash !== SHARES && prepend && symbol}</span>
+        <input
+          type="number"
+          onChange={(e) => {
+            updateAmount(e.target.value);
+            updateInitialAmount(e.target.value);
+            errorCheck(e.target.value);
+          }}
+          title={disabled ? "Liquidity Depleted" : "enter amount"}
+          value={amount}
+          placeholder="0"
+          disabled={disabled}
+          onWheel={(e: any) => e?.target?.blur()}
+        />
+        { maxValue && (
+          <TinyThemeButton text="Max" action={setMax} noHighlight />
+        )}
+         { toggleUnderlying && (
+          <TinyThemeButton text="switch" action={toggleUnderlying} noHighlight />
+        )}
+        {!!currencyName && chosenCash !== SHARES && !showCurrencyDropdown && (
+          // <span className={Styles.CurrencyLabel}>
+          //   {icon} {label}
+          // </span>
+          <span className={Styles.CurrencyLabel}>
+            {label}
+          </span>
+        )}
+        {chosenCash === SHARES && !showCurrencyDropdown && <span className={Styles.SharesLabel}>Shares</span>}
+        {showCurrencyDropdown && <CurrencyDropdown defaultValue={chosenCash} onChange={(cash) => updateCash(cash)} />}
+      </div>
+      <span className={Styles.RateLabel}>
+        <span>Rate:</span>
+        {rate}
+      </span>
+    </div>
+  );
+};
+
 const PLACEHOLDER = "00";
 
 export const isInvalidNumber = (number) => {

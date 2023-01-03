@@ -27,6 +27,7 @@ export const DataStore = {
 
 export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children }: any) => {
   const { account } = useUserStore();
+  
   const configCashes = getCashesInfo();
   const state = useData(configCashes);
   const {
@@ -52,6 +53,7 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
       const { blocknumber: dblock, markets: dmarkets, ammExchanges: damm } = DataStore.get();
       const { actions: { setRewardsStatus, setIsRpcDown } } = AppStatusStore;
       const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
+      console.log("provider: ", provider)
       let infos = { markets: dmarkets, ammExchanges: damm, blocknumber: dblock };
 
       try {

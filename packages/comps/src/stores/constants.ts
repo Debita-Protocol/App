@@ -83,8 +83,9 @@ export const DEFAULT_USER_STATE: UserState = {
   ramm: {
     vaultBalances: {},
     zcbBalances: {},
-    reputationScore: "0"
-  }
+    reputationScore: "0",
+    poolInfos: {}
+  },
 };
 
 export const USER_KEYS = {
@@ -96,6 +97,7 @@ export const USER_KEYS = {
 };
 
 export const USER_ACTIONS = {
+  UPDATE_USER_POOL_DATA: "UPDATE_USER_POOL_DATA",
   ADD_TRANSACTION: "ADD_TRANSACTION",
   REMOVE_TRANSACTION: "REMOVE_TRANSACTION",
   FINALIZE_TRANSACTION: "FINALIZE_TRANSACTION",

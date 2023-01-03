@@ -96,7 +96,8 @@ export const DEFAULT_USER_STATE: UserState = {
   ramm: {
     vaultBalances: {},
     zcbBalances: {},
-    reputationScore: ""
+    reputationScore: "",
+    poolInfos:{}
   }
 };
 
