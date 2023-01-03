@@ -171,10 +171,12 @@ const CreditLineRequestForm = () => {
       // instrumentAddress
     )) {
       console.log("creating instrument");
-      let _principal = new BN(principal).shiftedBy(18).toFixed();
+      let _principal = new BN(principal).shiftedBy(18).toFixed(0);
       console.log("principal: ", _principal);
-      let _interest = new BN(interest).shiftedBy(18).toFixed();
+      let _interest = new BN(interest).shiftedBy(18).toFixed(0);
       console.log("interes: ", _interest);
+      console.log("collateral type: ", collateralType);
+      console.log("name: ", formatBytes32String(name));
       if (collateralType === "3") {
         try {
           let instrument_address = await createCreditLineInstrument(
@@ -183,7 +185,7 @@ const CreditLineRequestForm = () => {
           console.log("instrument address: ", instrument_address);
           // log all the arguments
           await createCreditlineMarket(
-            account, loginAccount.library, formatBytes32String(name), instrument_address, vaultId, _principal, _interest, description, total_duration
+            account, loginAccount.library, name, instrument_address, vaultId, _principal, _interest, description, total_duration
           );
           console.log("done");
         } catch (err) {
@@ -305,9 +307,9 @@ const CreditLineRequestForm = () => {
         <label>Annual Interest Rate: </label>
         <FormAmountInput 
           amount={ interestRate }
-          updateAmount={(e) => {
-            if (/^\d*\.?\d*$/.test(e.target.value)) {
-              setInterestRate(e.target.value);
+          updateAmount={(val) => {
+            if (/^\d*\.?\d*$/.test(val)) {
+              setInterestRate(val);
             }
           }}
           prepend={"%"}

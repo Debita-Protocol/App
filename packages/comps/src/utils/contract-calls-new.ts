@@ -165,8 +165,8 @@ export const addAcceptedCollaterals = async (
             marketId,
             collateralInfo.tokenAddress,
             collateralInfo.isERC20 ? "0" : collateralInfo.tokenId,
-            new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(),
-            new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(),
+            new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
+            new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
             collateralInfo.isERC20
         )
         await tx.wait(1);
@@ -182,8 +182,38 @@ interface CollateralItem {
     isERC20: boolean;
 }
 
+export const borrowCreditlineInstrument = async (
+    account: string, 
+    provider: Web3Provider, 
+    instrument_address: string
+) => {
+    const signer = getSigner(provider, account);
+    const creditline = new Contract(instrument_address, CreditlineData.abi, signer);
+    const tx = await creditline.drawdown();
+    return tx;
+}
 
 
+export const repayCreditlineInstrument = async (
+    account: string,
+    provider: Web3Provider,
+    instrument_address: string,
+    underlying_address: string,
+    amount: string
+) => {
+    const signer = getSigner(provider, account);
+    const approved = await useIsERC20ApprovedSpender(account, provider, underlying_address, instrument_address, amount);
+
+    if (!approved) {
+        await approveERC20(account, provider, underlying_address, amount, instrument_address);
+    }
+
+    const creditline = new Contract(instrument_address, CreditlineData.abi, signer);
+    const tx = await creditline.repay(
+        new BN(amount).shiftedBy(18).toFixed(0)
+    );
+    return tx;
+}
 
 /// CALL AS VALIDATOR
 export const approveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
@@ -303,6 +333,10 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cash = new Contract(cash_address, ERC20Data.abi, signer);
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
+
+    let tx = await controller.testApproveMarket(4);
+    await tx.wait(1);
+    console.log("done");
     // let tx = await controller.testVerifyAddress();
     // await tx.wait(1);
 
@@ -364,10 +398,10 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await controller.setReputationManager(reputation_manager_address);
     // await tx.wait();
     // console.log("E");
-    let tx = await controller.testVerifyAddress(); 
-    tx.wait();
-    tx = await reputationManager.setTraderScore(account, pp); 
-    tx.wait();
+    // let tx = await controller.testVerifyAddress(); 
+    // tx.wait();
+    // tx = await reputationManager.setTraderScore(account, pp); 
+    // tx.wait();
     // let tx = await controller.initiateMarket(
     //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
     //     {
@@ -397,7 +431,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //     1
     // )
     // tx.wait();
-    console.log("tx");
+    // console.log("tx");
     // console.log("initiateMarket");
 
     // console.log("E")
@@ -548,7 +582,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
 
             let instr = instrumentBundle[j];
             let poolData = {} as any;
-            let instrument: Instrument = Object.assign(
+            let instrument: Instrument  = Object.assign(
                 {},
                 {
                     name: parseBytes32String(instr.name),
@@ -559,7 +593,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     description: instr.description,
                     balance: toDisplay(instr.balance.toString()),
                     principal: toDisplay(instr.principal.toString()),
-                    yield: toDisplay(instr.expectedYield.toString()),
+                    interest: toDisplay(instr.expectedYield.toString()),
                     address: instr.instrument_address,
                     duration: instr.duration.toString(),
                     maturityDate: instr.maturityDate.toString(),
@@ -568,7 +602,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     managerStake: toDisplay(instr.managers_stake?.toString()),
                     approvalPrice: toDisplay(instr.approvalPrice?.toString()),
                     isPool: instr.isPool, 
-
+                    instrumentType: instr.instrument_type.toString(),
                 }
             )
 
@@ -637,7 +671,7 @@ export const mintTestNFT = async (account: string, provider: Web3Provider, token
 // mint cash token for testing, should take account, provider, tokenId, token address as input
 export const mintCashToken = async (account: string, provider: Web3Provider, tokenAddress: string) => {
     const contract = new Contract(tokenAddress, CashData.abi, getSigner(provider, account));
-    const tx = await contract.faucet(new BN(1e18).multipliedBy(20).toFixed());
+    const tx = await contract.faucet(new BN(1e18).multipliedBy(20).toFixed(0));
     await tx.wait(1);
     return tx;
 }
@@ -880,11 +914,11 @@ export const createCreditlineMarket = async (
     duration: string
 ): Promise<TransactionResponse>  => {
     const controller = new Contract(controller_address, ControllerData.abi, provider.getSigner(account));
-    const faceValue = new BN(principal).plus(new BN(expectedYield)).toFixed();
+    const faceValue = new BN(principal).plus(new BN(expectedYield)).toFixed(0);
     const tx: TransactionResponse = await controller.initiateMarket(
         account,
         {
-            name,
+            name: formatBytes32String(name),
             isPool: false,
             trusted: false,
             balance: 0,
@@ -1060,7 +1094,7 @@ export const poolBorrow = async (
     console.log("poolBorrow: ", amount, decimals, poolAddress)
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     const tx: TransactionResponse = await pool.borrow(
-        new BN(amount).shiftedBy(decimals).toFixed(),
+        new BN(amount).shiftedBy(decimals).toFixed(0),
         constants.AddressZero,
         0,
         0,
@@ -1095,9 +1129,10 @@ export const poolRepayAmount = async (
 }
 
 export const poolAddInterest = async (
+    account: string,
+    library: Web3Provider,
     poolAddress: string
 ) => {
-    const { account, library } = useActiveWeb3React();
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     const tx: TransactionResponse = await pool.addInterest();
     tx.wait();

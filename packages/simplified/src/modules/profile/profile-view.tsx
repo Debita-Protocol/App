@@ -63,9 +63,9 @@ const ProfileView: React.FC = () => {
 
     return (
         <div className={Styles.ProfileView}>
-            <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
+            {/* <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
                 Click Me
-            </button>
+            </button> */}
             <section className={Styles.UserDetailsView}>
                 <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
             </section>
@@ -142,7 +142,7 @@ const MarketCard: React.FC = ({ marketId, zcbBalance, instruments }) => {
             search: makeQuery({id: marketId})
         }}>
         <div className={Styles.UserVaultCard}>
-            <ValueLabel label={""} value={instrument.description} />
+            <ValueLabel label={""} value={instrument.name} />
             <ValueLabel label={"LongZCB balance"} value={zcbBalance.longZCB} />
             <ValueLabel label={"ShortZCB balance"} value={zcbBalance.shortZCB} />
         </div>

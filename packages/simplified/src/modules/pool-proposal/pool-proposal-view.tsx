@@ -26,6 +26,7 @@ interface CollateralItem {
 }
 
 export const FormAmountInput = ({amount, updateAmount, prepend }) => {
+  const [_amount, _setAmount] = useState(amount);
   
   return (
     <div className={classNames(Styles.FormAmountInput, {
@@ -36,11 +37,13 @@ export const FormAmountInput = ({amount, updateAmount, prepend }) => {
       </span>
       <input
         type="number"
-        value={amount}
-        placeholder={"0"}
+        value={_amount}
+        placeholder="0"
         onChange={(e) => {
+          _setAmount(e.target.value)
           updateAmount(e.target.value);
         }} 
+        onWheel={(e: any) => e?.target?.blur()}
       />
     </div>
     

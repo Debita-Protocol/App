@@ -37,6 +37,7 @@ const { MARKET_ID_PARAM_NAME, } = Constants;
 let timeoutId = null;
 
 
+
 const PoolView: React.FC = () => {
     const location = useLocation();
     const { [MARKET_ID_PARAM_NAME]: marketId } = parseQuery(location.search);
@@ -140,7 +141,7 @@ const PoolView: React.FC = () => {
     };
 
     const addInterestAction = () => {
-        poolAddInterest(poolAddress);
+        poolAddInterest(account, loginAccount.library, poolAddress);
     };
 
     

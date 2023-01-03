@@ -203,34 +203,68 @@
   .ThemeBorder;
   display: flex;
   flex-flow: column nowrap;
-  align-items:center;
-  border-radius: @size-8;
-  padding: @size-20;
-  border: @size-1 solid var(--theme-border);
+  align-items: center;
+  padding: @size-10;
   background-color: var(--primary-bg);
-  >section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    >div {
-      padding:@size-6;
+  > div:first-of-type {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    > span {
+      padding: @size-20;
+      font-size: @size-20;
+      font-weight: @weight-bold;
+      color: var(--secondary-text);
     }
-    > div:first-of-type {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      > span {
-        &:first-of-type {
-          .text-16-semi-bold;
+  }
+  > section {
+    display: flex;
+    width:100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr ;
+    > div{
+      padding-left:@size-20;
+      // padding-right:@size-20;
+      padding-bottom: @size-10;
+      >span:first-of-type {
+        font-size: @size-12;
+        font-weight: @weight-semi-bold;
+        color: var(--secondary-text);
+      }
+    }
     
-          color: var(--secondary-text);
-          font-style: normal;
-          font-size: 0.75rem;
-          font-weight:400;
-          margin-bottom: @size-8;
-          grid-column: 1 / span 2;
-        }
+    >div:last-of-type {
+      padding-left:@size-20;
+      padding-right:@size-20;
+      >span:first-of-type {
+        font-size: @size-12;
+        font-weight: @weight-semi-bold;
+        color: var(--secondary-text);
+      }
+      >span:last-of-type {
+        font-size: @size-12;
+        font-weight: @weight-semi-bold;
+        color: var(--secondary-text);
+        padding-left: @size-16;
+          > svg {
+            height: @size-16;
+            width: @size-16;
+            border-radius: @size-4;
+          }
       }
     }
   }
+
+  .LoanCardButtons {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 80%;
+  }
+  
 }
 
 .MyLoansView {

@@ -30,8 +30,8 @@ export const LoanCard = ({
   console.log("rendering loan-card")
   const ID = parseBytes32String(id);
   const date = new Date(Number(repaymentDate) * 1000).toDateString()
-  const _duration = new BN(duration.toNumber()).div(60*60*24).toFixed()
-  const _principal = new BN(principal.toNumber()).div(10**PRICE_PRECISION).toFixed().toString()
+  const _duration = new BN(duration.toNumber()).div(60*60*24).toFixed(0)
+  const _principal = new BN(principal.toNumber()).div(10**PRICE_PRECISION).toFixed(0).toString()
 
   return (
       <Link

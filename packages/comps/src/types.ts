@@ -374,7 +374,7 @@ export interface BaseInstrument {
   description: string;
   balance: string;
   principal: string;
-  yield: string;
+  interest: string;
   address: string;
   duration?: string;
   maturityDate?: string;
@@ -383,6 +383,7 @@ export interface BaseInstrument {
   managerStake?: string; 
   approvalPrice?: string; 
   isPool?: boolean; 
+  instrumentType?: string;
 }
 
 export interface PoolInstrument extends BaseInstrument {

@@ -120,7 +120,7 @@ const Pools: React.FC = () => {
 }
 
 const MyLoans: React.FC = () => {
-    const { instruments } = useDataStore2();
+    const { vaults, instruments } = useDataStore2();
     const { account, loginAccount } = useUserStore();
     const [ loans, setLoans ] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -143,13 +143,16 @@ const MyLoans: React.FC = () => {
         // const { loans, borrowedBalances } = getUserLoanData(instruments)
 
         // incorrect, but for now match instruments where the utilizer is the user.
+        console.log("instruments", instruments);
         let _loans = [];
         for (const [id, instr] of Object.entries(_instruments)) {
-            _loans.push(instr);
-            break;
+            if (instr.utilizer === account && instr.instrumentType === "0") {
+                _loans.push(instr);
+            }
         }
         return _loans;
     }
+    console.log("loans: ", loans);
     
     return (
         <div className={Styles.MyLoansView}>
@@ -159,12 +162,13 @@ const MyLoans: React.FC = () => {
                     <LoadingPoolCard key={index} />
                 ))}
                 </section>
-            ) : loans.length > 0 ? (
+            ) : loans.length > 0 && Object.entries(vaults).length > 0 ? (
                 <section>
                   {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
                     <LoanCard
                       key={`${loan.marketId}-${index}`}
-                      
+                      instrument={loan}
+                      vault={vaults[loan.vaultId]}
                     />
                   ))}
                 </section>
@@ -196,7 +200,7 @@ const BorrowView: React.FC = () => {
         <div className={Styles.BorrowView}>
             <section className={Styles.Nav}>
                 <TabNavItem title="Pools" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                <TabNavItem title="My Loans" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                <TabNavItem title="Creditlines" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
             </section>
             
             <section>
