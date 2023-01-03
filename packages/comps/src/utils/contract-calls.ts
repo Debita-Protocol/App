@@ -417,42 +417,41 @@ export async function tradeZCB(
   const marketmanager = new ethers.Contract(market_manager_address, 
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
   const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
-  console.log('issue', issue); 
+  console.log('issue???', issue, marketId); 
   // await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
-
+  let tx;
   if(issue){
-    console.log('issue'); 
-    await marketmanager.issuePoolBond( marketId, scaledAmount); 
+    console.log('issue???', marketId); 
+    tx = await marketmanager.issuePoolBond( marketId, scaledAmount); 
   }
 
   else{
 
     if (long){
       if(close){
-        await marketmanager.sellBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+        tx =await marketmanager.sellBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
       }
 
 
       else{
 
-        await marketmanager.buyBond(marketId, scaledAmount, pp.mul(slippageLimit*100), 0); 
+        tx =await marketmanager.buyBond(marketId, scaledAmount, pp.mul(slippageLimit*100), 0); 
       }
     }
     else{
       if(close){
 
-        await marketmanager.coverBondShort(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+        tx =await marketmanager.coverBondShort(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
       }
       else{
                     console.log('????')
 
-        await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
+        tx =await marketmanager.shortBond(marketId, scaledAmount, pp.mul(slippageLimit), 0); 
       }
     }
 
   }
 
-  let tx; 
   return tx; 
 }
 
@@ -536,7 +535,7 @@ export async function addProposal(  // calls initiate market
   const data = {} as CoreInstrumentData_; 
   const pooldata = {} as CorePoolData_; 
   data.name = formatBytes32String("name"); 
-  data.isPool = true; 
+  data.isPool = false; 
   data.trusted = false; 
   data.balance = new BN(0).toFixed(); 
   data.faceValue = pp.mul(faceValue); //new BN(faceValue).shiftedBy(decimals).toFixed(); 

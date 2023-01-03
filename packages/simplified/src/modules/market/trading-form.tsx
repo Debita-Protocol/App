@@ -282,9 +282,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   // );
 
   useEffect(async()=> {
-    if(account  ){
+    if(account && loginAccount ){
       const maxUint = 2**255
-  
+      
       const allowance = await getERC20Allowance(
         underlying_address, 
         loginAccount.library, 
@@ -459,14 +459,38 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     setShowTradingForm(false);
     const isShort = selectedOutcomeId ==1? false:true
     console.log('isissue', isIssue); 
-    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue ).then((response)=>{
-      console.log('tradingresponse', response)
-      setWaitingToSign(false); 
-      if(response){
-        console.log('??response'); 
-        setWaitingToSign(false); 
-      }}).catch((error)=>{
-        console.log('Trading Error', error)
+    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue )
+      .then((response) => {
+        console.log('trading response', response)
+        if (response) {
+          const { hash } = response;
+          setAmount("");
+          setWaitingToSign(false);
+          addTransaction({
+            hash,
+            chainId: loginAccount.chainId,
+            seen: false,
+            status: TX_STATUS.PENDING,
+            from: loginAccount.account,
+            addedTime: new Date().getTime(),
+            message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
+            marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+          });
+        }
+      })
+      .catch((error) => {
+        setWaitingToSign(false);
+        console.log("Error when trying to trade: ", error?.message);
+        addTransaction({
+          hash: `trade-failure${Date.now()}`,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: loginAccount.account,
+          addedTime: new Date().getTime(),
+          message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
+          marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+        });
       });
     
     // doZCBTrade(account, loginAccount.library, amm.turboId, amount).then((response)=>{
@@ -518,7 +542,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     //     });
     //   });
   };
-
+  console.log('instruments[marketId]?.isPool', instruments[marketId]?.isPool, marketId)
   const getRate = (): React.Fragment | null => {
     const priceImpact = formatPercent(breakdown?.priceImpact);
     const shares = !isNaN(Number(breakdown?.ratePerCash))
@@ -564,7 +588,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           <span>{formatPercent(amm?.feeInPercent).full}</span>
 
         </div>
-        {instruments[marketId]?.isPool && <TinyThemeButton
+        {instruments[marketId]?.isPool && isApproved&& <TinyThemeButton
           action={toggleIssueField}
           text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
         <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>

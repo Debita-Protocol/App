@@ -40,7 +40,7 @@ const {
   SelectionComps: { SquareDropdown, ToggleSwitch },
   Icons: { Arrow, MaticIcon },
   InputComps: { SearchInput },
-  LabelComps: { CategoryIcon },
+  LabelComps: { generateTooltip, CategoryIcon },
   MarketCardComps: { MarketTitleArea },
   ButtonComps: { PrimaryThemeButton, SecondaryThemeButton },
 } = Components;
@@ -182,6 +182,13 @@ const applyFiltersAndSort = (
 
   setFilteredMarkets(updatedFilteredMarkets);
 };
+function bin2String(array) {
+  var result = "";
+  for (var i = 0; i < array.length; i++) {
+    result += String.fromCharCode(parseInt(array[i], 2));
+  }
+  return result;
+}
 export const InstrumentCard = ({instrument}: any):React.FC=>{
   const {
     settings: { timeFormat },
@@ -212,9 +219,10 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
         {/*<CategoryIcon {{ "categories" } }/> */}
         {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
+                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
 
-             {<PrimaryThemeButton
-            text="Go to Instrument"
+             {<SecondaryThemeButton
+            text={"Go to Instrument #"+marketId}
             small
             disabled={false}
             action={() =>
@@ -227,7 +235,6 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
               })
             }
           />}
-                <p style={{ fontWeight: 'bold' }}> {}{marketId?.toString()+" "}</p>
 
       </MarketLink>
 
@@ -235,14 +242,14 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
         {/*<CategoryIcon {...{ categories }} />
                 <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </button>
-      <span>{ (instrument.isPool? "  true": "  false")}</span>
-      <span>{instrument.trusted }</span>
-      <span>{"-"}</span>
+      <span>{ (instrument?.isPool? "  true": "  false")}</span>
+      <span>{instrument?.balance.toString() }</span>
+      <span>{instrument?.seniorAPR.toString()}{"%"}</span>
       <span>
-        {"$0.00"}
+        {instrument?.exposurePercentage.toString()}{"%"}
       </span>
       <span>
-        {(instrument.trusted? "  true": "false")} 
+        {(instrument?.trusted? "  true": "false")} 
         {/*true && <span>{"0"}</span>*/}
       </span>
       <div>
@@ -266,8 +273,9 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
               })
             }
           />*/}
-        
+        {generateTooltip("Instrument Description:"+instrument?.description, "instrument"+marketId)}
       </div>
+
 
     </article>
   );

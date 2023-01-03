@@ -32,7 +32,7 @@ import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 const {
   SEO,
-  LabelComps: { WarningBanner, CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
+  LabelComps: { generateTooltip, WarningBanner, CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
   Icons: { ConfirmedCheck },
   ButtonComps: { SecondaryThemeButton },
   InputComps: { OutcomesGrid },
@@ -222,11 +222,12 @@ const MarketView = ({ defaultMarket = null }) => {
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
   const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
-  const canbeApproved = !market_[Id]?.marketConditionMet 
+  const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
-  console.log('isApproved', isApproved, canbeApproved)
+  const instrumenType = 
+    console.log('isApproved', isApproved, canbeApproved)
 
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
@@ -346,13 +347,59 @@ const MarketView = ({ defaultMarket = null }) => {
         <div className={Styles.topRow}>
           {/*<CategoryIcon big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
+
         </div>
-        {<h1>{titles[0]}</h1>}
-        { <h3>{descriptions[0]}</h3>}
-        <span>Instrument Type: {instruments[marketId]?.isPool? "Pool Instrument": "Fixed Rate/Term Instrument"}</span>
+        {<h1>{"Instrument Name: " + (instruments[Id]?.name[0]!=0? instruments[Id]?.name[0] : "NFT Lending Pool")}</h1>}
+        { <h4>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</h4>}
+        <span>Instrument Type: {instruments[marketId]?.type? "Pool Instrument": "Fixed Rate/Term Instrument"}</span>
+        <h3>Profit Mechanism</h3>
+        <p>{isPool?
+          "Profit made from longZCB is (realized instrument's return) - (promisedReturn), compounded every second. Participants can redeem their longZCB to realize profit. "
+          : "longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p> 
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
+
+        {isPool && (<ul className={Styles.StatsRow}>
+          <li>
+
+            <span>(Senior) Promised Return</span>
+            {generateTooltip(
+                      "Returns made from the instrument that automatically is allocated to its parent vault, in APR",
+                      "pr"
+                    )}
+            <span>{poolData?.promisedReturn}{" %"}</span> 
+
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+            <li>
+            <span>Instrument's Expected Return</span>
+              {generateTooltip(
+                        "Estimated return the instrument would make, in APR",
+                        "expected"
+                      )}
+            <span>{totalCollateral}{" %"}</span> 
+
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+            <li>
+            <span>longZCB Expected Return</span>
+              {generateTooltip(
+                        "Instrument Expected Return - promisedReturn ",
+                        "lexpected"
+                      )}
+            <span>{totalCollateral - poolData?.promisedReturn}{" %"}</span> 
+
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+        </ul>)}
+
         <WinningOutcomeLabel winningOutcome={outcomeLabel} />
 
         <div
@@ -361,39 +408,45 @@ const MarketView = ({ defaultMarket = null }) => {
           })}
         >
           <h4>Overview</h4>
-
+          <p> {instruments[Id]?.description} </p>
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))*/}
-          {details.length > 1 && (
+          {/*details.length > 1 && (
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
-          )}
-          {showMoreDetails && 
+          )*/}
+          {/*showMoreDetails && 
            <div>
 
-           <p>{"Details"}</p> 
- 
+
 
            </div>
-
-         }
+         */}
 
         </div>
 
         <ul className={Styles.StatsRow}>
           <li>
-            <span>Net ZCB Bought </span>
-            <span>{totalCollateral}{" underlying"}</span> 
+            <span>Net Bought </span>
+              {generateTooltip(
+                        "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
+                        "net"
+                      )}
+            <span>{totalCollateral}</span> 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
           <li>
-            <span>Required Net ZCB</span>
-            <span>{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }{" underlying"}</span> 
+            <span>Required Collateral</span>
+              {generateTooltip(
+                        "Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying ",
+                        "required net"
+                      )}
+            <span>{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }</span> 
           </li>
 
           <li>
@@ -574,8 +627,12 @@ const MarketView = ({ defaultMarket = null }) => {
             subtitle={
               "Expected incremented reputation scores if instrument is profitable : 1"
             }
+            // title2="Expected Profit "
+            // subtitle2={"Expected Profit of longzcb to be made per second is profit of instrument - promisedReturn"}
+
            //onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
           />
+     
         <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId ={marketId}
         isApproved = {isApproved}/> 
 

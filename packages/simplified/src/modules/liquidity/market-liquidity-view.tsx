@@ -342,6 +342,7 @@ export const MarketLiquidityView = () => {
         </article>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
+
           ))}
         </section>
         </div>
