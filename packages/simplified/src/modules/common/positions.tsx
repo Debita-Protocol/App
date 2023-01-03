@@ -138,18 +138,21 @@ const PositionRow = ({
   averagePricePurchased = "0.9", 
   limitOrder = null, 
   claimable , 
-  portfolio = false 
+  portfolio = false , 
+  zcbAmount 
+
 }: {
+zcbAmount?: string; 
   marketId?: string, 
   claimable?: boolean
   limitOrder?: number; 
   // position?: PositionBalance;
   hasLiquidity: boolean;
   key?: string;
-  outcome: string;
-  quantity: string; 
-  averagePricePurchased:string; 
-  address: string; 
+  outcome?: string;
+  quantity?: string; 
+  averagePricePurchased?:string; 
+  address?: string; 
   portfolio?: boolean; 
 
 }) => {
@@ -168,8 +171,8 @@ return (
 
     <li >{outcome}{limitOrder!=null? limitOrder==0?" Bid" : " Ask" : ""} </li>
 
-    <li>{"0.92/32   "} </li>
-    <li>{"0.92/32   "} </li>
+    <li>{"-  "} </li>
+    <li>{zcbAmount} </li>
     <li>{!portfolio?(<TinyThemeButton
     // action={() => {
     //   setTableView(null);
@@ -535,7 +538,7 @@ export const PositionTable = ({
  
   
 
-
+console.log('zcbBalances', ); 
   let position; 
   return (
     <>
@@ -545,8 +548,12 @@ export const PositionTable = ({
         {!portfolioPage? (<PositionHeader />):
         <PortfolioHeader/>}
         {/*positions.length === 0 && <span>No positions to show</span>*/}
-        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} claimable = {true} key={String(0)} hasLiquidity={true} outcome={"longZCB"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
-        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
+        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
+        zcbAmount = {zcbBalances[marketId]?.longZCB}
+        claimable = {true} key={String(0)} hasLiquidity={true} outcome={"longZCB"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
+        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
+        zcbAmount = {zcbBalances[marketId]?.shortZCB}
+        claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
         
         {!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
 
@@ -585,7 +592,8 @@ export const PositionTable = ({
 const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPage}) => {
   const {
     balances: { marketShares },
-  }: UserState = useUserStore();
+
+  }= useUserStore();
   const {
     settings: { showResolvedPositions },
   } = useSimplifiedStore();

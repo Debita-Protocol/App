@@ -224,21 +224,31 @@ export const generateTooltip = (tipText: string, key: string) => {
 export interface WarningBannerProps {
   title: string;
   subtitle: string;
+  title2?: string;
+  subtitle2?: string;
   className?: string;
   onClose?: Function;
 }
 
-export const WarningBanner = ({ title, subtitle, className, onClose }: WarningBannerProps) => {
+export const WarningBanner = ({ title, subtitle,title2,subtitle2, className, onClose }: WarningBannerProps) => {
   return (
-    <section className={classNames(Styles.WarningBanner, className)}>
-      {HelpIcon}
+    <section className={classNames(Styles.WarningBanner2, className)}>
+          {/*HelpIcon*/}
+
       <div>
+
         <span>{title}</span>
         <span>{subtitle}</span>
 
       </div>
+      <div>
+        <span>{title2}</span>
+        <span>{subtitle2}</span>
+
+      </div>
       {onClose && <div onClick={() => onClose()}>{XIcon}</div>}
     </section>
+
   );
 };
 

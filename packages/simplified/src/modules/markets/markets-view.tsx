@@ -316,7 +316,7 @@ const MarketsView = () => {
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
-  console.log('vaults', vaults)
+  console.log('vaults', vaults, vaults.length, vaults) 
   // const marketKeys = Object.keys(markets);
   // const {amm} = markets;
 
@@ -461,7 +461,7 @@ const MarketsView = () => {
       {filteredVaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}   
         
 </section>
-      {loading ?false&& (
+      {loading ? filteredVaults.length==0 && (
         <section>
           {new Array(PAGE_LIMIT).fill(null).map((m, index) => (
             <LoadingMarketCard key={index} />

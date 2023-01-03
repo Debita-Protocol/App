@@ -667,6 +667,61 @@
   }
 }
 
+
+.WarningBanner2 {
+  border-radius: @size-8;
+  display: grid;
+  // grid-template-columns: auto 1fr auto;
+  border: @size-1 solid var(--success);
+  padding: @size-16 @size-18;
+
+  > div:first-of-type {
+    display: flex;
+    flex-direction: column;
+    margin-left: @size-14;
+
+    > span:first-of-type {
+      .text-12-semi-bold;
+
+      color: var(--primary-text);
+      margin-bottom: @size-4;
+    }
+
+    > span:last-of-type {
+      .text-12;
+
+      color: var(--primary-text);
+    }
+  }
+  > div:nth-of-type(2) {
+    display: flex;
+    flex-direction: column;
+    margin-left: @size-14;
+    margin-top: @size-6; 
+    > span:first-of-type {
+      .text-12-semi-bold;
+
+      color: var(--primary-text);
+      margin-bottom: @size-4;
+    }
+
+    > span:last-of-type {
+      .text-12;
+
+      color: var(--primary-text);
+    }  
+  }
+
+  > div:nth-of-type(3) {
+    cursor: pointer;
+  }
+
+  > div:last-of-type > svg > path {
+    fill: var(--primary-text);
+  }
+}
+
+
 :root[theme="SPORTS"],
 :root[theme="SPORTS_DARK"] {
   .NetworkMismatch {
