@@ -18,7 +18,8 @@ import {
   createBigNumber,
   useAppStatusStore,
   useScrollToTopOnMount,
-  useDataStore2
+  useDataStore2, 
+  ApprovalHooks
 } from "@augurproject/comps";
 import {  AddMetaMaskToken } from "../common/labels";
 import { Slippage, Leverage} from "../common/slippage";
@@ -38,6 +39,8 @@ import {
   INSTRUMENT_SORT_TYPES, INSTRUMENT_SORT_TYPE_TEXT
 } from "../constants";
 import {InstrumentCard, SortableHeaderButton} from "./liquidity-view"; 
+const{
+ useIsTokenApprovedSpender} = ApprovalHooks; 
 
 const {
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
@@ -59,7 +62,7 @@ const {
   estimateResetPrices,
   doResetPrices,
   mintVaultDS,
-faucetUnderlying , redeemVault
+faucetUnderlying , redeemVault, getERC20Allowance
 } = ContractCalls;
 const {
   PathUtils: { makePath, parseQuery },
@@ -93,6 +96,7 @@ const defaultAddLiquidityBreakdown: LiquidityBreakdown = {
 };
 const MIN_PRICE = 0.02;
 
+  
 const TRADING_FEE_OPTIONS = [
   {
     id: 0,
@@ -212,7 +216,6 @@ export const MarketLiquidityView = () => {
   const underlying_address = vault?.want.address; 
   const underlyingSymbol = vault?.want.symbol; 
   const exchangeRate = Number(vault.totalShares) ==0? 1: Number(vault.totalAssets)/Number(vault.totalShares); 
-console.log('??', vault.totalAssets, vault.totalShares); 
 
   const BackToLPPageAction = () => {
     history.push({
@@ -391,10 +394,7 @@ const LiquidityWarningFooter = () => (
 export const ManagerWarning = () => (
   <article className={Styles.LiquidityWarningFooter}>
     <span>
-      {WarningIcon} Trade Limited due to: 
-    </span>
-    <span>
-    - ee
+      {WarningIcon} Account is not a verified manager, first verify in profile page.
     </span>
 
   </article>
@@ -522,7 +522,7 @@ const confirmRedemVault = async({
 const faucet = async({
   account, loginAccount, underlying_address
 })=>{
-  // faucetUnderlying(account, loginAccount.library, underlying_address)
+  faucetUnderlying(account, loginAccount.library, underlying_address)
 }
 interface MintFormProps {
   vaultId: string; 
@@ -549,13 +549,17 @@ const MintForm = ({
     balances,
     loginAccount,
     actions: { addTransaction },
+    ramm: { reputationScore, vaultBalances, zcbBalances}
   } = useUserStore();
+  const [vaultAllowance, setVaultAllowance] = useState(false); 
+
+
   const {
     actions: { setModal },
   } = useAppStatusStore();
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   // const {vaultId} = vaults; 
-  console.log('vaults', vaults[vaultId], instruments); 
+  // console.log('vaults', vaults[vaultId], instruments); 
   const isAdd = selectedAction === ADD; 
   const isRemove = selectedAction === REMOVE ;
   const isMint = selectedAction === "mint";
@@ -574,6 +578,22 @@ const MintForm = ({
     newOutcomes[index].price = price;
     setOutcomes([...newOutcomes]);
   };
+
+  useEffect(async()=> {
+    if(account  ){
+      const maxUint = 2**255
+  
+      const allowance = await getERC20Allowance(
+        vaults[vaultId]?.want.address, 
+        loginAccount.library, 
+        account, 
+        vaults[vaultId]?.address
+        )
+      if (allowance && Number(allowance) >= maxUint)
+        setVaultAllowance(true); 
+    }
+  }, [account, amount,vaults, instruments])
+
   const amountLabel = !isMint? "Shares": vaults[vaultId]?.want.symbol; 
     const approvalActionType = ApprovalAction.MINT_SETS
     // isRemove
@@ -594,7 +614,11 @@ const MintForm = ({
   //   ? getResetBreakdown(breakdown, market)
   //   : getCreateBreakdown(breakdown, market, balances, isRemove);
   let cash: Cash; 
-  const userMaxAmount = "10000"
+  const userMaxAmount = isAdd? vaultBalances[vaultId]?.base : 
+      isMint? vaultBalances[vaultId]?.shares: vaultBalances[vaultId]?.shares
+
+  // const vaultApproved = useIsTokenApprovedSpender(vault[vaultId]?.want.address, vault[vaultId]?.address);
+
     return (
     <section
       className={classNames(Styles.LiquidityForm, {
@@ -752,7 +776,7 @@ const MintForm = ({
               </div>)}
               <div className={Styles.Breakdown}>
                 <span>{!isRemove ? "You'll receive": "Debt remaining after"}</span>
-                <InfoNumbers
+                {leverageFactor==0?(<InfoNumbers
                   infoNumbers={[
                     {
                       label: amountLabel,
@@ -763,8 +787,30 @@ const MintForm = ({
                       //value:`${formatCash(amount, USDC).full}`,
                       //svg: USDCIcon,
                     },
+
                   ]}
-                />
+                />): 
+              (<InfoNumbers
+                  infoNumbers={[
+                    {
+                      label: "Shares Total",
+                      value: isMint
+                      ? (Number(amount)* exchangeRate).toString()
+                      :isRemove ? (Number(amount)/exchangeRate).toString()
+                      : (Number(amount)/exchangeRate).toString()
+                     
+                    },
+                    {
+                      label: "Debt(Shares) Total",
+                      value: isMint
+                      ? (Number(amount)* exchangeRate).toString()
+                      :isRemove ? (Number(amount)/exchangeRate).toString()
+                      : (Number(amount)/exchangeRate).toString()
+                      
+                    }
+                  ]}
+                />)
+              }
 
               </div>
             </>
@@ -788,6 +834,7 @@ const MintForm = ({
               action = {()=> faucet({account, loginAccount, underlying_address})}
               text={"Faucet Underlying"}
               />
+
               // <ApprovalButton
               //   amm={null}
               //   cash={cash}
@@ -796,137 +843,21 @@ const MintForm = ({
               //   ds = {true}
               // />
             )}
-            <SecondaryThemeButton
+            {!vaultAllowance?
+            (<ApprovalButton
+              {...{
+              spender_: vaults[vaultId]?.address, 
+              underlyingAddress:vaults[vaultId]?.want.address, 
+              }}
+            />):
+            (<SecondaryThemeButton
               action={ ()=> isAdd
                 ? confirmMintVault({account, loginAccount, vaultId, amount,leverageFactor, addTransaction})
                 : isMint
                 ? confirmRedemVault({account, loginAccount, vaultId, amount}) 
                 : confirmRedemVault({account, loginAccount, vaultId, amount})}
 
-              // action={() =>
-              //   setModal({
-              //     type: MODAL_CONFIRM_TRANSACTION,
-              //     title: isRemove
-              //       ? "Remove Liquidity"
-              //       : isMint
-              //       ? "Mint Complete Sets"
-              //       : isResetPrices
-              //       ? "Reset Prices"
-              //       : "Add Liquidity",
-              //     transactionButtonText: isRemove ? "Remove" : isMint ? "Mint" : isResetPrices ? "Reset Prices" : "Add",
-              //     transactionAction: ({ onTrigger = null, onCancel = null }) => {
-              //       onTrigger && onTrigger();
-              //       confirmAction({
-              //         addTransaction,
-              //         breakdown,
-              //         setBreakdown,
-              //         account,
-              //         loginAccount,
-              //         market,
-              //         amount,
-              //         onChainFee,
-              //         outcomes,
-              //         cash,
-              //         amm,
-              //         isRemove,
-              //         estimatedLpAmount,
-              //         afterSigningAction: BackToLPPageAction,
-              //         onCancel,
-              //         isMint,
-              //         isResetPrices,
-              //       });
-              //     },
-              //     targetDescription: {
-              //       market,
-              //       label: isMint ? "Market" : "Pool",
-              //     },
-              //     footer: isRemove
-              //       ? {
-              //           text: REMOVE_FOOTER_TEXT,
-              //         }
-              //       : null,
-              //     breakdowns: isRemove
-              //       ? [
-              //           {
-              //             heading: "What you are removing:",
-              //             infoNumbers: [
-              //               {
-              //                 label: "Pooled USDC",
-              //                 value: `${formatCash(liquidityUSD, USDC).full}`,
-              //                 svg: USDCIcon,
-              //               },
-              //             ],
-              //           },
-              //           {
-              //             heading: "What you'll recieve",
-              //             infoNumbers,
-              //           },
-              //         ]
-              //       : isMint
-              //       ? [
-              //           {
-              //             heading: "What you are depositing",
-              //             infoNumbers: [
-              //               {
-              //                 label: "amount",
-              //                 value: `${formatCash(amount, USDC).full}`,
-              //                 svg: USDCIcon,
-              //               },
-              //             ],
-              //           },
-              //           {
-              //             heading: "What you'll recieve",
-              //             infoNumbers,
-              //           },
-              //         ]
-              //       : isResetPrices
-              //       ? [
-              //           {
-              //             heading: "New Prices",
-              //             infoNumbers: resetPricesInfoNumbers,
-              //           },
-              //           {
-              //             heading: "USDC Needed to reset the prices",
-              //             infoNumbers: [
-              //               {
-              //                 label: "amount",
-              //                 value: `${formatCash(amount, USDC).full}`,
-              //                 svg: USDCIcon,
-              //               },
-              //             ],
-              //           },
-              //           {
-              //             heading: "What you'll recieve",
-              //             infoNumbers,
-              //           },
-              //         ]
-              //       : [
-              //           {
-              //             heading: "What you are depositing",
-              //             infoNumbers: [
-              //               {
-              //                 label: "amount",
-              //                 value: `${formatCash(amount, USDC).full}`,
-              //                 svg: USDCIcon,
-              //               },
-              //             ],
-              //           },
-              //           {
-              //             heading: "What you'll recieve",
-              //             infoNumbers,
-              //           },
-              //           {
-              //             heading: "Pool Details",
-              //             infoNumbers: [
-              //               {
-              //                 label: "Trading Fee",
-              //                 value: `${amm?.feeInPercent}%`,
-              //               },
-              //             ],
-              //           },
-              //         ],
-              //   })
-              // }
+             
               disabled={false}//!isApproved || inputFormError !== ""}
               error={inputFormError}//buttonError}
               text={isAdd?"Mint" : isMint?"Redeem" :  "Rewind"
@@ -940,7 +871,7 @@ const MintForm = ({
                 //   : null
               }
               customClass={ButtonStyles.ReviewTransactionButton}
-            />
+            />)}
 
           </div>
         </section>
@@ -996,7 +927,6 @@ const LiquidityForm = ({
     "0";
   const userMaxAmount = isRemove ? shareBalance : userTokenBalance;
   const approvedToTransfer = ApprovalState.APPROVED;
-  console.log('approvedToTransfer',approvedToTransfer)
   const isApprovedToTransfer = approvedToTransfer === ApprovalState.APPROVED;
   const approvalActionType = isRemove
     ? ApprovalAction.REMOVE_LIQUIDITY
@@ -1052,14 +982,11 @@ const LiquidityForm = ({
     async function getResults() {
       let results: LiquidityBreakdown;
       if (isRemove) {
-        console.log('HI')
         results = await getRemoveLiquidity(amm, loginAccount?.library, amount, account, cash, market?.hasWinner);
       } else if (isResetPrices) {
-                console.log('HI2')
 
         results = await estimateResetPrices(loginAccount?.library, account, amm);
       } else {
-                        console.log('HI3')
 
         results = await estimateAddLiquidityPool(account, loginAccount?.library, amm, cash, amount);
       }

@@ -73,6 +73,8 @@ const MarketTableHeader = ({
 
 const PortfolioTableHeader = ({
   marketId, 
+  underlyingBalance, 
+  sharesBalance
 }) => {
 
   return(
@@ -82,8 +84,8 @@ const PortfolioTableHeader = ({
         {<span>{"Vault #"}{"1"}</span>}
         {<span>{"Direct to vault"}</span>}
       </span>
- 
-    { <h4>{"  My Underlying : "}{"0 "}{"     My Shares : "}{" 0"}</h4>}
+  
+    { <h4>{"  My Underlying : "}{underlyingBalance}{"     My Shares : "}{sharesBalance}</h4>}
 
     </MarketLink> 
   </div> 
@@ -157,8 +159,10 @@ const PositionRow = ({
   averagePricePurchased = "0.9", 
   limitOrder = null, 
   claimable , 
-  portfolio = false 
+  portfolio = false ,
+  balance, 
 }: {
+  balance?: string, 
   marketId?: string, 
   claimable?: boolean
   limitOrder?: number; 
@@ -185,10 +189,11 @@ const [amount, setAmount] = useState(0);
 return (
   <ul className={Styles.PositionRow}>
 
-    <li >{outcome}{limitOrder!=null? limitOrder==0?" Bid" : " Ask" : ""} </li>
+    <li>{marketId} </li>
 
-    <li>{"0.92/32   "} </li>
-    <li>{"0.92/32   "} </li>
+    <li >{outcome} </li>
+
+    <li>{balance} </li>
     <li>{!portfolio?(<TinyThemeButton
     // action={() => {
     //   setTableView(null);
@@ -528,7 +533,7 @@ interface PositionsLiquidityViewSwitcherProps {
 const POSITIONS_LIQUIDITY_LIMIT = 50;
 
 interface PositionsTableProps {
-  marketId?: string;
+  vaultId?: string;
   // market: MarketInfo;
   // ammExchange: AmmExchange;
   // positions: PositionBalance[];
@@ -538,7 +543,7 @@ interface PositionsTableProps {
 }
 
 export const PositionTable = ({
-  marketId,  
+  vaultId,  
 
   singleMarket=true,
   portfolioPage = false
@@ -552,11 +557,24 @@ export const PositionTable = ({
   const {
     settings: { timeFormat },
   } = useSimplifiedStore();
-
- 
+  console.log('vault here', vaultBalances[vaultId])
+  console.log('zcbhere', zcbBalances[1])
+  const filterMarkets = (zcbBalances) => {
+      let marketIds = [];
+      for (const [marketId, val] of Object.entries(zcbBalances)) {
+          // if (val?.longZCB !== "0" || val.shortZCB !== "0") {
+          //     marketIds.push(marketId);
+          // }
+          marketIds.push(marketId); 
+      }
+      return marketIds;
+  }
+  const marketIds = useMemo(() => {
+      return filterMarkets(zcbBalances);
+  }, [zcbBalances]);
+  let position; 
   
 
-  let position; 
   return (
     <>
       <div className={Styles.PositionTable}>
@@ -564,16 +582,21 @@ export const PositionTable = ({
           <MarketTableHeader timeFormat={timeFormat} market={market} ammExchange={ammExchange} />*/}
         
 
-           <PortfolioTableHeader marketId = {"1"}/>
-            { /*<span>No zcb positions to show</span>*/}
-            <PortfolioHeader/>
+         <PortfolioTableHeader marketId = {"1"} underlyingBalance = {vaultBalances[vaultId]?.base}
+         sharesBalance = {vaultBalances[vaultId]?.shares}/>
+          { /*<span>No zcb positions to show</span>*/}
+          <PortfolioHeader/>
+          {marketIds.map((marketId)=>
+            <div>
+            <PositionRow  marketId = {marketId} portfolio = {portfolioPage} balance = {zcbBalances[marketId]?.shortZCB}
+              outcome={"shortZCB"} />
+            <PositionRow  marketId = {marketId} portfolio = {portfolioPage} balance = {zcbBalances[marketId]?.longZCB}
+              outcome={"longZCB"} />
+            </div>
+            )} 
+         
 
-            {<PositionRow  marketId = {"1"} portfolio = {portfolioPage} 
-            outcome={"1"} />}
-            {<PositionRow  marketId = {"1"} portfolio = {portfolioPage} 
-             outcome={"1"} />}
-
-            <PortfolioFooter/>
+          {/*<PortfolioFooter/>*/}
         {/*{positions &&
           positions
             .filter((p) => p.visible)
@@ -593,7 +616,14 @@ export const PositionTable = ({
             onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
           />
         )*/}
-  
+   <WarningBanner
+            className={Styles.MarginTop}
+            title="Why do I have a position after adding liquidity?"
+            subtitle={
+              "To maintain the Yes to No percentage ratio, a number of shares are returned to the liquidity provider."
+            }
+            //onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
+          />
     </>
   );
 };
@@ -642,7 +672,6 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
   // }, [zcbBalances]);
 
 
-  console.log('vaultIds', vaultIds); 
  
   // const positions = marketShares 
   //   ? ((Object.values(marketShares).filter((s) => s.positions.length) as unknown[]) as {
@@ -670,20 +699,16 @@ const AllPositionTable = ({ marketId, page, claimableFirst = false, portfolioPag
   //   handleFilterSort();
   // }, [positions.length, Object.values(marketShares || {}).length]);
 
-  const positionVis = sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT).map((position) => {
-    return (
-      vaultIds.map((vaultId)=>{
-      <PositionTable
-        marketId = {marketId}
-        portfolioPage = {portfolioPage}
-        // key={`${position.ammExchange.marketId}-PositionsTable`}
-        // market={position.ammExchange.market}
-        // ammExchange={position.ammExchange}
-        // positions={position.positions}
-        // claimableWinnings={position.claimableWinnings}
-      />  
+  const positionVis = //sliceByPage(filteredMarketPositions, page, POSITIONS_LIQUIDITY_LIMIT)
 
-      })
+  vaultIds.map((vaultId) => 
+  {
+    return (
+      <PositionTable
+        vaultId = {vaultId}
+        portfolioPage = {portfolioPage}
+
+      />  
  
     ) ;
   });
@@ -786,21 +811,7 @@ export const PositionsView = ({
                 usePageLocation
               />
             )}
-          {marketId && (
-            <>
-              {tableView === POSITIONS && (
-                <PositionTable
-                  marketId = {marketId}
-                  singleMarket
-                  // market={market}
-                  // ammExchange={ammExchange}
-                  // positions={userPositions}
-                  // claimableWinnings={winnings}
-                  // lb={lb} sb={sb} la={la} sa={sa}
-                />
-              )}
-            </>
-          )}
+          
         </div>
       )}
       {/*positions?.length === 0 && !marketId && tableView === POSITIONS && <span>No positions to show</span>}

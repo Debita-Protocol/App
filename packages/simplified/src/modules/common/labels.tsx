@@ -9,6 +9,8 @@ import {
   Constants,
   ContractCalls,
   Formatter,
+  useDataStore2,  
+
 } from "@augurproject/comps";
 // @ts-ignore
 import MetamaskIcon from "../ConnectAccount/assets/metamask.png";
@@ -33,6 +35,7 @@ const handleValue = (value, cashName = USDC) =>
 export const AppViewStats = ({ portfolioPage = false, small = false, liquidity = false, trading = false }) => {
   const { isLogged } = useAppStatusStore();
   const { balances } = useUserStore();
+  const { vaults: vaults, instruments: instruments }= useDataStore2();
   const totalAccountValue = useMemo(
     () =>
       handleValue(
@@ -51,7 +54,15 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
   const usdValueLP = useMemo(() => handleValue(balances?.USDC?.usdValue/300000 || 0), [
     balances?.totalCurrentLiquidityUsd,
   ]);
+  var tvl = 0; 
+  const numvaults = Object.values(vaults)?.length; 
 
+  for(let i=1; i<= Object.values(vaults)?.length; i++){
+    console.log("tvl????",Number(vaults[i]?.totalAssets))
+    tvl = tvl+ Number(vaults[i]?.totalAssets); 
+
+  }
+  console.log('tvl', tvl)
 
   const verified = true; 
   const reputation = 1;
@@ -69,18 +80,18 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
       <ValueLabel large={!small} label="Total Vault Positions/Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
       {portfolioPage &&(
       <ValueLabel large={!small} label="Number of Invested Vaults" light={!isLogged} value={"13%"} small={small} />)}
-      {portfolioPage &&(
-      <ValueLabel large={!small} label="Total Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
+     
 
-
-      {!portfolioPage && (<ValueLabel large={!small} label="Current Vault APR" light={!isLogged} value={"13%"} small={small} />)}
+      {!portfolioPage && (<ValueLabel large={!small} label="Number of Vaults" light={!isLogged} 
+        value={Object.values(vaults)?.length} small={small} />)}
       {!portfolioPage &&trading && (
-        <ValueLabel large={!small} label="My USDC Vault" light={!isLogged} value={usdValueUSDC} small={small} />
+        <ValueLabel large={!small} label="Number of Instruments" light={!isLogged} 
+        value={Object.values(instruments)?.length} small={small} />
       )}
       {/*{liquidity && <ValueLabel large={!small} small={small} label="Liquidity Positions" value={usdValueLP} />} */}
-      {!portfolioPage &&(<ValueLabel large={!small} small={small} label="My Bond Positions" value={usdValueLP} />)}
+      { (<ValueLabel large={!small} small={small} label="Protocol TVL" value={handleValue(tvl)} />)}
 
-      {(<ValueLabel large={!small} small={small} label="Is Verified/REPU Score" value={isVerified} />)}
+      {(<ValueLabel large={!small} small={small} label="Average Vault APR" value={"12%"} />)}
 
     </div>
   );

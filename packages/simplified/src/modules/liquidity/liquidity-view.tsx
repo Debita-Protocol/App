@@ -23,7 +23,8 @@ import {
   POOL_SORT_TYPES,
   POOL_SORT_TYPE_TEXT,
   INSTRUMENT_SORT_TYPE_TEXT, 
-  INSTRUMENT_SORT_TYPES
+  INSTRUMENT_SORT_TYPES, 
+  INSTRUMENT_TYPE_OPTIONS
 } from "../constants";
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
@@ -610,12 +611,13 @@ const LiquidityView = () => {
       {/*<AppViewStats small liquidity /> */}
       {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
       {/*<MaticAddMetaMaskToken /> */}
- <button onClick={() => setupExample( { account,loginAccount}
+ {/*<button onClick={() => setupExample( { account,loginAccount}
 )}>SetUp</button>
   
   <button onClick={() => setUpExampleManager( { account,loginAccount}
 )}>SetUpManager</button>
-  <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> 
+  <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> */}
+
       <span></span>     
       <span></span>
       <span></span>
@@ -630,6 +632,10 @@ const LiquidityView = () => {
               Pariticipate in pricing risks and earn more <a href=".">Learn more →</a>
             </p>*/}
       <ul>
+        <SecondaryThemeButton
+  action = {()=> addExampleProposal({account, loginAccount})}
+  text = {"Example Proposal"}
+     />
         {/*<SquareDropdown
           onChange={(value) => {
             updatePoolsViewSettings({ primaryCategory: value, subCategories: [] });
@@ -641,8 +647,8 @@ const LiquidityView = () => {
           onChange={(value) => {
             updatePoolsViewSettings({ marketTypeFilter: value });
           }}
-          options={MARKET_TYPE_OPTIONS}
-          defaultValue={marketTypeFilter}
+          options={INSTRUMENT_TYPE_OPTIONS}
+          defaultValue={INSTRUMENT_TYPE_OPTIONS[0].value}
         />
         <label html-for="toggleOnlyUserLiquidity">
           <ToggleSwitch

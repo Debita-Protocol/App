@@ -16,6 +16,7 @@ const APPROVAL_AMOUNT = String(new BN(2 ** 255).minus(1).toFixed());
 
 export const useIsTokenApproved = (tokenAddress: string): Promise<boolean> => {
   const { loginAccount } = useUserStore();
+  const maxUint = 2**256 - 1; 
 
   return useMemo(async () => {
     if (loginAccount) {
@@ -25,7 +26,9 @@ export const useIsTokenApproved = (tokenAddress: string): Promise<boolean> => {
         loginAccount.account,
         loginAccount.account
       );
-      return allowance && new BN(allowance).gt(0) ? true : false;
+      //return allowance && new BN(allowance).gt(0) ? true : false;
+      console.log('allowance, maxuint', allowance, maxUint); 
+      return allowance && Number(allowance) == maxUint? true: false; 
     }
     return false;
   }, [loginAccount, tokenAddress]);
@@ -35,8 +38,11 @@ export const useIsTokenApprovedSpender = (tokenAddress: string, spender: string)
   const { account, library } = useActiveWeb3React();
 
   return useMemo(async () => {
+    console.log('allowance, maxUint',tokenAddress, spender,account,  Number(APPROVAL_AMOUNT)); 
     const allowance = await getERC20Allowance(tokenAddress, library, account, spender);
-    return allowance && new BN(allowance).gt(0) ? true : false;
+    console.log('allowance, maxUint', Number(allowance), Number(APPROVAL_AMOUNT)); 
+    return allowance && Number(allowance) == Number(APPROVAL_AMOUNT)? true: false ; 
+    // return allowance && new BN(allowance).gt(0) ? true : false;
   }, [account, library, tokenAddress, spender]);
 };
 

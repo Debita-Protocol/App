@@ -194,22 +194,22 @@ return (
           },
           targetDescription: {
             //market,
-            label: "pool" //isMint ? "Market" : "Pool",
+            label: "" //isMint ? "Market" : "Pool",
           },
           footer: 
              {
-                text: "REMOVE_FOOTER_TEXT",
+                text: "Redeeming will automatically withdraw capital from the instrument",
             },
           setAmount: setAmount, 
           includeInput: true, 
            
           breakdowns: [
                 {
-                  heading: "What you are removing:",
+                  heading: "What you are redeeming:",
                   infoNumbers: [
                     {
-                      label: "Pooled USDC",
-                      value: `33`,                              
+                      label: "longZCB",
+                      value: amount,                              
                     },
                   ],
                 },
@@ -217,8 +217,8 @@ return (
                   heading: "What you'll recieve",
                   infoNumbers: [
                     {
-                      label: "Pooled USDC",
-                      value: `33`,                              
+                      label: "Underlying",
+                      value: amount,                              
                     },
                   ],
                 },

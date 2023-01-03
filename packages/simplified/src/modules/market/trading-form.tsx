@@ -25,12 +25,12 @@ const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress,
   //estimateZCBBuyTrade, 
   redeemZCB, getTraderBudget, getHedgeQuantity,
    getERCBalance, getVaultTokenBalance, tradeZCB, estimateTrade,
-    approveERC20, setUpManager} = ContractCalls;
+    approveERC20, setUpManager, getERC20Allowance} = ContractCalls;
 const { approveERC20Contract } = ApprovalHooks;
 
 const {
   Icons: { CloseIcon },
-  LabelComps: { generateTooltip },
+  LabelComps: { WarningBanner, generateTooltip },
   InputComps: { AmountInput, OutcomesGrid },
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
   SelectionComps: { BuySellToggleSwitch },
@@ -267,6 +267,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const [traderBudget, setTraderBudget] = useState("1");
   const [userBalance, setUserBalance] = useState("1"); 
   const [leverageFactor, setLeverageFactor] = useState(0); 
+  const [MMAllowance, setMMAllowance] = useState(false); 
+
   // const userBalance = String(
   //   useMemo(() => {
   //     return isBuy
@@ -278,6 +280,22 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   //       : "0";
   //   }, [orderType, ammCash?.name, amm?.id, selectedOutcomeId, balances])
   // );
+
+  useEffect(async()=> {
+    if(account  ){
+      const maxUint = 2**255
+  
+      const allowance = await getERC20Allowance(
+        underlying_address, 
+        loginAccount.library, 
+        account, 
+        marketManager
+        )
+      if (allowance && Number(allowance) >= maxUint)
+        setMMAllowance(true); 
+    }
+  }, [account, amount, vaults, instruments,market_])
+
 
   useEffect(async() => {
 
@@ -308,10 +326,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
       const isShort = selectedOutcomeId ==0? false:true
 
       const breakdown = isBuy
-        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort,true)
-        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort, false)
+        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort,true, isIssue)
+        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort, false, isIssue)
         isMounted&& setBreakdown(breakdown); 
-
     }
     // const getEstimate = async () => {
     //   const breakdown = isBuy
@@ -364,7 +381,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
       }
       else{
         actionText = breakdown; 
-        disabled = false; 
+      disabled = isIssue? false: true; 
       }
 
 
@@ -374,7 +391,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     } else if (!canbuy){
       console.log('??')
       actionText = "Trade Restricted"
-      disabled = true; 
+      disabled = isIssue? false: true; 
     }
     //   else if (!hasLiquidity) {
     //   actionText = "Liquidity Depleted";
@@ -545,12 +562,11 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         <div>
           <span>Selling Fee</span>
           <span>{formatPercent(amm?.feeInPercent).full}</span>
-        </div>
 
+        </div>
         {instruments[marketId]?.isPool && <TinyThemeButton
           action={toggleIssueField}
           text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
-
         <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
         <div
           onClick={() => {
@@ -560,9 +576,15 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         >
           {CloseIcon}
         </div>
+
       </div>
 
       <div>
+        {isIssue && 
+          <WarningBanner 
+          title={"Issue New longZCB and automatic supply to this instrument"} 
+          subtitle = {"Every 1 longZCB issued, leverageFactor * longZCB price underlying is supplied"}/>}
+
         {!isIssue && <OutcomesGrid
           outcomes={outcomes}
           selectedOutcome={selectedOutcome}
@@ -652,6 +674,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
               actionType: approvalAction,
               isApproved: isApprovedTrade,
               shareToken: outcomeShareToken,
+              spender_: marketManager, 
               underlyingAddress: underlying_address, 
               amount: amount,
               setIsApprovedTrade: setIsApprovedTrade, 
@@ -664,8 +687,15 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           action = {testVerify}
           />
           )}
-        
-        {!canRedeem &&(<SecondaryThemeButton
+        {!MMAllowance &&
+            (<ApprovalButton
+              {...{
+              spender_: marketManager, 
+              underlyingAddress:underlying_address, 
+              }}
+        />)}  
+
+        {!canRedeem &&MMAllowance&&(<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
           action={makeTrade}
           text={isIssue? "Issue New longZCB": canMakeTrade.actionText}
@@ -721,16 +751,16 @@ export const ApprovalButton = ({
   isApproved = false,
   shareToken = null,
   customClass = null,
-  ds = false, 
+  spender_, 
   underlyingAddress,
   setIsApprovedTrade = null,
 }: {
   amm?: AmmExchange;
-  cash: Cash;
+  cash?: Cash;
   spender_?: string; 
   underlyingAddress?: string; 
   amount?: string; 
-  actionType: string | number;
+  actionType?: string | number;
   isApproved?: boolean;
   shareToken?: string;
   customClass?: any;
@@ -758,11 +788,12 @@ export const ApprovalButton = ({
           let approvalAction = approveERC20;
           console.log('underlyingAddress', underlyingAddress)
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
-    let spender = marketManager//rewardContractAddress || ammFactory; 
+    // let spender = marketManager//rewardContractAddress || ammFactory; 
+    let spender = spender_; 
     let text = "Liquidity DS"; 
     const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
       addTransaction(tx);
-      setIsApprovedTrade(true)
+      setIsApprovedTrade && setIsApprovedTrade(true)
 
   } ,[cash, loginAccount, shareToken, amm])
 
@@ -844,7 +875,7 @@ export const ApprovalButton = ({
       break;
     }
     default:
-      buttonText = `Approve ${marketCashType}`;
+      buttonText = `Approve Underlying`;
       break;
   }
   console.log('buttontext', buttonText)
