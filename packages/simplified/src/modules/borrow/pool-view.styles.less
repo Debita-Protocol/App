@@ -4,7 +4,7 @@
 .PoolView {
     display: grid;
     padding: @size-40 @size-60 @size-48;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 0.5fr;
     > div:first-of-type {
         grid-column: span 3;
         > h3 {
@@ -19,7 +19,7 @@
             justify-content: space-around;
             border: @size-1 solid var(--theme-border);
             border-radius: @size-16;
-            margin-bottom: @size-36;
+            margin-bottom: @size-16;
             background: var(--primary-bg);
             .HoverDropShadow;
             > div {
@@ -73,28 +73,27 @@
                     border-bottom-right-radius: @size-8;
                      > div {
                         display: flex;
-                        flex-flow: row nowrap;
-                        justify-content: space-evenly;
+                        flex-flow: column nowrap;
+                        justify-content: space-between;
                         align-items: center;
                         > button {
-                            border: 0;
-                            min-height: @size-16;
-                            height: @size-16;
-                            min-width: @size-20;
-                            width: @size-20;
-                            color: var(--primary-bg);
+                            border: @size-1 solid var(--theme-border);
+                            margin-bottom: @size-4;
+                            // min-height: @size-16;
+                            // height: @size-16;
+                            // min-width: @size-20;
+                            // width: @size-20;
                         }
                        
                         > button:first-of-type {
-                            color: var(--buy); 
                             &:hover {
-                                background-color: var( --secondary-button-background-hover);
+                                border-color: var(--secondary-text);
                               }
                         }
                         > button:last-of-type {
-                            color: var(--sell);
+                            margin-right: @size-8;
                             &:hover {
-                                background-color: var(--secondary-button-background-hover);
+                                border-color: var(--secondary-text);
                               }
                         }
                      }
@@ -138,6 +137,7 @@
         display:flex;
         flex-flow: column nowrap;
         align-items:center;
+        width:100%;
         > h3 {
             font-size: @size-24;
             // padding-left: @size-40;
@@ -154,20 +154,34 @@
             flex-flow: column nowrap;
             align-items: flex-start;
             > div { // labels
-                padding-left: @size-20;
-                padding-bottom:@size-16;
-                > span:first-of-type {
-                    font-size: @size-14;
-                    font-weight: @weight-bold;
-                    color: var(--secondary-text);
+                // padding-left: @size-20;
+                // padding-bottom:@size-16;
+                display: flex;
+                flex-flow: column nowrap;
+                > div {
+                    display: flex;
+                    flex-flow: row nowrap;
+                    justify-content: space-between;
+                    padding: @size-8;
+                    > span:first-of-type {
+                        font-size: @size-14;
+                        font-weight: @weight-bold;
+                        color: var(--secondary-text);
+                    }
                 }
             }
 
-            > div:last-of-type { // buttons
+            > section { // buttons
                 display: flex;
-                flex-flow: column nowrap;
-                > button {   
+                flex-flow: row nowrap;
+                justify-content: space-evenly;
+                width:100%;
+                padding:@size-4;
+                > button {
                     margin-bottom: @size-8;
+                }
+                > button:first-of-type {
+                    margin-right: @size-4;
                 }
             }
             

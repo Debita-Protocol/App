@@ -43,11 +43,74 @@
 }
 
 .ModalPoolView {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-evenly;
+    > button {
+      margin-bottom: @size-20;
+    }
+}
+
+
+.ModalPoolBorrowView {
   display: flex;
   flex-flow: column nowrap;
-  justify-content: space-evenly;
+  justify-content: center;
+  align-items: flex-start;
+  > section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      padding: @size-16;
+      > span {
+        padding: @size-4;
+      }
+    }
+  }
+  > div:nth-of-type(3) {
+    width:100%;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content:flex-start;
+    > label:first-of-type {
+      color: var(--secondary-text);
+      font-size: @size-18;
+      font-weight: @weight-bold;
+    }
+  }
+  > div:nth-of-type(4) {
+    width:100%;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content:flex-start;
+  }
   > button {
     margin-bottom: @size-20;
+  }
+}
+
+.ModalPoolRepayView {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  > section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      padding: @size-16;
+      > span {
+        padding: @size-4;
+      }
+    }
   }
 }
 

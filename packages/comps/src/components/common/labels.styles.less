@@ -72,6 +72,65 @@
   }
 }
 
+.RammValueLabel {
+  display: grid;
+  grid-template-columns: auto auto;
+
+  > span {
+    display: flex;
+    align-items: center;
+  }
+
+  > span:first-of-type {
+    .text-12;
+
+    color: var(--secondary-text);
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+
+  > span:last-of-type {
+    .text-16-semi-bold;
+
+    color: var(--primary-text);
+    grid-column: 1 / span 2;
+  }
+
+  &.large {
+    > div:first-of-type {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-evenly;
+      > span:first-of-type {
+        .text-16-bold;
+      }
+    }
+
+    > span:nth-of-type(2) {
+      .text-14;
+    }
+
+    > span:last-of-type {
+      .text-36-bold;
+    }
+  }
+
+  &.light {
+    > span:last-of-type {
+      color: var(--secondary-text);
+    }
+  }
+
+  @media @breakpoint-mobile-tablet {
+    > span:first-of-type {
+      .text-12;
+    }
+    > span:last-of-type {
+      .text-14-semi-bold;
+    }
+  }
+}
+
 .IconLabel {
   display: grid;
   grid-template-columns: auto 1fr;

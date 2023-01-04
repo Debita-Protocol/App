@@ -47,7 +47,7 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
             {...modal}
             closeModal={closeModal}
           />
-        </section>
+          </section>
       );
     case MODAL_POOL_BORROWER_ACTION:
       return (

@@ -56,7 +56,7 @@ const AppBody = () => {
 
   useRammData({blocknumber, vaults, markets: _markets, instruments, isWalletRpc});
   const { ramm } = useUserStore();
-  // console.log("ramm: ", ramm);
+  console.log("ramm: ", ramm);
 
   useEffect(() => {
     const parsedQueryString = parseQuery(window.location.search);

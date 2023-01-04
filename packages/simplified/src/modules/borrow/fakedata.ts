@@ -56,7 +56,7 @@ let emptyInstrument: Instrument = {
     trusted: false,
     balance: "0",
     principal: "0",
-    yield: "0",
+    interest: "0",
     duration: "0",
     description: "a test description of the instrument",
     address: "0x1",
@@ -78,7 +78,7 @@ export let emptyPoolInstrument: PoolInstrument = {
     description: "a test description of the instrument",
     balance: "0",
     principal: "0",
-    yield: "0",
+    interest: "0",
     address: "0x1",
     saleAmount: "0",
     initPrice: "0",
@@ -88,6 +88,7 @@ export let emptyPoolInstrument: PoolInstrument = {
     poolLeverageFactor: "0",
     totalBorrowedAssets: "0",
     totalSuppliedAssets: "0",
+    totalAvailableAssets: "0",
     APR: "0",
     collaterals: [
         {
@@ -185,6 +186,7 @@ export let userPoolData: UserPoolInfo = {
             "1": "1"
         }
     },
+    removableCollateral: {},
     walletBalances: {
         "0xUSDC": {
             "0": "50.1414"
@@ -200,7 +202,9 @@ export let userPoolData: UserPoolInfo = {
         shares: "5.221",
         amount: "10.6"
     },
-    accountLiquidity: "50"
+    accountLiquidity: "50",
+    maxBorrowable: "50",
+
 }
 
 let _markets = {};

@@ -43,6 +43,37 @@ export const ValueLabel = ({ large, label, sublabel, value, light, small }: Valu
   );
 };
 
+
+export interface RammValueLabelProps {
+  large?: boolean;
+  label?: string;
+  sublabel?: string;
+  value: string | number;
+  light?: boolean;
+  small?: boolean;
+  tooltip?: React.FC;
+}
+
+export const RammValueLabel = ({ large, label, sublabel, value, light, small, tooltip }: RammValueLabelProps) => {
+  return (
+    <div
+      className={classNames(Styles.RammValueLabel, {
+        [Styles.large]: large,
+        [Styles.Sublabel]: sublabel,
+        [Styles.light]: light,
+        [Styles.small]: small,
+      })}
+    >
+      <div>
+        <span>{label}</span>
+        {tooltip}
+      </div>
+      {sublabel && <span>{sublabel}</span>}
+      <span>{value}</span>
+    </div>
+  );
+};
+
 export interface IconLabelProps {
   icon: Object;
   value: string | number;

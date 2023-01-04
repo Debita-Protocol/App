@@ -637,6 +637,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         psu: toDisplay(instr.poolData.psu.toString()),
                         totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
                         totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
+                        //totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
+                        totalAvailableAssets: "0",
                         APR: toDisplay(instr.poolData.APR.toString()),
                         collaterals
                     }
@@ -739,7 +741,7 @@ export const getRammData = async (
 
             const walletBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
                 return c.isERC20 ? {
-                    reference: "wallet-"+c.address,
+                    reference: "wallet-"+c.address + "-" + c.tokenId,
                     contractAddress: c.address,
                     abi:ERC20Data.abi,
                     calls: [
@@ -750,7 +752,7 @@ export const getRammData = async (
                         },
                     ]                    
                 } : {
-                    reference: "wallet-"+c.address,
+                    reference: "wallet-"+c.address + "-" + c.tokenId,
                     contractAddress: c.address,
                     abi:ERC721Data.abi,
                     calls: [
@@ -766,7 +768,7 @@ export const getRammData = async (
             const supplyBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
                 const methodParameters = c.isERC20 ? [c.address, account] : [c.address, c.tokenId];
                 return {
-                    reference: "supply-"+c.address,
+                    reference: "supply-"+c.address + "-" + c.tokenId,
                     contractAddress: instrument.address,
                     abi: PoolInstrumentData.abi,
                     calls: [
@@ -777,6 +779,34 @@ export const getRammData = async (
                         }
                     ]               
                 }});
+
+            const maxBorrowableContractCall: ContractCallContext = {
+                reference: "maxBorrowable",
+                contractAddress: instrument.address,
+                abi: PoolInstrumentData.abi,
+                calls: [
+                    {
+                        reference: "maxBorrowable",
+                        methodName: "getMaxBorrow",
+                        methodParameters: [account]
+                    }]
+            }
+            
+            const removableCollateralContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
+                return {
+                    reference: "removable-"+c.address+"-"+c.tokenId,
+                    contractAddress: instrument.address,
+                    abi: PoolInstrumentData.abi,
+                    calls: [
+                        {
+                            reference: "removableCollateral",
+                            methodName: "removeableCollateral",
+                            methodParameters: [account, c.tokenId, c.address],
+                        }
+                    ]               
+                }
+            });
+                
 
             const userSnapshotContractCall: ContractCallContext[] = [
                 {
@@ -796,35 +826,47 @@ export const getRammData = async (
             const { results }: ContractCallResults = await multicall.call(
                 [...walletBalancesContractCalls,
                 ...supplyBalancesContractCalls,
-                ...userSnapshotContractCall]
+                ...userSnapshotContractCall,
+                ...removableCollateralContractCalls,
+                maxBorrowableContractCall
+            ]
             );
+            console.log('results', results);
             let walletBalances = {};
             let supplyBalances = {};
+            let removableCollaterals = {};
+
             instrument.collaterals.map((c) => {
 
                 let walletBalance;
                 let supplyBalance;
+                let removableCollateral = toDisplay(results["removable-"+c.address+"-"+c.tokenId].callsReturnContext[0].returnValues[0].toString());
                 if (c.isERC20) {
-                    walletBalance = toDisplay(results["wallet-"+c.address].callsReturnContext[0].returnValues[0].toString());
-                    supplyBalance = toDisplay(results["supply-"+c.address].callsReturnContext[0].returnValues[0].toString());
+                    walletBalance = toDisplay(results["wallet-"+c.address+"-"+c.tokenId].callsReturnContext[0].returnValues[0].toString());
+                    supplyBalance = toDisplay(results["supply-"+c.address+"-"+c.tokenId].callsReturnContext[0].returnValues[0].toString());
                 } else {
-                    walletBalance = results["wallet-"+c.address].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
-                    supplyBalance = results["supply-"+c.address].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
+                    walletBalance = results["wallet-"+c.address+"-"+c.tokenId].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
+                    supplyBalance = results["supply-"+c.address+"-"+c.tokenId].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
                 }
                 // I hate javascript and this whole hack data structure.
                 if (walletBalances[c.address]) {
-                    walletBalance;
                     let obj2 = Object.assign({}, walletBalances[c.address], {
                         [c.tokenId]: walletBalance
                     })
                     let obj3 = Object.assign({}, supplyBalances[c.address], {
                         [c.tokenId]: supplyBalance     
                      })
+                    let obj4 = Object.assign({}, removableCollateral[c.address], {
+                        [c.tokenId]: removableCollateral     
+                     });
                     walletBalances = Object.assign(walletBalances, {
                         [c.address] : obj2
                     })
                     supplyBalances = Object.assign(supplyBalances, {
                         [c.address] : obj3
+                    });
+                    removableCollaterals = Object.assign(removableCollateral, {
+                        [c.address] : obj4
                     });
                 } else {
                     Object.assign(walletBalances, {
@@ -837,9 +879,16 @@ export const getRammData = async (
                             [c.tokenId]: supplyBalance
                         }
                     })
+                    Object.assign(removableCollaterals, {
+                        [c.address] : {
+                            [c.tokenId]: removableCollateral
+                        }
+                    })
                 }
             });
+
             const userSnapshot = results["userSnapshot"].callsReturnContext[0].returnValues as any;
+            const maxBorrowable = toDisplay(results["maxBorrowable"].callsReturnContext[0].returnValues[0].toString());
 
             Object.assign(poolInfos, {
                 [instrument.marketId]: {
@@ -847,9 +896,11 @@ export const getRammData = async (
                     supplyBalances,
                     borrowBalance: {
                         shares: toDisplay(userSnapshot._userBorrowShares.toString()),
-                        base: toDisplay(userSnapshot._userBorrowAmount.toString())
+                        amount: toDisplay(userSnapshot._userBorrowAmount.toString())
                     },
                     accountLiquidity: toDisplay(userSnapshot._userAccountLiquidity.toString()),
+                    maxBorrowable,
+                    removableCollateral: removableCollaterals
                 }
             });
         }
@@ -1087,20 +1138,35 @@ export const poolBorrow = async (
     account: string,
     library: Web3Provider,
     amount: string,
-    decimals: number,
+    collateralAmount: string,
+    collateralAddress: string,
+    collateralTokenId: string,
+    collateralIsERC20: boolean,
+    collateralDecimals: number,
     poolAddress: string
 ) => {
     // const { account, library } = useActiveWeb3React();
-    console.log("poolBorrow: ", amount, decimals, poolAddress)
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
+    if (new BN(collateralAmount).gt(new BN(0))) {
+        if (collateralIsERC20) {
+            const approved = await useIsERC20ApprovedSpender(account, library, collateralAddress, poolAddress, collateralAmount);
+            if (!approved) {
+                await approveERC20(account, library, collateralAddress, collateralAmount, poolAddress);
+            }
+        } else {
+            const approved = await useIsERC721ApprovedSpender(account, library, collateralAddress, collateralTokenId, poolAddress);
+            if (!approved) {
+                await approveERC721(account, library, collateralAddress, collateralTokenId, poolAddress);
+            }
+        }
+    }
     const tx: TransactionResponse = await pool.borrow(
-        new BN(amount).shiftedBy(decimals).toFixed(0),
-        constants.AddressZero,
-        0,
-        0,
+        new BN(amount).shiftedBy(18).toFixed(0),
+        collateralAddress,
+        collateralTokenId,
+        collateralIsERC20 ? new BN(collateralAmount).shiftedBy(collateralDecimals).toFixed(0) : "0",
         account
     );
-    tx.wait();
     return tx;
 }
 
@@ -1110,7 +1176,6 @@ export const poolRepayAmount = async (
     account: string,
     library: Web3Provider,
     amount: string,
-    decimals: number,
     poolAddress: string,
     assetAddress: string
 ) => {
@@ -1121,12 +1186,22 @@ export const poolRepayAmount = async (
     }
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     const tx: TransactionResponse = await pool.repayWithAmount(
-        new BN(amount).shiftedBy(decimals).toString(),
+        new BN(amount).shiftedBy(18).toString(),
         account
     );
-    tx.wait();
     return tx;
 }
+
+// export const poolRepayShares = async (
+//     account: string,
+//     library: Web3Provider,
+//     amount: string,
+//     decimals: number,
+//     poolAddress: string,
+//     assetAddress: string
+// ) {
+    
+// }
 
 export const poolAddInterest = async (
     account: string,
