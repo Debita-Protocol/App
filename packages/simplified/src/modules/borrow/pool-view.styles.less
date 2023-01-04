@@ -5,6 +5,21 @@
     display: grid;
     padding: @size-40 @size-60 @size-48;
     grid-template-columns: 1fr 1fr 0.5fr;
+    > button:first-of-type {
+        .text-16-semi-bold;
+
+        color: var(--secondary-text);
+        grid-column: 1;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        display: flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: center;
+        margin-right: auto;
+        margin-bottom: @size-16;
+    }
     > div:first-of-type {
         grid-column: span 3;
         > h3 {

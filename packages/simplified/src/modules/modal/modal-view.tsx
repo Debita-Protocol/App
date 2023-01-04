@@ -4,8 +4,9 @@ import { useHistory } from "react-router";
 import Styles from "./modal.styles.less";
 import { MODAL_POOL_BORROWER_ACTION, MODAL_POOL_COLLATERAL_ACTION, MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "../constants";
 import { Constants, Modals, useUserStore, useAppStatusStore } from "@augurproject/comps";
-import ModalCollateralPoolAction from "./modal-collateral-pool";
+//import ModalCollateralPoolAction from "./modal-collateral-pool";
 import ModalPoolBorrowerAction from "./modal-pool-borrower";
+import ModalPoolCollateralAction from "./modal-ramm";
 
 const { ModalConnectWallet } = Modals;
 
@@ -42,12 +43,7 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
       );
     case MODAL_POOL_COLLATERAL_ACTION:
       return (
-        <section className={Styles.ModalView}>
-          <ModalCollateralPoolAction
-            {...modal}
-            closeModal={closeModal}
-          />
-          </section>
+        <ModalPoolCollateralAction {...modal} />
       );
     case MODAL_POOL_BORROWER_ACTION:
       return (

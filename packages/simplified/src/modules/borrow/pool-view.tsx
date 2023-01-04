@@ -21,6 +21,7 @@ import {userPoolData, emptyPoolInstrument } from "./fakedata";
 import {BigNumber as BN} from "bignumber.js";
 import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 import { TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
+import { BackIcon } from "@augurproject/comps/build/components/common/icons";
 
 
 
@@ -47,6 +48,7 @@ const PoolView: React.FC = () => {
     const { [MARKET_ID_PARAM_NAME]: marketId } = parseQuery(location.search);
     const { vaults, instruments } = useDataStore2();
     const [ instrumentNotFound, setInstrumentNotFound ] = useState(false);
+    const history = useHistory();
 
     const { actions: { setModal } } = useAppStatusStore();
     const {cashes} = useDataStore2();
@@ -128,7 +130,6 @@ const PoolView: React.FC = () => {
     const { walletBalances, borrowBalance: {amount: borrowedAmount}, accountLiquidity} = poolInfo;
     const borrowCapacity =new BN(poolInfo.maxBorrowable).isZero() ? "0.0" :
     new BN(borrowedAmount).dividedBy(new BN(poolInfo.maxBorrowable)).multipliedBy(100).toString();
-
     
 
     // grab underlying asset from vaults object
@@ -136,13 +137,17 @@ const PoolView: React.FC = () => {
     // const { want, name: vaultName } = vaults[marketId];
     // const {supplyBalances, walletBalances, borrowBalance, accountLiquidity} = poolInfo;
     // const {amount: borrowAmount} = borrowBalance;
-
     return (// first div is header
         <div className={Styles.PoolView}>
+            <button onClick={() => history.push(
+                {
+                    pathname: makePath("borrow")
+                }
+            )}>{BackIcon} Back To Pools</button>
             <div>
-                <button onClick={testApproveAction}>
+                {/* <button onClick={testApproveAction}>
                     test approve action
-                </button>
+                </button> */}
                 <h3>
                     { name }
                 </h3>
@@ -200,50 +205,96 @@ const PoolView: React.FC = () => {
                                 console.log("walletBalance: ", walletBalance);
                                 const { borrowAmount, maxAmount } = asset;
                                 const addAction = () => {
-                                    setModal({
-                                        type: MODAL_POOL_COLLATERAL_ACTION,
-                                        action: async (amount: string, afterAction: Function) => {
-                                            addPoolCollateral(
-                                                account,
-                                                loginAccount.library,
-                                                asset.address,
-                                                asset.tokenId,
-                                                amount,
-                                                poolAddress,
-                                                asset.isERC20,
-                                                Number(asset.decimals)
-                                            ).then(tx => {
-
-                                            })
-                                            afterAction();
-                                        },
-                                        isAdd: true,
-                                        maxValue: walletBalance,
-                                        symbol: asset.symbol,
-                                        isERC20: asset.isERC20
-                                    });
+                                        setModal({
+                                            instrument,
+                                            vault,
+                                            collateral:asset,
+                                          type: "MODAL_POOL_COLLATERAL_ACTION",
+                                          title: "Add " + asset.symbol,
+                                          transactionButtonText: "Add",
+                                          transactionAction: async (amount) => 
+                                          {
+                                            await addPoolCollateral(
+                                                account, loginAccount.library, asset.addres, asset.tokenId, amount, poolAddress, asset.isERC20, Number(asset.decimals)
+                                            )
+                                          },
+                                          targetDescription: {
+                                            //market,
+                                            label: "" //isMint ? "Market" : "Pool",
+                                          },
+                                          isAdd: true,
+                                          breakdowns: [
+                                                {
+                                                  heading: "",
+                                                  infoNumbers: [
+                                                    {
+                                                      label: "Collateral: ",
+                                                      value: asset.symbol,                              
+                                                    },
+                                                  ],
+                                                },
+                                              ]          
+                                              
+                                          });
                                 }
                                 const removeAction = () => {
                                     setModal({
-                                        type: MODAL_POOL_COLLATERAL_ACTION,
-                                        action: async (amount: string, afterAction: Function) => {
-                                            let tx = await removePoolCollateral(
-                                                account,
-                                                loginAccount.library,
-                                                asset.address,
-                                                asset.tokenId,
-                                                amount,
-                                                poolAddress,
-                                                Number(asset.decimals)
-                                            );
-                                            tx.wait();
-                                            afterAction();
+                                        collateral:asset,
+                                        type: "MODAL_POOL_COLLATERAL_ACTION",
+                                        title: "Withdraw " + asset.symbol,
+                                        transactionButtonText: "Withdraw",
+                                        instrument,
+                                        vault,
+                                        transactionAction: async (amount) => 
+                                        {
+                                            await removePoolCollateral(
+                                                            account,
+                                                            loginAccount.library,
+                                                            asset.address,
+                                                            asset.tokenId,
+                                                            amount,
+                                                            poolAddress,
+                                                            Number(asset.decimals)
+                                                        );
+                                        },
+                                        targetDescription: {
+                                          //market,
+                                          label: "" //isMint ? "Market" : "Pool",
                                         },
                                         isAdd: false,
-                                        maxValue: supplyBalance,
-                                        symbol: asset.symbol,
-                                        isERC20: asset.isERC20
-                                    });
+                                        breakdowns: [
+                                              {
+                                                heading: "",
+                                                infoNumbers: [
+                                                  {
+                                                    label: "Collateral: ",
+                                                    value: asset.symbol,                              
+                                                  },
+                                                ],
+                                              },
+                                            ]          
+                                            
+                                        });
+                                    // setModal({
+                                    //     type: MODAL_POOL_COLLATERAL_ACTION,
+                                    //     action: async (amount: string, afterAction: Function) => {
+                                    //         let tx = await removePoolCollateral(
+                                    //             account,
+                                    //             loginAccount.library,
+                                    //             asset.address,
+                                    //             asset.tokenId,
+                                    //             amount,
+                                    //             poolAddress,
+                                    //             Number(asset.decimals)
+                                    //         );
+                                    //         tx.wait();
+                                    //         afterAction();
+                                    //     },
+                                    //     isAdd: false,
+                                    //     maxValue: supplyBalance,
+                                    //     symbol: asset.symbol,
+                                    //     isERC20: asset.isERC20
+                                    // });
                                 }
 
                                 return (<tr>
