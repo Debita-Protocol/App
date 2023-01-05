@@ -296,10 +296,10 @@ export const MarketLiquidityView = () => {
           </li>
 
           <li>
-            <span>Managers' Leverage</span>
+            <span>Total First Loss Capital</span>
             {generateTooltip(
-          "Amount of leveraged exposure to this vault's instruments. Default Leverage is 1. Any other leverage will mint NFTs instead of ERC20",
-          "slippageToleranceInfo"
+          "Total amount of insurance. Loss from instruments will be first deducted from this amount",
+          "firstloss"
         )}
             <span>{formatDai(100000000/1000000 || "0.00").full}</span>
 

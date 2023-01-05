@@ -584,9 +584,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         />
 
         <div>
-          <span>Selling Fee</span>
-          <span>{formatPercent(amm?.feeInPercent).full}</span>
-
+          <span>Selling Fee: {formatPercent(amm?.feeInPercent).full}</span>
+          <span>Budget: 1000</span>
         </div>
         {instruments[marketId]?.isPool && isApproved&& <TinyThemeButton
           action={toggleIssueField}

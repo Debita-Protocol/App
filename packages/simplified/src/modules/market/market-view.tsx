@@ -375,9 +375,9 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
             <li>
-            <span>Instrument's Expected Return</span>
+            <span>Instrument's Estimated Return</span>
               {generateTooltip(
-                        "Estimated return the instrument would make, in APR",
+                        "What I, as a manager, predict the estimated return the instrument would make, in APR",
                         "expected"
                       )}
             <span>{totalCollateral}{" %"}</span> 
@@ -387,9 +387,9 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
             <li>
-            <span>longZCB Expected Return</span>
+            <span>longZCB Estimated Return</span>
               {generateTooltip(
-                        "Instrument Expected Return - promisedReturn ",
+                        "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
                         "lexpected"
                       )}
             <span>{totalCollateral - poolData?.promisedReturn}{" %"}</span> 
@@ -458,7 +458,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
 
           <li>
-            <span>Number of Managers</span>
+            <span>longZCB Price Now</span>
             <span>1</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
