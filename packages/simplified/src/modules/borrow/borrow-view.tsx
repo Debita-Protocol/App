@@ -13,6 +13,7 @@ import {
     Constants,
     useScrollToTopOnMount,
 } from "@augurproject/comps"
+import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 
 const { 
     ButtonComps: { SecondaryThemeButton },
@@ -67,11 +68,47 @@ const Pools: React.FC = () => {
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Vault</th>
-                        <th>Collateral</th>
-                        <th>APR</th>
-                        <th>Leverage Factor</th>
+                        <th>
+                            <div>
+                                <span>
+                                    Name
+                                </span>
+                                {generateTooltip("Name of the pool","Name")}
+                            </div>
+                            
+                        </th>
+                        <th>
+                            <div>
+                                <span>
+                                Vault
+                                </span>
+                                {generateTooltip("Associated Vault", "Vault")}
+                            </div>
+                        </th>
+                        <th>
+                            <div>
+                                <span>
+                                Collateral
+                                </span>
+                                {generateTooltip("Accepted collateral(s)", "Collateral")}     
+                            </div>
+                        </th>
+                        <th>
+                            <div>
+                                <span>
+                                    Borrow APR
+                                </span>
+                                {generateTooltip("Rate paid by borrowers", "APR")}
+                            </div>
+                        </th>
+                        <th>
+                            <div>
+                                <span>
+                                    Utilization Rate
+                                </span>
+                                {generateTooltip("The amount of supplied assets borrowed", "Utilization Rate")}
+                            </div>
+                        </th>
                         <th>Total Borrowed Assets</th>
                         <th>Total Available Assets</th>
                     </tr>

@@ -395,6 +395,7 @@ export interface PoolInstrument extends BaseInstrument {
   poolLeverageFactor: string;
   totalBorrowedAssets: string;
   totalSuppliedAssets: string;
+  totalAvailableAssets: string;
   APR: string;
   managementFee?: string;
   collaterals: Collateral[]; 
@@ -452,7 +453,9 @@ export interface Asset {
 export interface Collateral extends Asset {
   borrowAmount: string;
   maxAmount: string;
+  totalCollateral?: string; // total collateral in the pool, 
   tokenId?: string;
+  owner?: string; // supplied if owner is not zero address.
   balance?: string;
   isERC20: boolean;
 }
@@ -475,6 +478,11 @@ export interface UserPoolInfo {
       [tokenId: string]: string;
     };
   };
+  removableCollateral: {
+    [address: string]: {
+      [tokenId: string]: string;
+    }
+  }
   walletBalances? : {
     [address: string]: {
       [tokenId: string]: string;
@@ -485,6 +493,7 @@ export interface UserPoolInfo {
     amount: string;
   };
   accountLiquidity: string;
+  maxBorrowable: string;
 }
 
 

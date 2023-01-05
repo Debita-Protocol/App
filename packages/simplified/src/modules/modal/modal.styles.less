@@ -43,11 +43,74 @@
 }
 
 .ModalPoolView {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-evenly;
+    > button {
+      margin-bottom: @size-20;
+    }
+}
+
+
+.ModalPoolBorrowView {
   display: flex;
   flex-flow: column nowrap;
-  justify-content: space-evenly;
+  justify-content: center;
+  align-items: flex-start;
+  > section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      padding: @size-16;
+      > span {
+        padding: @size-4;
+      }
+    }
+  }
+  > div:nth-of-type(3) {
+    width:100%;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content:flex-start;
+    > label:first-of-type {
+      color: var(--secondary-text);
+      font-size: @size-18;
+      font-weight: @weight-bold;
+    }
+  }
+  > div:nth-of-type(4) {
+    width:100%;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content:flex-start;
+  }
   > button {
     margin-bottom: @size-20;
+  }
+}
+
+.ModalPoolRepayView {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+  align-items: flex-start;
+  > section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      padding: @size-16;
+      > span {
+        padding: @size-4;
+      }
+    }
   }
 }
 
@@ -345,6 +408,74 @@
   svg {
     path {
       fill: var(--failed)
+    }
+  }
+}
+
+
+.ModalPoolCollateralView {
+  .Container;
+
+  max-width: 395px;
+  min-width: 350px;
+
+  > main {
+    padding-top: @size-16;
+
+    > section:not(:last-of-type) {
+      border-bottom: @size-1 solid var(--theme-border);
+      padding-bottom: @size-16;
+
+      &:first-of-type.TargetDescription {
+        grid-gap: @size-4;
+        > span:first-of-type {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+.RammTargetDescription {
+  > span:first-of-type,
+  > span:nth-of-type(3) {
+    .text-14-semi-bold;
+
+    color: var(--primary-text);
+    margin-bottom: 0;
+  }
+
+  > span:nth-of-type(2) {
+    display: grid;
+    grid-gap: @size-4;
+
+    > span:first-of-type {
+      .text-14-semi-bold;
+
+      color: var(--primary-text);
+      line-height: 140%;
+
+      > span:first-of-type {
+        .limit-lines(1);
+      }
+
+      > span:last-of-type {
+        .limit-lines(2);
+      }
+
+      > span:first-of-type:last-of-type {
+        .limit-lines(3);
+      }
+    }
+
+    > span:last-of-type {
+      .text-12;
+
+      color: var(--secondary-text);
+      white-space: nowrap;
+      word-break: none;
+      display: inline-block;
+      text-transform: capitalize;
     }
   }
 }

@@ -9,6 +9,7 @@ import {
     Components
 } from "@augurproject/comps";
 import { InstrumentInfos, VaultInfo, VaultInfos, PoolInstrument, Collateral } from "@augurproject/comps/build/types";
+import {BigNumber as BN} from "bignumber.js";
 
 const {
     LabelComps: { ValueLabel }
@@ -99,7 +100,7 @@ const PoolCardView: React.FC = ({
         </td>
         <td>
             <span>
-                {poolLeverageFactor}
+                { new BN(totalSuppliedAssets).isZero() ? "0.00" : new BN(totalBorrowedAssets).dividedBy(new BN(totalSuppliedAssets)).multipliedBy(100).toFixed(2) }%
             </span>
         </td>
         <td>

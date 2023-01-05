@@ -158,25 +158,26 @@
 .ModalAmountInput {
 
   display: flex;
-  padding: @size-24 @size-24 @size-40;
+  padding: @size-10 @size-20;
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 100%;
 
   > span:first-of-type {
-    .text-16-bold;
-
+    .text-18-bold;
+    padding-bottom: @size-4;
     text-transform: capitalize;
     color: var(--secondary-text);
     align-items: center;
     display: flex;
+    grid-column: span 2;
   }
 
   > span:nth-of-type(2) {
     .text-14-semi-bold;
-
+    grid-column: span 2;
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     text-transform: capitalize;
     color: var(--primary-text);
     cursor: pointer;
@@ -236,7 +237,7 @@
   > input {
     .text-20-bold;
 
-    width: @size-64;
+    width: @size-90;
     color: var(--primary-text);
     background-color: var(--primary-bg);
     border-radius: @size-8;

@@ -79,6 +79,26 @@ export interface AmountInputProps {
   toggleUnderlying?: Function; 
 }
 
+export interface ModalAmountInputProps {
+  updateInitialAmount: (string) => void;
+  initialAmount: string;
+  maxValue?: string;
+  showCurrencyDropdown?: boolean;
+  updateCash?: (string) => void;
+  chosenCash: string;
+  heading?: string;
+  rate?: React.Fragment | null;
+  error?: boolean;
+  updateAmountError?: Function;
+  ammCash?: Cash;
+  isBuy?: boolean;
+  disabled?: boolean;
+  toggleUnderlying?: Function; 
+  dropdown?: React.FC,
+  tooltip?: React.FC,
+  maxValueLabel?: string
+}
+
 export const AmountInput = ({
   updateInitialAmount,
   initialAmount,
@@ -192,7 +212,10 @@ export const ModalAmountInput = ({
   isBuy = true,
   disabled = false,
   toggleUnderlying, 
-}: AmountInputProps) => {
+  dropdown,
+  tooltip,
+  maxValueLabel
+}: ModalAmountInputProps) => {
   const { isLogged } = useAppStatusStore();
   const currencyName = chosenCash;
   const [amount, updateAmount] = useState(initialAmount);
@@ -223,7 +246,7 @@ export const ModalAmountInput = ({
         <span onClick={setMax}>
         {isLogged && maxValue&&(
           <>
-            <span>balance:</span>{" "}
+            <span>{maxValueLabel ? maxValueLabel : "Balance:"}</span>
             {isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted}
           </>
         )}
@@ -264,7 +287,9 @@ export const ModalAmountInput = ({
           </span>
         )}
         {chosenCash === SHARES && !showCurrencyDropdown && <span className={Styles.SharesLabel}>Shares</span>}
-        {showCurrencyDropdown && <CurrencyDropdown defaultValue={chosenCash} onChange={(cash) => updateCash(cash)} />}
+        {dropdown}
+        {tooltip}
+        {/* {showCurrencyDropdown && <CurrencyDropdown defaultValue={chosenCash} onChange={(cash) => updateCash(cash)} />} */}
       </div>
       <span className={Styles.RateLabel}>
         <span>Rate:</span>
