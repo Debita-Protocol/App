@@ -30,6 +30,8 @@ import { useSimplifiedStore } from "../stores/simplified";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
+import {FormAmountInput} from "../pool-proposal/pool-proposal-view";
+
 const {
   SEO,
   LabelComps: { generateTooltip, WarningBanner, CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
@@ -155,7 +157,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
-
+  const [estimatedYield, setEstimatedYield] = useState(0); 
 
 
   const marketId = useMarketQueryId();
@@ -360,10 +362,10 @@ const MarketView = ({ defaultMarket = null }) => {
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
 
-        {isPool && (<ul className={Styles.StatsRow}>
-          <li>
+        {(<ul className={Styles.UpperStatsRow}>
+         {/* <li>
 
-            <span>(Senior) Promised Return</span>
+            <p>(Senior) Promised Return</p>
             {generateTooltip(
                       "Returns made from the instrument that automatically is allocated to its parent vault, in APR",
                       "pr"
@@ -372,27 +374,44 @@ const MarketView = ({ defaultMarket = null }) => {
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
-          </li>
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
+          </li>*/}
             <li>
-            <span>Instrument's Estimated Return</span>
-              {generateTooltip(
-                        "What I, as a manager, predict the estimated return the instrument would make, in APR",
-                        "expected"
-                      )}
-            <span>{totalCollateral}{" %"}</span> 
+              <p>{isPool? "Instrument's Estimated Return":"Instrument's Estimated Return" }</p>
+                      {isPool? generateTooltip(
+                      "Returns made from the instrument that automatically is allocated to its parent vault, in APR",
+                      "pr"
+                    ): generateTooltip(
+                      "Yield generated from instrument, in notional amount. ",
+                      "pr2")}
+             <FormAmountInput
+                updateAmount={(val) => {
+                  console.log("val: ", estimatedYield);
+                  if (/^\d*\.?\d*$/.test(val)) {
+                    setEstimatedYield(
+                      val
+                      
+                    )
+                  }
+                }}
+                prepend={isPool?"%":""}
+                amount={estimatedYield}
+              />
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
             <li>
-            <span>longZCB Estimated Return</span>
-              {generateTooltip(
+            <p>{isPool? "longZCB Estimated Return": "longZCB estimated Redemption price"}</p>
+              {isPool?generateTooltip(
                         "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
                         "lexpected"
-                      )}
-            <span>{totalCollateral - poolData?.promisedReturn}{" %"}</span> 
+                      ): generateTooltip(
+                        "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
+                        "lexpected")}
+             
+            <span>{String(estimatedYield)}{isPool&&" %"}</span> 
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}

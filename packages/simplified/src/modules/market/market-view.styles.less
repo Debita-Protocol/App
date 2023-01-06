@@ -238,6 +238,43 @@
   }
 }
 
+
+.UpperStatsRow {
+  .ThemeBorder;
+
+  background: var(--quaternary-bg);
+  display: flex;
+  flex-flow: row nowrap;
+  width: 100%;
+  height: @size-128;
+
+  > li {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    flex: 1;
+    grid-gap: @size-2;
+
+    &:not(:last-of-type) {
+      border-right: @size-1 solid var(--theme-border);
+    }
+
+    > span:first-of-type {
+      .text-16;
+
+      color: var(--secondary-text);
+    }
+
+    > span:last-of-type {
+      .text-20-semi-bold;
+
+      color: var(--primary-text);
+    }
+  }
+}
+
 .StatsRow {
   .ThemeBorder;
 
@@ -492,4 +529,83 @@
       }
     }
   }
+}
+
+
+
+.FormAmountInput {
+  .text-20-bold;
+
+  grid-column: 1 / span 2;
+  margin-top: @size-14;
+  background-color: var(--primary-bg);
+  border-radius: @size-8;
+  display: flex;
+  flex-flow: row nowrap;
+  height: @size-56;
+  min-height: @size-56;
+  border: @size-1 solid var(--theme-border);
+  outline: 0;
+  color: var(--secondary-text);
+  align-items: center;
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
+
+  > button {
+    margin-right: @size-8;
+  }
+
+  // &:focus-within {
+  //   border: @size-1 solid var(--theme-border);
+  //   outline: 0;
+  // }
+
+  > span {
+    flex: 0 auto;
+  }
+
+  > input {
+    .text-20-bold;
+
+    min-width: @size-64;
+    width: @size-80;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    border-radius: @size-8;
+    border: 0;
+    outline: 0;
+    flex: 1 100%;
+    padding: @size-14 0;
+    margin-right: @size-8;
+    text-overflow: ellipsis;
+
+    &:focus {
+      border: 0;
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--primary-bg);
+    }
+  }
+
+  > span:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin-right: @size-2;
+    margin-left: @size-16;
+  }
+
+  &.Edited {
+    color: var(--primary-text);
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+  }
+  
 }
