@@ -216,7 +216,10 @@ export const MarketLiquidityView = () => {
   const underlying_address = vault?.want.address; 
   const underlyingSymbol = vault?.want.symbol; 
   const exchangeRate = Number(vault.totalShares) ==0? 1: Number(vault.totalAssets)/Number(vault.totalShares); 
-
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
   const BackToLPPageAction = () => {
     history.push({
       pathname: makePath(LIQUIDITY),
@@ -298,10 +301,11 @@ export const MarketLiquidityView = () => {
           <li>
             <span>Total First Loss Capital</span>
             {generateTooltip(
-          "Total amount of insurance. Loss from instruments will be first deducted from this amount",
+          "Total amount of insurance in vault's underlying. Loss from instruments will be first deducted from this amount",
           "firstloss"
         )}
-            <span>{formatDai(100000000/1000000 || "0.00").full}</span>
+            <span>{roundDown(vault.totalProtection, 2)
+              }</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>

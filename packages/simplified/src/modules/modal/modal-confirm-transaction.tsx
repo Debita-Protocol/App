@@ -32,7 +32,8 @@ export interface ModalConfirmTransactionProps {
   setAmount?: Function; 
   includeInput?: boolean; 
   maxValue?: string; 
-  name?: string, 
+  name?: string;  
+  disabled?: boolean; 
 }
 
 const ModalConfirmTransaction = ({
@@ -46,6 +47,7 @@ const ModalConfirmTransaction = ({
   includeInput = false, 
   maxValue, 
   name, 
+  disabled, 
 }: ModalConfirmTransactionProps) => {
   const [buttonText, setButtonText] = useState(transactionButtonText);
   return (
@@ -80,7 +82,7 @@ const ModalConfirmTransaction = ({
             });
           }}
           text={buttonText}
-          disabled={buttonText !== transactionButtonText}
+          disabled={disabled || buttonText !== transactionButtonText}
           customClass={ButtonStyles.ReviewTransactionButton}
         />
    

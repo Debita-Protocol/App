@@ -206,6 +206,10 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   const{marketId} = instrument; 
   // console.log('instrument', instrument)
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -244,7 +248,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       </button>
       <span>{ (instrument?.isPool? "  true": "  false")}</span>
       <span>{instrument?.balance.toString() }</span>
-      <span>{instrument?.seniorAPR.toString()}{"%"}</span>
+      <span>{roundDown((((1+ Number(instrument?.seniorAPR)/1e18)**31536000) -1)*100, 2)}{"%"}</span>
       <span>
         {instrument?.exposurePercentage.toString()}{"%"}
       </span>

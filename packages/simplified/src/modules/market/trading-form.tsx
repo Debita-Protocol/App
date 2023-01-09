@@ -689,7 +689,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, ammCash)} />
 
-        {isLogged && 
+        {/*isLogged && 
           !isApprovedTrade && 
           (
           <ApprovalButton
@@ -705,7 +705,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
               setIsApprovedTrade: setIsApprovedTrade, 
             }}
           />
-        )}
+        )*/}
         {isLogged && isNotVerified &&(
           <TinyThemeButton 
           text = {"Test Verify"}

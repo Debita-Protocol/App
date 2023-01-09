@@ -139,8 +139,8 @@ const PositionRow = ({
   limitOrder = null, 
   claimable , 
   portfolio = false , 
-  zcbAmount 
-
+  zcbAmount , 
+isApproved, 
 }: {
 zcbAmount?: string; 
   marketId?: string, 
@@ -154,7 +154,7 @@ zcbAmount?: string;
   averagePricePurchased?:string; 
   address?: string; 
   portfolio?: boolean; 
-
+isApproved?:  boolean; 
 }) => {
   const {actions: {setModal},} = useAppStatusStore(); 
   const {
@@ -203,10 +203,12 @@ return (
              {
                 text: "Redeeming will automatically withdraw capital from the instrument",
             },
+
           setAmount: setAmount, 
           includeInput: true, 
            maxValue: zcbAmount||0, 
            name: outcome, 
+           disabled :!isApproved, 
           breakdowns: [
                 {
                   heading: "What you are redeeming:",
@@ -515,13 +517,15 @@ interface PositionsTableProps {
   // claimableWinnings?: Winnings;
   singleMarket?: boolean;
   portfolioPage?: boolean; 
+  isApproved?: boolean;
 }
 
 export const PositionTable = ({
   marketId,  
 
   singleMarket=true,
-  portfolioPage = false
+  portfolioPage = false, 
+  isApproved, 
 }: PositionsTableProps) => {
   const {
     seenPositionWarnings,
@@ -550,10 +554,10 @@ console.log('zcbBalances', );
         <PortfolioHeader/>}
         {/*positions.length === 0 && <span>No positions to show</span>*/}
         {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
-        zcbAmount = {zcbBalances[marketId]?.longZCB}
+        zcbAmount = {zcbBalances[marketId]?.longZCB} isApproved = {isApproved}
         claimable = {true} key={String(0)} hasLiquidity={true} outcome={"longZCB"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
         {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
-        zcbAmount = {zcbBalances[marketId]?.shortZCB}
+        zcbAmount = {zcbBalances[marketId]?.shortZCB }isApproved = {isApproved}
         claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
         
         {false &&!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
@@ -661,6 +665,8 @@ interface PositionsLiquidityViewSwitcherProps {
   setTables?: Function;
   claimableFirst?: boolean;
   portfolioPage?: boolean; 
+
+  isApproved?: boolean; 
 }
 export const PositionsView = ({
   marketId, 
@@ -668,7 +674,8 @@ export const PositionsView = ({
   setActivity = null,
   setTables=null,
   claimableFirst = false,
-  portfolioPage = false
+  portfolioPage = false, 
+  isApproved, 
 }: PositionsLiquidityViewSwitcherProps) => {
   const {
     balances: { lpTokens, marketShares },
@@ -745,6 +752,7 @@ export const PositionsView = ({
                 <PositionTable
                   marketId = {marketId}
                   singleMarket
+                  isApproved = {isApproved}
                   // market={market}
                   // ammExchange={ammExchange}
                   // positions={userPositions}

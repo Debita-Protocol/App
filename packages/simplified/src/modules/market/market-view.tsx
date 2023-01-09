@@ -638,7 +638,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{31536000* poolData?.promisedReturn/1e18}{"%"}</span>
+            <span>{roundDown((((1+ poolData?.promisedReturn/1e18)**31536000) -1)*100, 2)}{"%"}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -710,7 +710,7 @@ const MarketView = ({ defaultMarket = null }) => {
         {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
         lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
         
-        <PositionsView marketId = {marketId}/>
+        <PositionsView marketId = {marketId} isApproved = {isApproved}/>
 
         <div
           className={classNames(Styles.Details, {
