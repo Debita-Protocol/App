@@ -310,7 +310,7 @@ export const MarketLiquidityView = () => {
         </ul>
 
         <h4></h4>
-     <h4>Vault Performance</h4>
+     {/*<h4>Vault Performance</h4>*/}
 
         </div> 
         <MintForm {...{vaultId, selectedAction, setSelectedAction, amount, setAmount, 
@@ -723,7 +723,7 @@ const MintForm = ({
           updateInitialAmount={(amount) => setAmount(amount)}
           initialAmount={amount}
           maxValue={userMaxAmount}
-          chosenCash={isRemove ? SHARES : chosenCash}
+          chosenCash={isRemove ?  SHARES : !isMint ? chosenCash: SHARES}
           updateCash={updateCash}
           updateAmountError={() => null}
           disabled = {false}

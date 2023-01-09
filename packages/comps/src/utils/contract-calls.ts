@@ -615,7 +615,7 @@ export async function mintVaultDS(
   depositAmount: string, 
   leverageFactor: number = 0, 
   // not_faucet: boolean = false
-  ) : Promise<TransactionResponse>{
+  ) {
   const scaledAmount = pp.mul(Number(depositAmount)* precision).div(precision); 
 
   if(leverageFactor!=0) {
@@ -636,7 +636,26 @@ export async function mintVaultDS(
    cashabi["abi"], getProviderOrSigner(library, account))
 
   // await collateral.approve(vaultAd, scaledAmount); 
-  return await vault.deposit(scaledAmount, account); 
+  try {
+    const response: TransactionResponse = await vault.deposit(scaledAmount, account);
+    const { hash } = response;
+    return {
+      hash,
+      // chainId: String(chainId),
+      addedTime: new Date().getTime(),
+      seen: false,
+      status: TX_STATUS.PENDING,
+      marketDescription: "Minted " + depositAmount+ "vault shares",
+      from: account,
+      message: `Investing in Vault` + vaultId,
+      // approval: { tokenAddress: tokenAddress, spender: spender },
+    };
+
+  } catch (error) {
+    console.debug("Failed to mint vault", error);
+    throw error;
+  }
+
 
   // const collateral = Cash__factory.connect(collateral_address, library.getSigner(account));
   // const decimals = await collateral.decimals()

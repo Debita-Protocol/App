@@ -32,6 +32,7 @@ export interface ModalConfirmTransactionProps {
   setAmount?: Function; 
   includeInput?: boolean; 
   maxValue?: string; 
+  name?: string, 
 }
 
 const ModalConfirmTransaction = ({
@@ -43,7 +44,8 @@ const ModalConfirmTransaction = ({
   footer = null,
   setAmount = null, 
   includeInput = false, 
-  maxValue = "0", 
+  maxValue, 
+  name, 
 }: ModalConfirmTransactionProps) => {
   const [buttonText, setButtonText] = useState(transactionButtonText);
   return (
@@ -52,7 +54,7 @@ const ModalConfirmTransaction = ({
       <main>
         {includeInput&& 
             (<AmountInput 
-                chosenCash={"longZCB"}
+                chosenCash={name}
                 heading="Amount"
                 updateInitialAmount={(val) => {
                     setAmount(val);

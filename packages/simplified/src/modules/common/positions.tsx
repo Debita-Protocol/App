@@ -205,7 +205,8 @@ return (
             },
           setAmount: setAmount, 
           includeInput: true, 
-           
+           maxValue: zcbAmount||0, 
+           name: outcome, 
           breakdowns: [
                 {
                   heading: "What you are redeeming:",
@@ -555,7 +556,7 @@ console.log('zcbBalances', );
         zcbAmount = {zcbBalances[marketId]?.shortZCB}
         claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
         
-        {!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
+        {false &&!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
 
         {/*{positions &&
           positions
