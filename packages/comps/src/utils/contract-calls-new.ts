@@ -13,7 +13,8 @@ import {
     pool_factory_address,
     cash_address,
     creditLine_address,
-    variable_interest_rate_address
+    variable_interest_rate_address,
+    validator_manager_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -333,10 +334,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cash = new Contract(cash_address, ERC20Data.abi, signer);
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
-
-    let tx = await controller.testApproveMarket(4);
-    await tx.wait(1);
-    console.log("done");
+    let tx;
     // let tx = await controller.testVerifyAddress();
     // await tx.wait(1);
 
@@ -398,7 +396,8 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await controller.setReputationManager(reputation_manager_address);
     // await tx.wait();
     // console.log("E");
-    // let tx = await controller.testVerifyAddress(); 
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // tx = await controller.testVerifyAddress(); 
     // tx.wait();
     // tx = await reputationManager.setTraderScore(account, pp); 
     // tx.wait();
@@ -437,24 +436,24 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("E")
     
 
-    // tx = await controller.createVault(
-    //     cash.address,
-    //     false,
-    //     0,
-    //     0,
-    //     0,
-    //     {
-    //         N: 1,
-    //         sigma: pp.mul(5).div(100),
-    //         alpha: pp.mul(4).div(10),
-    //         omega: pp.mul(2).div(10),
-    //         delta: pp.mul(2).div(10),
-    //         r:"0",
-    //         s: pp.mul(2),
-    //         steak: pp.div(4)
-    //     }
-    // );
-    // await tx.wait(2);
+    tx = await controller.createVault(
+        cash.address,
+        false,
+        0,
+        0,
+        0,
+        {
+            N: 1,
+            sigma: pp.mul(5).div(100),
+            alpha: pp.mul(4).div(10),
+            omega: pp.mul(2).div(10),
+            delta: pp.mul(2).div(10),
+            r:"0",
+            s: pp.mul(2),
+            steak: pp.div(4)
+        }
+    );
+    await tx.wait(2);
     console.log("F");
 }
 
