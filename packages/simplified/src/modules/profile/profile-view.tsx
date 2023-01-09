@@ -63,9 +63,9 @@ const ProfileView: React.FC = () => {
 
     return (
         <div className={Styles.ProfileView}>
-            {/* <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
+            <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
                 Click Me
-            </button> */}
+            </button>
             <section className={Styles.UserDetailsView}>
                 <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
             </section>
