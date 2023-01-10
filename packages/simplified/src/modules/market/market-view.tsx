@@ -30,7 +30,43 @@ import { useSimplifiedStore } from "../stores/simplified";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
-import {FormAmountInput} from "../pool-proposal/pool-proposal-view";
+const FormAmountInput = ({amount, updateAmount, prepend }) => {
+        //  <input
+        //   type="number"
+        //   onChange={(e) => {
+        //     updateAmount(e.target.value);
+        //     updateInitialAmount(e.target.value);
+        //     errorCheck(e.target.value);
+        //   }}
+        //   title={disabled ? "Liquidity Depleted" : "enter amount"}
+        //   value={amount}
+        //   placeholder="0"
+        //   disabled={disabled}
+        //   onWheel={(e: any) => e?.target?.blur()}
+        // />
+    console.log('amountinput here', amount); 
+  return (
+    <div className={classNames(Styles.FormAmountInput, {
+      [Styles.Edited]: amount !== ""
+    })}>
+      <span>
+        {prepend}
+      </span>
+      <input
+        type="number"
+        value={amount}
+        placeholder="0"
+        onChange={(e) => {
+          console.log('estimated yield here', e.target.value, amount)
+          updateAmount(e.target.value);
+        }} 
+        onWheel={(e: any) => e?.target?.blur()}
+      />
+    </div>
+    
+  )
+}
+
 
 const {
   SEO,
@@ -82,6 +118,52 @@ const WinningOutcomeLabel = ({ winningOutcome }) => (
     </span>
   </span>
 );
+const estimatedReturnsPerp = (
+  promised_return:number, 
+  leverageFactor: number, 
+  inceptionPrice: number,
+  returns: number ) =>{//returns is in decimals, 0.1 is 10% apr 
+
+// (BASE_UNIT+ vars.leverageFactor).mulWadDown(previewMint(BASE_UNIT.mulWadDown(vars.inceptionPrice))) 
+//       -  vars.srpPlusOne.mulWadDown(vars.leverageFactor)
+      //totalassets/totalshares * amount totalassets*10/totalshares * amount * 
+      // inceptionPrice * 1+returns
+      // vars.inceptionPrice.mulWadDown((BASE_UNIT+ vars.promised_return)
+      // .rpow(block.timestamp - vars.inceptionTime, BASE_UNIT))    
+  const srpPlusOne = inceptionPrice * ((1 + promised_return) ** (31536000)) ;
+  const term1 = (1+Number(leverageFactor)); 
+  const term2 =  (inceptionPrice* (1+ returns)); 
+  // console.log('srpplusone', srpPlusOne,  (inceptionPrice* (1+ returns)),(1 + promised_return), (1 + leverageFactor) * (inceptionPrice* (1+ returns)), 
+  //  (srpPlusOne* leverageFactor)); 
+  console.log('leverageFactor', term1, term2, term1*term2 , returns, srpPlusOne, leverageFactor); 
+  return  100* (term1 * term2 - (srpPlusOne* leverageFactor)-inceptionPrice)/inceptionPrice; 
+  //return ((1 + leverageFactor) * (inceptionPrice* (1+ returns)) - (srpPlusOne* leverageFactor) - inceptionPrice)/inceptionPrice; 
+      // 1+lev * inception - 15* lev 
+      // inception + levinception - inception*lev = inception 
+
+}
+const estimatedReturnsFixed = (
+  totalSupply:number, principal: number, 
+expectedYield: number, managerExpectedYield: number, alpha:number, price:number ) => {
+
+  let totalSupply_ = (principal * alpha)/price; 
+  const extra_gain = Number(managerExpectedYield)> Number(expectedYield)? Number(managerExpectedYield) - Number(expectedYield) : 0; 
+  const loss = Number(managerExpectedYield)> Number(expectedYield)? 0: Number(expectedYield) + Number(principal) - 
+   (Number(principal) +Number(managerExpectedYield)); 
+  console.log('extragain/loss', totalSupply, principal, expectedYield, managerExpectedYield, extra_gain, loss); 
+
+  let redemption_price; 
+  if (extra_gain > 0) redemption_price = 1 + extra_gain/totalSupply_
+  else{
+    if(1 <= loss/totalSupply_) return 0; 
+    else redemption_price = 1 - loss/totalSupply_; 
+  }
+
+
+  return redemption_price; 
+}
+
+  
 
 export const useMarketQueryId = () => {
   const location = useLocation();
@@ -157,7 +239,6 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
-  const [estimatedYield, setEstimatedYield] = useState(0); 
 
 
   const marketId = useMarketQueryId();
@@ -218,18 +299,19 @@ const MarketView = ({ defaultMarket = null }) => {
   const isPool = instruments[Id]?.isPool? true:false; 
   const poolData = instruments[Id]
   const duration = instruments[Id]?.duration
-  const expectedYield = instruments[Id]?.expectedYield
+  const expectedYield = instruments[Id]?.interest
   const principal = instruments[Id]?.principal
   const trusted = instruments[Id]?.trusted? 0: 1; 
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
-  const isApproved = (!market_[Id]?.duringAssessment && market_[Id]?.alive); 
+  const longZCBPrice = market_[Id]?.bondPool.longZCBprice; 
+  const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
-  const instrumenType = 
-    console.log('isApproved', isApproved, canbeApproved)
+  // const instrumenType = 
+  //   console.log('isApproved', isApproved, canbeApproved)
 
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
@@ -315,8 +397,17 @@ const MarketView = ({ defaultMarket = null }) => {
   const { volume24hrTotalUSD = null, volumeTotalUSD = null } = transactions[marketId] || {};
   const isFinalized = false//isMarketFinal(market);
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
-  console.log('transactions,', transactions); 
+  const [estimatedYield, setEstimatedYield] = useState(0); 
+  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn/1e18, 
+    poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
+  : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
+    
+  console.log('estimatedyield', managerExpectedYield)
 
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
@@ -363,6 +454,19 @@ const MarketView = ({ defaultMarket = null }) => {
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
 
         {(<ul className={Styles.UpperStatsRow}>
+         { !isPool&& (<li>
+            <p>{"Proposed Estimated Return"}</p>
+              {generateTooltip(
+                "The yield the instrument would incur as proposed by the utilizer" ,
+                "estimated return")
+                }
+             
+            <span>{String(roundDown(expectedYield, 2))}</span> 
+
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>)}
          {/* <li>
 
             <p>(Senior) Promised Return</p>
@@ -377,23 +481,30 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
           </li>*/}
             <li>
-              <p>{isPool? "Instrument's Estimated Return":"Instrument's Estimated Return" }</p>
+              <p>{isPool? "Instrument's Estimated APR":"Instrument's Estimated Return" }</p>
                       {isPool? generateTooltip(
-                      "Returns made from the instrument that automatically is allocated to its parent vault, in APR",
+                      "Actual Returns made from the instrument that automatically is allocated to its parent vault, in APR",
                       "pr"
                     ): generateTooltip(
-                      "Yield generated from instrument, in notional amount. ",
+                      "Actual return generated from instrument, denominated in its underlying. Could be negative, lower bounded by -(principal)",
                       "pr2")}
              <FormAmountInput
-                updateAmount={(val) => {
-                  console.log("val: ", estimatedYield);
-                  if (/^\d*\.?\d*$/.test(val)) {
-                    setEstimatedYield(
-                      val
+              
+                updateAmount = {setEstimatedYield}
+                // {
+                //   (val) => {
+                //   console.log("val: ", estimatedYield);
+                //   setEstimatedYield(
+                //       val
                       
-                    )
-                  }
-                }}
+                //     )
+                //   // if (/^\d*\.?\d*$/.test(val)) {
+                //   //   setEstimatedYield(
+                //   //     val
+                      
+                //   //   )
+                //   // }
+                // }}
                 prepend={isPool?"%":""}
                 amount={estimatedYield}
               />
@@ -403,20 +514,21 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
             <li>
-            <p>{isPool? "longZCB Estimated Return": "longZCB estimated Redemption price"}</p>
+            <p>{isPool? "longZCB Estimated APR": "longZCB estimated Redemption price"}</p>
               {isPool?generateTooltip(
                         "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
                         "lexpected"
                       ): generateTooltip(
-                        "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
+                        "The redemption price of longZCB at maturity. Equals 1 if estimated return = prooposed return.   ",
                         "lexpected")}
              
-            <span>{String(estimatedYield)}{isPool&&" %"}</span> 
+            <span>{String(roundDown(managerExpectedYield, 2))}{isPool&&" %"}</span> 
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
+
         </ul>)}
 
         <WinningOutcomeLabel winningOutcome={outcomeLabel} />
@@ -478,7 +590,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Price Now</span>
-            <span>1</span>
+            <span>{roundDown(longZCBPrice,2)}</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
 
@@ -486,13 +598,21 @@ const MarketView = ({ defaultMarket = null }) => {
         {!isPool ? (<ul className={Styles.StatsRow}>
           <li>
             <span>Principal </span>
-            <span>{formatDai(principal || "0.00").full}</span>
+            {generateTooltip(
+              "Total amount of underlying used by the instrument  ",
+              "principal"
+                      )}
+            <span>{roundDown(principal ,2)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Expected Tot.Yield</span>
-            <span>{formatDai(expectedYield  || "0.00").full}</span>
+            {generateTooltip(
+              "Amount of underlying the utilizer proposed the instrument would incur, when Principal was invested ",
+              "yield"
+                      )}
+            <span>{roundDown(expectedYield , 2)}</span>
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
@@ -518,7 +638,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{poolData?.promisedReturn}</span>
+            <span>{roundDown((((1+ poolData?.promisedReturn/1e18)**31536000) -1)*100, 2)}{"%"}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -590,7 +710,7 @@ const MarketView = ({ defaultMarket = null }) => {
         {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
         lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
         
-        <PositionsView marketId = {marketId}/>
+        <PositionsView marketId = {marketId} isApproved = {isApproved}/>
 
         <div
           className={classNames(Styles.Details, {

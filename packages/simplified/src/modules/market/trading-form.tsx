@@ -319,7 +319,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   }, []);
 
 
-
+  console.log('isapproved', isApproved); 
   useEffect(() => {
     let isMounted = true;
     const getEstimate = async()=>{
@@ -342,7 +342,6 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
      // && new BN(amount).lte(new BN(userBalance))
       ) {
       getEstimate();
-      console.log('breakdown', breakdown); 
 
     } else if (breakdown !== null) {
       isMounted && setBreakdown(null);
@@ -361,7 +360,10 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     if (!isLogged) {
       actionText = "Connect Wallet";
       disabled = true;
-    } else if(typeof breakdown == "string" ){
+    }  else if(isApproved && !isIssue){
+      actionText = "Can only mint after approved"
+      disabled = true; 
+    }else if(typeof breakdown == "string" ){
       console.log('breakdown', breakdown); 
       if(breakdown == "execution reverted: ERC20: transfer amount exceeds allowance"){
         actionText = "Not approved";
@@ -473,7 +475,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
             status: TX_STATUS.PENDING,
             from: loginAccount.account,
             addedTime: new Date().getTime(),
-            message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
+            message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} ZCB`,
             marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
           });
         }
@@ -687,7 +689,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
        { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, ammCash)} />
 
-        {isLogged && 
+        {/*isLogged && 
           !isApprovedTrade && 
           (
           <ApprovalButton
@@ -703,7 +705,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
               setIsApprovedTrade: setIsApprovedTrade, 
             }}
           />
-        )}
+        )*/}
         {isLogged && isNotVerified &&(
           <TinyThemeButton 
           text = {"Test Verify"}
@@ -813,7 +815,7 @@ export const ApprovalButton = ({
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
     // let spender = marketManager//rewardContractAddress || ammFactory; 
     let spender = spender_; 
-    let text = "Liquidity DS"; 
+    let text = "Approving Underlying"; 
     const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
       addTransaction(tx);
       setIsApprovedTrade && setIsApprovedTrade(true)
