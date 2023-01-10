@@ -296,7 +296,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     }
   }, [account, amount, vaults, instruments,market_])
 
-
+console.log('MMAllowance', MMAllowance); 
   useEffect(async() => {
 
           

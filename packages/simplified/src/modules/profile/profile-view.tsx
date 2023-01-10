@@ -16,6 +16,7 @@ import InstrumentCard from "../common/instrument-card";
 import BigNumber from "bignumber.js";
 import { VaultBalances, ZCBBalances } from "@augurproject/comps/build/types";
 import { Link } from "react-router-dom";
+import { AppViewStats } from "../common/labels";
 
 const { ContractSetup } = ContractCalls2;
 const { ValueLabel } = LabelComps;
@@ -63,12 +64,15 @@ const ProfileView: React.FC = () => {
 
     return (
         <div className={Styles.ProfileView}>
+
             <button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
                 Click Me
             </button>
+
             <section className={Styles.UserDetailsView}>
                 <ValueLabel label={"Reputation Score: "} value={reputationScore}/>
             </section>
+
             <div>
                 <section className={Styles.UserVaultInfo}>
                     <h2>Vaults Balances: </h2>
@@ -138,7 +142,7 @@ const MarketCard: React.FC = ({ marketId, zcbBalance, instruments }) => {
 
     return (
         <Link to={{
-            pathname: makePath("market-liquidity"),
+            pathname: makePath("market"),
             search: makeQuery({id: marketId})
         }}>
         <div className={Styles.UserVaultCard}>

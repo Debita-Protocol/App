@@ -43,7 +43,7 @@ const { USDC, POSITIONS, LIQUIDITY, ALL, ADD, REMOVE, TRADES, TX_STATUS, Transac
 
 
 
-const redeem = ({
+export const redeem = ({
   account, loginAccount, marketId, amount
 })=>{
   redeemPoolZCB(account, loginAccount.library, marketId, amount).then((response)=> {console.log(response)}); 
@@ -142,7 +142,7 @@ const PositionRow = ({
   zcbAmount , 
 isApproved, 
 }: {
-zcbAmount?: string; 
+  zcbAmount?: string; 
   marketId?: string, 
   claimable?: boolean
   limitOrder?: number; 
@@ -164,8 +164,11 @@ isApproved?:  boolean;
     balances,
     transactions,
   } = useUserStore();
-const [amount, setAmount] = useState(0); 
+  const { instruments } = useDataStore2()
 
+  const [amount, setAmount] = useState<string>("");
+  const isPool = instruments[marketId]?.isPool; 
+  const redeemPrice = 1; 
 return (
   <ul className={Styles.PositionRow}>
 
@@ -203,19 +206,21 @@ return (
              {
                 text: "Redeeming will automatically withdraw capital from the instrument",
             },
-
-          setAmount: setAmount, 
-          includeInput: true, 
+            marketId: marketId, 
+            amount: amount, 
+            setAmount: setAmount, 
+          includeInput: isPool, 
            maxValue: zcbAmount||0, 
            name: outcome, 
-           disabled :!isApproved, 
-          breakdowns: [
+           disabled :false, 
+           redeemPrice: redeemPrice, 
+           breakdowns:  [
                 {
-                  heading: "What you are redeeming:",
+                  heading: "What you are redeeming?:",
                   infoNumbers: [
                     {
                       label: "longZCB",
-                      value: amount,                              
+                      value: Number(zcbAmount),                              
                     },
                   ],
                 },
@@ -224,7 +229,7 @@ return (
                   infoNumbers: [
                     {
                       label: "Underlying",
-                      value: amount,                              
+                      value: (Number(zcbAmount) * redeemPrice),                              
                     },
                   ],
                 },

@@ -130,7 +130,7 @@ const estimatedReturnsPerp = (
       // inceptionPrice * 1+returns
       // vars.inceptionPrice.mulWadDown((BASE_UNIT+ vars.promised_return)
       // .rpow(block.timestamp - vars.inceptionTime, BASE_UNIT))    
-  const srpPlusOne = inceptionPrice * ((1 + promised_return/1e19) ** (31536000)) ;
+  const srpPlusOne = inceptionPrice * ((1 + promised_return/1e18) ** (31536000)) ;
   const term1 = (1+Number(leverageFactor)); 
   const term2 =  (inceptionPrice* (1+ returns)); 
   // console.log('srpplusone', srpPlusOne,  (inceptionPrice* (1+ returns)),(1 + promised_return), (1 + leverageFactor) * (inceptionPrice* (1+ returns)), 
@@ -321,7 +321,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const isApproved = (!market_[Id]?.duringAssessment && market_[Id]?.alive); 
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
-  const longZCBSupply = market_[Id]?.longZCBsupply; 
+  const longZCBSupply = market_[Id]?.bondPool.longZCB.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
@@ -416,7 +416,6 @@ const MarketView = ({ defaultMarket = null }) => {
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
     
-  console.log('STUFF2', poolData, estimatedYield)
 
   function roundDown(number, decimals) {
       decimals = decimals || 0;
@@ -580,7 +579,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
                         "net"
                       )}
-            <span>{totalCollateral}</span> 
+            <span>{roundDown(market_[Id]?.bondPool.longZCB.totalSupply,2)}/{roundDown(market_[Id]?.bondPool.shortZCB.totalSupply,2)}</span> 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
@@ -601,7 +600,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Start Price </span>
-            <span>{formatDai(0.818 || "0.00").full}</span>
+            <span>{market_[Id]?.bondPool.b}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -657,7 +656,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{roundDown((((1+ poolData?.promisedReturn/1e19)**31536000) -1)*100, 2)}{"%"}</span>
+            <span>{roundDown((((1+ poolData?.promisedReturn/1e18)**31536000) -1)*100, 2)}{"%"}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -681,8 +680,8 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <ul className={Styles.StatsRow}>
           <li>
-            <span>longZCB Issued </span>
-            <span>{longZCBSupply}</span>
+            <span>--</span>
+            <span>-</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
@@ -697,7 +696,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
           <li>
-            <span>Price of longZCB</span>
+            <span>--</span>
               <span>-</span>
 
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}

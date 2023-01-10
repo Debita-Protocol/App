@@ -6,6 +6,9 @@ import { Components, InputComps } from "@augurproject/comps";
 import { InfoNumbers, InfoNumberType } from "../market/trading-form";
 import { MarketInfo } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "modules/stores/simplified";
+import {useUserStore } from "@augurproject/comps";
+import {redeem} from "../common/positions"; 
+
 const {
   ButtonComps: { SecondaryThemeButton },
   MarketCardComps: { MarketTitleArea },
@@ -34,6 +37,9 @@ export interface ModalConfirmTransactionProps {
   maxValue?: string; 
   name?: string;  
   disabled?: boolean; 
+  amount?: string; 
+  marketId?: string;
+  redeemPrice?: string;  
 }
 
 const ModalConfirmTransaction = ({
@@ -43,13 +49,44 @@ const ModalConfirmTransaction = ({
   targetDescription,
   title,
   footer = null,
+  amount, 
   setAmount = null, 
   includeInput = false, 
   maxValue, 
   name, 
   disabled, 
+  marketId, 
+  redeemPrice = "1", 
 }: ModalConfirmTransactionProps) => {
+  const {
+    account,
+    loginAccount,
+    actions: { addTransaction },
+      } = useUserStore();
+
   const [buttonText, setButtonText] = useState(transactionButtonText);
+  const [amount_, _setAmount] = useState(""); 
+
+const breakdowns_ = [
+                {
+                  heading: "What you are redeeming:",
+                  infoNumbers: [
+                    {
+                      label: "longZCB",
+                      value: amount_,                              
+                    },
+                  ],
+                },
+                {
+                  heading: "What you'll recieve",
+                  infoNumbers: [
+                    {
+                      label: "Underlying",
+                      value: Number(redeemPrice) * Number(amount_),                              
+                    },
+                  ],
+                },
+              ] 
   return (
     <section className={Styles.ModalConfirmTransaction}>
       <Header title={title} />
@@ -58,23 +95,43 @@ const ModalConfirmTransaction = ({
             (<AmountInput 
                 chosenCash={name}
                 heading="Amount"
-                updateInitialAmount={(val) => {
-                    setAmount(val);
-                }}
-                initialAmount={"0"}
+                updateInitialAmount={
+                  // (amount)=> setAmount(amount)
+                  (amount_)=> _setAmount(amount_)
+                  }
+                //   (val) => {
+                //     setAmount(val);
+                // }}
+                initialAmount={amount}
                 maxValue={maxValue}
             />)
         }
+        
         <TargetDescription {...{ targetDescription }} />
-        {breakdowns.length > 0 &&
-          breakdowns.map(({ heading, infoNumbers }) => (
+        {!includeInput ?
+          (breakdowns.map(({ heading, infoNumbers }) => (
             <section key={`${heading}-breakdown`}>
               <h5>{heading}</h5>
               <InfoNumbers {...{ infoNumbers }} />
             </section>
-          ))}
+          )))
+          : (breakdowns_.map(({ heading, infoNumbers }) => (
+            <section key={`${heading}-breakdown`}>
+              <h5>{heading}</h5>
+              <InfoNumbers {...{ infoNumbers }} />
+            </section>
+          )))
 
-        <SecondaryThemeButton
+        }
+        {
+          includeInput? 
+          (  <SecondaryThemeButton
+          action={()=> redeem({account, loginAccount, marketId, amount: amount_})}
+          text={buttonText}
+          disabled={disabled || buttonText !== transactionButtonText}
+          customClass={ButtonStyles.ReviewTransactionButton}
+        />):
+          (<SecondaryThemeButton
           action={() => {
             transactionAction({
               onTrigger: () => setButtonText("Awaiting signing..."),
@@ -84,7 +141,11 @@ const ModalConfirmTransaction = ({
           text={buttonText}
           disabled={disabled || buttonText !== transactionButtonText}
           customClass={ButtonStyles.ReviewTransactionButton}
-        />
+        />)
+
+
+        }
+    
    
         {footer && (
           <div className={Styles.FooterText}>
