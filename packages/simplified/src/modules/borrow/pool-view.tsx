@@ -17,7 +17,7 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MODAL_ADD_LIQUIDITY, MODAL_POOL_COLLATERAL_ACTION, MODAL_POOL_BORROWER_ACTION } from "@augurproject/comps/build/utils/constants";
 import { LoadingPoolCard } from "./PoolCard";
 
-import {userPoolData, emptyPoolInstrument } from "./fakedata";
+//import {userPoolData, emptyPoolInstrument } from "./fakedata";
 import {BigNumber as BN} from "bignumber.js";
 import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 import { TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
@@ -197,7 +197,7 @@ const PoolView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        { userPoolData && userPoolData.walletBalances && collaterals.length > 0? (
+                        { collaterals.length > 0? (
                             collaterals.map((asset, i) => { // className CollateralSupplyCard, error handling.
                                 // console.log(asset);
                                 const supplyBalance = poolInfo.supplyBalances[asset.address][asset.tokenId];

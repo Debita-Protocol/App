@@ -223,7 +223,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const trusted = instruments[Id]?.trusted? 0: 1; 
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
-  const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
+  const isApproved = (!market_[Id]?.duringAssessment && market_[Id]?.alive); 
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.longZCBsupply; 

@@ -9,6 +9,8 @@ import {
     ContractCalls2
   } from "@augurproject/comps";
 
+import _ from "lodash"
+
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
 import Styles from "./creditline-proposal-view.styles.less";

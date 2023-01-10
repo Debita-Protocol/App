@@ -9,9 +9,10 @@ import {
 } from "./constants-2";
 import { useData2 } from "./data-hooks-2";
 import { useUserStore, UserStore } from "./user";
-import { getContractData } from "../utils/contract-calls-new";
+//import { getContractData } from "../utils/contract-calls-new";
+import { fetchRammGraphData } from "../utils/contract-calls-new";
 import { VaultInfos, VaultInfo } from "types";
-import { getAllTransactions } from "../apollo/client";
+//import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
 import { MARKET_LOAD_TYPE } from "../utils/constants";
@@ -62,10 +63,11 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
       let infos = { vaults: dvaults , blocknumber: dblock, instruments: dinstruments, markets: dmarkets };
 
       try {
-        infos = await getContractData(
-          userAccount,
-          provider
-        );
+        // infos = await getContractData(
+        //   userAccount,
+        //   provider
+        // );
+        infos = await fetchRammGraphData(provider)
         console.log('infos: ', infos)
         if (isRpcDown) {
           setIsRpcDown(false);

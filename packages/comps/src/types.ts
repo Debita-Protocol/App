@@ -512,24 +512,58 @@ export interface CorePoolData {
   auctions?: Auction[];
 }
 
+export interface BondPool {
+  address: string
+  longZCB: Asset
+  shortZCB: Asset
+  longZCBPrice: string
+  a_initial: string
+  b_initial: string
+  b: string
+  discountCap: string
+  discountedReserved: string
+}
+
 export interface CoreMarketInfo {
-  bondPool: string;
+  //bondPool: string;
+  bondPool: BondPool;
   marketId: string;
   vaultId: string;
   creationTimestamp: string;
   parameters: ParameterInfo;
-  phase?: MarketPhaseData;
-  longZCB?: string;
-  shortZCB?: string;
-  longZCBprice:string;
-  longZCBsupply: string;
+  // phase?: MarketPhaseData;
+  duringAssessment: boolean;
+  onlyReputable: boolean;
+  resolved: boolean;
+  alive: boolean;
+  atLoss: boolean;
+  base_budget: string;
+  // longZCB?: string;
+  // shortZCB?: string;
+  // longZCBprice:string;
+  // longZCBsupply: string;
   redemptionPrice: string;
   totalCollateral: string;
   approved_principal?: string;
   approved_yield?: string;
-  validatorData: ValidatorData;
+  // validatorData: ValidatorData;
+  validators: string[];
+  val_cap: string;
+  avg_price: string;
+  totalSales: string;
+  totalStaked: string;
+  numApproved: string;
+  initialStake: string;
+  finalStake: string;
+  numResolved: string;
   marketConditionMet: boolean;
-  initialLongZCBPrice: string;
+  // N: string
+  // sigma: string
+  // alpha: string
+  // omega: string
+  // delta: string
+  // rMarket: string
+  // initialLongZCBPrice: string;
 }
 
 export interface ValidatorData {
@@ -550,18 +584,27 @@ export interface VaultInfo {
   marketIds: string[],
   onlyVerified: boolean,
   default_params: ParameterInfo,
-  r: string,
+  // r: string,
   asset_limit: string;
   total_asset_limit: string;
   want: Asset;
   totalShares: string;
   name: string;
+  symbol: string;
   totalAssets: string;
   utilizationRate: string;
   exchangeRate: string;
   totalEstimatedAPR?: string; 
   goalAPR?: string; 
   totalProtection?: string; 
+  
+  rVault: string
+  N: string
+  sigma: string
+  alpha: string
+  omega: string
+  delta: string
+  rMarket: string
 
 };
 

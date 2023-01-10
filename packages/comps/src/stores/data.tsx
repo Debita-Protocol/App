@@ -9,7 +9,7 @@ import {
 import { useData } from "./data-hooks";
 import { useUserStore, UserStore } from "./user";
 import { getMarketInfos, getRewardsStatus } from "../utils/contract-calls";
-import { getAllTransactions } from "../apollo/client";
+// import { getAllTransactions } from "../apollo/client";
 import { getDefaultProvider } from "../components/ConnectAccount/utils";
 import { AppStatusStore } from "./app-status";
 import { MARKET_LOAD_TYPE } from "../utils/constants";
@@ -108,32 +108,32 @@ export const DataProvider = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children 
     };
   }, []);
 
-  useEffect(() => {
-    let isMounted = true;
-    const { actions: { setIsDegraded } } = AppStatusStore;
-    const { isDegraded } = AppStatusStore.get();
-    const fetchTransactions = () =>
-      getAllTransactions(
-        account?.toLowerCase(),
-        (transactions) => isMounted && transactions && updateTransactions(transactions)
-      )
-        .then(() => {
-          isDegraded && setIsDegraded(false)
-        })
-        .catch((e) => {
-          !isDegraded && setIsDegraded(true);
-        });
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   const { actions: { setIsDegraded } } = AppStatusStore;
+  //   const { isDegraded } = AppStatusStore.get();
+  //   const fetchTransactions = () =>
+  //     getAllTransactions(
+  //       account?.toLowerCase(),
+  //       (transactions) => isMounted && transactions && updateTransactions(transactions)
+  //     )
+  //       .then(() => {
+  //         isDegraded && setIsDegraded(false)
+  //       })
+  //       .catch((e) => {
+  //         !isDegraded && setIsDegraded(true);
+  //       });
 
-    fetchTransactions();
+  //   fetchTransactions();
 
-    const intervalId = setInterval(() => {
-      fetchTransactions();
-    }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, [account]);
+  //   const intervalId = setInterval(() => {
+  //     fetchTransactions();
+  //   }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
+  //   return () => {
+  //     isMounted = false;
+  //     clearInterval(intervalId);
+  //   };
+  // }, [account]);
 
   return <DataContext.Provider value={state}>{children}</DataContext.Provider>;
 };

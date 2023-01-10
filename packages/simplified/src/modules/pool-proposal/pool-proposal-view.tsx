@@ -9,7 +9,7 @@ import { PoolLeverageFactor } from "../common/slippage";
 import { isAddress } from '@ethersproject/address';
 
 
-const { createPoolMarket, createPoolInstrument, addAcceptedCollaterals} = ContractCalls2;
+const { createPoolMarket, createPoolInstrument} = ContractCalls2;
 const {
     SelectionComps: {SquareDropdown, SingleCheckbox},
     ButtonComps: { SecondaryThemeButton, TinyThemeButton },
@@ -17,7 +17,7 @@ const {
     
 } = Components;
 
-interface CollateralItem {
+interface PoolCollateralItem {
     tokenAddress: string;
     tokenId: string;
     borrowAmount: string;
@@ -70,7 +70,7 @@ const PoolProposalView: React.FC = () => {
         inceptionPrice: "",
         leverageFactor: ""
     });
-    const [ collateralInfos, setCollateralInfos] = useState<CollateralItem[]>([]);
+    const [ collateralInfos, setCollateralInfos] = useState<PoolCollateralItem[]>([]);
 
     const {inputError, inputMessage} = usePoolFormInputValdiation(poolData, collateralInfos); 
     
@@ -122,7 +122,8 @@ const PoolProposalView: React.FC = () => {
             vaults[vaultId].address,
             vaults[vaultId].want.address,
             poolData.name,
-            poolData.symbol
+            poolData.symbol,
+            collateralInfos
         );
 
         // using poolData createPoolMarket
@@ -140,12 +141,12 @@ const PoolProposalView: React.FC = () => {
             poolInstrumentAddress
         );
 
-        await addAcceptedCollaterals(
-            account,
-            loginAccount.library,
-            marketId,
-            collateralInfos
-        );
+        // await addAcceptedCollaterals(
+        //     account,
+        //     loginAccount.library,
+        //     marketId,
+        //     collateralInfos
+        // );
     }, [poolData, collateralInfos, vaultId, vaults]);
 
 
@@ -167,6 +168,8 @@ const PoolProposalView: React.FC = () => {
             isERC20: true
         }]);
     }, [collateralInfos]);
+
+    console.log("collateralInfo: ", collateralInfos);
     
     return (
         <>
@@ -463,7 +466,7 @@ const usePoolFormInputValdiation = ({
       if (collateralInfo.tokenAddress.length === 0 || !isAddress(collateralInfo.tokenAddress)) {
         inputError = true;
         inputMessage = "Collateral Address is required";
-      } else if (!collateralInfo.isERC20 && collateralInfo.tokenId.length > 0) {
+      } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
         inputError = true;
         inputMessage = "Token ID is required";
       } else if (new BN(collateralInfo.borrowAmount).isZero()) {

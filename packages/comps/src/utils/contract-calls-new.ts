@@ -43,6 +43,10 @@ import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
 import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
+import { rammClient } from "../apollo-ramm/client";
+import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
+
+import _ from "lodash"
 
 
 type NumStrBigNumber = number | BN | string;
@@ -53,6 +57,81 @@ function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
 }
 const pp = BigNumber.from(10).pow(18);
 
+export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
+    vaults: VaultInfos, 
+    markets: CoreMarketInfos, 
+    instruments: InstrumentInfos,
+    blocknumber: number
+}> => {
+    const blocknumber = await provider.getBlockNumber();
+    let vaults: VaultInfos = {};
+    let markets: CoreMarketInfos = {};
+    let instruments: InstrumentInfos = {};
+    try {
+        const vaultResponse = await rammClient.query({
+            query: GET_VAULTS
+        });
+        console.log("vaultResponse", vaultResponse)
+        _.forEach(vaultResponse.data.vaults, (vault) => {
+            let marketIds = _.map(vault.marketIds, (market) => market.id);
+            let _vault = _.assign(vault, {marketIds});
+            vaults[vault.vaultId] = _vault;
+        })
+
+        const marketResponse = await rammClient.query({
+            query: GET_MARKETS
+        });
+        console.log("marketResponse", marketResponse)
+        _.forEach(marketResponse.data.markets, (market) => {
+            let validators = _.map(market.validators, (validator) => validator.address);
+            let parameters = {
+                N: market.N,
+                sigma: market.sigma,
+                alpha: market.alpha,
+                omega: market.omega,
+                delta: market.delta,
+                r: market.rMarket,
+                s: market.s,
+                steak: market.steak,
+           }
+           let _market = _.assign(market, {vaultId: market.vaultId.vaultId}, {validators, parameters});
+           
+            markets[market.marketId] = _market;
+        })
+
+        const instrumentResponse = await rammClient.query({
+            query: GET_INSTRUMENTS
+        });
+
+        _.forEach(instrumentResponse.data.poolInstruments, (instrument) => {
+            instruments[instrument.marketId.id] = _.assign(instrument, {
+                vaultId: instrument.vaultId.vaultId,
+                marketId: instrument.marketId.id,
+                isPool: true
+            })
+        })
+        _.forEach(instrumentResponse.data.generalInstruments, (instrument) => {
+            instruments[instrument.marketId.id] = _.assign(instrument, {
+                vaultId: instrument.vaultId.vaultId,
+                marketId: instrument.marketId.id,
+                isPool: false
+            })
+        })
+        _.forEach(instrumentResponse.data.creditlineInstruments, (instrument) => {
+            instruments[instrument.marketId.id] = _.assign(instrument, {
+                vaultId: instrument.vaultId.vaultId,
+                marketId: instrument.marketId.id,
+                isPool: false
+            })
+        })
+
+        return { vaults, markets, instruments, blocknumber}
+
+    } catch(err) {
+        console.log(err);
+        return { vaults, markets, instruments, blocknumber}
+    }
+}
 
 // pool instrument functions
 export const createPoolMarket = async (
@@ -116,6 +195,14 @@ export const createPoolMarket = async (
     return marketId;
 }
 
+interface PoolCollateralItem {
+    tokenAddress: string;
+    tokenId: string;
+    borrowAmount: string;
+    maxAmount: string;
+    isERC20: boolean;
+}
+
 export const createPoolInstrument = async (
     account: string, 
     provider: Web3Provider, 
@@ -123,6 +210,7 @@ export const createPoolInstrument = async (
     asset: string,
     name: string,
     symbol: string,
+    collateralInfos: PoolCollateralItem[]
 ): Promise<string> => {
     // console.log("poolInstrumentABI: ", PoolInstrumentData.abi);
     const poolInstrumentFactory = new ContractFactory(PoolInstrumentData.abi, PoolInstrumentData.bytecode, provider.getSigner(account));
@@ -134,6 +222,25 @@ export const createPoolInstrument = async (
     // console.log("symbol: ", symbol);
     // console.log("variable_interest_rate_address: ", variable_interest_rate_address);
 
+    let collateralLabels = [];
+    let collateralDatas = [];
+    _.forEach(collateralInfos, (collateralInfo) => {
+        collateralLabels = _.concat(collateralLabels, {
+            tokenAddress: collateralInfo.tokenAddress,
+            tokenId: collateralInfo.isERC20 ? "0" : collateralInfo.tokenId
+        });
+
+        collateralDatas = _.concat(collateralDatas, {
+            totalCollateral: 0,
+            maxBorrowAmount: new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
+            maxAmount: new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
+            isERC20: collateralInfo.isERC20,
+        });
+    })
+
+    // console.log("collateral labels: ",collateralLabels)
+    // console.log("collateral datas: ",collateralDatas)
+
     const poolInstrument = await poolInstrumentFactory.deploy(  
         vault,
         controller_address,
@@ -142,46 +249,39 @@ export const createPoolInstrument = async (
         name,
         symbol,
         variable_interest_rate_address,
-        []
+        [],
+        collateralLabels,
+        collateralDatas
     );
     await poolInstrument.deployed();
     console.log("poolInstrument deployed to:", poolInstrument.address);
     return poolInstrument.address;
 }
 
-export const addAcceptedCollaterals = async (
-    account: string,
-    provider: Web3Provider,
-    marketId: string,
-    collateralItems: CollateralItem[] // not in wad format yet
-) => {
-    const signer = getSigner(provider, account);
-    const controller = new Contract(controller_address, ControllerData.abi, signer);
+// export const addAcceptedCollaterals = async (
+//     account: string,
+//     provider: Web3Provider,
+//     marketId: string,
+//     collateralItems: PoolCollateralItem[] // not in wad format yet
+// ) => {
+//     const signer = getSigner(provider, account);
+//     const controller = new Contract(controller_address, ControllerData.abi, signer);
     
-    const multicall = new Multicall({ ethersProvider: provider });
+//     const multicall = new Multicall({ ethersProvider: provider });
 
-    // for each collateralInfo item, call controller.addAcceptedCollateral
-    collateralItems.forEach(async (collateralInfo) => {
-        const tx = await controller.addAcceptedCollateral(
-            marketId,
-            collateralInfo.tokenAddress,
-            collateralInfo.isERC20 ? "0" : collateralInfo.tokenId,
-            new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
-            new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
-            collateralInfo.isERC20
-        )
-        await tx.wait(1);
-    });
-}
-
-
-interface CollateralItem {
-    tokenAddress: string;
-    tokenId: string;
-    borrowAmount: string;
-    maxAmount: string;
-    isERC20: boolean;
-}
+//     // for each collateralInfo item, call controller.addAcceptedCollateral
+//     collateralItems.forEach(async (collateralInfo) => {
+//         const tx = await controller.addAcceptedCollateral(
+//             marketId,
+//             collateralInfo.tokenAddress,
+//             collateralInfo.isERC20 ? "0" : collateralInfo.tokenId,
+//             new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
+//             new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
+//             collateralInfo.isERC20
+//         )
+//         await tx.wait(1);
+//     });
+// }
 
 export const borrowCreditlineInstrument = async (
     account: string, 
@@ -335,6 +435,9 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
+
+    // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
+    // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
     // let tx = await controller.testVerifyAddress();
     // await tx.wait(1);
 
@@ -436,224 +539,224 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("E")
     
 
-    tx = await controller.createVault(
-        cash.address,
-        false,
-        0,
-        0,
-        0,
-        {
-            N: 1,
-            sigma: pp.mul(5).div(100),
-            alpha: pp.mul(4).div(10),
-            omega: pp.mul(2).div(10),
-            delta: pp.mul(2).div(10),
-            r:"0",
-            s: pp.mul(2),
-            steak: pp.div(4)
-        }
-    );
-    await tx.wait(2);
+    // tx = await controller.createVault(
+    //     "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
+    //     false,
+    //     0,
+    //     0,
+    //     0,
+    //     {
+    //         N: 1,
+    //         sigma: pp.mul(5).div(100),
+    //         alpha: pp.mul(4).div(10),
+    //         omega: pp.mul(2).div(10),
+    //         delta: pp.mul(2).div(10),
+    //         r:"0",
+    //         s: pp.mul(2),
+    //         steak: pp.div(4)
+    //     }
+    // );
+    // await tx.wait(2);
     console.log("F");
 }
 
-export const getContractData = async (account: string, provider: Web3Provider): Promise<{
-    vaults: VaultInfos, 
-    markets: CoreMarketInfos, 
-    instruments: InstrumentInfos,
-    blocknumber: number
-}> => {
-    const blocknumber = await provider.getBlockNumber();
-    const controller = new Contract(controller_address, ControllerData.abi, provider);
-    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, provider);
-    const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, provider);
-    const fetcher = new Contract(fetcher_address, FetcherData.abi, getProviderOrSigner(provider, account));
+// export const getContractData = async (account: string, provider: Web3Provider): Promise<{
+//     vaults: VaultInfos, 
+//     markets: CoreMarketInfos, 
+//     instruments: InstrumentInfos,
+//     blocknumber: number
+// }> => {
+//     const blocknumber = await provider.getBlockNumber();
+//     const controller = new Contract(controller_address, ControllerData.abi, provider);
+//     const marketManager = new Contract(market_manager_address, MarketManagerData.abi, provider);
+//     const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, provider);
+//     const fetcher = new Contract(fetcher_address, FetcherData.abi, getProviderOrSigner(provider, account));
 
 
-    const numVaults = await vaultFactory.numVaults();
-    let vaults: VaultInfos = {};
-    let markets: CoreMarketInfos = {};
-    let instruments: InstrumentInfos = {};
+//     const numVaults = await vaultFactory.numVaults();
+//     let vaults: VaultInfos = {};
+//     let markets: CoreMarketInfos = {};
+//     let instruments: InstrumentInfos = {};
 
-    for (let i = 1; i < numVaults.toNumber()+1; i++) {
+//     for (let i = 1; i < numVaults.toNumber()+1; i++) {
 
-        const { vaultBundle, marketBundle, instrumentBundle, timestamp } = await fetcher.fetchInitial(
-            controller_address, 
-            market_manager_address,
-            i
-        );
-        console.log("vaultBundle", vaultBundle);
-        if (isDataTooOld(timestamp.toNumber())) {
-            console.error(
-              "node returned data too old",
-              "timestamp",
-              new Date(timestamp.toNumber() * 1000).toString(),
-              provider.connection.url
-            );
-            throw new Error("contract data too old");
-          }
+//         const { vaultBundle, marketBundle, instrumentBundle, timestamp } = await fetcher.fetchInitial(
+//             controller_address, 
+//             market_manager_address,
+//             i
+//         );
+//         console.log("vaultBundle", vaultBundle);
+//         if (isDataTooOld(timestamp.toNumber())) {
+//             console.error(
+//               "node returned data too old",
+//               "timestamp",
+//               new Date(timestamp.toNumber() * 1000).toString(),
+//               provider.connection.url
+//             );
+//             throw new Error("contract data too old");
+//           }
         
-        let default_params = {
-            N: vaultBundle.default_params.N.toString(),
-            sigma: toDisplay(vaultBundle.default_params.sigma.toString()),
-            alpha: toDisplay(vaultBundle.default_params.alpha.toString()),
-            omega: toDisplay(vaultBundle.default_params.omega.toString()),
-            delta: toDisplay(vaultBundle.default_params.delta.toString()),
-            r: toDisplay(vaultBundle.default_params.r.toString()),
-            s: toDisplay(vaultBundle.default_params.s.toString()),
-            steak: toDisplay(vaultBundle.default_params.steak.toString()),
-        };
+//         let default_params = {
+//             N: vaultBundle.default_params.N.toString(),
+//             sigma: toDisplay(vaultBundle.default_params.sigma.toString()),
+//             alpha: toDisplay(vaultBundle.default_params.alpha.toString()),
+//             omega: toDisplay(vaultBundle.default_params.omega.toString()),
+//             delta: toDisplay(vaultBundle.default_params.delta.toString()),
+//             r: toDisplay(vaultBundle.default_params.r.toString()),
+//             s: toDisplay(vaultBundle.default_params.s.toString()),
+//             steak: toDisplay(vaultBundle.default_params.steak.toString()),
+//         };
 
-        //let want = structuredClone(vaultBundle.want);
-        let want = {} as any;
-        want.address = vaultBundle.want.addr;
-        want.symbol = vaultBundle.want.symbol;
-        want.decimals = vaultBundle.want.decimals.toNumber();
-        want.name = vaultBundle.want.name;
-        want.asset = "";
-        want.displayDecimals = 6;
+//         //let want = structuredClone(vaultBundle.want);
+//         let want = {} as any;
+//         want.address = vaultBundle.want.addr;
+//         want.symbol = vaultBundle.want.symbol;
+//         want.decimals = vaultBundle.want.decimals.toNumber();
+//         want.name = vaultBundle.want.name;
+//         want.asset = "";
+//         want.displayDecimals = 6;
 
-        // add vault
-        let vault: VaultInfo = Object.assign ({}, {
-            address: vaultBundle.vault_address,
-            vaultId: vaultBundle.vaultId.toString(),
-            marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
-            onlyVerified: vaultBundle.onlyVerified,
-            want: want,
-            default_params: default_params,
-            r: toDisplay(vaultBundle.r.toString()),
-            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
-            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
-            totalShares: toDisplay(vaultBundle.totalShares.toString()),
-            name: vaultBundle.name,
-            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
-            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
-            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
-            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
-            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
-            totalProtection: toDisplay(vaultBundle.totalProtection.toString())
-        });  
+//         // add vault
+//         let vault: VaultInfo = Object.assign ({}, {
+//             address: vaultBundle.vault_address,
+//             vaultId: vaultBundle.vaultId.toString(),
+//             marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
+//             onlyVerified: vaultBundle.onlyVerified,
+//             want: want,
+//             default_params: default_params,
+//             r: toDisplay(vaultBundle.r.toString()),
+//             asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
+//             total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
+//             totalShares: toDisplay(vaultBundle.totalShares.toString()),
+//             name: vaultBundle.name,
+//             exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
+//             utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
+//             totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
+//             totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
+//             goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
+//             totalProtection: toDisplay(vaultBundle.totalProtection.toString())
+//         });  
 
-        for (let j = 0; j < marketBundle.length; j++) {
-            // add market
-            let m = marketBundle[j];
-            let parameters = {} as any;
-            for (const [key, value] of Object.entries(m.parameters)) {
-                if (!isNumeric(key)) {
-                    parameters[key] = toDisplay(value.toString());
-                }
-            }
+//         for (let j = 0; j < marketBundle.length; j++) {
+//             // add market
+//             let m = marketBundle[j];
+//             let parameters = {} as any;
+//             for (const [key, value] of Object.entries(m.parameters)) {
+//                 if (!isNumeric(key)) {
+//                     parameters[key] = toDisplay(value.toString());
+//                 }
+//             }
 
-            let validatorData = {
-                validators: m.validatorData.validators,
-                val_cap: toDisplay(m.validatorData.val_cap.toString()),
-                avg_price: toDisplay(m.validatorData.avg_price.toString()),
-                totalSales: toDisplay(m.validatorData.totalSales.toString()),
-                totalStaked: toDisplay(m.validatorData.totalStaked.toString()),
-                numApproved: m.validatorData.numApproved.toString(),
-                initialStake: toDisplay(m.validatorData.initialStake.toString()),
-                finalStake: toDisplay(m.validatorData.finalStake.toString()),
-                numResolved: m.validatorData.numResolved.toString(),
-            }
+//             let validatorData = {
+//                 validators: m.validatorData.validators,
+//                 val_cap: toDisplay(m.validatorData.val_cap.toString()),
+//                 avg_price: toDisplay(m.validatorData.avg_price.toString()),
+//                 totalSales: toDisplay(m.validatorData.totalSales.toString()),
+//                 totalStaked: toDisplay(m.validatorData.totalStaked.toString()),
+//                 numApproved: m.validatorData.numApproved.toString(),
+//                 initialStake: toDisplay(m.validatorData.initialStake.toString()),
+//                 finalStake: toDisplay(m.validatorData.finalStake.toString()),
+//                 numResolved: m.validatorData.numResolved.toString(),
+//             }
 
-            let market: CoreMarketInfo = Object.assign(
-                {},
-                {
-                    bondPool: m.bondPool,
-                    marketId: m.marketId.toString(),
-                    vaultId: m.vaultId.toString(),
-                    creationTimestamp: m.creationTimestamp.toString(),
-                    parameters,
-                    phase: m.phase,
-                    longZCB: m.longZCB,
-                    shortZCB: m.shortZCB,
-                    approved_principal: toDisplay(m.approved_principal.toString()),
-                    approved_yield: toDisplay(m.approved_yield.toString()),
-                    longZCBprice: toDisplay(m.longZCBprice.toString()),
-                    longZCBsupply: toDisplay(m.longZCBsupply.toString()),
-                    redemptionPrice: toDisplay(m.redemptionPrice.toString()),
-                    totalCollateral: toDisplay(m.totalCollateral.toString()),
-                    validatorData,
-                    marketConditionMet: m.marketConditionMet,
-                    initialLongZCBPrice: toDisplay(m.initialLongZCBPrice.toString())
-                }
-            );
+//             let market: CoreMarketInfo = Object.assign(
+//                 {},
+//                 {
+//                     bondPool: m.bondPool,
+//                     marketId: m.marketId.toString(),
+//                     vaultId: m.vaultId.toString(),
+//                     creationTimestamp: m.creationTimestamp.toString(),
+//                     parameters,
+//                     phase: m.phase,
+//                     longZCB: m.longZCB,
+//                     shortZCB: m.shortZCB,
+//                     approved_principal: toDisplay(m.approved_principal.toString()),
+//                     approved_yield: toDisplay(m.approved_yield.toString()),
+//                     longZCBprice: toDisplay(m.longZCBprice.toString()),
+//                     longZCBsupply: toDisplay(m.longZCBsupply.toString()),
+//                     redemptionPrice: toDisplay(m.redemptionPrice.toString()),
+//                     totalCollateral: toDisplay(m.totalCollateral.toString()),
+//                     validatorData,
+//                     marketConditionMet: m.marketConditionMet,
+//                     initialLongZCBPrice: toDisplay(m.initialLongZCBPrice.toString())
+//                 }
+//             );
 
-            let instr = instrumentBundle[j];
-            let poolData = {} as any;
-            let instrument: Instrument  = Object.assign(
-                {},
-                {
-                    name: parseBytes32String(instr.name),
-                    marketId: instr.marketId.toString(),
-                    vaultId: instr.vaultId.toString(),
-                    utilizer: instr.utilizer,
-                    trusted: instr.trusted,
-                    description: instr.description,
-                    balance: toDisplay(instr.balance.toString()),
-                    principal: toDisplay(instr.principal.toString()),
-                    interest: toDisplay(instr.expectedYield.toString()),
-                    address: instr.instrument_address,
-                    duration: instr.duration.toString(),
-                    maturityDate: instr.maturityDate.toString(),
-                    seniorAPR: toDisplay(instr.seniorAPR.toString()),
-                    exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
-                    managerStake: toDisplay(instr.managers_stake?.toString()),
-                    approvalPrice: toDisplay(instr.approvalPrice?.toString()),
-                    isPool: instr.isPool, 
-                    instrumentType: instr.instrument_type.toString(),
-                }
-            )
+//             let instr = instrumentBundle[j];
+//             let poolData = {} as any;
+//             let instrument: Instrument  = Object.assign(
+//                 {},
+//                 {
+//                     name: parseBytes32String(instr.name),
+//                     marketId: instr.marketId.toString(),
+//                     vaultId: instr.vaultId.toString(),
+//                     utilizer: instr.utilizer,
+//                     trusted: instr.trusted,
+//                     description: instr.description,
+//                     balance: toDisplay(instr.balance.toString()),
+//                     principal: toDisplay(instr.principal.toString()),
+//                     interest: toDisplay(instr.expectedYield.toString()),
+//                     address: instr.instrument_address,
+//                     duration: instr.duration.toString(),
+//                     maturityDate: instr.maturityDate.toString(),
+//                     seniorAPR: toDisplay(instr.seniorAPR.toString()),
+//                     exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
+//                     managerStake: toDisplay(instr.managers_stake?.toString()),
+//                     approvalPrice: toDisplay(instr.approvalPrice?.toString()),
+//                     isPool: instr.isPool, 
+//                     instrumentType: instr.instrument_type.toString(),
+//                 }
+//             )
 
-            if (instr.isPool) {
-                let l = instr.poolData.collaterals.length;
-                let collaterals: Collateral[] = [];
-                for (let z=0; z < l; z++) {
-                    let _c = instr.poolData.collaterals[z];
-                    let c = Object.assign({}, {
-                        address: _c.tokenAddress,
-                        tokenId: _c.tokenId.toString(),
-                        name: _c.name,
-                        symbol: _c.symbol,
-                        isERC20: _c.isERC20,
-                        decimals: _c.decimals,
-                        borrowAmount: toDisplay(_c.borrowAmount.toString()),
-                        maxAmount: toDisplay(_c.maxAmount.toString()),
-                    })
-                    collaterals.push(c);
-                }
-                instrument = Object.assign(
-                    instrument,
-                    {  
-                        saleAmount: toDisplay(instr.poolData.saleAmount.toString()),
-                        initPrice: toDisplay(instr.poolData.initPrice.toString()),
-                        promisedReturn: instr.poolData.promisedReturn.toString(),
-                        inceptionTime: instr.poolData.inceptionTime.toString(),
-                        inceptionPrice: toDisplay(instr.poolData.inceptionPrice.toString()),
-                        poolLeverageFactor: toDisplay(instr.poolData.leverageFactor.toString()),
-                        managementFee: toDisplay(instr.poolData.managementFee.toString()),
-                        pju: toDisplay(instr.poolData.pju.toString()),
-                        psu: toDisplay(instr.poolData.psu.toString()),
-                        totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
-                        totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
-                        //totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
-                        totalAvailableAssets: "0",
-                        APR: toDisplay(instr.poolData.APR.toString()),
-                        collaterals
-                    }
-                )
-            }
+//             if (instr.isPool) {
+//                 let l = instr.poolData.collaterals.length;
+//                 let collaterals: Collateral[] = [];
+//                 for (let z=0; z < l; z++) {
+//                     let _c = instr.poolData.collaterals[z];
+//                     let c = Object.assign({}, {
+//                         address: _c.tokenAddress,
+//                         tokenId: _c.tokenId.toString(),
+//                         name: _c.name,
+//                         symbol: _c.symbol,
+//                         isERC20: _c.isERC20,
+//                         decimals: _c.decimals,
+//                         borrowAmount: toDisplay(_c.borrowAmount.toString()),
+//                         maxAmount: toDisplay(_c.maxAmount.toString()),
+//                     })
+//                     collaterals.push(c);
+//                 }
+//                 instrument = Object.assign(
+//                     instrument,
+//                     {  
+//                         saleAmount: toDisplay(instr.poolData.saleAmount.toString()),
+//                         initPrice: toDisplay(instr.poolData.initPrice.toString()),
+//                         promisedReturn: instr.poolData.promisedReturn.toString(),
+//                         inceptionTime: instr.poolData.inceptionTime.toString(),
+//                         inceptionPrice: toDisplay(instr.poolData.inceptionPrice.toString()),
+//                         poolLeverageFactor: toDisplay(instr.poolData.leverageFactor.toString()),
+//                         managementFee: toDisplay(instr.poolData.managementFee.toString()),
+//                         pju: toDisplay(instr.poolData.pju.toString()),
+//                         psu: toDisplay(instr.poolData.psu.toString()),
+//                         totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
+//                         totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
+//                         //totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
+//                         totalAvailableAssets: "0",
+//                         APR: toDisplay(instr.poolData.APR.toString()),
+//                         collaterals
+//                     }
+//                 )
+//             }
 
-            markets[market.marketId] = market;
-            instruments[instrument.marketId] = instrument;
-        }
+//             markets[market.marketId] = market;
+//             instruments[instrument.marketId] = instrument;
+//         }
         
-        vaults[vault.vaultId] = vault;
-    }
-    // can filter markets here, if dead markets for example.
+//         vaults[vault.vaultId] = vault;
+//     }
+//     // can filter markets here, if dead markets for example.
 
-    return { vaults, markets, instruments, blocknumber };
-}
+//     return { vaults, markets, instruments, blocknumber };
+// }
 
 function isNumeric(str) {
     if (typeof str != "string") return false // we only process strings!
@@ -687,9 +790,6 @@ export const getRammData = async (
     blocknumber: number
 ): Promise<CoreUserState> => {
     // get reputation score
-    console.log("account", account);
-    console.log("provider", provider);
-    console.log("vaults", vaults);
     const controller = new Contract(controller_address, ControllerData.abi, provider);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, provider);
 
@@ -697,7 +797,7 @@ export const getRammData = async (
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
-    console.log('getting user balances')
+    console.log('A')
     for (const [key, value] of Object.entries(vaults)) {
         const vault = new Contract(value.address, VaultData.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
@@ -712,13 +812,14 @@ export const getRammData = async (
             }
         })
     }
+    console.log('B')
 
     // get zcb balances
     let zcbBalances: ZCBBalances = {};
     for (const [key, market] of Object.entries(markets as CoreMarketInfos)) {
-        const { longZCB, shortZCB } = market;
-        const longZCBContract = new Contract(longZCB, ERC20Data.abi, getProviderOrSigner(provider, account));
-        const shortZCBContract = new Contract(shortZCB, ERC20Data.abi, getProviderOrSigner(provider, account));
+        const { bondPool : { longZCB: { address: longZCBAddress }, shortZCB: { address: shortZCBAddress }} } = market;
+        const longZCBContract = new Contract(longZCBAddress, ERC20Data.abi, getProviderOrSigner(provider, account));
+        const shortZCBContract = new Contract(shortZCBAddress, ERC20Data.abi, getProviderOrSigner(provider, account));
         const longZCBBalance = await longZCBContract.balanceOf(account);
         const shortZCBBalance = await shortZCBContract.balanceOf(account);
         console.log('zcbbalances', longZCBBalance.toString())
@@ -729,6 +830,7 @@ export const getRammData = async (
             }
         })
     };
+    console.log("C")
 
     // get pool data
     let poolInfos: UserPoolInfos = {};
@@ -737,6 +839,8 @@ export const getRammData = async (
         if ("poolLeverageFactor" in instrument) {
             // multicall w/ all the collateral balances + all the pool data
             const multicall = new Multicall({ ethersProvider: provider });
+
+            console.log("pool leverage Factor")
 
             const walletBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
                 return c.isERC20 ? {
