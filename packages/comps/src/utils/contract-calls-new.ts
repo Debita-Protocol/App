@@ -94,7 +94,15 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
                 s: market.s,
                 steak: market.steak,
            }
-           let _market = _.assign(market, {vaultId: market.vaultId.vaultId}, {validators, parameters});
+           let phase = {
+                duringAssessment: market.duringAssessment,
+                onlyReputable: market.onlyReputable,
+                resolved: market.resolved,
+                alive: market.alive,
+                base_budget: market.baseBudget,
+                marketCondition: market.marketCondition
+           }
+           let _market = _.assign(market, {vaultId: market.vaultId.vaultId}, {validators, parameters, phase});
            
             markets[market.marketId] = _market;
         })

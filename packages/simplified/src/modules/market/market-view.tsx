@@ -309,7 +309,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.longZCBsupply; 
-  const instrumentBalance = instruments[Id]?.balance; 
+  const instrumentBalance = instruments[Id]?.balance;
+  
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 

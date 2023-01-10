@@ -98,6 +98,9 @@
             > div:first-of-type {
               > div:first-of-type {
                 border-width: 0;
+                > div {
+                  border: @size-1 solid var(--theme-border);
+                }
               }
               > div {
                 padding-bottom:@size-8;
@@ -109,6 +112,8 @@
                 > input {
                   border: @size-1 solid var(--theme-border);
                   border-radius: @size-10;
+                  color: var(--primary-text);
+                  background-color: var(--primary-bg);
                 }
               }
             }
@@ -220,6 +225,8 @@
   > textarea {
     border: @size-1 solid var(--theme-border);
     border-radius: @size-10;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
   }
 }
 
@@ -231,7 +238,7 @@
   > label {
     font-size: @size-18;
     font-weight: @weight-bold;
-    color: var(--primary-secondary);
+    color: var(--primary-text);
   }
   > div {
     display: flex;
@@ -241,13 +248,15 @@
     > label {
       font-size: @size-14;
       font-weight: @weight-semi-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-8;
     }
     > input {
+      color: var(--primary-text);
+      background-color: var(--primary-bg);
       font-size: @size-18;
       font-weight: @weight-bold;
-      color: var(--primary-secondary);
+      color: var(--primary-text);
       padding: @size-16;
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
