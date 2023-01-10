@@ -299,25 +299,28 @@ const MarketView = ({ defaultMarket = null }) => {
   const isPool = instruments[Id]?.isPool? true:false; 
   const poolData = instruments[Id]
   const duration = instruments[Id]?.duration
-  const expectedYield = instruments[Id]?.interest
+  const expectedYield = instruments[Id]?.expectedYield
   const principal = instruments[Id]?.principal
   const trusted = instruments[Id]?.trusted? 0: 1; 
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
-  const longZCBPrice = market_[Id]?.bondPool.longZCBprice; 
+  const longZCBPrice = market_[Id]?.bondPool.longZCBPrice; 
   const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
-  const longZCBSupply = market_[Id]?.longZCBsupply; 
+  const longZCBSupply = market_[Id]?.bondPool.longZCB.totalSupply; 
   const instrumentBalance = instruments[Id]?.balance;
-  
+
+  // log all of the data above
+  console.log('STUFF', isPool, poolData, duration, expectedYield, principal, trusted, totalCollateral, alpha, longZCBPrice, isApproved, canbeApproved, outcomeLabel, longZCBSupply, instrumentBalance)
+
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
-  const longZCB_ad = market_[marketId]?.longZCB
-  const shortZCB_ad = market_[marketId]?.shortZCB; 
+  const longZCB_ad = market_[marketId]?.bondPool.longZCB.address
+  const shortZCB_ad = market_[marketId]?.bondPool.shortZCB.address;
   // console.log('vaults', vaults, instruments, market_[marketId].longZCB)
   // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
   // useEffect(async() =>{
