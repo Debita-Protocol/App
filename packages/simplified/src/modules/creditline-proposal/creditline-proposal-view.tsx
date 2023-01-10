@@ -208,7 +208,9 @@ const CreditLineRequestForm = () => {
     }
     if (_vaultOptions.length > 0 ) { 
       setDefaultVault(_vaultOptions[0].value);
-      setVaultId(_vaultOptions[0].value);
+      if (vaultId === "") {
+        setVaultId(_vaultOptions[0].value);
+      }
     }
     return _vaultOptions;
   }, [vaults]);
