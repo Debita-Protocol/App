@@ -241,7 +241,7 @@ export const MarketLiquidityView = () => {
           })}
         >
           <h4>Vault Details</h4>
-            <p>{"DETAILS"}</p>
+            <p>{"Vault/Underlying Tokens"}</p>
           <AddMetaMaskToken tokenSymbol = {"Vault"+vaultId} tokenAddress={vault_address}  />
           <AddMetaMaskToken tokenSymbol = {underlyingSymbol} tokenAddress={underlying_address}  />          
           {(
@@ -249,7 +249,7 @@ export const MarketLiquidityView = () => {
               {showMoreDetails ? "Read Less" : "Read More"}
             </button> 
           )}
-          <p>{"DESCRITPTIONS"}</p>
+          <p>{"details"}</p>
 
 
 
@@ -273,8 +273,8 @@ export const MarketLiquidityView = () => {
           </li>
 
           <li>
-            <span>Vault Type</span>
-            <span>Pool Instruments</span>
+            <span>Vault Underlying</span>
+            <span>{vaults[vaultId].want.name}</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
         {/*inception price,inception time, current value prices, current mark prices*/}
@@ -283,7 +283,7 @@ export const MarketLiquidityView = () => {
 
       <ul className={Styles.StatsRow}>
       <li>
-          <span>Total Supply </span>
+          <span>Total Shares </span>
           <span>{vault.totalShares}</span>
 
           {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
