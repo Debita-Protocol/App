@@ -115,21 +115,25 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: true
+                isPool: true,
+                promisedReturn: new BN(instrument.promisedReturn).shiftedBy(18).toFixed(0),
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
         _.forEach(instrumentResponse.data.generalInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: false
+                isPool: false,
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
         _.forEach(instrumentResponse.data.creditlineInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: false
+                isPool: false,
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
 
