@@ -42,7 +42,7 @@ import { isDataTooOld } from "./date-utils";
 import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
-import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
+// import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
 import { rammClient } from "../apollo-ramm/client";
 import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
 
