@@ -55,12 +55,14 @@ export const GET_MARKETS = gql`
                     name
                     symbol
                     decimals
+                    totalSupply
                 }
                 shortZCB {
                     address: id
                     name
                     symbol
                     decimals
+                    totalSupply
                 }
                 longZCBPrice
                 b_initial

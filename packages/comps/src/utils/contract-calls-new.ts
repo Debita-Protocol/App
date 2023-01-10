@@ -94,7 +94,15 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
                 s: market.s,
                 steak: market.steak,
            }
-           let _market = _.assign(market, {vaultId: market.vaultId.vaultId}, {validators, parameters});
+           let phase = {
+                duringAssessment: market.duringAssessment,
+                onlyReputable: market.onlyReputable,
+                resolved: market.resolved,
+                alive: market.alive,
+                base_budget: market.baseBudget,
+                marketCondition: market.marketCondition
+           }
+           let _market = _.assign(market, {vaultId: market.vaultId.vaultId}, {validators, parameters, phase});
            
             markets[market.marketId] = _market;
         })
@@ -107,21 +115,25 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: true
+                isPool: true,
+                promisedReturn: new BN(instrument.promisedReturn).shiftedBy(18).toFixed(0),
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
         _.forEach(instrumentResponse.data.generalInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: false
+                isPool: false,
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
         _.forEach(instrumentResponse.data.creditlineInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,
-                isPool: false
+                isPool: false,
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
 
