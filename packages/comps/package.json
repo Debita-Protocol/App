@@ -70,6 +70,8 @@
     ]
   },
   "devDependencies": {
+    "@augurproject/ethereum-multicall": "^1.5.2",
+
     "@babel/cli": "7.13.0",
     "@babel/core": "7.13.1",
     "@babel/preset-react": "^7.12.13",
