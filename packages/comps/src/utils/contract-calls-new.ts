@@ -81,7 +81,6 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
         const marketResponse = await rammClient.query({
             query: GET_MARKETS
         });
-        console.log("marketResponse", marketResponse)
         _.forEach(marketResponse.data.markets, (market) => {
             let validators = _.map(market.validators, (validator) => validator.address);
             let parameters = {
@@ -136,7 +135,7 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
                 seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
             })
         })
-
+        console.log("EVERYTHING: ", vaults, markets, instruments, blocknumber)
         return { vaults, markets, instruments, blocknumber}
 
     } catch(err) {

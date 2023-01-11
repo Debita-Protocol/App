@@ -108,11 +108,11 @@ const PoolProposalView: React.FC = () => {
         }
         if (_vaultOptions.length > 0 ) { 
           setDefaultVault(_vaultOptions[0].value);
+          if (vaultId === "") {
+            setVaultId(_vaultOptions[0].value);
+          }
         }
-        if (vaultId === "") {
-          setVaultId(_vaultOptions[0].value);
-        }
-        console.log("_vaultOptions: ", _vaultOptions)
+
         return _vaultOptions;
       }, [vaults]);
       let chosenCash = vaultId !== "" ? vaults[vaultId].want.name : "";
@@ -140,30 +140,30 @@ const PoolProposalView: React.FC = () => {
 
         
         // first create a pool instrument
-        // const poolInstrumentAddress = await createPoolInstrument(
-        //     account,
-        //     loginAccount.library,
-        //     vaults[vaultId].address,
-        //     vaults[vaultId].want.address,
-        //     poolData.name,
-        //     poolData.symbol,
-        //     collateralInfos
-        // );
+        const poolInstrumentAddress = await createPoolInstrument(
+            account,
+            loginAccount.library,
+            vaults[vaultId].address,
+            vaults[vaultId].want.address,
+            poolData.name,
+            poolData.symbol,
+            collateralInfos
+        );
 
         // using poolData createPoolMarket
-        // await createPoolMarket(
-        //     account,
-        //     loginAccount.library,
-        //     vaultId,
-        //     poolData.name,
-        //     poolData.description,
-        //     saleAmount,
-        //     initPrice,
-        //     promisedReturn,
-        //     inceptionPrice,
-        //     leverageFactor,
-        //     poolInstrumentAddress
-        // );
+        await createPoolMarket(
+            account,
+            loginAccount.library,
+            vaultId,
+            poolData.name,
+            poolData.description,
+            saleAmount,
+            initPrice,
+            promisedReturn,
+            inceptionPrice,
+            leverageFactor,
+            poolInstrumentAddress
+        );
 
         // await addAcceptedCollaterals(
         //     account,

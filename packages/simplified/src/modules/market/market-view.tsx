@@ -412,7 +412,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
   const [estimatedYield, setEstimatedYield] = useState(0); 
   console.log('promisedReturnee', instruments[marketId]?.promisedReturn); 
-  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn*1e18, 
+  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn, 
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
     
@@ -657,7 +657,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{roundDown((((1+ poolData?.promisedReturn*1e18/1e19)**31536000) -1)*100, 2)}{"%"}</span>
+            <span>{roundDown((((1+ poolData?.promisedReturn/1e19)**31536000) -1)*100, 2)}{"%"}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
