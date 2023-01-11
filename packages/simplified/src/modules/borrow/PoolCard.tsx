@@ -1,5 +1,8 @@
 import React, { useMemo } from "react"
+
+// @ts-ignore
 import Styles from "./borrow-view.styles.less";
+
 import { Link } from "react-router-dom";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import makeQuery from "@augurproject/comps/build/utils/links/make-query";

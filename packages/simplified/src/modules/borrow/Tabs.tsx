@@ -1,5 +1,8 @@
 import React from "react"
+
+// @ts-ignore
 import Styles from "./borrow-view.styles.less";
+
 import classNames from "classnames";
 
 export const TabContent: React.FC = ({id, activeTab, children}) => {
