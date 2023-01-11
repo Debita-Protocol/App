@@ -24,7 +24,7 @@
     "bet": "yarn simp",
     "subgraph": "yarn --silent workspace @augurproject/subgraph",
     "hardhat": "yarn --silent smart hardhat",
-    "publish-site": "yarn build && yarn simp build"
+    "publish-site": "yarn build && yarn build && yarn simp build"
   },
   "workspaces": {
     "packages": [

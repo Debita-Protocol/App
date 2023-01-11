@@ -1,7 +1,10 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router";
 import { HashRouter } from "react-router-dom";
+
+// @ts-ignore
 import Styles from "./App.styles.less";
+
 import Routes from "./routes/routes";
 import TopNav from "./common/top-nav";
 import "../assets/styles/shared.less";
