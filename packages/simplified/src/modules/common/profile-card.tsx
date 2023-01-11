@@ -1,5 +1,7 @@
 import React from "react"
 import { Passport } from "@gitcoinco/passport-sdk-types"
+
+// @ts-ignore
 import Styles from "./profile-card.styles.less"
 
 const ProfileCard = ({ passport }: { passport: Passport }) => {

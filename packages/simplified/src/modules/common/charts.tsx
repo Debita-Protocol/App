@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import Highcharts from "highcharts/highstock";
 import NoDataToDisplay from "highcharts/modules/no-data-to-display";
+
+// @ts-ignore
 import Styles from "./charts.styles.less";
+
 import classNames from "classnames";
 import type { MarketInfo } from "@augurproject/comps/build/types";
 import {

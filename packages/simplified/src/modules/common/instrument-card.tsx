@@ -6,7 +6,11 @@ import { ethers, BigNumber, BytesLike } from "ethers";
 import BN from "bignumber.js"
 import { ContractCalls, useUserStore } from "@augurproject/comps";
 import { PrimaryThemeButton, SecondaryThemeButton } from "@augurproject/comps/build/components/common/buttons";
+
+// @ts-ignore
 import Styles from "./instrument-card.styles.less"
+
+
 const { checkInstrumentStatus, vaultHarvest } = ContractCalls;
 
 
