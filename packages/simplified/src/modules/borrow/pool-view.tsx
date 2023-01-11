@@ -12,7 +12,10 @@ import {
 } from "@augurproject/comps"
 
 import { useLocation, useHistory } from "react-router";
+
+//@ts-ignore
 import Styles from "./pool-view.styles.less";
+
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MODAL_ADD_LIQUIDITY, MODAL_POOL_COLLATERAL_ACTION, MODAL_POOL_BORROWER_ACTION } from "@augurproject/comps/build/utils/constants";
 import { LoadingPoolCard } from "./PoolCard";
