@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react"
 import { useDataStore2, useUserStore } from "@augurproject/comps"
+
+// @ts-ignore
 import Styles from "./borrow-view.styles.less";
+
 import classNames from "classnames";
 import {TabContent, TabNavItem} from "./Tabs";
 import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument} from "@augurproject/comps/build/types"

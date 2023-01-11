@@ -1,4 +1,6 @@
 import React from 'react';
+
+// @ts-ignore
 import Styles from './top-banner.styles.less';
 
 export const TopBanner = () => (
