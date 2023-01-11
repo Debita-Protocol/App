@@ -8,6 +8,26 @@ import classNames from "classnames";
 import { PoolLeverageFactor } from "../common/slippage";
 import { isAddress } from '@ethersproject/address';
 
+import { Constants } from "@augurproject/comps";
+const {
+    BUY,
+    ApprovalAction,
+    ApprovalState,
+    ERROR_AMOUNT,
+    CONNECT_ACCOUNT,
+    ENTER_AMOUNT,
+    INSUFFICIENT_BALANCE,
+    ZERO,
+    SET_PRICES,
+    MINT_SETS,
+    RESET_PRICES,
+    ONE,
+    INVALID_PRICE,
+    INVALID_PRICE_GREATER_THAN_SUBTEXT,
+    INVALID_PRICE_ADD_UP_SUBTEXT,
+    TX_STATUS,
+  } = Constants;
+
 
 const { createPoolMarket, createPoolInstrument} = ContractCalls2;
 const {
@@ -59,6 +79,7 @@ const PoolProposalView: React.FC = () => {
         actions: { addTransaction },
       } = useUserStore();
     const { vaults } = useDataStore2();
+    
 
     const [ poolData, setPoolData] = useState({
         description: "",
@@ -77,7 +98,6 @@ const PoolProposalView: React.FC = () => {
 
     const [ vaultId, setVaultId ] = useState("");
     const [ defaultVault, setDefaultVault] = useState("");
-    console.log("vaultId: ", vaultId);
     let vaultOptions = useMemo(() => {
         let _vaultOptions = [];
         for (const [id, vault] of Object.entries(vaults as VaultInfos)) {
@@ -88,8 +108,11 @@ const PoolProposalView: React.FC = () => {
         }
         if (_vaultOptions.length > 0 ) { 
           setDefaultVault(_vaultOptions[0].value);
+        }
+        if (vaultId === "") {
           setVaultId(_vaultOptions[0].value);
         }
+        console.log("_vaultOptions: ", _vaultOptions)
         return _vaultOptions;
       }, [vaults]);
       let chosenCash = vaultId !== "" ? vaults[vaultId].want.name : "";
@@ -106,6 +129,7 @@ const PoolProposalView: React.FC = () => {
         const promisedReturn = new BN(poolData.promisedReturn).shiftedBy(18).toFixed();
         const inceptionPrice = new BN(poolData.inceptionPrice).shiftedBy(18).toFixed();
         const leverageFactor = new BN(poolData.leverageFactor).shiftedBy(18).toFixed();
+        console.log("vaultId: ", vaultId);
 
         // console.log("saleAmount: ", saleAmount);
         // console.log("initPrice: ", initPrice);
@@ -116,30 +140,30 @@ const PoolProposalView: React.FC = () => {
 
         
         // first create a pool instrument
-        const poolInstrumentAddress = await createPoolInstrument(
-            account,
-            loginAccount.library,
-            vaults[vaultId].address,
-            vaults[vaultId].want.address,
-            poolData.name,
-            poolData.symbol,
-            collateralInfos
-        );
+        // const poolInstrumentAddress = await createPoolInstrument(
+        //     account,
+        //     loginAccount.library,
+        //     vaults[vaultId].address,
+        //     vaults[vaultId].want.address,
+        //     poolData.name,
+        //     poolData.symbol,
+        //     collateralInfos
+        // );
 
         // using poolData createPoolMarket
-        const marketId = await createPoolMarket(
-            account,
-            loginAccount.library,
-            vaultId,
-            poolData.name,
-            poolData.description,
-            saleAmount,
-            initPrice,
-            promisedReturn,
-            inceptionPrice,
-            leverageFactor,
-            poolInstrumentAddress
-        );
+        // await createPoolMarket(
+        //     account,
+        //     loginAccount.library,
+        //     vaultId,
+        //     poolData.name,
+        //     poolData.description,
+        //     saleAmount,
+        //     initPrice,
+        //     promisedReturn,
+        //     inceptionPrice,
+        //     leverageFactor,
+        //     poolInstrumentAddress
+        // );
 
         // await addAcceptedCollaterals(
         //     account,
@@ -169,7 +193,7 @@ const PoolProposalView: React.FC = () => {
         }]);
     }, [collateralInfos]);
 
-    console.log("collateralInfo: ", collateralInfos);
+    console.log("vaultId: ", vaultId);
     
     return (
         <>

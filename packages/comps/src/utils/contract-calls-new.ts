@@ -158,7 +158,7 @@ export const createPoolMarket = async (
     inceptionPrice: string,
     leverageFactor: string,
     instrumentAddress: string
-): Promise<string> => {
+): Promise<TransactionResponse> => {
     // get controller contract
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
@@ -191,20 +191,11 @@ export const createPoolMarket = async (
         }
     }
 
-    console.log("instrumentData: ", instrumentData);
-    console.log("vaultId: ", vaultId);
-
-    const tx = await controller.initiateMarket(
+    return controller.initiateMarket(
         account,
         instrumentData,
         vaultId
     );
-    await tx.wait(1);
-    const marketCount = await marketManager.marketCount();
-    const marketId = new BN(marketCount.toString()).minus(1).toString();
-
-    
-    return marketId;
 }
 
 interface PoolCollateralItem {
@@ -447,7 +438,6 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
-
     // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
     // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
     // let tx = await controller.testVerifyAddress();
@@ -491,13 +481,11 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // const variableInterestRate = await variableInterestRateFactory.deploy();
     // console.log("variableInterestRate", variableInterestRate.address);
 
-    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    tx.wait();
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();
-
-    // console.log("A1")
 
     // tx = await controller.setMarketManager(marketManager.address);
     // await tx.wait();
@@ -552,7 +540,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     
 
     // tx = await controller.createVault(
-    //     "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
+    //     cash_address,
     //     false,
     //     0,
     //     0,
@@ -566,7 +554,8 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //         r:"0",
     //         s: pp.mul(2),
     //         steak: pp.div(4)
-    //     }
+    //     },
+    //     "a description about the vault"
     // );
     // await tx.wait(2);
     console.log("F");
@@ -809,7 +798,7 @@ export const getRammData = async (
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
-    console.log('A')
+    // console.log('A')
     for (const [key, value] of Object.entries(vaults)) {
         const vault = new Contract(value.address, VaultData.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
@@ -824,7 +813,7 @@ export const getRammData = async (
             }
         })
     }
-    console.log('B')
+    // console.log('B')
 
     // get zcb balances
     let zcbBalances: ZCBBalances = {};
@@ -842,7 +831,7 @@ export const getRammData = async (
             }
         })
     };
-    console.log("C")
+    // console.log("C")
 
     // get pool data
     let poolInfos: UserPoolInfos = {};
@@ -852,7 +841,7 @@ export const getRammData = async (
             // multicall w/ all the collateral balances + all the pool data
             const multicall = new Multicall({ ethersProvider: provider });
 
-            console.log("pool leverage Factor")
+            // console.log("pool leverage Factor")
 
             const walletBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
                 return c.isERC20 ? {

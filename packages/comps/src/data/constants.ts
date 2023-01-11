@@ -25,17 +25,17 @@ export const marketFactoryAddress = "0x0559B2a21d6479b9a03ea835D83895f5aEE47C5f"
 /**
  * used for data fetcher
  */
-export const controller_address = "0x36c7feB605891E643258B7fFd5c28a41b83D71Aa";
-export const market_manager_address = "0x18A7D487c5139ff4314Dc6907Dc3c7570E3f6890";
-export const vault_factory_address = "0xca78349EB90CeB5Cc8D7B98154B7e8179ccd2A15";
+export const controller_address = "0x07B318BDda3ca6e51A9f8546cFd07ea15096D478";
+export const market_manager_address = "0xfFd8D1d768199714E94C433894F67f94Df658Afa";
+export const vault_factory_address = "0x458b1a6F452D262f5ddE6dc9725dCeAfcB2d3751";
 export const creditLine_address = "0x4be7805A2b35ce177F802D88A01Fecfc686fFB38"; 
-export const pool_factory_address = "0xd4244cfc3461d936a563e370aCE6867f25cEac2f"; 
+export const pool_factory_address = "0x4ABeCdDDB28492Bd9A3BDe3156Bee0EBE7dCa40F"; 
 export const cash_address = "0xd6A5640De726a89A54ca724ac12BCc5E89600720"; 
-export const reputation_manager_address = "0x2558d5A7475891cA513944328052073f841CaB05";
+export const reputation_manager_address = "0xdec32C81f4021a9BD51Efc9b28568928DDaF2Ad3";
 export const fetcher_address =  "0x51065b5cE4E476720A223a6eb0890B9D5B5403E6";
 export const leverageModule_address = "0xf9c6A04026c30dFC56FdB72A4B8cd00fB922823b"; 
 export const variable_interest_rate_address = "0x541D09035CA76AE5CEA1C6ECDf098A48a8F2FDEe";
-export const validator_manager_address = "0xB32f1b9753948eA080e61c29ede33Aaf32E218aC";
+export const validator_manager_address = "0xD2cfbB4719C4EFb9985280d635BE1518ba69D696";
 
 // 12/30 3.27pm
 // deploying "Controller" 0xbAB2fa347D9e605d3038DbCb5c23D7e5C1898544 with 5363775 gas

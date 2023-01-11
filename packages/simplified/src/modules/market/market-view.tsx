@@ -406,7 +406,7 @@ const MarketView = ({ defaultMarket = null }) => {
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
     
-  console.log('estimatedyield', managerExpectedYield)
+  console.log('STUFF2', poolData, estimatedYield)
 
   function roundDown(number, decimals) {
       decimals = decimals || 0;
