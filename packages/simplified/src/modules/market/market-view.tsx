@@ -130,12 +130,12 @@ const estimatedReturnsPerp = (
       // inceptionPrice * 1+returns
       // vars.inceptionPrice.mulWadDown((BASE_UNIT+ vars.promised_return)
       // .rpow(block.timestamp - vars.inceptionTime, BASE_UNIT))    
-  const srpPlusOne = inceptionPrice * ((1 + promised_return) ** (31536000)) ;
+  const srpPlusOne = inceptionPrice * ((1 + promised_return/1e19) ** (31536000)) ;
   const term1 = (1+Number(leverageFactor)); 
   const term2 =  (inceptionPrice* (1+ returns)); 
   // console.log('srpplusone', srpPlusOne,  (inceptionPrice* (1+ returns)),(1 + promised_return), (1 + leverageFactor) * (inceptionPrice* (1+ returns)), 
   //  (srpPlusOne* leverageFactor)); 
-  console.log('leverageFactor', term1, term2, term1*term2 , returns, srpPlusOne, leverageFactor); 
+  console.log('leverageFactor', term1, term2, term1*term2 ,promised_return,  returns, srpPlusOne, leverageFactor); 
   return  100* (term1 * term2 - (srpPlusOne* leverageFactor)-inceptionPrice)/inceptionPrice; 
   //return ((1 + leverageFactor) * (inceptionPrice* (1+ returns)) - (srpPlusOne* leverageFactor) - inceptionPrice)/inceptionPrice; 
       // 1+lev * inception - 15* lev 
@@ -227,7 +227,20 @@ const NonexistingMarketView = ({ text, showLink = false }) => {
     </div>
   );
 };
-
+function timeConverter(UNIX_timestamp){
+  var a = new Date(UNIX_timestamp * 1000);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var year = a.getFullYear();
+  var month = months[a.getMonth()];
+  var date = a.getDate();
+  var hour = a.getHours();
+  var min = a.getMinutes();
+  var sec = a.getSeconds();
+  var time = date + ' ' + month + ' ' + year 
+  //+' ' + hour + ':' + min + ':' + sec ;
+  return time;
+}
+console.log(timeConverter(0));
 const getAddress =async({
   account, loginAccount, marketId
 }) =>{
@@ -305,22 +318,18 @@ const MarketView = ({ defaultMarket = null }) => {
   const totalCollateral = market_[Id]?.totalCollateral; 
   const alpha = market_[Id]?.parameters.alpha; 
   const longZCBPrice = market_[Id]?.bondPool.longZCBPrice; 
-  const isApproved = (!market_[Id]?.phase.duringAssessment && market_[Id]?.phase.alive); 
+  const isApproved = (!market_[Id]?.duringAssessment && market_[Id]?.alive); 
   const canbeApproved = market_[Id]?.marketConditionMet 
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
-  const longZCBSupply = market_[Id]?.bondPool.longZCB.totalSupply; 
-  const instrumentBalance = instruments[Id]?.balance;
-
-  // log all of the data above
-  console.log('STUFF', isPool, poolData, duration, expectedYield, principal, trusted, totalCollateral, alpha, longZCBPrice, isApproved, canbeApproved, outcomeLabel, longZCBSupply, instrumentBalance)
-
+  const longZCBSupply = market_[Id]?.longZCBsupply; 
+  const instrumentBalance = instruments[Id]?.balance; 
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 
   // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
 
-  const longZCB_ad = market_[marketId]?.bondPool.longZCB.address
-  const shortZCB_ad = market_[marketId]?.bondPool.shortZCB.address;
+  const longZCB_ad = market_[marketId]?.longZCB
+  const shortZCB_ad = market_[marketId]?.shortZCB; 
   // console.log('vaults', vaults, instruments, market_[marketId].longZCB)
   // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
   // useEffect(async() =>{
@@ -402,7 +411,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const isFinalized = false//isMarketFinal(market);
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
   const [estimatedYield, setEstimatedYield] = useState(0); 
-  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn/1e18, 
+  console.log('promisedReturnee', instruments[marketId]?.promisedReturn); 
+  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn*1e18, 
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
     
@@ -565,7 +575,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
         <ul className={Styles.StatsRow}>
           <li>
-            <span>Net Bought </span>
+            <span>Total Longs/Shorts</span>
               {generateTooltip(
                         "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
                         "net"
@@ -575,14 +585,19 @@ const MarketView = ({ defaultMarket = null }) => {
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
+
           <li>
-            <span>Required Collateral</span>
+            <span>Net Collateral/Required Collateral</span>
               {generateTooltip(
-                        "Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying ",
-                        "required net"
+                        "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
+                        "net"
                       )}
-            <span>{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }</span> 
+            <span>{totalCollateral}/{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }</span> 
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
+
 
           <li>
             <span>longZCB Start Price </span>
@@ -621,12 +636,12 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Duration(days) </span>
-            <span>{duration}</span>
+            <span>{roundDown(365.24*duration/31560000,1)}</span>
           </li>
 
           <li>
-            <span>Start Date</span>
-              <span>{"12/20/2022"}</span>
+            <span>Start Time</span>
+              <span>{timeConverter(market_[Id]?.creationTimestamp)}</span>
 
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
           </li>
@@ -642,7 +657,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Senior Promised Return</span>
-            <span>{roundDown((((1+ poolData?.promisedReturn/1e18)**31536000) -1)*100, 2)}{"%"}</span>
+            <span>{roundDown((((1+ poolData?.promisedReturn*1e18/1e19)**31536000) -1)*100, 2)}{"%"}</span>
 
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -653,7 +668,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>Start Date</span>
-              <span>{"8/20/2022"}</span>
+              <span>{timeConverter(market_[Id]?.creationTimestamp)}</span>
 
            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
           </li>

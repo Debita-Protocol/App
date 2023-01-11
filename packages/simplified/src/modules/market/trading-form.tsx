@@ -60,7 +60,10 @@ export interface InfoNumberType {
   tooltipKey?: string;
   svg?: ReactNode;
 }
-
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
 interface InfoNumbersProps {
   infoNumbers: InfoNumberType[];
   unedited?: boolean;
@@ -182,14 +185,11 @@ interface CanTradeProps {
 //   shareToken?: string;
 //   defaultPrice?: string;
 // }
-function roundDown(number, decimals) {
-    decimals = decimals || 0;
-    return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
-}
+
 const getOutcomes = (price) =>{
   const outcome = {} as AmmOutcome
   outcome.id = 0; 
-  outcome.price = price; 
+  outcome.price = roundDown(price,4).toString(); 
   outcome.name = "longZCB"
   const outcome2 = {} as AmmOutcome
   outcome2.id = 1; 
@@ -234,7 +234,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
 
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
 
-  const outcomes = getOutcomes(market_[marketId]?.longZCBprice);
+  const outcomes = getOutcomes(market_[marketId]?.bondPool.longZCBPrice);
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);

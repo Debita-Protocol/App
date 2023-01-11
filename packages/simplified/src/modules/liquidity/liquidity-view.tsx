@@ -214,8 +214,8 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
     <article
       className={classNames(Styles.LiquidityMarketCard, {
         [Styles.HasUserLiquidity]: true,
-        [Styles.Expanded]: false,
-        [Styles.Final]: false,
+        [Styles.Expanded]: true,
+        [Styles.Final]: true,
       })}
     >
 
@@ -248,7 +248,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       </button>
       <span>{ (instrument?.isPool? "  true": "  false")}</span>
       <span>{instrument?.balance.toString() }</span>
-      <span>{roundDown((((1+ Number(instrument?.seniorAPR)/1e18)**31536000) -1)*100, 2)}{"%"}</span>
+      <span>{roundDown((((1+ Number(instrument?.seniorAPR)*1e18/1e19)**31536000) -1)*100, 2)}{"%"}</span>
       <span>
         {instrument?.exposurePercentage.toString()}{"%"}
       </span>
