@@ -20,51 +20,54 @@
  */
 
 export const COMMON_HEAD_TAGS = {
-  title: "Augur",
+  title: "RAMM",
   description:
-    "Augur is a decentralized oracle and prediction market protocol built on the Ethereum blockchain. It allows you to forecast events and be rewarded for predicting them correctly.",
+    "RAMM is a prediction market protocol built on the Ethereum blockchain. It allows you to forecast events and be rewarded for predicting them correctly.",
   ogTitle: "Decentralized Prediction Markets",
   ogDescription:
-    "Augur is a decentralized oracle and prediction market protocol built on the Ethereum blockchain. It allows you to forecast events and be rewarded for predicting them correctly.",
+    ".",
   ogSiteName: "Decentralized Prediction Markets",
   ogUrl: "",
-  ogImage: "favicon/apple-icon-precomposed.png",
+  ogImage: "favicon/ramm.png",
   ogLocale: "en_US",
   ogType: "article",
   articleTag: [
-    "Augur",
+    "RAMM",
     "Prediction Markets",
-    "Predictive Market",
+    "Underwriting",
+    "Decentralized Predictions", 
     "Market Predictions",
-    "Share Market",
-    "Bet Predictions",
-    "Prediction Site",
-    "Decentralized",
+    "Vault",
+    "Decentralized Underwriting",
+    "Uncollateralized Lending",
+    "Risk Pricing",
+    "Pricing Risk",
+    "Decentralized risk pricing"
   ],
   articlePublishedTime: "2019-01-07T00:00:01+00:00",
   articleModifiedTime: "2019-01-07T00:00:12+00:00",
   ogUpdatedTime: "2019-01-07T00:00:12+00:00",
   articlePublisher: "",
-  articleSection: "Prediction Markets",
+  articleSection: "Decentralized Underwriting",
   ogImageWidth: "1024",
   ogImageHeight: "640",
   ogImageAlt:
-    "The image shows the Augur logo in the colors black and cyan inside a white circle. It represents a bunch of disparate points of information [i.e the edges] swirling in to converge upon some truth.",
+    ".",
   twitterCardType: "summary",
   twitterTitle: "Decentralized Prediction Markets",
   twitterDescription:
-    "Augur is a decentralized prediction market built on the Ethereum blockchain. It allows you to forecast events and be rewarded for predicting them correctly.",
-  twitterImage: "favicon/apple-icon-precomposed.png",
+    ".",
+  twitterImage: "favicon/ramm.png",
   twitterImageAlt:
-    "The image shows the Augur logo in the colors black and cyan inside a white circle. It represents a bunch of disparate points of information [i.e the edges] swirling in to converge upon some truth.",
-  twitterSite: "@AugurProject",
-  twitterCreator: "@AugurProject",
+    ",",
+  twitterSite: "@ramm",
+  twitterCreator: "@ramm",
   canonicalUrl: "",
 };
 
-const MARKETS_LIST_TITLE = "The world’s most accessible, no-limit betting exchange";
+const MARKETS_LIST_TITLE = "RAMM Instruments";
 const MARKETS_LIST_DESCRIPTION =
-  "Bet and trade on user-created markets, from weather to crypto to finance. No limits on the amount you can bet or what you can bet on. Lowest fees and the best odds.";
+  "Underwrite Every Kind of Instruments";
 
 export const MARKETS_LIST_HEAD_TAGS = {
   ...COMMON_HEAD_TAGS,

@@ -34,6 +34,7 @@ import { useSimplifiedStore } from "../stores/simplified";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
+import {Sidebar} from "../sidebar/sidebar"; 
 const FormAmountInput = ({amount, updateAmount, prepend }) => {
         //  <input
         //   type="number"
@@ -447,9 +448,8 @@ const MarketView = ({ defaultMarket = null }) => {
    " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
   return (
     <div className={Styles.MarketView}>
-      <SEO {...MARKETS_LIST_HEAD_TAGS} title={descriptions[0]} ogTitle={descriptions[0]} twitterTitle={descriptions[0]} />
+      <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
       <section>
-
         <NetworkMismatchBanner />
           {!(reputationScore >0) && <ManagerWarning/>}
 
@@ -457,19 +457,21 @@ const MarketView = ({ defaultMarket = null }) => {
         <div className={Styles.topRow}>
           {/*<CategoryIcon big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
+          {<h1>{"Instrument Name: " + (instruments[Id]?.name[0]!=0? instruments[Id]?.name[0] : "NFT Lending Pool")}</h1>}
+
 
         </div>
-        {<h1>{"Instrument Name: " + (instruments[Id]?.name[0]!=0? instruments[Id]?.name[0] : "NFT Lending Pool")}</h1>}
-        { <h4>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</h4>}
-        <span>Instrument Type: {instruments[marketId]?.type? "Pool Instrument": "Fixed Rate/Term Instrument"}</span>
+          { <p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>}
+
+        <span>Instrument Type: {isPool? "Perpetual Instrument": "Fixed Rate/Term Instrument"}</span>
         <h3>Profit Mechanism</h3>
         <p>{isPool?
-          "Profit made from longZCB is (realized instrument's return) - (promisedReturn), compounded every second. Participants can redeem their longZCB to realize profit. "
+          "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
           : "longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p> 
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
-
+        <h3>Simulate Returns</h3>
         {(<ul className={Styles.UpperStatsRow}>
          { !isPool&& (<li>
             <p>{"Proposed Estimated Return"}</p>

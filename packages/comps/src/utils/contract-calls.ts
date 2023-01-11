@@ -241,6 +241,9 @@ export async function setUpTestManager(
     reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
   await controller.testVerifyAddress(); 
   await reputation.incrementScore(account, pp.mul(10)); 
+    // const leverageModule = new ethers.Contract(
+    //   leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) ); 
+    // return await leverageModule.mintWithLeverage(vaultId, scaledAmount,leverageFactor); 
 }
 
 export async function approveInstrument(

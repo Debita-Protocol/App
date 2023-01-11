@@ -59,10 +59,11 @@ const AppBody = () => {
 
   useRammData({blocknumber, vaults, markets: _markets, instruments, isWalletRpc});
   const { ramm } = useUserStore();
-  console.log("ramm: ", ramm);
 
   useEffect(() => {
     const parsedQueryString = parseQuery(window.location.search);
+    console.log('parsedQueryString', parsedQueryString)
+
     try {
       if (parsedQueryString && parsedQueryString?.primaryCategory) {
         updateMarketsViewSettings({ primaryCategory: parsedQueryString.primaryCategory });

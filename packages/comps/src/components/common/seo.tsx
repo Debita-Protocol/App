@@ -59,8 +59,8 @@ export const SEO = ({
   twitterCreator,
 }: ReactHelmetConfig) => (
   <Helmet
-    defaultTitle="Augur"
-    titleTemplate="%s | Augur"
+    defaultTitle="RAMM"
+    titleTemplate="%s | RAMM"
   >
     {title && <title>{title}</title>}
     {description && <meta name="description" content={description} />}

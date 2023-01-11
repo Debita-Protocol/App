@@ -22,7 +22,7 @@ import { Cash } from "@augurproject/comps/build/types";
 import BigNumber from "bignumber.js";
 import { ZERO } from "modules/constants";
 import { MaticIcon } from "@augurproject/comps/build/components/common/icons";
-
+import ProfileView from "../profile/profile-view"; 
 const {
   Formatter: { formatCash },
 } = Utils;
@@ -242,9 +242,10 @@ export const PortfolioView = () => {
           setActivity={() => setView(ACTIVITY)}
           claimableFirst
         />*/}
+        
         {view === ACTIVITY && <Activity />}
-        <PositionsView portfolioPage = {true} />
-
+        {/*<PositionsView portfolioPage = {true} />*/}
+        <ProfileView/>
 
 
         {view === ACTIVITY && <Activity />}

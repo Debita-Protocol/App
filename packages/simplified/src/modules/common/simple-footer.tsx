@@ -9,10 +9,10 @@ const { VersionLabel } = LabelComps;
 export const SimpleFooter = () => (
   <footer className={Styles.SimpleFooter}>
     <div>
-      <Logo isMobile />
-      <ExternalLink label="Augur.net" URL="https://www.augur.net/" />
-      <ExternalLink label="Help Docs" URL="https://help.augur.net" />
-      <ExternalLink label="Discord" URL="https://invite.augur.net/" />
+      {/*<Logo isMobile />*/}
+      <ExternalLink label="Home" URL="https://ramm.finance" />
+      <ExternalLink label="Help Docs" URL="https://www.google.com" />
+      <ExternalLink label="Discord" URL="https://www.google.com/" />
       <VersionLabel />
     </div>
     <div />
