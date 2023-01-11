@@ -1,6 +1,9 @@
 import React from 'react';
 import classNames from 'classnames';
+
+// @ts-ignore
 import Styles from './chevron-flip.styles.less';
+
 import { Icons } from '@augurproject/comps';
 
 const { ChevronFlipIcon } = Icons;
