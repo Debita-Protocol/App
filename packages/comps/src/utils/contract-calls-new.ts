@@ -42,11 +42,14 @@ import { isDataTooOld } from "./date-utils";
 import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
-import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
+
 import { rammClient } from "../apollo-ramm/client";
 import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
 
 import _ from "lodash"
+
+// @ts-ignore
+import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Multicall } from "@augurproject/ethereum-multicall";
 
 
 type NumStrBigNumber = number | BN | string;
@@ -439,8 +442,8 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     let tx;
 
     // console.log("stuff: ", await controller.getVaultSnapShot("1"));
-    tx = await reputationManager.incrementScore(account,pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore(account,pp); // validator
+    // tx.wait();
     // let result = await controller.testApproveMarket("6");
     // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
     // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
@@ -485,24 +488,24 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // const variableInterestRate = await variableInterestRateFactory.deploy();
     // console.log("variableInterestRate", variableInterestRate.address);
 
-    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    console.log("B")
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    console.log("C")
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    console.log("D")
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    console.log("E");
-    tx = await controller.setValidatorManager(validator_manager_address);
-    tx = await controller.testVerifyAddress(); 
-    tx.wait();
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // console.log("B")
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // console.log("C")
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // console.log("D")
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // console.log("E");
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // tx = await controller.testVerifyAddress(); 
+    // tx.wait();
     // tx = await reputationManager.setTraderScore(account, pp); 
     // tx.wait();
     // let tx = await controller.initiateMarket(
@@ -540,26 +543,26 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("E")
     
 
-    // tx = await controller.createVault(
-    //     cash_address,
-    //     false,
-    //     0,
-    //     0,
-    //     0,
-    //     {
-    //         N: 1,
-    //         sigma: pp.mul(5).div(100),
-    //         alpha: pp.mul(4).div(10),
-    //         omega: pp.mul(2).div(10),
-    //         delta: pp.mul(2).div(10),
-    //         r:"0",
-    //         s: pp.mul(2),
-    //         steak: pp.div(4)
-    //     },
-    //     "a description about the vault"
-    // );
-    // await tx.wait(2);
-    // console.log("F");
+    tx = await controller.createVault(
+        cash_address,
+        false,
+        0,
+        0,
+        0,
+        {
+            N: 1,
+            sigma: pp.mul(5).div(100),
+            alpha: pp.mul(4).div(10),
+            omega: pp.mul(2).div(10),
+            delta: pp.mul(2).div(10),
+            r:"0",
+            s: pp.mul(2),
+            steak: pp.div(4)
+        },
+        "a description about the vault"
+    );
+    await tx.wait(2);
+    console.log("F");
 }
 
 // export const getContractData = async (account: string, provider: Web3Provider): Promise<{
