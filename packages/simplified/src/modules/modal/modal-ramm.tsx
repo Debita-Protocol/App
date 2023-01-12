@@ -2,6 +2,8 @@ import React, { useState } from "react";
 
 // @ts-ignore
 import Styles from "./modal.styles.less";
+
+// @ts-ignore
 import ButtonStyles from "../common/buttons.styles.less";
 import { Header } from "./common";
 import { Components, useUserStore } from "@augurproject/comps";
