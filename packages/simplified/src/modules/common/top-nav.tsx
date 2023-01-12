@@ -21,7 +21,7 @@ import {
   PROPOSAL,
   PROFILE
 } from '../constants';
-import { VerifiedAccount } from "./verified-account";
+// import { VerifiedAccount } from "./verified-account";
 
 
 const { parsePath, makePath } = PathUtils;

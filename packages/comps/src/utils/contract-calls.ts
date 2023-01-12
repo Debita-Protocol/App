@@ -131,8 +131,8 @@ import {
 import {BigNumber, BigNumberish, utils} from "ethers"
 import { Loan,LoginAccount} from "../types"
 
-import createIdentity from "@interep/identity"
-import createProof from "@interep/proof"
+// import createIdentity from "@interep/identity"
+// import createProof from "@interep/proof"
 import tlensabi from "../data/TrustedMarketFactoryV3.json"; 
 
 import controllerabi from "../data/controller.json" ; 
@@ -1298,37 +1298,37 @@ export async function redeemPostAssessment(
 }
 
 
-export async function verifyAddress(
-  account: string,
-  provider: Web3Provider
-): Promise<TransactionResponse> {
-  const wasmFilePath = "../static/semaphore.wasm";
-  const zkeyFilePath = "../static/semaphore_final.zkey";
+// export async function verifyAddress(
+//   account: string,
+//   provider: Web3Provider
+// ): Promise<TransactionResponse> {
+//   const wasmFilePath = "../static/semaphore.wasm";
+//   const zkeyFilePath = "../static/semaphore_final.zkey";
   
-  const signer = provider.getSigner(account)
+//   const signer = provider.getSigner(account)
   
-  const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
+//   const controller = Controller__factory.connect(controller_address, getProviderOrSigner(provider, account))
   
-  const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
+//   const identity = await createIdentity((message) => signer.signMessage(message), "Twitter")
   
-  const group = {
-    provider: "twitter",
-    name: "unrated"
-  }
+//   const group = {
+//     provider: "twitter",
+//     name: "unrated"
+//   }
 
-  const externalNullifier = 1
+//   const externalNullifier = 1
 
-  const snarkArtifacts = {
-    wasmFilePath,
-    zkeyFilePath
-  }
+//   // const snarkArtifacts = {
+//   //   wasmFilePath,
+//   //   zkeyFilePath
+//   // }
 
-  const signal_string = "twitter-unrated"
+//   // const signal_string = "twitter-unrated"
 
-  const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
+//   // const proof : any = await createProof(identity, group, externalNullifier, signal_string, snarkArtifacts)
 
-  return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
-}
+//   // return controller.verifyAddress(proof.publicSignals.nullifierHash, proof.publicSignals.externalNullifier, proof.solidityProof)
+// }
 
 export async function getVerificationStatus(
   account: string,
