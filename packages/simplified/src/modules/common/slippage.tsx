@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+
+// @ts-ignore
 import ButtonStyles from "./buttons.styles.less";
 import classNames from "classnames";
 import { LabelComps, ButtonComps, useUserStore } from "@augurproject/comps";
