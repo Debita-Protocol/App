@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import ButtonStyles from "./buttons.styles.less";
 import classNames from "classnames";
 import { LabelComps, ButtonComps, useUserStore } from "@augurproject/comps";
+
+// @ts-ignore
 import Styles from "./slippage.styles.less";
 import ChevronFlip from "./chevron-flip";
 import { useSimplifiedStore } from "../stores/simplified";

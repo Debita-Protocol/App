@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+
+//@ts-ignore
 import Styles from "./labels.styles.less";
 import classNames from "classnames";
 import {

@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+
+// @ts-ignore
 import Styles from "./tables.styles.less";
 import classNames from "classnames";
 import { getClaimAllMessage } from "../portfolio/portfolio-view";

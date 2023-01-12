@@ -1,4 +1,6 @@
 import React from "react";
+
+// @ts-ignore
 import Styles from "./simple-footer.styles.less";
 import { Logo, LabelComps } from "@augurproject/comps";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
