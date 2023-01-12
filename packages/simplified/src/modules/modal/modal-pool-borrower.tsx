@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { ContractCalls2, useDataStore2, useAppStatusStore, InputComps, Icons, ButtonComps, LabelComps, useUserStore } from "@augurproject/comps";
+// @ts-ignore
 import Styles from "./modal.styles.less";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 import { assertType } from "graphql";

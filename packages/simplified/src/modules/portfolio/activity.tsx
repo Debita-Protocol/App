@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+// @ts-ignore
 import Styles from "./activity.styles.less";
 import {
   useAppStatusStore,

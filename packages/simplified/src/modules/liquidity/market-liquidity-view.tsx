@@ -3,8 +3,13 @@ import classNames from "classnames";
 
 // @ts-ignore
 import Styles from "./market-liquidity-view.styles.less";
+// @ts-ignore
 import CommonStyles from "../modal/modal.styles.less";
+
+// @ts-ignore
 import ButtonStyles from "../common/buttons.styles.less";
+
+// @ts-ignore
 import LiqStyles from "./liquidity-view.styles.less"; 
 import { useHistory, useLocation } from "react-router";
 import { InfoNumbers, ApprovalButton } from "../market/trading-form";

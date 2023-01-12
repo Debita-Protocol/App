@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// @ts-ignore
 import Styles from "./portfolio-view.styles.less";
 import Activity from "./activity";
 import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher } from "../common/tables";

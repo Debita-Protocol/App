@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useMemo, useCallback} from 'react';
 import { Components, ContractCalls2, useUserStore, useDataStore2 } from '@augurproject/comps';
 import { Collateral, VaultInfos } from '@augurproject/comps/build/types';
+// @ts-ignore
 import Styles from "./pool-proposal-view.styles.less";
 import _ from "lodash";
 import { BigNumber as BN } from "bignumber.js";

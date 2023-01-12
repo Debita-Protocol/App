@@ -1,5 +1,6 @@
 import React from 'react';
 
+// @ts-ignore
 import Styles from './modal.styles.less';
 import { Icons, useAppStatusStore } from '@augurproject/comps';
 

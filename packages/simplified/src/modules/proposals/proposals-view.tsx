@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom"
 import {Link} from "react-router-dom";
 import makePath from "./make-path";
 import makeQuery from "./make-query";
+// @ts-ignore
 import Styles from "./proposals-view.styles.less";
 import {TabNavItem, TabContent} from "./tabs";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";

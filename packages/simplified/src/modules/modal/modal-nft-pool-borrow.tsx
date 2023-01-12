@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDataStore2, useAppStatusStore, InputComps, Icons, ButtonComps } from "@augurproject/comps";
+// @ts-ignore
 import Styles from "./modal.styles.less";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 

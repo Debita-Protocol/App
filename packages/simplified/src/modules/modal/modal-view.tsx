@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import ModalConfirmTransaction from './modal-confirm-transaction';
 import { useHistory } from "react-router";
+
+// @ts-ignore
 import Styles from "./modal.styles.less";
 import { MODAL_POOL_BORROWER_ACTION, MODAL_POOL_COLLATERAL_ACTION, MODAL_CONFIRM_TRANSACTION, MODAL_CONNECT_TO_POLYGON, MODAL_NFT_POOL_BORROW, MODAL_NFT_POOL_ACTION } from "../constants";
 import { Constants, Modals, useUserStore, useAppStatusStore } from "@augurproject/comps";

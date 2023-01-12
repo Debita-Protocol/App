@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+
+// @ts-ignore
 import Styles from "./modal.styles.less";
 import ButtonStyles from "../common/buttons.styles.less";
 import { Header } from "./common";

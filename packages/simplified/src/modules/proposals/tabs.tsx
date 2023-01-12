@@ -1,6 +1,7 @@
 import React from "react"
 // import Styles from "./tabs.styles.less";
 import classNames from "classnames";
+// @ts-ignore
 import Styles from "./proposals-view.styles.less";
 
 export const TabContent: React.FC = ({id, activeTab, children, className}) => {

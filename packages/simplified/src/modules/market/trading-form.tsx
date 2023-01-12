@@ -2,6 +2,8 @@ import React, { ReactNode, useEffect, useMemo, useState, useCallback } from "rea
 
 // @ts-ignore
 import Styles from "../market/trading-form.styles.less";
+
+// @ts-ignore
 import ButtonStyles from "../common/buttons.styles.less";
 import classNames from "classnames";
 import { useSimplifiedStore } from "../stores/simplified";
