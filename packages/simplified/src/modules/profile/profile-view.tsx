@@ -8,7 +8,7 @@ import {
     useUserStore,
     useDataStore2
 } from "@augurproject/comps";
-import ProfileCard from "../common/profile-card";
+// import ProfileCard from "../common/profile-card";
 import Styles from "./profile-view.styles.less";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { PassportReader } from "@gitcoinco/passport-sdk-reader";
