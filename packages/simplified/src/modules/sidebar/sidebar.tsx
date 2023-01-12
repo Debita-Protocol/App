@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+// @ts-ignore
 import Styles from "./sidebar.styles.less";
 import classNames from "classnames";
 import { Link } from "react-router-dom";
