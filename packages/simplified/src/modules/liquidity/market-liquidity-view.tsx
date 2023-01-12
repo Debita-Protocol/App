@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import classNames from "classnames";
+
+// @ts-ignore
 import Styles from "./market-liquidity-view.styles.less";
 import CommonStyles from "../modal/modal.styles.less";
 import ButtonStyles from "../common/buttons.styles.less";

@@ -13,7 +13,10 @@ import _ from "lodash"
 
 import { BaseThemeButtonProps } from "@augurproject/comps/build/components/common/buttons";
 import { MARKETS_LIST_HEAD_TAGS } from "../seo-config";
+
+// @ts-ignore
 import Styles from "./creditline-proposal-view.styles.less";
+
 import { SUPER_BUTTON } from "../common/super-button";
 import { useHistory } from "react-router-dom"
 //import Calendar from 'react-calendar'; => to do later.

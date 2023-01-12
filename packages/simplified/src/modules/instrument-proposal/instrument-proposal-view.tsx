@@ -2,6 +2,8 @@ import { ContractCalls, useUserStore } from "@augurproject/comps";
 import React, { useState, useCallback} from "react";
 import BigNumber, { BigNumber as BN } from "bignumber.js";
 import { BaseThemeButton } from "@augurproject/comps/build/components/common/buttons";
+
+// @ts-ignore
 import Styles from "./instrument-proposal-view.styles.less";
 
 const { addProposal } = ContractCalls;

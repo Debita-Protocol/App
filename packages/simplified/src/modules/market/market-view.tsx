@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router";
+
+// @ts-ignore
 import Styles from "./market-view.styles.less";
+
 import ButtonStyles from "../common/buttons.styles.less";
 import classNames from "classnames";
 import SimpleChartSection from "../common/charts";

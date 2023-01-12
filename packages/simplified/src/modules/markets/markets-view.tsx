@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
+
+// @ts-ignore
 import Styles from "./markets-view.styles.less";
+
 import { AppViewStats } from "../common/labels";
 import classNames from "classnames";
 import { useSimplifiedStore } from "../stores/simplified";
