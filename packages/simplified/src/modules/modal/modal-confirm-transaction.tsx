@@ -41,7 +41,8 @@ export interface ModalConfirmTransactionProps {
   disabled?: boolean; 
   amount?: string; 
   marketId?: string;
-  redeemPrice?: string;  
+  redeemPrice?: string; 
+  includeButton?: boolean;  
 }
 
 const ModalConfirmTransaction = ({
@@ -59,6 +60,7 @@ const ModalConfirmTransaction = ({
   disabled, 
   marketId, 
   redeemPrice = "1", 
+  includeButton = true, 
 }: ModalConfirmTransactionProps) => {
   const {
     account,
@@ -125,7 +127,7 @@ const breakdowns_ = [
           )))
 
         }
-        {
+        {includeButton ?(
           includeInput? 
           (  <SecondaryThemeButton
           action={()=> redeem({account, loginAccount, marketId, amount: amount_})}
@@ -144,6 +146,7 @@ const breakdowns_ = [
           disabled={disabled || buttonText !== transactionButtonText}
           customClass={ButtonStyles.ReviewTransactionButton}
         />)
+          ): null
 
 
         }

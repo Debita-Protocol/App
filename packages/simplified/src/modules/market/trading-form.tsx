@@ -226,6 +226,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     loginAccount,
     balances,
     actions: { addTransaction },
+      ramm
+
   } = useUserStore();
   const [orderType, setOrderType] = useState(BUY);
   const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
@@ -255,6 +257,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   //   outcomeShareToken,
   // });
 
+  console.log('ramm', ramm); 
 
  // const { hasLiquidity } = amm;
   const hasLiquidity = true; 
@@ -297,6 +300,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         )
       if (allowance && Number(allowance) >= maxUint)
         setMMAllowance(true); 
+
+      if (ramm.reputationScore =="0") setIsNotVerified(true); 
+      else setIsNotVerified(false); 
     }
   }, [account, amount, vaults, instruments,market_])
 
@@ -576,6 +582,7 @@ console.log('MMAllowance', MMAllowance);
   return (
     <div className={Styles.TradingForm}>
       <div>
+
         <BuySellToggleSwitch
           toggle={isBuy}
           setToggle={() => {
@@ -588,7 +595,12 @@ console.log('MMAllowance', MMAllowance);
             setAmount("");
           }}
         />
-
+     {isLogged && isNotVerified &&(
+          <SecondaryThemeButton 
+          text = {"Test Verify"}
+          action = {testVerify}
+          />
+          )}
         <div>
           <span>Selling Fee: {formatPercent(amm?.feeInPercent).full}</span>
           <span>Budget: 1000</span>
@@ -710,12 +722,7 @@ console.log('MMAllowance', MMAllowance);
             }}
           />
         )*/}
-        {isLogged && isNotVerified &&(
-          <TinyThemeButton 
-          text = {"Test Verify"}
-          action = {testVerify}
-          />
-          )}
+   
         {!MMAllowance &&
             (<ApprovalButton
               {...{
@@ -800,6 +807,7 @@ export const ApprovalButton = ({
   const {
     loginAccount,
     actions: { addTransaction },
+
   } = useUserStore();
   const marketCashType = cash?.name;
   const ammFactory = amm?.ammFactoryAddress;

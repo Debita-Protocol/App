@@ -36,7 +36,8 @@ const handleValue = (value, cashName = USDC) =>
 
 export const AppViewStats = ({ portfolioPage = false, small = false, liquidity = false, trading = false }) => {
   const { isLogged } = useAppStatusStore();
-  const { balances } = useUserStore();
+  const { balances ,     ramm: { reputationScore, vaultBalances, zcbBalances}
+} = useUserStore();
   const { vaults: vaults, instruments: instruments }= useDataStore2();
   const totalAccountValue = useMemo(
     () =>
@@ -57,13 +58,17 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
     balances?.totalCurrentLiquidityUsd,
   ]);
   var tvl = 0; 
+  var vaultsPos = 0; 
   const numvaults = Object.values(vaults)?.length; 
 
   for(let i=1; i<= Object.values(vaults)?.length; i++){
-    console.log("tvl????",Number(vaults[i]?.totalAssets))
     tvl = tvl+ Number(vaults[i]?.totalAssets); 
 
   }
+  for(let i=1; i<= Object.values(vaultBalances)?.length; i++){
+    vaultsPos += Number(vaultBalances[i].shares); 
+  }
+
   console.log('tvl', tvl)
 
   const verified = true; 
@@ -79,9 +84,9 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
   return (
     <div className={classNames(Styles.AppStats, { [Styles.small]: small, [Styles.full]: liquidity && trading, [Styles.LPOnly]: liquidity && !trading })}>
       {portfolioPage &&(
-      <ValueLabel large={!small} label="Total Vault Positions/Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
+      <ValueLabel large={!small} label="Total Vault Positions" light={!isLogged} value={handleValue(vaultsPos)} small={small} />)}
       {portfolioPage &&(
-      <ValueLabel large={!small} label="Number of Invested Vaults" light={!isLogged} value={"13%"} small={small} />)}
+      <ValueLabel large={!small} label="My Estimated APR" light={!isLogged} value={"13%"} small={small} />)}
      
 
       {!portfolioPage && (<ValueLabel large={!small} label="Number of Vaults" light={!isLogged} 

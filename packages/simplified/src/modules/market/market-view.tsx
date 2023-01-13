@@ -35,20 +35,25 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 import {Sidebar} from "../sidebar/sidebar"; 
+
+const InstumentDescriptionFormat = ({instrumenType})=>{
+  const fields =["ETH", "1100", "1/20/2023", "1" ]
+  if (instrumenType == 1){
+    return "The covered call instrument for "+ fields[0] + " has a strike price of "
+    + fields[1] + " and a maturity date at " +fields[2] + ". The redemption price of longZCB of this bet, if correct, is "
+    + fields[3] + ". Given the payoff, If you want to bet on the price of ETH to be below "
+    + fields[1] + " by " + fields[2] +" then buy longZCB."
+    
+  }
+  else if(instrumenType==2){
+    return "The conditional lendingPool has "+ fields[1]+ " as collateral." 
+
+  }
+  else return null; 
+}
+
 const FormAmountInput = ({amount, updateAmount, prepend }) => {
-        //  <input
-        //   type="number"
-        //   onChange={(e) => {
-        //     updateAmount(e.target.value);
-        //     updateInitialAmount(e.target.value);
-        //     errorCheck(e.target.value);
-        //   }}
-        //   title={disabled ? "Liquidity Depleted" : "enter amount"}
-        //   value={amount}
-        //   placeholder="0"
-        //   disabled={disabled}
-        //   onWheel={(e: any) => e?.target?.blur()}
-        // />
+
     console.log('amountinput here', amount); 
   return (
     <div className={classNames(Styles.FormAmountInput, {
@@ -260,7 +265,8 @@ const MarketView = ({ defaultMarket = null }) => {
 
 
   const marketId = useMarketQueryId();
-  const { isMobile } = useAppStatusStore();
+
+  const { actions: {setModal},isMobile } = useAppStatusStore();
   const {
     settings: { timeFormat },
     showTradingForm,
@@ -386,19 +392,9 @@ const MarketView = ({ defaultMarket = null }) => {
 
  
 
-  //Example types 
-  const types = ["Discretionary Loan", "Isolated Lending", "Options Selling", "Leveraged Yield Farming", "Discretionary Loan", "Spot Allocation"]; 
-  const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool#3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot" ];
-  const descriptions = ["Buy bonds issued by Flint Dao, or bet on its default", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Buy bonds issued by Kao Dao, or bet on its default", "Long or Short Spot Positions"] 
-  const marketisApproved = ["False", "False", "True", "False", "True", "True"]; 
-  const principals = ["1000$", "3000$", "2500$","1400$", "4200$", "500$"]; 
-  const aprs = ["100$", "120$","150$", "320$", "210$", "80$"]; 
-  const durations = ["120 days", "1 Year", "30days", "60days", "1 Year", "10 days"]; 
-
-
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: 1}); 
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
-
   // if (!market) return <EmptyMarketView />;
 
  // const details = detailFromResolutionRules? getResolutionRules(market) : "No details";
@@ -471,6 +467,63 @@ const MarketView = ({ defaultMarket = null }) => {
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
+        <div>
+              <h4>Overview</h4>
+          <p> {/*instruments[Id]?.description*/}
+          {instrumentDescription}</p>
+          <SecondaryThemeButton
+          text="More Info"
+          action={() =>
+        setModal({
+
+          type: "MODAL_CONFIRM_TRANSACTION",
+          title: "Instrument Information",
+          includeButton : false, 
+          // transactionButtonText: "Redeem",
+          // transactionAction: ({ onTrigger = null, onCancel = null }) => 
+          // {
+          //   onTrigger && onTrigger();
+          //   redeem({account, loginAccount, marketId, amount})
+          
+          // },
+          targetDescription: {
+            //market,
+            label: "Description",  //isMint ? "Market" : "Pool",
+            subLabel: instrumentDescription
+          },
+          footer: 
+             {
+                text: "Redeeming will automatically withdraw capital from the instrument",
+            },
+          
+           name: "outcome", 
+           breakdowns:  [
+                {
+                  heading: "Instrument Type",
+                  infoNumbers: [
+                    {
+                      label: instrumentDescription,
+                      // value: 1,
+
+                    },
+                  ],
+                },
+                // {
+                //   heading: "What you'll recieve",
+                //   infoNumbers: [
+                //     {
+                //       label: "Underlying",
+                //       value: 1,                              
+                //     },
+                //   ],
+                // },
+              ]          
+              
+          })
+        }
+          customClass={ButtonStyles.TinyTransparentButton} 
+        /> 
+          </div>
         <h3>Simulate Returns</h3>
         {(<ul className={Styles.UpperStatsRow}>
          { !isPool&& (<li>
@@ -557,8 +610,6 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Overview</h4>
-          <p> {instruments[Id]?.description} </p>
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
