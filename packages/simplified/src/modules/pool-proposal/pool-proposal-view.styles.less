@@ -29,7 +29,15 @@
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    padding: @size-20;
+    padding: @size-15;
+    > div {
+      padding-left:@size-10;
+      > label {
+        font-size: @size-18;
+        font-weight: @weight-bold;
+        color: var(--primary-text);
+      }
+    }
     > label {
       font-size: @size-18;
       font-weight: @weight-bold;
@@ -43,7 +51,7 @@
       padding: @size-16;
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
-      width: 50%;
+      
       background-color: var(--primary-bg);
     }
 
@@ -51,19 +59,22 @@
       display: flex;
       flex-flow: column nowrap;
       align-items: flex-start;
-      justify-content: flex-start;
+
       > div:first-of-type {
         display: flex;
         // flex-flow: row nowrap;
         // align-items: center;
         // justify-content: center;
         width: 80%;
-        > label {
-          font-size: @size-18;
-          font-weight: @weight-bold;
-          color: var(--primary-secondary);
-          padding: @size-16;
+        > div:first-of-type  {
+          > label {
+            font-size: @size-18;
+            font-weight: @weight-bold;
+            color: var(--primary-text);
+            padding-right: @size-20;
+          }
         }
+
         > button {
           font-size: @size-18;
           font-weight: @weight-bold;
@@ -137,11 +148,41 @@
       }
     }
   }
+
+  > div:last-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+    > button {
+      .SimplifiedActionButton
+    }
+    > div {
+      display: flex;
+      background-color: transparent;
+      border: none;
+      > div {
+        display: flex;
+        flex-flow: row nowrap;
+
+        > label {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--secondary-text);
+          padding: @size-16;
+        }
+        > span {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--primary-text);
+          padding: @size-16;
+        }
+      }
+    }
+  }
 }
 
 
 
-.FormAmountInput {
+.AmountInputField {
   .text-20-bold;
 
   grid-column: 1 / span 2;
@@ -152,22 +193,19 @@
   flex-flow: row nowrap;
   height: @size-56;
   min-height: @size-56;
-  border: @size-1 solid var(--theme-border);
+  border: @size-1 solid transparent;
   outline: 0;
   color: var(--secondary-text);
   align-items: center;
-  &:hover {
-    border: @size-1 solid var(--secondary-text);
-  }
 
   > button {
     margin-right: @size-8;
   }
 
-  // &:focus-within {
-  //   border: @size-1 solid var(--theme-border);
-  //   outline: 0;
-  // }
+  &:focus-within {
+    border: @size-1 solid var(--theme-border);
+    outline: 0;
+  }
 
   > span {
     flex: 0 auto;
@@ -176,8 +214,7 @@
   > input {
     .text-20-bold;
 
-    min-width: @size-64;
-    width: @size-80;
+    width: @size-64;
     color: var(--primary-text);
     background-color: var(--primary-bg);
     border-radius: @size-8;
@@ -215,7 +252,6 @@
   &.Error {
     border: @size-1 solid var(--failed);
   }
-  
 }
 
 
@@ -263,4 +299,64 @@
       margin: @size-8;
     }
   } 
+}
+
+
+.CurrencyLabel {
+  .text-16-semi-bold;
+
+  align-items: center;
+  color: var(--primary-text);
+  flex: 0 0 auto;
+  display: flex;
+  flex-flow: row nowrap;
+  white-space: nowrap;
+  justify-content: center;
+  margin-right: @size-16;
+
+  > svg {
+    height: @size-24;
+    width: @size-24;
+    margin-right: @size-4;
+  }
+}
+
+.SimplifiedActionButton {
+  border: @size-1 solid var(--theme-border);
+  background: var(--primary-text);
+  color: var(--inverted-primary-text);
+  min-height: @size-68;
+  height: @size-68;
+  max-height: @size-68;
+  border-radius: 1rem;
+  > span:first-of-type {
+    .text-20-bold;
+  }
+  width: 100%;
+
+  &:not(:disabled) {
+    &:hover {
+      background: rgba(var(--primary-text-rgb), 0.85);
+      color: var(--inverted-primary-text);
+    }
+
+    &:focus-within:hover:active {
+      background: var(--inverted-primary-bg);
+      color: var(--inverted-primary-text);
+    }
+  }
+
+  &:not(:disabled):not(.Disabled):focus,
+  &:not(:disabled):not(.Disabled):focus-within {
+    background-color: var(--primary-text);
+    color: var(--inverted-primary-text);
+    outline: 0;
+    border: @size-1 solid var(--theme-border);
+    box-shadow: none;
+  }
+
+  &:not(:disabled):not(.Disabled):active {
+    background-color: var(--tertiary-bg);
+    color: var(--primary-text);
+  }
 }

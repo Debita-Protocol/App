@@ -548,6 +548,154 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
   );
 };
 
+export const PromisedReturn = ({leverageFactor, setLeverageFactor}) => {
+  const {
+    settings: { slippage },
+    actions: { updateSettings },
+  } = useSimplifiedStore();
+  const { account } = useUserStore();
+  const [showSelection, setShowSelection] = useState(true);
+
+  const isSelectedArray = useMemo(() => {
+    let output = [false, false, false, false, false];
+    switch (leverageFactor) {
+      case 0: {
+        output[0] = true;
+        break;
+      }
+      case 1: {
+        output[1] = true;
+        break;
+      }
+      case 2: {
+        output[2] = true;
+        break;
+      }
+      case 3: {
+        output[3] = true;
+        break;
+      }
+      default: {
+        output[4] = true;
+        break;
+      }
+    }
+    return output;
+  }, [leverageFactor]);
+  const [customVal, setCustomVal] = useState(isSelectedArray[4] ? slippage : "");
+  const [error, setError] = useState("");
+
+  return (
+    <section
+      className={classNames(Styles.PoolLeverageFactor, {
+        [Styles.showSelection]: showSelection,
+        [Styles.HasError]: error,
+      })}
+    >
+      <ul>
+        <div>
+          <li>
+            <TinyThemeButton
+              text=" 0.00"
+              action={() => {
+                setLeverageFactor(0)
+                // updateSettings({ slippage: "0.00" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[0]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="1.0"
+              action={() => {
+                setLeverageFactor(1)
+                // updateSettings({ slippage: "1" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[1]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="2.0"
+              action={() => {
+                setLeverageFactor(2)
+                // updateSettings({ slippage: "2" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[2]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <li>
+            <TinyThemeButton
+              text="3.0"
+              action={() => {
+                setLeverageFactor(3)
+                // updateSettings({ slippage: "3" }, account);
+                setCustomVal("");
+                setError("");
+              }}
+              selected={isSelectedArray[3]}
+              noHighlight
+              customClass={ButtonStyles.TinyTransparentButton}
+            />
+          </li>
+          <div
+            className={classNames({
+              [Styles.first]: isSelectedArray[1],
+              [Styles.second]: isSelectedArray[2],
+              [Styles.third]:isSelectedArray[3]  ,
+              [Styles.none]: isSelectedArray[4],
+            })}
+          ></div>
+        </div>
+        <li>
+          <div
+            className={classNames({
+              [Styles.Selected]: isSelectedArray[4] === true,
+            })}
+          >
+            <input
+              type="number"
+              step="0.1"
+              value={customVal}
+              onChange={(v) => {
+                const val = v.target.value;
+                setCustomVal(val);
+                if (!(val === "" || isNaN(Number(val)) || Number(val) > 10 || Number(val) <= 0)) {
+                  setError("");
+                  setLeverageFactor(val);
+                  // updateSettings({ slippage: val }, account);
+                } else if (val === "") {
+                  setError("");
+                  setLeverageFactor(0); 
+                  // updateSettings({ slippage: 0 }, account);
+                } else {
+                  setError("Enter a valid leverage multiplier");
+                }
+              }}
+              placeholder="Custom"
+              max="10"
+              min="0.1"
+            />
+          </div>
+        </li>
+      </ul>
+      {error && <span>{error}</span>}
+    </section>
+  );
+};
+
 //   const {
 //     settings: { slippage },
 //     actions: { updateSettings },

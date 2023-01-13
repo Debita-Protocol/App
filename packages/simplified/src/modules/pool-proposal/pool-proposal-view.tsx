@@ -6,10 +6,11 @@ import Styles from "./pool-proposal-view.styles.less";
 import _ from "lodash";
 import { BigNumber as BN } from "bignumber.js";
 import classNames from "classnames";
-import { PoolLeverageFactor } from "../common/slippage";
+import { PoolLeverageFactor, PromisedReturn } from "../common/slippage";
 import { isAddress } from '@ethersproject/address';
 
 import { Constants } from "@augurproject/comps";
+import { generateTooltip } from '@augurproject/comps/build/components/common/labels';
 const {
     BUY,
     ApprovalAction,
@@ -29,7 +30,6 @@ const {
     TX_STATUS,
   } = Constants;
 
-
 const { createPoolMarket, createPoolInstrument} = ContractCalls2;
 const {
     SelectionComps: {SquareDropdown, SingleCheckbox},
@@ -46,11 +46,11 @@ interface PoolCollateralItem {
     isERC20: boolean;
 }
 
-export const FormAmountInput = ({amount, updateAmount, prepend }) => {
+export const FormAmountInput = ({amount, updateAmount, prepend, label="" }) => {
   const [_amount, _setAmount] = useState(amount);
   
   return (
-    <div className={classNames(Styles.FormAmountInput, {
+    <div className={classNames(Styles.AmountInputField, {
       [Styles.Edited]: amount !== ""
     })}>
       <span>
@@ -66,11 +66,17 @@ export const FormAmountInput = ({amount, updateAmount, prepend }) => {
         }} 
         onWheel={(e: any) => e?.target?.blur()}
       />
+      <span className={Styles.CurrencyLabel}>
+            {label}
+      </span>
     </div>
     
   )
 }
 
+const toCompoundingRatePerSec = (r_i: number): BN => {
+  return new BN(Math.exp(Math.log(r_i + 1) / (31536000)) - 1);
+}
 
 const PoolProposalView: React.FC = () => {
     const {
@@ -80,8 +86,7 @@ const PoolProposalView: React.FC = () => {
         actions: { addTransaction },
       } = useUserStore();
     const { vaults } = useDataStore2();
-    
-
+    const [ deployedInstrument, setDeployedInstrument ] = useState(false); 
     const [ poolData, setPoolData] = useState({
         description: "",
         name: "",
@@ -93,10 +98,10 @@ const PoolProposalView: React.FC = () => {
         leverageFactor: ""
     });
     const [ collateralInfos, setCollateralInfos] = useState<PoolCollateralItem[]>([]);
+    const [ instrumentAddress, setInstrumentAddress ] = useState("");
 
-    const {inputError, inputMessage} = usePoolFormInputValdiation(poolData, collateralInfos); 
-    
-
+    const {inputError, inputMessage} = usePoolFormInputValdiation(poolData, collateralInfos, instrumentAddress); 
+  
     const [ vaultId, setVaultId ] = useState("");
     const [ defaultVault, setDefaultVault] = useState("");
     let vaultOptions = useMemo(() => {
@@ -120,28 +125,15 @@ const PoolProposalView: React.FC = () => {
 
     const submitProposal = useCallback(async () => {
 
-        // console.log("vault address: ", vaults[vaultId].address)
-        // console.log("want: ", vaults[vaultId].want.address);  
-        // console.log("poolData: ", poolData);
-        // console.log("collateralInfos: ", collateralInfos);
-
-        const saleAmount = new BN(poolData.saleAmount).shiftedBy(18).toFixed();
-        const initPrice = new BN(poolData.initPrice).shiftedBy(18).toFixed();
-        const promisedReturn = new BN(poolData.promisedReturn).shiftedBy(18).toFixed();
-        const inceptionPrice = new BN(poolData.inceptionPrice).shiftedBy(18).toFixed();
-        const leverageFactor = new BN(poolData.leverageFactor).shiftedBy(18).toFixed();
-        console.log("vaultId: ", vaultId);
-
-        // console.log("saleAmount: ", saleAmount);
-        // console.log("initPrice: ", initPrice);
-        // console.log("promisedReturn: ", promisedReturn);
-        // console.log("inceptionPrice: ", inceptionPrice);
-        // console.log("leverageFactor: ", leverageFactor);
-
-
+        const saleAmount = new BN(poolData.saleAmount).shiftedBy(18).toFixed(0);
+        const initPrice = new BN(poolData.initPrice).shiftedBy(18).toFixed(0);
+        const inceptionPrice = new BN(poolData.inceptionPrice).shiftedBy(18).toFixed(0);
+        const leverageFactor = new BN(poolData.leverageFactor).shiftedBy(18).toFixed(0);
+        const promisedReturn = toCompoundingRatePerSec(parseFloat(poolData.promisedReturn) / 100).shiftedBy(18).toFixed(0);
         
-        // first create a pool instrument
-        const poolInstrumentAddress = await createPoolInstrument(
+        let deployedAddress;
+        if (instrumentAddress === "") {
+          createPoolInstrument(
             account,
             loginAccount.library,
             vaults[vaultId].address,
@@ -149,10 +141,34 @@ const PoolProposalView: React.FC = () => {
             poolData.name,
             poolData.symbol,
             collateralInfos
-        );
+          )
+          .then(({ response, instrumentAddress: _deployedAddress}) => {
+            const {hash} = response
+            setDeployedInstrument(true);
+            setInstrumentAddress(_deployedAddress);
+            addTransaction({
+              hash,
+              chainId: loginAccount.chainId,
+              status: TX_STATUS.PENDING,
+              message: "contract deployment pending at " + _deployedAddress + " ..."})
+            })
+            .catch((err) => {
+              addTransaction({
+                hash: "contract-deployment-failed",
+                chainId: loginAccount.chainId,
+                seen: false,
+                status: TX_STATUS.FAILURE,
+                from: account,
+                addedTime: new Date().getTime(),
+                message: "contract deployment failed",
+              });
+            })
+        }
+        // first create a pool instrument
+
 
         // using poolData createPoolMarket
-        await createPoolMarket(
+        createPoolMarket(
             account,
             loginAccount.library,
             vaultId,
@@ -163,15 +179,25 @@ const PoolProposalView: React.FC = () => {
             promisedReturn,
             inceptionPrice,
             leverageFactor,
-            poolInstrumentAddress
-        );
-
-        // await addAcceptedCollaterals(
-        //     account,
-        //     loginAccount.library,
-        //     marketId,
-        //     collateralInfos
-        // );
+            deployedAddress ? deployedAddress : instrumentAddress
+        ).then((txResponse) => {
+          addTransaction({
+            hash: txResponse.hash,
+            chainId: loginAccount.chainId,
+            status: TX_STATUS.PENDING,
+            message: "creating instrument market..."
+          });
+          }).catch((err) => {
+            addTransaction({
+              hash: "market-creation-failed",
+              chainId: loginAccount.chainId,
+              seen: false,
+              status: TX_STATUS.FAILURE,
+              from: account,
+              addedTime: new Date().getTime(),
+              message: `Failed to create market from pool. ${err}`
+            });
+          })
     }, [poolData, collateralInfos, vaultId, vaults]);
 
 
@@ -184,7 +210,8 @@ const PoolProposalView: React.FC = () => {
     }, [collateralInfos]);
 
     // add empty collateralItem to collateralInfos
-    const addCollateral = useCallback(() => {
+    const addCollateral = useCallback((e) => {
+      e.preventDefault();
         setCollateralInfos((prev) => [...prev, {
             tokenAddress: "",
             tokenId: "",
@@ -194,10 +221,15 @@ const PoolProposalView: React.FC = () => {
         }]);
     }, [collateralInfos]);
 
-    console.log("vaultId: ", vaultId);
+    const underlyingSymbol = vaultId !== "" ? vaults[vaultId].want.symbol : "";
+
+    if (!loginAccount || !loginAccount.library) {
+        return <h2>
+          Please connect your wallet to use this feature
+        </h2>;
+    }
     
     return (
-        <>
           <div className={Styles.PoolProposalForm}>
             {/* <SUPER_BUTTON /> */}
             <div>
@@ -206,11 +238,18 @@ const PoolProposalView: React.FC = () => {
               </h3>
             </div>
             <div>
-              <label>Selected Vault: </label>
+              <div>
+                <label>Selected Vault: </label>
+                { generateTooltip("Vault that the instrument will be attached to, vault underlying will be deposited to the instrument on instrument approval", "vault")}
+              </div>
               <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
             </div>
             <div>
-              <label>Name: </label>
+              <div>
+                <label>Name: </label>
+                { generateTooltip("Name of the pool instrument", "name")}
+              </div>
+              
               <TextInput placeholder="" value={poolData.name} onChange={(val) => {
                 setPoolData((prevData) => {
                     return {...prevData, name: val}
@@ -218,7 +257,11 @@ const PoolProposalView: React.FC = () => {
               }}/>
             </div>
             <div>
-              <label>Symbol: </label>
+              <div>
+                <label>Symbol: </label>
+                { generateTooltip("Symbol of the pool instrument", "symbol")}
+              </div>
+              
               <TextInput placeholder="" value={poolData.symbol} onChange={(val) => {
                 setPoolData((prevData) => {
                     return {...prevData, symbol: val}
@@ -226,7 +269,12 @@ const PoolProposalView: React.FC = () => {
               }}/>
             </div>
             <div>
-              <label>Sale Amount: </label>
+              <div>
+                <label>Sale Amount: </label>
+                { generateTooltip("Minimum vault underlying from managers for the approval of pool", "sale amount")}
+              </div>
+             
+
               <FormAmountInput
                 updateAmount={(val) => {
                   console.log("val: ", val);
@@ -238,10 +286,14 @@ const PoolProposalView: React.FC = () => {
                 }}
                 prepend={"$"}
                 amount={poolData.saleAmount}
+                label={underlyingSymbol}
               />
             </div>
             <div>
-              <label>Initial Price: </label>
+              <div>
+                <label>Initial Price: </label>
+                { generateTooltip("Initial price of the longZCB", "initPrice")}
+              </div>
               <FormAmountInput 
                 updateAmount={
                   (val) => {
@@ -254,10 +306,14 @@ const PoolProposalView: React.FC = () => {
                 }
                 amount={poolData.initPrice}
                 prepend={"$"}
+                label={underlyingSymbol}
               />
             </div>
             <div>
-              <label>Inception Price: </label>
+              <div>
+                <label>Inception Price: </label>
+                { generateTooltip("Initial Price of longZCB post approval", "inceptionPrice")}
+              </div>
               <FormAmountInput 
                 updateAmount={
                   (val) => {
@@ -270,10 +326,14 @@ const PoolProposalView: React.FC = () => {
                 }
                 amount={poolData.inceptionPrice}
                 prepend={"$"}
+                label={underlyingSymbol}
               />
             </div>
             <div>
-              <label>Promised Return: </label>
+              <div>
+                <label>Promised Return (Annualized): </label>
+                { generateTooltip("Annualized promised compounding return rate to senior position", "promisedReturn")}
+              </div>
               <FormAmountInput 
                 updateAmount={
                   (val) => {
@@ -285,11 +345,15 @@ const PoolProposalView: React.FC = () => {
                   }
                 }
                 amount={poolData.promisedReturn}
-                prepend={"$"}
+                prepend={""}
+                label={"%"}
               />
             </div>
             <div>
-                <label>Leverage Factor: </label>
+                <div>
+                  <label>Leverage Factor: </label>
+                  { generateTooltip("Determines the leverage for longZCB minters, higher levFactor means higher risk/reward. lower levFactor means more protection for senior vault token holders", "levFactor")}
+                </div>
                 <PoolLeverageFactor 
                 leverageFactor={poolData.leverageFactor}
                 setLeverageFactor={
@@ -304,8 +368,12 @@ const PoolProposalView: React.FC = () => {
             </div>
             <div className={Styles.PoolCollaterals}>
                 <div>
-                    <label>Accepted Collateral</label>
-                    <TinyThemeButton text="+" action={addCollateral} small={true}/>
+                    <div>
+                      <label>Accepted Collateral</label>
+                      { generateTooltip("Add accepted collateral for the lending pool", "collateral")}
+                    </div>
+                   
+                    <TinyThemeButton text="+" action={addCollateral} small={true} noHighlight={true}/>
                 </div>
                 <section>
                 {collateralInfos.map((collateralInfo, index) => { // address, isERC20, borrowAmount, maxAmount what are the decimals? decimals used in address of the collateral.
@@ -373,6 +441,7 @@ const PoolProposalView: React.FC = () => {
                             <FormAmountInput 
                               amount={collateralInfo.borrowAmount}
                               prepend="$"
+                              label={underlyingSymbol}
                               updateAmount={
                                 (val) => {
                                     if (/^\d*\.?\d*$/.test(val)) {
@@ -392,9 +461,10 @@ const PoolProposalView: React.FC = () => {
                           </div>
                           <div>
                           <label>Asset Borrow Liquidity</label>
-                            <FormAmountInput 
+                            <FormAmountInput
                               amount={collateralInfo.maxAmount}
                               prepend="$"
+                              label={underlyingSymbol}
                               updateAmount={
                                 (val) => {
                                     if (/^\d*\.?\d*$/.test(val)) {
@@ -435,12 +505,31 @@ const PoolProposalView: React.FC = () => {
               ></textarea>
             </div>
             <div>
+              <div>
+                <label>Instrument Address (optional): </label>
+                { generateTooltip("leave empty if you want the pool instrument to be created for you", "name")}
+              </div>
+              <TextInput placeholder="" value={instrumentAddress} onChange={(val) => {
+                setInstrumentAddress(val)
+              }}/>
+            </div>
+            <div>
               <SecondaryThemeButton 
               text={inputError ? inputMessage : "Submit Proposal"}
               action={inputError ? null : submitProposal} />
+              <div>
+                { deployedInstrument &&
+                  (
+                    <div>
+                      <label>Deployed Instrument Address: </label>
+                      <span>{ instrumentAddress }</span>
+                    </div>
+                  )
+                }
+              </div>
             </div>
+
             </div>
-          </>
         );
 }
 
@@ -455,7 +544,7 @@ const usePoolFormInputValdiation = ({
   promisedReturn,
   inceptionPrice,
   leverageFactor
-}, collateralInfos) => {
+}, collateralInfos, instrumentAddress) => {
   let inputError = false;
   let inputMessage = "";
   if (description.length === 0) {
@@ -485,6 +574,9 @@ const usePoolFormInputValdiation = ({
   } else if (collateralInfos.length === 0) {
     inputError = true;
     inputMessage = "Collateral is required";
+  } else if (instrumentAddress !== "" && !isAddress(instrumentAddress)) {
+    inputError = true;
+    inputMessage = "Instrument Address is not valid";
   } else {
     collateralInfos.forEach((collateralInfo) => {
       // check whether collateral address is valid

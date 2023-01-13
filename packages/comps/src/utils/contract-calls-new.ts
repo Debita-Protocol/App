@@ -216,7 +216,7 @@ export const createPoolInstrument = async (
     name: string,
     symbol: string,
     collateralInfos: PoolCollateralItem[]
-): Promise<string> => {
+): Promise<{response: TransactionResponse, instrumentAddress: string}> => {
     // console.log("poolInstrumentABI: ", PoolInstrumentData.abi);
     const poolInstrumentFactory = new ContractFactory(PoolInstrumentData.abi, PoolInstrumentData.bytecode, provider.getSigner(account));
     // console.log("vault: ", vault);
@@ -258,9 +258,9 @@ export const createPoolInstrument = async (
         collateralLabels,
         collateralDatas
     );
-    await poolInstrument.deployed();
-    console.log("poolInstrument deployed to:", poolInstrument.address);
-    return poolInstrument.address;
+    await poolInstrument.deployed()
+
+    return {response: poolInstrument.deployTransaction, instrumentAddress: poolInstrument.address};
 }
 
 // export const addAcceptedCollaterals = async (

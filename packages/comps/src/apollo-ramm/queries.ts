@@ -89,7 +89,7 @@ export const GET_MARKETS = gql`
             alive
             base_budget: baseBudget
             marketCondition
-          
+            instrumentType
             redemptionPrice
             totalCollateral
             approved_principal:approvedPrincipal
