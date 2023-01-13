@@ -13,8 +13,10 @@ import {
   ContractCalls,
   Stores,
   useScrollToTopOnMount,
-  useDataStore2
+  useDataStore2, useAppStatusStore
 } from "@augurproject/comps";
+import ButtonStyles from "../common/buttons.styles.less";
+
 import { AppViewStats, AvailableLiquidityRewards, MaticAddMetaMaskToken } from "../common/labels";
 import {
   MARKET, 
@@ -202,7 +204,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   } = useUserStore();
     const [expanded, setExpanded] = useState(false);
 
-    // const {actions: {setModal},} = useAppStatusStore(); 
+     const {actions: {setModal},} = useAppStatusStore(); 
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
@@ -241,7 +243,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
               })
             }
           />}
-
+     
       </MarketLink>
 
       <button onClick={() => setExpanded(!expanded)}>
@@ -279,7 +281,59 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
               })
             }
           />*/}
-        {generateTooltip("Instrument Description:"+instrument?.description, "instrument"+marketId)}
+        {/*generateTooltip("Instrument Description:"+instrument?.description, "instrument"+marketId)*/}
+ <SecondaryThemeButton
+          text="More Info"
+          action={() =>
+        setModal({
+
+          type: "MODAL_CONFIRM_TRANSACTION",
+          title: "Instrument Information",
+          includeButton : false, 
+          // transactionButtonText: "Redeem",
+          // transactionAction: ({ onTrigger = null, onCancel = null }) => 
+          // {
+          //   onTrigger && onTrigger();
+          //   redeem({account, loginAccount, marketId, amount})
+          
+          // },
+          targetDescription: {
+            //market,
+            label: "Description",  //isMint ? "Market" : "Pool",
+            subLabel: "instrumentDescription"
+          },
+          footer: 
+             {
+                text: "Redeeming will automatically withdraw capital from the instrument",
+            },
+          
+           name: "outcome", 
+           breakdowns:  [
+                {
+                  heading: "Instrument Type",
+                  infoNumbers: [
+                    {
+                      label: "instrumentDescription",
+                      // value: 1,
+
+                    },
+                  ],
+                },
+                // {
+                //   heading: "What you'll recieve",
+                //   infoNumbers: [
+                //     {
+                //       label: "Underlying",
+                //       value: 1,                              
+                //     },
+                //   ],
+                // },
+              ]          
+              
+          })
+        }
+          customClass={ButtonStyles.TinyTransparentButton} 
+        /> 
       </div>
 
 
