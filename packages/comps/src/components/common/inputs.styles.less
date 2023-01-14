@@ -396,7 +396,7 @@
 }
 
 .TextInput {
-  .ThemeBorder;
+  
   .text-16-bold;
 
   display: flex;
@@ -404,7 +404,8 @@
   background: transparent;
   width: unset;
   color: var(--primary-text);
-
+  text-overflow: ellipsis;
+  .ThemeBorder;
   &:focus {
     .ThemeBorder;
     outline: 0;
