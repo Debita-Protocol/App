@@ -1333,26 +1333,25 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    // console.log("stuff: ", await controller.getVaultSnapShot("1"));
-    // tx = await reputationManager.incrementScore(account,pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore(account,pp); // validator
+    tx.wait();
 
-    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    tx.wait();
 
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // tx = await controller.testVerifyAddress(); 
-    // tx.wait();
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    tx = await controller.setValidatorManager(validator_manager_address);
+    tx = await controller.testVerifyAddress(); 
+    tx.wait();
 
-    // console.log("F");
+    console.log("F");
 
     await scriptSetup(account, provider);
 }
