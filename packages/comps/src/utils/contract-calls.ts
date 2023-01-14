@@ -33,7 +33,7 @@ import {
   CorePoolData
 } from "../types";
 import { ethers, Transaction } from "ethers";
-import { Contract } from "@ethersproject/contracts";
+import { Contract, ContractFactory } from "@ethersproject/contracts";
 import {addresses, 
   //LinearBondingCurve__factory 
 } from "@augurproject/smart";
@@ -120,11 +120,12 @@ import {
   RepNFT_address,
   marketFactoryAddress,
   fetcher_address, 
-  cash_address, 
+  usdc_address, 
   pool_factory_address, 
   creditLine_address, 
   reputation_manager_address, 
-  leverageModule_address
+  leverageModule_address,
+  weth_address
 } from "../data/constants";
 
 
@@ -141,11 +142,13 @@ import vaultabi from "../data/vault.json";
 import marketmanagerabi from "../data/marketmanager.json"; 
 import reputationManagerAbi from "../data/ReputationManager.json"; 
 import leverageModuleAbi from "../data/leverageModule.json"; 
+import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
+
+
 const precision = 1e10; 
 const pp = BigNumber.from(10).pow(18);
 const { parseBytes32String, formatBytes32String } = utils;
-
-
+const cash_address = usdc_address; 
 
 export interface CoreInstrumentData_ {
   name: any; 
@@ -512,10 +515,95 @@ export async function setUpExampleController(account: string, library: Web3Provi
 
   // await controller.createVault(
   //   cash_address, 
-  //   false, 0, pp.mul(10000000000), pp.mul(10000000000), params
+  //   false, 0, pp.mul(10000000000), pp.mul(10000000000), params, _description
   // )
 
 }
+
+export async function createVault(account: string, library: Web3Provider){
+  const collateral_address = cash_address; 
+  const description = "This vault is for USDC"; 
+
+ interface DefaultParams {
+    N: string;
+    sigma: BigNumberish;
+    alpha: BigNumberish; 
+    omega: BigNumberish; 
+    delta: BigNumberish; 
+    r: string; 
+    s: BigNumberish; 
+    steak: BigNumberish; 
+  }
+  const params = {} as DefaultParams; 
+
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+
+  params.N = "1"; 
+  params.sigma = pp.mul(5).div(100); 
+  params.alpha = pp.mul(4).div(10); 
+  params.omega = pp.mul(2).div(10);
+  params.delta = pp.mul(2).div(10); 
+  params.r = "0"; 
+  params.s = pp.mul(2);
+  params.steak = pp.div(4); 
+
+  await controller.createVault(
+    cash_address, 
+    false, 0, pp.mul(10000000000), pp.mul(10000000000), params, description
+  )
+
+
+}
+const createOptionsInstrument = async (
+  account: string, 
+  library: Web3Provider,  
+  vaultId: string, 
+  shortCollateral: BigNumber, 
+  strikePrice: BigNumber = pp, 
+  oracle: string = cash_address,
+  pricePerContract: BigNumber = pp.div(10), 
+  duration: string = "10000" , 
+  ) => {
+
+  const longCollateral = shortCollateral.mul(pricePerContract).div(pp); 
+  const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+
+    const signer = getSigner(library, account);
+    const vaultAd = await controller.getVaultfromId(vaultId); 
+    console.log('creating options instrument, ',
+    vaultAd, account, weth_address,  
+      strikePrice.toString(), 
+      pricePerContract.toString(), 
+      shortCollateral.toString() ,
+      longCollateral.toString(), 
+      cash_address, 
+      oracle, 
+      duration); 
+
+    const factory = new ContractFactory(CoveredCallInstrumentData.abi, CoveredCallInstrumentData.bytecode, signer);
+    const instrument = await factory.deploy(
+      vaultAd, 
+      account, 
+      weth_address, 
+      strikePrice, 
+      pricePerContract.toString(), 
+      shortCollateral.toString(), 
+      longCollateral.toString(), 
+      cash_address, 
+      oracle, 
+      duration, {gasLimit: 10000000});    
+    // console.log('wtf???')
+    // await contract.deployed(); 
+    const { address: instrument_address} = instrument;
+    // console.log('instrument address', instrument_address); 
+    return instrument_address; 
+
+  } 
+
 
 export async function addProposal(  // calls initiate market
   account: string, 
@@ -524,19 +612,25 @@ export async function addProposal(  // calls initiate market
   principal: string= "100", 
   expectedYield: string= "10", // this should be amount of collateral yield to be collected over the duration, not percentage
   duration: string = "100", 
-  description: string= "Test Description", 
-  Instrument_address: string = creditLine_address, //need to have been created before
-  instrument_type: number = 0, 
+  description: string= "Covered Call Options Short", 
+  Instrument_address: string = "0x7B446405CE289f0eFbd0D17666281742cfB34Eb7", //need to have been created before
+  instrument_type: number = 1, 
   vaultId: string = "1"
   ): Promise<TransactionResponse> {
+
+  // const instrument_address = await createOptionsInstrument( 
+  //   account, library, vaultId, pp.mul(principal),  ); 
+  // console.log('instrument deployed', instrument_address); 
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
 
 
+
   const data = {} as CoreInstrumentData_; 
   const pooldata = {} as CorePoolData_; 
-  data.name = formatBytes32String("name"); 
+
+  data.name = formatBytes32String("Covered Call Instrument"); 
   data.isPool = false; 
   data.trusted = false; 
   data.balance = new BN(0).toFixed(); 
@@ -559,7 +653,9 @@ export async function addProposal(  // calls initiate market
   pooldata.managementFee = "1"
   data.poolData = pooldata; 
   console.log('account', account, Instrument_address); 
-  await controller.initiateMarket("0xda96D4256411235c2B61028c689169DcB95105Df", data, vaultId,{gasLimit: 10000000})
+  await controller.initiateMarket(account, data, vaultId,{gasLimit: 10000000}); 
+
+
   // export interface CorePoolData {
 //   saleAmount: string;
 //   initPrice: string;

@@ -34,7 +34,69 @@ import { useSimplifiedStore } from "../stores/simplified";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
-import {Sidebar} from "../sidebar/sidebar"; 
+import {Sidebar} from "../sidebar/sidebar";
+const InstrumentBreakDownFormat = ({instrumentType})=>{
+  if (instrumentType==1){
+    return {
+            heading: "Additional Information",
+            infoNumbers: [
+              {
+                label: "Strike Price",
+                value: 1,
+
+
+              },
+            {
+                label: "Trade Date/Time",
+                value: 1,
+                
+
+              },
+               {
+                label: "Maturity Date",
+                value: 1,
+                
+
+              },
+              {
+                label: "Price per contract",
+                value: 1,
+                
+
+              },
+            ],
+          }
+  }
+  else if(instrumentType == 2){
+    return {
+            heading: "Additional Information",
+            infoNumbers: [
+              {
+                label: "Number of Collateral",
+                value: 1,
+
+
+              },
+            {
+                label: "Trade Date/Time",
+                value: 1,
+                
+
+              },
+ 
+            ],
+          }
+  }
+  else return 0; 
+}
+const InstrumentOverviewFormat = ({ instrumenType}) =>{
+  if (instrumenType == 1){
+    return "Managers who think the price of the underlying asset would be below the proposed strike price by maturity should buy longZCB. When the option is not exercised, the proposed estimated return will be fully paid by the utilizer, and redemption price of longZCB will be 1. "
+  }
+  else {
+    return""
+  }
+}
 
 const InstumentDescriptionFormat = ({instrumenType})=>{
   const fields =["ETH", "1100", "1/20/2023", "1" ]
@@ -314,7 +376,7 @@ const MarketView = ({ defaultMarket = null }) => {
   }, [market]);
 
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  console.log('instruments', instruments, market_); 
+  console.log('instruments!', instruments, market_, loginAccount); 
   // if (!instruments) {
   //   return <div >Vault Not Found.</div>;
   // }
@@ -334,6 +396,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.bondPool.longZCB.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
+  const instrumentTypeWord =  market_[Id]?.instrumentType; 
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 
@@ -341,58 +404,10 @@ const MarketView = ({ defaultMarket = null }) => {
 
   const longZCB_ad = market_[marketId]?.longZCB
   const shortZCB_ad = market_[marketId]?.shortZCB; 
-  // console.log('vaults', vaults, instruments, market_[marketId].longZCB)
-  // console.log('account, looginaccoint, balances,actions', account, loginAccount, balances)
-  // useEffect(async() =>{
-  //   let stored; 
-  //   let instrument;
 
-  //   try{stored = await getHedgePrice(account, loginAccount?.library, String(market?.amm?.turboId));
-  //   instrument = await getInstrumentData_(account, loginAccount?.library, String(market?.amm?.turboId))
-  // }
-  //     catch (err){console.log("status error", err)}
-
-  //   setstoredCollateral(stored);
-  //   setPrincipal(instrument?.principal.toString());
-  //   setYield(instrument?.expectedYield.toString()); 
-  //   const dur = Number(instrument?.duration.toString()); 
-  //   setDuration(String(dur)); 
-
-
-  // }, [])
-  // useEffect(async ()=> {
-  //   let tc; 
-  //   let bal; 
-  //   let lbal; 
-
-  //     try{
-  //     //stored = await fetchTradeData(loginAccount.library,account, market.amm.turboId);
-  //     //stored = await getHedgePrice(account, loginAccount.library, String(market.amm.turboId));
-  //    // instrument = await getInstrumentData_(account, loginAccount.library, String(market.amm.turboId)); 
-  //     //tc = await getTotalCollateral(account, loginAccount?.library, String(market?.amm.turboId)); 
-  //     tc = 0;
-  //     bal = await getZCBBalances( account, loginAccount?.library, String(market?.amm.turboId)); 
-  //     lbal = await getERCBalance(account, loginAccount?.library, "0x7C49b76207F71Ebd1D7E5a9661f82908E0055131" ); 
-  //    // canbeApproved = await canApproveUtilizer(account, loginAccount.library, String(market.amm.turboId))
-  
-  //    // console.log('instruments', instrument); 
-  //   }
-  //   catch (err){console.log("status error", err)
-  //  return;}
-  //   // setstoredCollateral(stored);
-  //   // setPrincipal(instrument.principal.toString());
-  //   // setYield(instrument.expectedYield.toString()); 
-  //   // const dur = Number(instrument.duration.toString()); 
-  //   // setDuration(String(dur)); 
-  //   setTotalCollateral(tc); 
-  //   setLongBalance(Number(lbal.toString())/(10**18)); 
-  //   setShortBalance(bal[1]); 
-  //   console.log('here')
-  // }, [blocknumber, transactions]);
-
- 
-
+  const instrumentOverview = InstrumentOverviewFormat({instrumenType: 1})
   const instrumentDescription = InstumentDescriptionFormat({instrumenType: 1}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: 1}); 
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
   // if (!market) return <EmptyMarketView />;
@@ -453,7 +468,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <div className={Styles.topRow}>
           {/*<CategoryIcon big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
-          {<h1>{"Instrument Name: " + (instruments[Id]?.name[0]!=0? instruments[Id]?.name[0] : "NFT Lending Pool")}</h1>}
+          {<h1>{"Instrument: " + (instruments[Id]?.name!=0? instruments[Id]?.name : "NFT Lending Pool")}</h1>}
 
 
         </div>
@@ -470,7 +485,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <div>
               <h4>Overview</h4>
           <p> {/*instruments[Id]?.description*/}
-          {instrumentDescription}</p>
+          {instrumentOverview}</p>
           <SecondaryThemeButton
           text="More Info"
           action={() =>
@@ -488,26 +503,17 @@ const MarketView = ({ defaultMarket = null }) => {
           // },
           targetDescription: {
             //market,
-            label: "Description",  //isMint ? "Market" : "Pool",
+            label: "Overview",  //isMint ? "Market" : "Pool",
             subLabel: instrumentDescription
           },
           footer: 
              {
-                text: "Redeeming will automatically withdraw capital from the instrument",
+                text: "-",
             },
           
            name: "outcome", 
            breakdowns:  [
-                {
-                  heading: "Instrument Type",
-                  infoNumbers: [
-                    {
-                      label: instrumentDescription,
-                      // value: 1,
-
-                    },
-                  ],
-                },
+                instrumentBreakDown
                 // {
                 //   heading: "What you'll recieve",
                 //   infoNumbers: [
@@ -657,7 +663,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Start Price </span>
-            <span>{market_[Id]?.bondPool.b}</span>
+            <span>{roundDown(market_[Id]?.bondPool.b,2)}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -692,7 +698,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
           <li>
             <span>Duration(days) </span>
-            <span>{roundDown(365.24*duration/31560000,1)}</span>
+            <span>{roundDown(365.24*duration,1)}</span>
           </li>
 
           <li>
@@ -852,7 +858,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
 <AddMetaMaskToken tokenSymbol = {"longZCB"} tokenAddress={longZCB_ad}  />
                 <AddMetaMaskToken tokenSymbol = {"shortZCB"} tokenAddress={shortZCB_ad}  />
-        {<SecondaryThemeButton
+        {account=="0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
           text="Approve Instrument"
           action={testapprovemarket
             //() => setShowTradingForm(true)

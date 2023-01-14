@@ -329,7 +329,7 @@ export const MarketLiquidityView = () => {
    
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
-      <LiquidityWarningFooter />
+      {/*<LiquidityWarningFooter />*/}
 
       <div className={LiqStyles.LiquidityView}>
                    <h4>Instruments</h4>

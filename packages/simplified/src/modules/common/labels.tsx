@@ -66,7 +66,7 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
 
   }
   for(let i=1; i<= Object.values(vaultBalances)?.length; i++){
-    vaultsPos += Number(vaultBalances[i].shares); 
+    vaultsPos += Number(vaultBalances[i]?.shares); 
   }
 
   console.log('tvl', tvl)
