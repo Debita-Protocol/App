@@ -1,0 +1,362 @@
+@import (reference) '~assets/styles/shared';
+
+.PoolProposalForm {
+  display: flex;
+  flex-flow: column wrap;
+  align-items: normal;
+  margin: @size-10;
+  background-color: var(--quaternary-bg);
+  border: @size-1 solid var(--theme-border);
+  border-radius: @size-10;
+  width: 70%;
+  height: fit-content;
+  .HoverDropShadow;
+  
+  > div:first-of-type { // header
+    border-bottom: @size-1 solid var(--theme-border);
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    > h3 {
+      font-size: @size-20;
+      font-weight: @weight-bold;
+    }
+  }
+
+  > div {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: @size-15;
+    > div {
+      padding-left:@size-10;
+      > label {
+        font-size: @size-18;
+        font-weight: @weight-bold;
+        color: var(--primary-text);
+      }
+    }
+    > label {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-text);
+      padding: @size-16;
+    }
+    > input {
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-text);
+      padding: @size-16;
+      border: @size-1 solid var(--theme-border);
+      border-radius: @size-10;
+      
+      background-color: var(--primary-bg);
+    }
+
+    &.PoolCollaterals {
+      display: flex;
+      flex-flow: column nowrap;
+      align-items: flex-start;
+
+      > div:first-of-type {
+        display: flex;
+        // flex-flow: row nowrap;
+        // align-items: center;
+        // justify-content: center;
+        width: 80%;
+        > div:first-of-type  {
+          > label {
+            font-size: @size-18;
+            font-weight: @weight-bold;
+            color: var(--primary-text);
+            padding-right: @size-20;
+          }
+        }
+
+        > button {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--primary-secondary);
+          padding: @size-16;
+          border: @size-1 solid var(--theme-border);
+          border-radius: @size-10;
+          &:hover {
+            border-color: var(--secondary-text);
+          }
+        }
+      }
+      > section {
+        display: flex;
+        flex-flow: column nowrap;
+        width:100%;
+        > div {
+
+          display: flex;
+          flex-flow: column wrap;
+
+          &.PoolCollateralItem {
+            .HoverDropShadow;
+            border: @size-1 solid var(--theme-border);
+            border-radius: @size-10;
+            display: flex;
+            flex-flow: row nowrap; 
+            justify-content: space-evenly;
+            align-items: center;
+            width:90%;
+            margin-bottom:@size-20;
+            > div:first-of-type {
+              > div:first-of-type {
+                border-width: 0;
+                > div {
+                  border: @size-1 solid var(--theme-border);
+                }
+              }
+              > div {
+                padding-bottom:@size-8;
+                > label {
+                  color: var(--secondary-text);
+                  font-size: @size-16;
+                  font-weight: @weight-semi-bold;
+                }
+                > input {
+                  border: @size-1 solid var(--theme-border);
+                  border-radius: @size-10;
+                  color: var(--primary-text);
+                  background-color: var(--primary-bg);
+                }
+              }
+            }
+            > div:nth-of-type(2) {
+              display: flex;
+              flex-flow: column nowrap;
+              justify-content: center;
+              align-items: center;
+              > div {
+                padding: @size-8;
+                > label {
+                  color: var(--secondary-text);
+                  font-size: @size-16;
+                  font-weight: @weight-semi-bold;
+                }
+              }
+            }
+          }
+        }
+
+      }
+    }
+  }
+
+  > div:last-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+    > button {
+      .SimplifiedActionButton
+    }
+    > div {
+      display: flex;
+      background-color: transparent;
+      border: none;
+      > div {
+        display: flex;
+        flex-flow: row nowrap;
+
+        > label {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--secondary-text);
+          padding: @size-16;
+        }
+        > span {
+          font-size: @size-18;
+          font-weight: @weight-bold;
+          color: var(--primary-text);
+          padding: @size-16;
+        }
+      }
+    }
+  }
+}
+
+
+
+.AmountInputField {
+  .text-20-bold;
+
+  grid-column: 1 / span 2;
+  margin-top: @size-14;
+  background-color: var(--primary-bg);
+  border-radius: @size-8;
+  display: flex;
+  flex-flow: row nowrap;
+  height: @size-56;
+  min-height: @size-56;
+  border: @size-1 solid transparent;
+  outline: 0;
+  color: var(--secondary-text);
+  align-items: center;
+
+  > button {
+    margin-right: @size-8;
+  }
+
+  &:focus-within {
+    border: @size-1 solid var(--theme-border);
+    outline: 0;
+  }
+
+  > span {
+    flex: 0 auto;
+  }
+
+  > input {
+    .text-20-bold;
+
+    width: @size-64;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+    border-radius: @size-8;
+    border: 0;
+    outline: 0;
+    flex: 1 100%;
+    padding: @size-14 0;
+    margin-right: @size-8;
+    text-overflow: ellipsis;
+
+    &:focus {
+      border: 0;
+      outline: 0;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: var(--primary-bg);
+    }
+  }
+
+  > span:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    margin-right: @size-2;
+    margin-left: @size-16;
+  }
+
+  &.Edited {
+    color: var(--primary-text);
+  }
+
+  &.Error {
+    border: @size-1 solid var(--failed);
+  }
+}
+
+
+.Description {
+
+  padding: @size-20;
+  > textarea {
+    border: @size-1 solid var(--theme-border);
+    border-radius: @size-10;
+    color: var(--primary-text);
+    background-color: var(--primary-bg);
+  }
+}
+
+.Duration {
+  padding: @size-20;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items:center;
+  > label {
+    font-size: @size-18;
+    font-weight: @weight-bold;
+    color: var(--primary-text);
+  }
+  > div {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: center;
+    align-items: center;
+    > label {
+      font-size: @size-14;
+      font-weight: @weight-semi-bold;
+      color: var(--primary-text);
+      padding: @size-8;
+    }
+    > input {
+      color: var(--primary-text);
+      background-color: var(--primary-bg);
+      font-size: @size-18;
+      font-weight: @weight-bold;
+      color: var(--primary-text);
+      padding: @size-16;
+      border: @size-1 solid var(--theme-border);
+      border-radius: @size-10;
+      margin: @size-8;
+    }
+  } 
+}
+
+
+.CurrencyLabel {
+  .text-16-semi-bold;
+
+  align-items: center;
+  color: var(--primary-text);
+  flex: 0 0 auto;
+  display: flex;
+  flex-flow: row nowrap;
+  white-space: nowrap;
+  justify-content: center;
+  margin-right: @size-16;
+
+  > svg {
+    height: @size-24;
+    width: @size-24;
+    margin-right: @size-4;
+  }
+}
+
+.SimplifiedActionButton {
+  border: @size-1 solid var(--theme-border);
+  background: var(--primary-text);
+  color: var(--inverted-primary-text);
+  min-height: @size-68;
+  height: @size-68;
+  max-height: @size-68;
+  border-radius: 1rem;
+  > span:first-of-type {
+    .text-20-bold;
+  }
+  width: 100%;
+
+  &:not(:disabled) {
+    &:hover {
+      background: rgba(var(--primary-text-rgb), 0.85);
+      color: var(--inverted-primary-text);
+    }
+
+    &:focus-within:hover:active {
+      background: var(--inverted-primary-bg);
+      color: var(--inverted-primary-text);
+    }
+  }
+
+  &:not(:disabled):not(.Disabled):focus,
+  &:not(:disabled):not(.Disabled):focus-within {
+    background-color: var(--primary-text);
+    color: var(--inverted-primary-text);
+    outline: 0;
+    border: @size-1 solid var(--theme-border);
+    box-shadow: none;
+  }
+
+  &:not(:disabled):not(.Disabled):active {
+    background-color: var(--tertiary-bg);
+    color: var(--primary-text);
+  }
+}

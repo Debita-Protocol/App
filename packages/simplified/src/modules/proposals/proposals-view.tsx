@@ -9,6 +9,7 @@ import {TabNavItem, TabContent} from "./tabs";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
 import GeneralInstrumentForm from "./general-instrument-form";
 import PoolProposalView from "../pool-proposal/pool-proposal-view";
+import OptionsProposalView from "modules/options-proposal/options-proposal-view";
 
 
 const ProposalsView = () => {
@@ -24,18 +25,13 @@ const ProposalsView = () => {
             </section>
             <section>
                 <TabContent id="0" activeTab={activeTab}>
-                    <h3>
-                        General Form
-                    </h3>
+                    <GeneralInstrumentForm />
                 </TabContent>
                 <TabContent id="1" activeTab={activeTab} className={Styles.poolTab}> 
                     <CreditLineProposalView />
                 </TabContent>
-                
                 <TabContent id="2" activeTab={activeTab}>
-                    <h3>
-                        Options Form
-                    </h3>
+                    <OptionsProposalView />
                 </TabContent>
                 <TabContent id="3" activeTab={activeTab} className={Styles.PoolTab}>
                     <PoolProposalView />

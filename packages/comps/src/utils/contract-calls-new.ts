@@ -11,7 +11,8 @@ import {
     fetcher_address,
     reputation_manager_address,
     pool_factory_address,
-    cash_address,
+    usdc_address,
+    weth_address,
     creditLine_address,
     variable_interest_rate_address,
     validator_manager_address
@@ -31,6 +32,7 @@ import VaultData from "../data/vault.json";
 import CashData from "../data/cash.json";
 import TestNFTData from "../data/TestNFT.json";
 import SyntheticZCBPoolData from "../data/SyntheticZCBPool.json";
+import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
 
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
@@ -59,6 +61,15 @@ function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
     return new BN(n).dividedBy(new BN(10).pow(new BN(p))).decimalPlaces(d).toString();
 }
 const pp = BigNumber.from(10).pow(18);
+
+
+export const createOptionsInstrument = async (account, library, vaultId) => {
+    const signer = getSigner(library, account);
+    const vault = new Contract(vaultId, VaultData.abi, signer);
+    const optionsFactory = new ContractFactory()
+    const tx = await vault.createOptionsInstrument();
+    return tx;
+}
 
 export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
     vaults: VaultInfos, 
@@ -428,142 +439,7 @@ export const testFullApprove = async (account: string, provider: Web3Provider, m
 
 }
 
-export const ContractSetup = async (account: string, provider: Web3Provider) => {
-    console.log("ContractSetup");
-    const signer = getSigner(provider, account);
-    const controller = new Contract(controller_address, ControllerData.abi, signer);
-    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
-    const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
-    const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
-    const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
-    const cash = new Contract(cash_address, ERC20Data.abi, signer);
-    const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
-    const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
-    let tx;
 
-    // console.log("stuff: ", await controller.getVaultSnapShot("1"));
-    // tx = await reputationManager.incrementScore(account,pp); // validator
-    // tx.wait();
-    // let result = await controller.testApproveMarket("6");
-    // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
-    // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
-    // let tx = await controller.testVerifyAddress();
-    // await tx.wait(1);
-
-    // await mintTestNFT(account, provider, "1", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
-    // await mintTestNFT(account, provider, "2", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
-
-    // const cash1 = await cashFactory.deploy(
-    //     "Cash1",
-    //     "CASH1",
-    //     18
-    // );
-    // await cash1.deployed();
-    // console.log("cash1 deployed to:", cash1.address);
-    // const cash2 = await cashFactory.deploy(
-    //     "Cash2",
-    //     "CASH2",
-    //     18
-    // );
-    // await cash2.deployed();
-    // console.log("cash2 deployed to:", cash2.address);
-    // const nft1 = await nftFactroy.deploy(
-    //     "NFT1",
-    //     "NFT1"
-    // );
-    // await nft1.deployed();
-    // console.log("nft1 deployed to:", nft1.address);
-    // const nft2 = await nftFactroy.deploy(
-    //     "NFT2",
-    //     "NFT2"
-    // );
-    // await nft2.deployed();
-    // console.log("nft2 deployed to:", nft2.address);
-
-    // const pool1 = new Contract("0x55e08cff64B0659E5bBd5645D24f591446316c2e", PoolInstrumentData.abi, signer);
-    // console.log((await pool1.getAcceptedCollaterals()));
-    // const vault1 = new Contract("0xEbd3bc7CD466c262Dfe4fFA7b4Fc25fC8719Beb2", VaultData.abi, signer)
-    // console.log(await fetcher.fetchInitial(controller_address, market_manager_address, 1));
-    // const variableInterestRateFactory = new ContractFactory(VariableInterestRateData.abi, VariableInterestRateData.bytecode, provider.getSigner(account));
-    // const variableInterestRate = await variableInterestRateFactory.deploy();
-    // console.log("variableInterestRate", variableInterestRate.address);
-
-    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    // tx.wait();
-
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // console.log("B")
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // console.log("C")
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // console.log("D")
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // console.log("E");
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // tx = await controller.testVerifyAddress(); 
-    // tx.wait();
-    // tx = await reputationManager.setTraderScore(account, pp); 
-    // tx.wait();
-    // let tx = await controller.initiateMarket(
-    //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
-    //     {
-    //         name: utils.formatBytes32String("instrument 1"),
-    //         isPool: false,
-    //         trusted: false,
-    //         balance: 0,
-    //         faceValue: pp.add(pp.mul(5).div(100)),
-    //         marketId: 0,
-    //         principal: pp,
-    //         expectedYield: pp.mul(5).div(100),
-    //         duration: 100,
-    //         description: "description",
-    //         instrument_address: creditLine_address,
-    //         instrument_type: 0,
-    //         maturityDate: 0,
-    //         poolData: {
-    //             saleAmount: 0,
-    //             initPrice:0,
-    //             promisedReturn: 0,
-    //             inceptionTime: 0,
-    //             inceptionPrice: 0,
-    //             leverageFactor: 0,
-    //             managementFee: 0,
-    //         }
-    //     },
-    //     1
-    // )
-    // tx.wait();
-    // console.log("tx");
-    // console.log("initiateMarket");
-
-    // console.log("E")
-    
-
-    tx = await controller.createVault(
-        cash_address,
-        false,
-        0,
-        0,
-        0,
-        {
-            N: 1,
-            sigma: pp.mul(5).div(100),
-            alpha: pp.mul(4).div(10),
-            omega: pp.mul(2).div(10),
-            delta: pp.mul(2).div(10),
-            r:"0",
-            s: pp.mul(2),
-            steak: pp.div(4)
-        },
-        "a description about the vault"
-    );
-    await tx.wait(2);
-    console.log("F");
-}
 
 // export const getContractData = async (account: string, provider: Web3Provider): Promise<{
 //     vaults: VaultInfos, 
@@ -1321,3 +1197,239 @@ export const poolAddInterest = async (
     tx.wait();
     return tx;
 }
+
+// scripts
+
+const scriptVaultNames = ["ETH Options Vault", "USDC Lending Pool Vault"]
+const scriptCashAddresses = [ weth_address, usdc_address ]
+
+const fakeVaults = [
+    {
+        vaultId: 1,
+        description: "ETH Options Vault",
+        cash: weth_address,
+        onlyVerified: false,
+        r: "0",
+        asset_limit: "0",
+        total_asset_limit: "0",
+        vaultParams: {
+            N: 1,
+            sigma: pp.mul(5).div(100),
+            alpha: pp.mul(4).div(10),
+            omega: pp.mul(2).div(10),
+            delta: pp.mul(2).div(10),
+            r:"0",
+            s: pp.mul(2),
+            steak: pp.div(4)
+        }
+    },
+    {
+        vaultId: 2,
+        description: "USDC Lending Pool Vault",
+        cash: usdc_address,
+        onlyVerified: false,
+        r: "0",
+        asset_limit: "0",
+        total_asset_limit: "0",
+        vaultParams: {
+            N: 1,
+            sigma: pp.mul(5).div(100),
+            alpha: pp.mul(4).div(10),
+            omega: pp.mul(2).div(10),
+            delta: pp.mul(2).div(10),
+            r:"0",
+            s: pp.mul(2),
+            steak: pp.div(4)
+        }
+    }
+]
+
+const fakePools = [
+    {
+        
+    }
+]
+
+const fakeOptionsInstrument = [
+    {
+        vaultId: 1,
+        cash: weth_address,
+        
+    }
+]
+
+export const ContractSetup = async (account: string, provider: Web3Provider) => {
+    console.log("ContractSetup");
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
+    const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
+    const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
+    const cash = new Contract(usdc_address, ERC20Data.abi, signer);
+    const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
+    const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
+    let tx;
+
+    // console.log("stuff: ", await controller.getVaultSnapShot("1"));
+    tx = await reputationManager.incrementScore(account,pp); // validator
+    tx.wait();
+
+    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    tx.wait();
+
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    tx = await controller.setValidatorManager(validator_manager_address);
+    tx = await controller.testVerifyAddress(); 
+    tx.wait();
+
+    console.log("F");
+}
+
+
+// creates fake vaults + associated instruments
+const scriptSetup= async (account, provider) => {
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+
+    for (let i=0; i < scriptVaultNames.length; i++) {
+        const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
+        await createVault(
+            account, provider,
+            cash,
+            onlyVerified,
+            r,
+            asset_limit,
+            total_asset_limit,
+            vaultParams,
+            description
+        )
+    }
+
+    await scriptAddPoolInstruments(
+        account, provider,
+
+    );
+    await scriptAddOptionsInstruments();
+}
+
+const createVault = async (
+    account, provider, 
+    underlying_address, 
+    onlyVerified,
+    r,
+    asset_limit,
+    total_asset_limit,
+    vaultParams, 
+    description
+    ) => {
+    const signer = getSigner(provider, account);
+    const controller = new Contract(controller_address, ControllerData.abi, signer);
+
+    let tx = await controller.createVault(
+        underlying_address,
+        onlyVerified,
+        r,
+        asset_limit,
+        total_asset_limit,
+        vaultParams,
+        description
+    );
+
+    tx.wait()
+}
+
+const scriptCreateOptionsInstrumnet = async(
+    account, provider,
+    onlyReputable,
+
+    ) => {
+
+}
+
+    // let result = await controller.testApproveMarket("6");
+    // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
+    // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
+    // let tx = await controller.testVerifyAddress();
+    // await tx.wait(1);
+
+    // await mintTestNFT(account, provider, "1", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
+    // await mintTestNFT(account, provider, "2", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
+
+    // const cash1 = await cashFactory.deploy(
+    //     "Cash1",
+    //     "CASH1",
+    //     18
+    // );
+    // await cash1.deployed();
+    // console.log("cash1 deployed to:", cash1.address);
+    // const cash2 = await cashFactory.deploy(
+    //     "Cash2",
+    //     "CASH2",
+    //     18
+    // );
+    // await cash2.deployed();
+    // console.log("cash2 deployed to:", cash2.address);
+    // const nft1 = await nftFactroy.deploy(
+    //     "NFT1",
+    //     "NFT1"
+    // );
+    // await nft1.deployed();
+    // console.log("nft1 deployed to:", nft1.address);
+    // const nft2 = await nftFactroy.deploy(
+    //     "NFT2",
+    //     "NFT2"
+    // );
+    // await nft2.deployed();
+    // console.log("nft2 deployed to:", nft2.address);
+
+    // const pool1 = new Contract("0x55e08cff64B0659E5bBd5645D24f591446316c2e", PoolInstrumentData.abi, signer);
+    // console.log((await pool1.getAcceptedCollaterals()));
+    // const vault1 = new Contract("0xEbd3bc7CD466c262Dfe4fFA7b4Fc25fC8719Beb2", VaultData.abi, signer)
+    // console.log(await fetcher.fetchInitial(controller_address, market_manager_address, 1));
+    // const variableInterestRateFactory = new ContractFactory(VariableInterestRateData.abi, VariableInterestRateData.bytecode, provider.getSigner(account));
+    // const variableInterestRate = await variableInterestRateFactory.deploy();
+    // console.log("variableInterestRate", variableInterestRate.address);
+
+        // tx = await reputationManager.setTraderScore(account, pp); 
+    // tx.wait();
+    // let tx = await controller.initiateMarket(
+    //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
+    //     {
+    //         name: utils.formatBytes32String("instrument 1"),
+    //         isPool: false,
+    //         trusted: false,
+    //         balance: 0,
+    //         faceValue: pp.add(pp.mul(5).div(100)),
+    //         marketId: 0,
+    //         principal: pp,
+    //         expectedYield: pp.mul(5).div(100),
+    //         duration: 100,
+    //         description: "description",
+    //         instrument_address: creditLine_address,
+    //         instrument_type: 0,
+    //         maturityDate: 0,
+    //         poolData: {
+    //             saleAmount: 0,
+    //             initPrice:0,
+    //             promisedReturn: 0,
+    //             inceptionTime: 0,
+    //             inceptionPrice: 0,
+    //             leverageFactor: 0,
+    //             managementFee: 0,
+    //         }
+    //     },
+    //     1
+    // )
+    // tx.wait();
+    // console.log("tx");
+    // console.log("initiateMarket");
+
+    // console.log("E")
