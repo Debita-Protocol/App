@@ -59,13 +59,14 @@
       display: flex;
       flex-flow: column nowrap;
       align-items: flex-start;
-
+      justify-content: flex-start;
       > div:first-of-type {
         display: flex;
         // flex-flow: row nowrap;
         // align-items: center;
         // justify-content: center;
         width: 80%;
+        margin-bottom: @size-20;
         > div:first-of-type  {
           > label {
             font-size: @size-18;
@@ -91,12 +92,15 @@
         display: flex;
         flex-flow: column nowrap;
         width:100%;
+        align-items: center;
         > div {
 
           display: flex;
           flex-flow: column wrap;
 
           &.PoolCollateralItem {
+            padding-left: @size-8;
+            padding-right: @size-8;
             .HoverDropShadow;
             border: @size-1 solid var(--theme-border);
             border-radius: @size-10;
@@ -202,10 +206,19 @@
     margin-right: @size-8;
   }
 
-  &:focus-within {
-    border: @size-1 solid var(--theme-border);
+  .ThemeBorder;
+  &:focus {
+    .ThemeBorder;
     outline: 0;
   }
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
+
+  // &:focus-within {
+  //   border: @size-1 solid var(--theme-border);
+  //   outline: 0;
+  // }
 
   > span {
     flex: 0 auto;
@@ -214,7 +227,7 @@
   > input {
     .text-20-bold;
 
-    width: @size-64;
+    width: unset;
     color: var(--primary-text);
     background-color: var(--primary-bg);
     border-radius: @size-8;
@@ -263,6 +276,14 @@
     border-radius: @size-10;
     color: var(--primary-text);
     background-color: var(--primary-bg);
+    .ThemeBorder;
+  &:focus {
+    .ThemeBorder;
+    outline: 0;
+  }
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
   }
 }
 

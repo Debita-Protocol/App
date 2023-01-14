@@ -3,19 +3,20 @@
 .CreditlineProposalForm {
   display: flex;
   flex-flow: column wrap;
-  align-items: space-between;
+  align-items: normal;
   margin: @size-10;
-  width:70%;
   background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
+  width: 70%;
+  height: fit-content;
   .HoverDropShadow;
-  > div:first-of-type {
+  > div:first-of-type { // header
+    border-bottom: @size-1 solid var(--theme-border);
+    width: 100%;
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
-    border-bottom: @size-1 solid var(--theme-border);
-    width: 100%;
     > h3 {
       font-size: @size-20;
       font-weight: @weight-bold;
@@ -27,7 +28,15 @@
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    padding: @size-20;
+    padding: @size-15;
+    > div {
+      padding-left:@size-10;
+      > label {
+        font-size: @size-18;
+        font-weight: @weight-bold;
+        color: var(--primary-text);
+      }
+    }
     > label {
       font-size: @size-18;
       font-weight: @weight-bold;
@@ -41,7 +50,7 @@
       padding: @size-16;
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
-      width: 50%;
+      
       background-color: var(--primary-bg);
     }
   }

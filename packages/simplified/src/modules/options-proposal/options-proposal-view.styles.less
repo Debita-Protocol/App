@@ -59,11 +59,11 @@
       display: flex;
       flex-flow: column nowrap;
       align-items: flex-start;
-      justify-content: center;
+      justify-content: flex-start;
       > div:first-of-type {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        margin-bottom: @size-15;
+        margin-bottom: @size-20;
         align-self: space-between;
         >div {
           > label {
@@ -77,7 +77,7 @@
         > button {
           font-size: @size-18;
           font-weight: @weight-bold;
-          color: var(--primary-secondary);
+          color: var(--primary-text);
           padding: @size-16;
           border: @size-1 solid var(--theme-border);
           border-radius: @size-10;
@@ -92,8 +92,8 @@
         align-self: center;
         > div { // for the strike price item
           display: flex;
-          flex-flow: row nowrap;
-          align-items: center;
+          flex-flow: column nowrap;
+          align-items: normal;
           justify-content: space-evenly;
           padding: @size-14;
           margin-bottom: @size-10;
@@ -103,7 +103,7 @@
           > label {
             font-size: @size-18;
             font-weight: @weight-bold;
-            color: var(--secondary-text);
+            color: var(--primary-text);
           }
           > input {
             font-size: @size-18;
@@ -111,6 +111,11 @@
             color: var(--primary-text);
             border: @size-1 solid var(--theme-border);
             border-radius: @size-10;
+            background-color: var(--primary-bg);
+          }
+          > button {
+            margin-top: @size-8;
+            width: @size-64;
             background-color: var(--primary-bg);
           }
         }
@@ -171,10 +176,19 @@
     margin-right: @size-8;
   }
 
-  &:focus-within {
-    border: @size-1 solid var(--theme-border);
+  .ThemeBorder;
+  &:focus {
+    .ThemeBorder;
     outline: 0;
   }
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
+
+  // &:focus-within {
+  //   border: @size-1 solid var(--theme-border);
+  //   outline: 0;
+  // }
 
   > span {
     flex: 0 auto;
@@ -182,8 +196,7 @@
 
   > input {
     .text-20-bold;
-
-    width: @size-64;
+    width: unset;
     color: var(--primary-text);
     background-color: var(--primary-bg);
     border-radius: @size-8;
@@ -225,6 +238,7 @@
 
 
 .Description {
+  
 
   padding: @size-20;
   > textarea {
@@ -232,6 +246,14 @@
     border-radius: @size-10;
     color: var(--primary-text);
     background-color: var(--primary-bg);
+    .ThemeBorder;
+  &:focus {
+    .ThemeBorder;
+    outline: 0;
+  }
+  &:hover {
+    border: @size-1 solid var(--secondary-text);
+  }
   }
 }
 
@@ -257,6 +279,7 @@
       padding: @size-8;
     }
     > input {
+      text-overflow: ellipsis;
       color: var(--primary-text);
       background-color: var(--primary-bg);
       font-size: @size-18;
@@ -266,6 +289,7 @@
       border: @size-1 solid var(--theme-border);
       border-radius: @size-10;
       margin: @size-8;
+      width: unset;
     }
   } 
 }
@@ -328,4 +352,8 @@
     background-color: var(--tertiary-bg);
     color: var(--primary-text);
   }
+}
+
+.ApproveButton {
+  .SimplifiedActionButton;
 }

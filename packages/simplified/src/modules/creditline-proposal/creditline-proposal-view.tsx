@@ -26,6 +26,7 @@ import { useDataStore2 } from "@augurproject/comps";
 import { VaultInfos } from "@augurproject/comps/build/types";
 import { SingleCheckbox } from "@augurproject/comps/build/components/common/selection";
 import {FormAmountInput} from "../pool-proposal/pool-proposal-view";
+import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 
 const { formatBytes32String, isAddress } = utils;
 
@@ -240,8 +241,6 @@ const CreditLineRequestForm = () => {
     }
   ]
 
-  
-
   // const buttonProps: BaseThemeButtonProps = {
   //   text: createdContract ? "Submit" : "Create Contract",
   //   action: createdContract ? submitProposal : createCreditline 
@@ -260,16 +259,23 @@ const CreditLineRequestForm = () => {
         </h3>
       </div>
       <div>
+        <div>
         <label>Selected Vault: </label>
+        { generateTooltip("Vault that the instrument will be attached to, vault underlying will be deposited to the instrument on instrument approval", "vault")}
+        </div>
+        
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
       </div>
       
       <div>
-        <label>Collateral Type: </label>
+        <div>
+          <label>Collateral Type: </label>
+          { generateTooltip("Collateral type for the instrument", "collateral")}
+        </div>
         <SquareDropdown options={collateralOptions} onChange={(val) => setCollateralType(val)} defaultValue={collateralType}/>
       </div>
       {collateralType === "0" && (
-        <>
+        <div>
           <div>
             <label>Collateral Address: </label>
             <TextInput placeholder="" value={collateral} onChange={(val) => setCollateral(val)}/>
@@ -288,8 +294,7 @@ const CreditLineRequestForm = () => {
               prepend="$"
             />
           </div>
-        </>
-        
+        </div>
       )}
       <div>
         <label>Name: </label>

@@ -197,6 +197,7 @@ const PoolProposalView: React.FC = () => {
               addedTime: new Date().getTime(),
               message: `Failed to create market from pool. ${err}`
             });
+            return;
           })
     }, [poolData, collateralInfos, vaultId, vaults]);
 
@@ -250,7 +251,7 @@ const PoolProposalView: React.FC = () => {
                 { generateTooltip("Name of the pool instrument", "name")}
               </div>
               
-              <TextInput placeholder="" value={poolData.name} onChange={(val) => {
+              <TextInput placeholder="Pool Instrument V0..." value={poolData.name} onChange={(val) => {
                 setPoolData((prevData) => {
                     return {...prevData, name: val}
                 })
@@ -262,7 +263,7 @@ const PoolProposalView: React.FC = () => {
                 { generateTooltip("Symbol of the pool instrument", "symbol")}
               </div>
               
-              <TextInput placeholder="" value={poolData.symbol} onChange={(val) => {
+              <TextInput placeholder="POOL" value={poolData.symbol} onChange={(val) => {
                 setPoolData((prevData) => {
                     return {...prevData, symbol: val}
                 })
@@ -306,7 +307,7 @@ const PoolProposalView: React.FC = () => {
                 }
                 amount={poolData.initPrice}
                 prepend={"$"}
-                label={underlyingSymbol}
+                label={"longZCB/" +underlyingSymbol}
               />
             </div>
             <div>
@@ -326,7 +327,7 @@ const PoolProposalView: React.FC = () => {
                 }
                 amount={poolData.inceptionPrice}
                 prepend={"$"}
-                label={underlyingSymbol}
+                label={"longZCB/" +underlyingSymbol}
               />
             </div>
             <div>
@@ -373,7 +374,7 @@ const PoolProposalView: React.FC = () => {
                       { generateTooltip("Add accepted collateral for the lending pool", "collateral")}
                     </div>
                    
-                    <TinyThemeButton text="+" action={addCollateral} small={true} noHighlight={true}/>
+                    <TinyThemeButton text="Add Collateral" action={addCollateral} small={true} noHighlight={true}/>
                 </div>
                 <section>
                 {collateralInfos.map((collateralInfo, index) => { // address, isERC20, borrowAmount, maxAmount what are the decimals? decimals used in address of the collateral.
@@ -494,7 +495,7 @@ const PoolProposalView: React.FC = () => {
               <textarea 
               rows="4" 
               cols="15" 
-              placeholder=""
+              placeholder="description..."
               onChange={(e) => {
                 setPoolData(prevData => {
                     return {...prevData, description: e.target.value}
@@ -509,7 +510,7 @@ const PoolProposalView: React.FC = () => {
                 <label>Instrument Address (optional): </label>
                 { generateTooltip("leave empty if you want the pool instrument to be created for you", "name")}
               </div>
-              <TextInput placeholder="" value={instrumentAddress} onChange={(val) => {
+              <TextInput placeholder="0x..." value={instrumentAddress} onChange={(val) => {
                 setInstrumentAddress(val)
               }}/>
             </div>
