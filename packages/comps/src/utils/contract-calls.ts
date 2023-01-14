@@ -611,7 +611,7 @@ export async function addProposal(  // calls initiate market
   faceValue: string = "110", 
   principal: string= "100", 
   expectedYield: string= "10", // this should be amount of collateral yield to be collected over the duration, not percentage
-  duration: string = "100", 
+  duration: string = "604800", 
   description: string= "Covered Call Options Short", 
   Instrument_address: string = "0x7B446405CE289f0eFbd0D17666281742cfB34Eb7", //need to have been created before
   instrument_type: number = 1, 
@@ -630,7 +630,7 @@ export async function addProposal(  // calls initiate market
   const data = {} as CoreInstrumentData_; 
   const pooldata = {} as CorePoolData_; 
 
-  data.name = formatBytes32String("Covered Call Instrument"); 
+  data.name = formatBytes32String("ETH Call 1700 23/01/16/00:00"); 
   data.isPool = false; 
   data.trusted = false; 
   data.balance = new BN(0).toFixed(); 
@@ -640,7 +640,7 @@ export async function addProposal(  // calls initiate market
   data.expectedYield = pp.mul(expectedYield);//new BN(expectedYield).shiftedBy(decimals).toFixed(); 
   data.duration = duration//new BN(duration).toString(); 
   data.description = description;
-  data.instrument_address = Instrument_address; //sample_instument_address;
+  data.instrument_address = "0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776"; //sample_instument_address;
   data.instrument_type = instrument_type;
   data.maturityDate = String(0);
 

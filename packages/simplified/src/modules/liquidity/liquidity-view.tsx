@@ -230,7 +230,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
 
              {<SecondaryThemeButton
-            text={"Go to Instrument #"+marketId}
+            text={instrument?.name}
             small
             disabled={false}
             action={() =>
