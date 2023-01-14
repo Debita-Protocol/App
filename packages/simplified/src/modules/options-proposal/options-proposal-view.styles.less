@@ -55,18 +55,17 @@
       background-color: var(--primary-bg);
     }
 
-    &.PoolCollaterals {
+    &.StrikeItems {
       display: flex;
       flex-flow: column nowrap;
       align-items: flex-start;
-
+      justify-content: center;
       > div:first-of-type {
-        display: flex;
-        // flex-flow: row nowrap;
-        // align-items: center;
-        // justify-content: center;
-        width: 80%;
-        > div:first-of-type  {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: @size-15;
+        align-self: space-between;
+        >div {
           > label {
             font-size: @size-18;
             font-weight: @weight-bold;
@@ -74,7 +73,7 @@
             padding-right: @size-20;
           }
         }
-
+    
         > button {
           font-size: @size-18;
           font-weight: @weight-bold;
@@ -87,64 +86,34 @@
           }
         }
       }
-      > section {
-        display: flex;
-        flex-flow: column nowrap;
-        width:100%;
-        > div {
 
+      > div:last-of-type {
+        width:80%;
+        align-self: center;
+        > div { // for the strike price item
           display: flex;
-          flex-flow: column wrap;
-
-          &.PoolCollateralItem {
-            .HoverDropShadow;
+          flex-flow: row nowrap;
+          align-items: center;
+          justify-content: space-evenly;
+          padding: @size-14;
+          margin-bottom: @size-10;
+          border: @size-1 solid var(--theme-border);
+          border-radius: @size-10;
+          background-color: var(--tertiary-bg);
+          > label {
+            font-size: @size-18;
+            font-weight: @weight-bold;
+            color: var(--secondary-text);
+          }
+          > input {
+            font-size: @size-18;
+            font-weight: @weight-bold;
+            color: var(--primary-text);
             border: @size-1 solid var(--theme-border);
             border-radius: @size-10;
-            display: flex;
-            flex-flow: row nowrap; 
-            justify-content: space-evenly;
-            align-items: center;
-            width:90%;
-            margin-bottom:@size-20;
-            > div:first-of-type {
-              > div:first-of-type {
-                border-width: 0;
-                > div {
-                  border: @size-1 solid var(--theme-border);
-                }
-              }
-              > div {
-                padding-bottom:@size-8;
-                > label {
-                  color: var(--secondary-text);
-                  font-size: @size-16;
-                  font-weight: @weight-semi-bold;
-                }
-                > input {
-                  border: @size-1 solid var(--theme-border);
-                  border-radius: @size-10;
-                  color: var(--primary-text);
-                  background-color: var(--primary-bg);
-                }
-              }
-            }
-            > div:nth-of-type(2) {
-              display: flex;
-              flex-flow: column nowrap;
-              justify-content: center;
-              align-items: center;
-              > div {
-                padding: @size-8;
-                > label {
-                  color: var(--secondary-text);
-                  font-size: @size-16;
-                  font-weight: @weight-semi-bold;
-                }
-              }
-            }
+            background-color: var(--primary-bg);
           }
         }
-
       }
     }
   }

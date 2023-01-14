@@ -556,19 +556,19 @@ const usePoolFormInputValdiation = ({
   } else if (symbol.length === 0) {
     inputError = true;
     inputMessage = "Symbol is required";
-  } else if (new BN(saleAmount).isZero()) {
+  } else if (!new BN(saleAmount) || new BN(saleAmount).lte(new BN(0))) {
     inputError = true;
     inputMessage = "Sale Amount is required";
-  } else if (new BN(initPrice).isZero()) { // must be greater than 1 but less than 0.
+  } else if (new BN(initPrice) || new BN(initPrice).lte(new BN(0))) { // must be greater than 1 but less than 0.
     inputError = true;
     inputMessage = "Initial Price is required";
-  } else if (new BN(promisedReturn).isZero()) {
+  } else if (new BN(promisedReturn) || new BN(promisedReturn).lte(new BN(0))) {
     inputError = true;
     inputMessage = "Promised Return is required";
-  } else if (new BN(inceptionPrice).isZero()) {
+  } else if (new BN(inceptionPrice) ||new BN(inceptionPrice).lte(new BN(0))) {
     inputError = true;
     inputMessage = "Inception Price is required";
-  } else if (new BN(leverageFactor).isZero()) {
+  } else if (new BN(leverageFactor) || new BN(leverageFactor).lte(new BN(0))) {
     inputError = true;
     inputMessage = "Leverage Factor is required";
   } else if (collateralInfos.length === 0) {
@@ -586,10 +586,10 @@ const usePoolFormInputValdiation = ({
       } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
         inputError = true;
         inputMessage = "Token ID is required";
-      } else if (new BN(collateralInfo.borrowAmount).isZero()) {
+      } else if (!new BN(collateralInfo.borrowAmount) || new BN(collateralInfo.borrowAmount).isZero()) {
         inputError = true;
         inputMessage = "Asset Borrow Liquidity is required";
-      } else if (new BN(collateralInfo.maxAmount).isZero()) {
+      } else if (!new BN(collateralInfo.maxAmount)|| new BN(collateralInfo.maxAmount).isZero()) {
         inputError = true;
         inputMessage = "Asset Max Liquidity is required";
       }

@@ -63,12 +63,10 @@ function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number=4) {
 const pp = BigNumber.from(10).pow(18);
 
 
-export const createOptionsInstrument = async (account, library, vaultId) => {
+export const createOptionsInstrument = async (account, library, vaultId, strikePrice, oracle, description, name, pricePerContract, duration, shortCollateral) => {
     const signer = getSigner(library, account);
-    const vault = new Contract(vaultId, VaultData.abi, signer);
-    const optionsFactory = new ContractFactory()
-    const tx = await vault.createOptionsInstrument();
-    return tx;
+    const factory = new ContractFactory(CoveredCallInstrumentData.abi, CoveredCallInstrumentData.bytecode, signer);
+    const contract = await factory.deploy
 }
 
 export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
@@ -273,31 +271,6 @@ export const createPoolInstrument = async (
 
     return {response: poolInstrument.deployTransaction, instrumentAddress: poolInstrument.address};
 }
-
-// export const addAcceptedCollaterals = async (
-//     account: string,
-//     provider: Web3Provider,
-//     marketId: string,
-//     collateralItems: PoolCollateralItem[] // not in wad format yet
-// ) => {
-//     const signer = getSigner(provider, account);
-//     const controller = new Contract(controller_address, ControllerData.abi, signer);
-    
-//     const multicall = new Multicall({ ethersProvider: provider });
-
-//     // for each collateralInfo item, call controller.addAcceptedCollateral
-//     collateralItems.forEach(async (collateralInfo) => {
-//         const tx = await controller.addAcceptedCollateral(
-//             marketId,
-//             collateralInfo.tokenAddress,
-//             collateralInfo.isERC20 ? "0" : collateralInfo.tokenId,
-//             new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
-//             new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
-//             collateralInfo.isERC20
-//         )
-//         await tx.wait(1);
-//     });
-// }
 
 export const borrowCreditlineInstrument = async (
     account: string, 
@@ -1272,25 +1245,27 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     let tx;
 
     // console.log("stuff: ", await controller.getVaultSnapShot("1"));
-    tx = await reputationManager.incrementScore(account,pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore(account,pp); // validator
+    // tx.wait();
 
-    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    tx = await controller.setValidatorManager(validator_manager_address);
-    tx = await controller.testVerifyAddress(); 
-    tx.wait();
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // tx = await controller.testVerifyAddress(); 
+    // tx.wait();
 
-    console.log("F");
+    // console.log("F");
+
+    await scriptSetup(account, provider);
 }
 
 
@@ -1313,11 +1288,11 @@ const scriptSetup= async (account, provider) => {
         )
     }
 
-    await scriptAddPoolInstruments(
-        account, provider,
+    // await scriptAddPoolInstruments(
+    //     account, provider,
 
-    );
-    await scriptAddOptionsInstruments();
+    // );
+    // await scriptAddOptionsInstruments();
 }
 
 const createVault = async (
