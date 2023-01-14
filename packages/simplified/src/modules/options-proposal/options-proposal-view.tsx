@@ -66,6 +66,12 @@ export const FormAmountInput = ({amount, updateAmount, prepend, label="" }) => {
   )
 }
 
+interface OptionsItem {
+  strikePrice: string,
+  deployed: boolean,
+  address: string
+}
+
 const toCompoundingRatePerSec = (r_i: number): BN => {
   return new BN(Math.exp(Math.log(r_i + 1) / (31536000)) - 1);
 }
@@ -84,10 +90,11 @@ const OptionsProposalView: React.FC = () => {
         name: "",
         pricePerContract: "",
         duration: "",
-        shortCollateral: ""
+        shortCollateral: "", // correseponds to the principal
+        oracle: ""
     });
-    const [ strikePrices, setStrikePrices ] = useState<string[]>([])
-    const [ instrumentAddress, setInstrumentAddress ] = useState("")
+
+    const [ strikePrices, setStrikePrices ] = useState<OptionsItem[]>([])
 
     // const {inputError, inputMessage} = usePoolFormInputValdiation(optionsData, collateralInfos, instrumentAddress); 
   
@@ -118,11 +125,32 @@ const OptionsProposalView: React.FC = () => {
 
     const underlyingSymbol = vaultId !== "" ? vaults[vaultId].want.symbol : "";
 
-    if (!loginAccount || !loginAccount.library) {
-        return <h2>
-          Please connect your wallet to use this feature
-        </h2>;
-    }
+    const {inputError, inputMessage} = useOptionsFormValidation(
+      optionsData,
+      strikePrices
+    )
+
+    const addOptionItem = useCallback((e) => {
+      e.preventDefault();
+        setStrikePrices((prev) => [...prev, {
+            strikePrice: "",
+            deployed: false,
+            address: ""
+        }]);
+    }, [strikePrices]);
+
+    const removeOptionItem = useCallback((index: number) => {
+      setStrikePrices((prev) => {
+          let result = prev.filter((_, i) => i !== index);
+          return result;
+      });
+  }, [strikePrices]);
+
+  if (!loginAccount || !loginAccount.library) {
+    return <h2>
+      Please connect your wallet to use this feature
+    </h2>;
+  }
     
     return (
           <div className={Styles.PoolProposalForm}>
@@ -145,8 +173,64 @@ const OptionsProposalView: React.FC = () => {
                 { generateTooltip("Name of the set of options instruments", "name")}
               </div>
               <TextInput placeholder="" value={optionsData.name} onChange={(val) => {
-                
+                setOptionsData(prevData => {
+                  return {...prevData, name: val} 
+                })
               }}/>
+            </div>
+            <div>
+              <div>
+                <label>Oracle: </label>
+                { generateTooltip("Oracle used to price the collateral", "oracle")}
+              </div>
+              <TextInput placeholder="" value={optionsData.oracle} onChange={(val) => {
+                setOptionsData(prevData => {
+                  return {...prevData, oracle: val} 
+                })
+              }}/>
+            </div>
+            <div className={Styles.StrikeItems}>
+              <div>
+                <div>
+                  <label>Strike Prices: </label>
+                  { generateTooltip("For each strike price specified an instrument will be deployed, AT LEAST ONE MUST BE SPECIFIED", "strikePrices")} 
+                </div>
+                <TinyThemeButton text="+" action={addOptionItem} small={true} noHighlight={true}/>
+               
+              </div>
+              <div>
+                {strikePrices.map((item, index) => {
+                  return (
+                    <div key={index}>
+                      <label>Strike Price {index + 1}: </label>
+                      <FormAmountInput
+                        updateAmount={
+                          (val) => {
+                            if (/^\d*\.?\d*$/.test(val)) {
+                              setStrikePrices(prevData => {
+                                let result = prevData.map((item, i) => {
+                                  if (i === index) {
+                                    return {...item, strikePrice: val}
+                                  }
+                                  return item;
+                                });
+                                return result;
+                              })
+                            }
+                          }
+                        }
+                        amount={item.strikePrice}
+                        prepend={"$"}
+                        label={underlyingSymbol}
+                      />
+                      <TinyThemeButton text="-" action={() => removeOptionItem(index)} small={true} noHighlight={true}/>
+                      </div>
+                  )
+                })
+                }
+
+                      
+              </div>
             </div>
             <div>
               <div>
@@ -184,36 +268,24 @@ const OptionsProposalView: React.FC = () => {
               ></textarea>
             </div>
             <div>
-              <div>
-                <label>Instrument Address (optional): </label>
-                { generateTooltip("leave empty if you want the pool instrument to be created for you", "name")}
-              </div>
-              <TextInput placeholder="" value={instrumentAddress} onChange={(val) => {
-                setInstrumentAddress(val)
-              }}/>
-            </div>
-            <div>
               <SecondaryThemeButton 
-              text={"Submit Proposal"}
-              action={null} />
+              text={inputError ? inputMessage : "Submit Proposal"}
+              action={inputError ? null : submitProposal} />
             </div>
-
             </div>
         );
 }
 
 export default OptionsProposalView;
 
-const usePoolFormInputValdiation = ({
+const useOptionsFormValidation = ({
   description,
   name,
-  symbol,
-  saleAmount,
-  initPrice,
-  promisedReturn,
-  inceptionPrice,
-  leverageFactor
-}, collateralInfos, instrumentAddress) => {
+  oracle,
+  pricePerContract,
+  duration,
+  shortCollateral
+}, strikePrices) => {
   let inputError = false;
   let inputMessage = "";
   if (description.length === 0) {
@@ -222,47 +294,31 @@ const usePoolFormInputValdiation = ({
   } else if (name.length === 0) {
     inputError = true;
     inputMessage = "Name is required";
-  } else if (symbol.length === 0) {
+  } else if (! new BN(pricePerContract) || new BN(pricePerContract).lte(new BN(0))) {
     inputError = true;
-    inputMessage = "Symbol is required";
-  } else if (new BN(saleAmount).isZero()) {
+    inputMessage = "Price per contract must be greater than 0";
+  }else if (! new BN(duration) || new BN(duration).lte(new BN(0))) {
     inputError = true;
-    inputMessage = "Sale Amount is required";
-  } else if (new BN(initPrice).isZero()) { // must be greater than 1 but less than 0.
+    inputMessage = "Duration invalid";
+  }else if (! new BN(shortCollateral) || new BN(shortCollateral).lte(new BN(0))) {
     inputError = true;
-    inputMessage = "Initial Price is required";
-  } else if (new BN(promisedReturn).isZero()) {
+    inputMessage = "Price per contract must be greater than 0";
+  } else if (!isAddress(oracle)) {
     inputError = true;
-    inputMessage = "Promised Return is required";
-  } else if (new BN(inceptionPrice).isZero()) {
-    inputError = true;
-    inputMessage = "Inception Price is required";
-  } else if (new BN(leverageFactor).isZero()) {
-    inputError = true;
-    inputMessage = "Leverage Factor is required";
-  } else if (collateralInfos.length === 0) {
-    inputError = true;
-    inputMessage = "Collateral is required";
-  } else if (instrumentAddress !== "" && !isAddress(instrumentAddress)) {
-    inputError = true;
-    inputMessage = "Instrument Address is not valid";
-  } else {
-    collateralInfos.forEach((collateralInfo) => {
-      // check whether collateral address is valid
-      if (collateralInfo.tokenAddress.length === 0 || !isAddress(collateralInfo.tokenAddress)) {
+    inputMessage = "invalid oracle address";
+  }else {
+    _.forEach(strikePrices, (strikePrice) => {
+      if (! new BN(strikePrice.strikePrice) || new BN(strikePrice.strikePrice).lte(new BN(0))) {
         inputError = true;
-        inputMessage = "Collateral Address is required";
-      } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
-        inputError = true;
-        inputMessage = "Token ID is required";
-      } else if (new BN(collateralInfo.borrowAmount).isZero()) {
-        inputError = true;
-        inputMessage = "Asset Borrow Liquidity is required";
-      } else if (new BN(collateralInfo.maxAmount).isZero()) {
-        inputError = true;
-        inputMessage = "Asset Max Liquidity is required";
+        inputMessage = "Strike price must be greater than 0";
       }
-    });
+      _.forEach(strikePrices, (other) => {
+        if (strikePrice.strikePrice === other.strikePrice) {
+          inputError = true;
+          inputMessage = "Duplicate strike prices";
+        }
+      })
+    })
   }
   return {inputError, inputMessage};
 }

@@ -30,7 +30,7 @@ const ProposalsView = () => {
                 <TabContent id="1" activeTab={activeTab} className={Styles.poolTab}> 
                     <CreditLineProposalView />
                 </TabContent>
-                <TabContent id="2" activeTab={activeTab}>
+                <TabContent id="2" activeTab={activeTab} className={Styles.poolTab}>
                     <OptionsProposalView />
                 </TabContent>
                 <TabContent id="3" activeTab={activeTab} className={Styles.PoolTab}>
