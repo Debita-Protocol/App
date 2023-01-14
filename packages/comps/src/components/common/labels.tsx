@@ -354,7 +354,8 @@ export const NetworkMismatchBanner = () => {
             [Styles.Market]: path === MARKET,
           })}
         >
-          You will need MATIC in order to participate. <ExternalLink label="Click here for more information." URL="https://help.augur.net" />
+          You will need MATIC in order to participate.
+           {/*<ExternalLink label="Click here for more information." URL="https://help.augur.net" />*/}
       </article>}
       {isRpcDown && <article
           className={classNames(Styles.NetworkMismatch, Styles.NetworkWarningBanner, {
@@ -375,14 +376,16 @@ export const NetworkMismatchBanner = () => {
             [Styles.Market]: path === MARKET,
           })}
         >
-          Rewards contract has a low balance. <ExternalLink label="Learn More." URL="https://help.augur.net/providing-liquidity/claiming-lp-rewards" />
+          Rewards contract has a low balance. 
+        {/*<ExternalLink label="Learn More." URL="https://help.augur.net/providing-liquidity/claiming-lp-rewards" />*/}
       </article>}    
       {isEmptyRewards && <article
           className={classNames(Styles.NetworkMismatch, Styles.NetworkWarningBanner, {
             [Styles.Market]: path === MARKET,
           })}
         >
-          Rewards contract is depleted. <ExternalLink label="Learn More." URL="https://help.augur.net/providing-liquidity/claiming-lp-rewards" />
+          Rewards contract is depleted.
+           {/*<ExternalLink label="Learn More." URL="https://help.augur.net/providing-liquidity/claiming-lp-rewards" />*/}
       </article>}         
     </>
   );

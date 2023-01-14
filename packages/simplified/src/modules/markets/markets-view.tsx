@@ -374,7 +374,6 @@ const MarketsView = () => {
       })}
     >
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
-      <NetworkMismatchBanner />
       <AppViewStats small liquidity trading /> 
       {/*isLogged ? <AppViewStats small liquidity trading /> : <TopBanner />*/}
       {isMobile && (
