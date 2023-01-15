@@ -31,11 +31,16 @@
     justify-content: space-between;
     padding: @size-15;
     > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
       padding-left:@size-10;
       > label {
         font-size: @size-18;
         font-weight: @weight-bold;
         color: var(--primary-text);
+        margin-bottom: 0;
+        padding-left: @size-5;
       }
     }
     > label {
@@ -65,13 +70,18 @@
         grid-template-columns: 1fr 1fr;
         margin-bottom: @size-20;
         align-self: space-between;
-        >div {
+        > div:first-of-type {
+          display: flex;
+          flex-flow: row nowrap;
+          justify-content: flex-start;
+          align-items: center;
           > label {
             font-size: @size-18;
             font-weight: @weight-bold;
             color: var(--primary-text);
-            padding-right: @size-20;
+            margin-bottom: 0;
           }
+          padding-right: @size-10;
         }
     
         > button {
@@ -89,21 +99,43 @@
 
       > div:last-of-type {
         width:80%;
+
+        display: flex;
+        flex-flow: column nowrap;
         align-self: center;
+        justify-content: flex-start;
+
         > div { // for the strike price item
           display: flex;
           flex-flow: column nowrap;
           align-items: normal;
           justify-content: space-evenly;
           padding: @size-14;
-          margin-bottom: @size-10;
+          margin-bottom: @size-30;
           border: @size-1 solid var(--theme-border);
           border-radius: @size-10;
           background-color: var(--tertiary-bg);
           > label {
-            font-size: @size-18;
+            font-size: @size-22;
             font-weight: @weight-bold;
             color: var(--primary-text);
+          }
+
+          > div {
+            > div {
+              display: flex;
+              flex-flow: row nowrap;
+              justify-content: flex-start;
+              align-items: center;
+              > label {
+                font-size: @size-18;
+                font-weight: @weight-bold;
+                color: var(--primary-text);
+                margin-bottom: 0;
+                margin-left: @size-10;
+              }
+            }
+            padding-bottom: @size-10;
           }
           > input {
             font-size: @size-18;
