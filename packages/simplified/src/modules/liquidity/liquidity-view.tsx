@@ -33,7 +33,7 @@ import {
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
 import { MarketInfo,InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
-
+import {InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat} from "../market/market-view"; 
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
 
@@ -202,6 +202,8 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
     balances: { lpTokens, pendingRewards },
     loginAccount,
   } = useUserStore();
+    const { markets} = useDataStore2();
+ 
     const [expanded, setExpanded] = useState(false);
 
      const {actions: {setModal},} = useAppStatusStore(); 
@@ -209,11 +211,18 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   const{marketId} = instrument; 
+  const type = markets[Number(marketId)]?.instrumentType; 
+
   // console.log('instrument', instrument)
   function roundDown(number, decimals) {
       decimals = decimals || 0;
       return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
   }
+
+  const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type)}); 
+
  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -250,7 +259,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
         {/*<CategoryIcon {...{ categories }} />
                 <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </button>
-      <span>{ (instrument?.isPool? "  true": "  false")}</span>
+      <span>{ (instrument?.isPool? "  Perpetual": "Fixed Term")}</span>
       <span>{instrument?.balance.toString() }</span>
       <span>{roundDown((((1+ Number(instrument?.seniorAPR)*1e18/1e19)**31536000) -1)*100, 2)}{"%"}</span>
       <span>
@@ -285,7 +294,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
  <SecondaryThemeButton
           text="More Info"
           action={() =>
-        setModal({
+               setModal({
 
           type: "MODAL_CONFIRM_TRANSACTION",
           title: "Instrument Information",
@@ -299,26 +308,17 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
           // },
           targetDescription: {
             //market,
-            label: "Description",  //isMint ? "Market" : "Pool",
-            subLabel: "instrumentDescription"
+            label: "Overview",  //isMint ? "Market" : "Pool",
+            subLabel: instrumentDescription
           },
           footer: 
              {
-                text: "Redeeming will automatically withdraw capital from the instrument",
+                text: "-",
             },
           
            name: "outcome", 
            breakdowns:  [
-                {
-                  heading: "Instrument Type",
-                  infoNumbers: [
-                    {
-                      label: "instrumentDescription",
-                      // value: 1,
-
-                    },
-                  ],
-                },
+                instrumentBreakDown
                 // {
                 //   heading: "What you'll recieve",
                 //   infoNumbers: [

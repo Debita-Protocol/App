@@ -282,7 +282,7 @@ export const INSTRUMENT_SORT_TYPES = {
   APPROVED: "APPROVED", 
 }
 export const INSTRUMENT_SORT_TYPE_TEXT = {
-  ISPOOL: "Is Pool", 
+  ISPOOL: "Type", 
   TVL: "TVL",
   APR: "Est. APR",
   PERCENTAGE: "Exposure %", 

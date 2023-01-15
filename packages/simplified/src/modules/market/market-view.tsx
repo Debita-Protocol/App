@@ -35,7 +35,7 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 import {Sidebar} from "../sidebar/sidebar";
-const InstrumentBreakDownFormat = ({instrumentType})=>{
+export const InstrumentBreakDownFormat = ({instrumentType})=>{
   if (instrumentType==1){
     return {
             heading: "Additional Information",
@@ -89,7 +89,7 @@ const InstrumentBreakDownFormat = ({instrumentType})=>{
   }
   else return 0; 
 }
-const InstrumentOverviewFormat = ({ instrumenType}) =>{
+export const InstrumentOverviewFormat = ({ instrumenType}) =>{
   if (instrumenType == 1){
     return "Managers who think the price of the underlying asset would be below the proposed strike price by maturity should buy longZCB. When the option is not exercised, the proposed estimated return will be fully paid by the utilizer, and redemption price of longZCB will be 1. "
   }
@@ -98,7 +98,7 @@ const InstrumentOverviewFormat = ({ instrumenType}) =>{
   }
 }
 
-const InstumentDescriptionFormat = ({instrumenType})=>{
+export const InstumentDescriptionFormat = ({instrumenType})=>{
   const fields =["ETH", "1100", "1/20/2023", "1" ]
   if (instrumenType == 1){
     return "The covered call instrument for "+ fields[0] + " has a strike price of "
@@ -405,9 +405,13 @@ const MarketView = ({ defaultMarket = null }) => {
   const longZCB_ad = market_[marketId]?.longZCB
   const shortZCB_ad = market_[marketId]?.shortZCB; 
 
-  const instrumentOverview = InstrumentOverviewFormat({instrumenType: 1})
-  const instrumentDescription = InstumentDescriptionFormat({instrumenType: 1}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: 1}); 
+  const type = market_[Id]?.instrumentType; 
+
+
+  const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type)}); 
+
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
   // if (!market) return <EmptyMarketView />;
