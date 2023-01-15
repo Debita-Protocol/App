@@ -292,8 +292,8 @@ const PoolProposalView: React.FC = () => {
             </div>
             <div>
               <div>
-                <label>Initial Price: </label>
-                { generateTooltip("Initial price of the longZCB", "initPrice")}
+                <label>LongZCB Initial Price: </label>
+                { generateTooltip("Must be between 0 and 1", "initPrice")}
               </div>
               <FormAmountInput 
                 updateAmount={
@@ -312,8 +312,8 @@ const PoolProposalView: React.FC = () => {
             </div>
             <div>
               <div>
-                <label>Inception Price: </label>
-                { generateTooltip("Initial Price of longZCB post approval", "inceptionPrice")}
+                <label>Long ZCB Inception Price: </label>
+                { generateTooltip("Initial price of longZCB post approval, must be between 0 and 1", "inceptionPrice")}
               </div>
               <FormAmountInput 
                 updateAmount={
@@ -373,7 +373,6 @@ const PoolProposalView: React.FC = () => {
                       <label>Accepted Collateral</label>
                       { generateTooltip("Add accepted collateral for the lending pool", "collateral")}
                     </div>
-                   
                     <TinyThemeButton text="Add Collateral" action={addCollateral} small={true} noHighlight={true}/>
                 </div>
                 <section>
@@ -536,6 +535,16 @@ const PoolProposalView: React.FC = () => {
 
 export default PoolProposalView;
 
+
+const validPositiveNumber = (val: string) => {
+  if (!val || val.length === 0) {
+    return false;
+  }
+  let num = new BN(val);
+  return num.gt(new BN(0));
+}
+
+
 const usePoolFormInputValdiation = ({
   description,
   name,
@@ -557,19 +566,19 @@ const usePoolFormInputValdiation = ({
   } else if (symbol.length === 0) {
     inputError = true;
     inputMessage = "Symbol is required";
-  } else if (!new BN(saleAmount) || new BN(saleAmount).lte(new BN(0))) {
+  } else if (!validPositiveNumber(saleAmount)) {
     inputError = true;
     inputMessage = "Sale Amount is required";
-  } else if (new BN(initPrice) || new BN(initPrice).lte(new BN(0))) { // must be greater than 1 but less than 0.
+  } else if (!validPositiveNumber(initPrice)) { // must be greater than 1 but less than 0.
     inputError = true;
     inputMessage = "Initial Price is required";
-  } else if (new BN(promisedReturn) || new BN(promisedReturn).lte(new BN(0))) {
+  } else if (!validPositiveNumber(promisedReturn)) {
     inputError = true;
     inputMessage = "Promised Return is required";
-  } else if (new BN(inceptionPrice) ||new BN(inceptionPrice).lte(new BN(0))) {
+  } else if (!validPositiveNumber(inceptionPrice)) {
     inputError = true;
     inputMessage = "Inception Price is required";
-  } else if (new BN(leverageFactor) || new BN(leverageFactor).lte(new BN(0))) {
+  } else if (!validPositiveNumber(leverageFactor)) {
     inputError = true;
     inputMessage = "Leverage Factor is required";
   } else if (collateralInfos.length === 0) {
@@ -587,10 +596,10 @@ const usePoolFormInputValdiation = ({
       } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
         inputError = true;
         inputMessage = "Token ID is required";
-      } else if (!new BN(collateralInfo.borrowAmount) || new BN(collateralInfo.borrowAmount).isZero()) {
+      } else if (!validPositiveNumber(collateralInfo.borrowAmount)) {
         inputError = true;
         inputMessage = "Asset Borrow Liquidity is required";
-      } else if (!new BN(collateralInfo.maxAmount)|| new BN(collateralInfo.maxAmount).isZero()) {
+      } else if (!validPositiveNumber(collateralInfo.maxAmount)) {
         inputError = true;
         inputMessage = "Asset Max Liquidity is required";
       }

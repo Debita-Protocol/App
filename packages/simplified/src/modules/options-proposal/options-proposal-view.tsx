@@ -73,7 +73,9 @@ interface OptionsItem {
   strikePrice: string,
   deployed: boolean,
   address: string,
-  marketInitiated: boolean
+  marketInitiated: boolean,
+  longCollateral: string,
+  pricePerContract: string
 }
 
 const toCompoundingRatePerSec = (r_i: number): BN => {
@@ -90,11 +92,8 @@ const OptionsProposalView: React.FC = () => {
   const { vaults } = useDataStore2();
   const [deployedInstrument, setDeployedInstrument] = useState(false);
   const [optionsData, setOptionsData] = useState({
-    description: "",
     name: "",
-    pricePerContract: "",
     duration: "",
-    shortCollateral: "", // correseponds to the principal
     oracle: ""
   });
   const [loading, setLoading] = useState(false);
@@ -132,17 +131,23 @@ const OptionsProposalView: React.FC = () => {
     let instrumentAddresses = []
     for (const item of strikePrices) {
       if (!item.deployed) {
-        const { description, name, pricePerContract, duration, shortCollateral, oracle } = optionsData;
-        const { strikePrice } = item;
+        const { name, duration, oracle } = optionsData;
+        const { strikePrice, pricePerContract, longCollateral } = item;
         const { address: vaultAddress } = vaults[vaultId];
         const { address: underlying } = vaults[vaultId].want;
         let _duration = new BN(duration).multipliedBy(86400).toFixed(0);
-
-        let _instrumentAddress;
-        
-        // instrument creation
+        let description = JSON.stringify(
+          {
+            underlying: underlyingSymbol,
+            strike: strikePrice,
+            duration: duration,
+            oracle: oracle,
+          }
+        )
+        console.log("description", description)
+        let instrumentAddress;
         try {
-          const {instrumentAddress, response} =  await createOptionsInstrument(
+          const {instrumentAddress: _instrumentAddress, response} = await createOptionsInstrument(
             account,
             loginAccount.library,
             underlying,
@@ -151,10 +156,16 @@ const OptionsProposalView: React.FC = () => {
             oracle,
             pricePerContract,
             _duration,
-            shortCollateral,
+            longCollateral,
             USDC_address
           )
-          _instrumentAddress = instrumentAddress;
+          instrumentAddress = _instrumentAddress;
+          addTransaction({
+            hash: response.hash,
+            chainId: loginAccount.chainId,
+            status: TX_STATUS.PENDING,
+            message: "creating options instruments..."
+          });
           setStrikePrices((prev) => {
             return prev.map((item) => {
               if (item.strikePrice === strikePrice) {
@@ -168,15 +179,9 @@ const OptionsProposalView: React.FC = () => {
               }
             })
           })
-  
-          addTransaction({
-            hash: response.hash,
-            chainId: loginAccount.chainId,
-            status: TX_STATUS.PENDING,
-            message: "creating options instruments..."
-          });
+
         } catch (err) {
-          console.log("err: ", err)
+          console.log("err: ", err);
           addTransaction({
             hash: "instrument-creation-failed",
             chainId: loginAccount.chainId,
@@ -186,12 +191,18 @@ const OptionsProposalView: React.FC = () => {
             addedTime: new Date().getTime(),
             message: `Failed to create instrument ${err}`
           });
-          return;
         }
+        
+          // .then(({instrumentAddress, response}) => {
+            
+          // }).catch((err) => {
+            
+          // })
+
 
         // market creation
         try {
-          if (!_instrumentAddress) {
+          if (!instrumentAddress) {
             throw new Error("instrument address not found")
           }
           const response = await createOptionsMarket(
@@ -199,8 +210,8 @@ const OptionsProposalView: React.FC = () => {
             loginAccount.library,
             name,
             description,
-            _instrumentAddress,
-            shortCollateral,
+            instrumentAddress,
+            longCollateral,
             pricePerContract,
             _duration,
             vaultId
@@ -241,10 +252,6 @@ const OptionsProposalView: React.FC = () => {
         }
       }
     }
-
-
-
-
   }, [vaultId, vaults, strikePrices, optionsData]);
 
 
@@ -255,7 +262,8 @@ const OptionsProposalView: React.FC = () => {
     strikePrices
   )
 
-  console.log(optionsData, strikePrices)
+  console.log("OPTIONS: ", optionsData, strikePrices)
+  console.log("optionsData.duration: ", optionsData.duration)
 
   const addOptionItem = useCallback((e) => {
     e.preventDefault();
@@ -263,7 +271,9 @@ const OptionsProposalView: React.FC = () => {
       strikePrice: "",
       deployed: false,
       address: "",
-      marketInitiated: false
+      marketInitiated: false,
+      pricePerContract: "",
+      longCollateral: ""
     }]);
   }, [strikePrices]);
 
@@ -290,35 +300,33 @@ const OptionsProposalView: React.FC = () => {
       </div>
       <div>
         <div>
-          <label>Selected Vault: </label>
           {generateTooltip("Vault that the instrument will be attached to, vault underlying will be deposited to the instrument on instrument approval", "vault")}
+          <label>Selected Vault: </label>
         </div>
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault} />
       </div>
       <div>
         <div>
+        {generateTooltip("Name of the pool instrument", "name")}
           <label>Name: </label>
-          {generateTooltip("Name of the set of options instruments", "name")}
         </div>
-        <TextInput placeholder="Covered Call V0..." value={optionsData.name} onChange={(val) => {
-          setOptionsData(prevData => {
+        <TextInput placeholder="Covered Calls V0..." value={optionsData.name} onChange={(val) => {
+          setOptionsData((prevData) => {
             return { ...prevData, name: val }
           })
         }} />
       </div>
       <div>
         <div>
-          <label>Duration: </label>
           {generateTooltip("Duration of the instrument, time of approval + duration will be the expiry date", "duration")}
+          <label>Duration: </label>
         </div>
         <FormAmountInput
           updateAmount={
             (val) => {
-              if (/^\d*\.?\d*$/.test(val)) {
-                setOptionsData(prevData => {
-                  return { ...prevData, duration: val }
-                })
-              }
+              setOptionsData(prevData => {
+                return { ...prevData, duration: val }
+              })
             }
           }
           amount={optionsData.duration}
@@ -328,8 +336,8 @@ const OptionsProposalView: React.FC = () => {
       </div>
       <div>
         <div>
-          <label>Oracle: </label>
           {generateTooltip("Oracle used to price the collateral", "oracle")}
+          <label>Oracle: </label>
         </div>
         <TextInput placeholder="0x..." value={optionsData.oracle} onChange={(val) => {
           setOptionsData(prevData => {
@@ -340,25 +348,55 @@ const OptionsProposalView: React.FC = () => {
       <div className={Styles.StrikeItems}>
         <div>
           <div>
-            <label>Strike Prices: </label>
             {generateTooltip("For each strike price specified an instrument will be deployed, AT LEAST ONE MUST BE SPECIFIED", "strikePrices")}
+            <label>Options Contracts: </label>
           </div>
-          <TinyThemeButton text="Add Strike Price" action={addOptionItem} small={true} noHighlight={true} />
+          <TinyThemeButton text="Add Contract" action={addOptionItem} small={true} noHighlight={true} />
 
         </div>
         <div>
           {strikePrices.map((item, index) => {
             return (
               <div key={index}>
-                <label>Strike Price {index + 1}: </label>
-                <FormAmountInput
-                  updateAmount={
-                    (val) => {
-                      if (/^\d*\.?\d*$/.test(val)) {
+                <label>Option {index + 1}: </label>
+                <div>
+                  <div>
+                    {generateTooltip("Strike price of the option", "strikePrice")}
+                    <label>Strike Price</label>
+                  </div>
+                  <FormAmountInput
+                    updateAmount={
+                      (val) => {
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setStrikePrices(prevData => {
+                            let result = _.map(prevData, (item, i) => {
+                              if (i === index) {
+                                return { ...item, strikePrice: val }
+                              }
+                              return item;
+                            });
+                            return result;
+                          })
+                        }
+                      }
+                    }
+                    amount={item.strikePrice}
+                    prepend={"$"}
+                    label={underlyingSymbol + "/USD"}
+                  />
+                </div>
+                <div>
+                  <div>
+                    {generateTooltip("total amount of underlying that utilizer will put up", "longCollateral")}
+                    <label>Total Premium: </label>
+                  </div>
+                  <FormAmountInput
+                    updateAmount={
+                      (val) => {
                         setStrikePrices(prevData => {
-                          let result = prevData.map((item, i) => {
+                          let result = _.map(prevData, (item, i) => {
                             if (i === index) {
-                              return { ...item, strikePrice: val }
+                              return { ...item, longCollateral: val }
                             }
                             return item;
                           });
@@ -366,80 +404,48 @@ const OptionsProposalView: React.FC = () => {
                         })
                       }
                     }
-                  }
-                  amount={item.strikePrice}
-                  prepend={"$"}
-                  label={underlyingSymbol + "/USD"}
-                />
+                    amount={strikePrices[index].longCollateral}
+                    prepend={"$"}
+                    label={underlyingSymbol}
+                  />
+                </div>
+                <div>
+                  <div>
+                    {generateTooltip("price per option contract, sets the option premium", "pricePerContract")}
+                    <label>Price Per Contract: </label>
+
+                  </div>
+                  <FormAmountInput
+                    updateAmount={
+                      (val) => {
+                        setStrikePrices(prevData => {
+                          let result = _.map(prevData, (item, i) => {
+                            if (i === index) {
+                              return { ...item, pricePerContract: val }
+                            }
+                            return item;
+                          });
+                          return result;
+                        })
+                      }
+                    }
+                    amount={strikePrices[index].pricePerContract}
+                    prepend={"$"}
+                    label={underlyingSymbol}
+                  />
+                </div>
                 <TinyThemeButton text="remove" action={() => removeOptionItem(index)} small={true} noHighlight={true} />
               </div>
             )
           })
           }
-
-
         </div>
-      </div>
-      <div>
-        <div>
-          <label>Vault Deposit Amount: </label>
-          {generateTooltip("corresponds to amount of vault underlying deposited into options instrument", "shortCollateral")}
-        </div>
-        <FormAmountInput
-          updateAmount={
-            (val) => {
-              if (/^\d*\.?\d*$/.test(val)) {
-                setOptionsData(prevData => {
-                  return { ...prevData, shortCollateral: val }
-                })
-              }
-            }
-          }
-          amount={optionsData.shortCollateral}
-          prepend={"$"}
-          label={underlyingSymbol}
-        />
-      </div>
-      <div>
-        <div>
-          <label>Price Per Contract: </label>
-          {generateTooltip("price per option contract, sets the option premium", "pricePerContract")}
-        </div>
-        <FormAmountInput
-          updateAmount={
-            (val) => {
-              if (/^\d*\.?\d*$/.test(val)) {
-                setOptionsData(prevData => {
-                  return { ...prevData, pricePerContract: val }
-                })
-              }
-            }
-          }
-          amount={optionsData.pricePerContract}
-          prepend={"$"}
-          label={underlyingSymbol}
-        />
-      </div>
-      <div className={Styles.Description}>
-        <label>Description: </label>
-        <textarea
-          rows="4"
-          cols="15"
-          placeholder="description..."
-          onChange={(e) => {
-            setOptionsData(prevData => {
-              return { ...prevData, description: e.target.value }
-            })
-          }
-          }
-          value={optionsData.description}
-        ></textarea>
       </div>
       <div>
         <SecondaryThemeButton
           text={inputError ? inputMessage : "Submit Proposal"}
           action={inputError ? null : submitProposal} />
-          
+
         <div>
           {_.map(strikePrices, (item, index) => {
             if (!item.deployed) {
@@ -447,8 +453,8 @@ const OptionsProposalView: React.FC = () => {
             }
             let label = (<div>
               <label>Strike Price {index + 1} Contract Address (click to open explorer): </label>
-            <span>{item.address}</span>
-              </div>);
+              <span>{item.address}</span>
+            </div>);
             return (
               <div key={index}>
                 <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} icon={true} label={label}>
@@ -465,40 +471,50 @@ const OptionsProposalView: React.FC = () => {
 
 export default OptionsProposalView;
 
+const validPositiveNumber = (val: string) => {
+  if (!val || val.length === 0) {
+    return false;
+  }
+  let num = new BN(val);
+  return num.gt(new BN(0));
+}
+
 const useOptionsFormValidation = ({
-  description,
   name,
   oracle,
-  pricePerContract,
   duration,
-  shortCollateral
 }, strikePrices) => {
   let inputError = false;
   let inputMessage = "";
-  if (description.length === 0) {
-    inputError = true;
-    inputMessage = "Description is required";
-  } else if (name.length === 0) {
+  if (name.length === 0) {
     inputError = true;
     inputMessage = "Name is required";
-  } else if (!new BN(pricePerContract) || new BN(pricePerContract).lte(new BN(0))) {
-    inputError = true;
-    inputMessage = "Price per contract must be greater than 0";
-  } else if (!new BN(duration) || new BN(duration).lte(new BN(0))) {
+  } else if (!validPositiveNumber(duration)) {
     inputError = true;
     inputMessage = "Duration invalid";
-  } else if (!new BN(shortCollateral) || new BN(shortCollateral).lte(new BN(0))) {
-    inputError = true;
-    inputMessage = "Price per contract must be greater than 0";
   } else if (!isAddress(oracle)) {
     inputError = true;
     inputMessage = "invalid oracle address";
+  } else if (strikePrices.length === 0) {
+    inputError = true;
+    inputMessage = "Must have at least one strike price";
   } else {
     _.forEach(strikePrices, (strikePrice, i) => {
-      if (!new BN(strikePrice.strikePrice) || new BN(strikePrice.strikePrice).lte(new BN(0))) {
+      if (!validPositiveNumber(strikePrice.strikePrice)) {
         inputError = true;
         inputMessage = "Strike price must be greater than 0";
       }
+
+      if (!validPositiveNumber(strikePrice.longCollateral)) {
+        inputError = true;
+        inputMessage = "Long collateral must be greater than 0";
+      }
+
+      if (!validPositiveNumber(strikePrice.pricePerContract)) {
+        inputError = true;
+        inputMessage = "Price per contract must be greater than 0";
+      }
+
       _.forEach(strikePrices, (other, j) => {
         if (i !== j && strikePrice.strikePrice === other.strikePrice) {
           inputError = true;

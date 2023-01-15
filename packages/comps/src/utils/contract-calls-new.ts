@@ -71,18 +71,22 @@ export const createOptionsInstrument = async (
     oracle,
     pricePerContract,
     duration,
-    shortCollateral,
+    longCollateral,
     collateral_address
 ): Promise<{ instrumentAddress: string, response: TransactionResponse }> => {
     const factory = new ContractFactory(CoveredCallInstrumentData.abi, CoveredCallInstrumentData.bytecode, library.getSigner(account));
 
-    const longCollateral = new BN(shortCollateral).multipliedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
+    const shortCollateral = new BN(longCollateral).decimalPlaces(18).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
     strikePrice = new BN(strikePrice).shiftedBy(18).toFixed(0)
-    shortCollateral = new BN(shortCollateral).shiftedBy(18).toFixed(0)
+    longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
+    console.log("shortCollateral", shortCollateral)
+    console.log("longCollateral", longCollateral)
+    console.log("pricePerContract", pricePerContract)
 
-    const contract: Contract = await factory.deploy(
+
+    const contract: Contract =  await factory.deploy(
         vault,
         account,
         underlying,
@@ -94,8 +98,6 @@ export const createOptionsInstrument = async (
         oracle,
         duration
     );
-    await contract.deployed();
-
     return { instrumentAddress: contract.address, response: contract.deployTransaction };
 }
 
@@ -104,16 +106,17 @@ export const createOptionsMarket = async (
     name,
     description,
     instrumentAddress,
-    shortCollateral,
+    longCollateral,
     pricePerContract,
     duration,
     vaultId,
 ): Promise<TransactionResponse>  => {
 
-    const longCollateral = new BN(shortCollateral).multipliedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
-    shortCollateral = new BN(shortCollateral).shiftedBy(18).toFixed(0)
+    const shortCollateral = new BN(longCollateral).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
+    longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
-    let faceValue = new BN(shortCollateral).plus(new BN(longCollateral)).toFixed(0);
+
+    const faceValue = new BN(longCollateral).plus(new BN(shortCollateral)).toFixed(0)
 
     // get controller contract
     const signer = getSigner(provider, account);
@@ -152,8 +155,6 @@ export const createOptionsMarket = async (
         instrumentData,
         vaultId
     );
-    tx.wait()
-
     return tx;
 }
 
