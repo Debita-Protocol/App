@@ -15,6 +15,8 @@ import {
   useScrollToTopOnMount,
   useDataStore2, useAppStatusStore
 } from "@augurproject/comps";
+
+// @ts-ignore
 import ButtonStyles from "../common/buttons.styles.less";
 
 import { AppViewStats, AvailableLiquidityRewards, MaticAddMetaMaskToken } from "../common/labels";
