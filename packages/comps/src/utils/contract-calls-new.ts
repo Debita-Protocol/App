@@ -76,7 +76,7 @@ export const createOptionsInstrument = async (
 ): Promise<{ instrumentAddress: string, response: TransactionResponse }> => {
     const factory = new ContractFactory(CoveredCallInstrumentData.abi, CoveredCallInstrumentData.bytecode, library.getSigner(account));
 
-    const shortCollateral = new BN(longCollateral).decimalPlaces(18).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
+    const shortCollateral = new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
     strikePrice = new BN(strikePrice).shiftedBy(18).toFixed(0)
     longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
@@ -356,7 +356,6 @@ export const createPoolInstrument = async (
         collateralLabels,
         collateralDatas
     );
-    await poolInstrument.deployed()
 
     return { response: poolInstrument.deployTransaction, instrumentAddress: poolInstrument.address };
 }
@@ -1334,27 +1333,51 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    tx = await reputationManager.incrementScore(account,pp); // validator
-    tx.wait();
+    let vault_address = await controller.getVaultfromId(1);
+    let marketIds = await controller.getMarketIds(1);
 
-    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    tx.wait();
+    console.log("marketIds", marketIds);
+    console.log("vault_address", vault_address);
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    tx = await controller.setValidatorManager(validator_manager_address);
-    tx = await controller.testVerifyAddress(); 
-    tx.wait();
+    let vault = new Contract(vault_address, VaultData.abi, signer);
+    let instrumentData = await vault.fetchInstrumentData(6);
+    console.log("instrumentData", instrumentData);
 
-    console.log("F");
+    let pool = new Contract("0x14Fee7AB6A172658dAFdc6208788c1c81E7AcD0D", PoolInstrumentData.abi, signer);
+    let collaterals = await pool.getAcceptedCollaterals();
+    let collateralData = await pool.collateralData("0x2C7Cb3cB22Ba9B322af60747017acb06deB10933", 0);
+    console.log("collaterals", collateralData);
 
-    await scriptSetup(account, provider);
+    let token = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
+    let symbol = await token.symbol();
+    console.log("symbol", symbol);
+    // console.log("collaterals", collaterals);
+    // console.log("collateralData", collateralData);
+
+    // vault.getInstrumentData();
+
+
+    // tx = await reputationManager.incrementScore(account,pp); // validator
+    // tx.wait();
+
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
+
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // tx = await controller.testVerifyAddress(); 
+    // tx.wait();
+
+    // console.log("F");
+
+    // await scriptSetup(account, provider);
 }
 
 
@@ -1497,3 +1520,30 @@ const scriptCreateOptionsInstrument = async (
     // console.log("initiateMarket");
 
     // console.log("E")
+
+export const isValidERC20 = async (account: string, library: Web3Provider, address) => {
+    // get ERC20 contract
+    const erc20 = new Contract(address, ERC20Data.abi, library.getSigner(account));
+    // get name
+    try {
+        const name = await erc20.callStatic.name();
+        const symbol = await erc20.callStatic.symbol();
+        const decimals = await erc20.callStatic.decimals();
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+export const isValidERC721 = async (account: string, library: Web3Provider, address) => {
+    // get erc721 contract
+    const erc721 = new Contract(address, ERC721Data.abi, library.getSigner(account));
+    // get name
+    try {
+        const name = await erc721.callStatic.name();
+        const symbol = await erc721.callStatic.symbol();
+        return true;
+    } catch (e) {
+        return false;
+    }
+}

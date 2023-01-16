@@ -8,7 +8,7 @@
   background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
-  width: 70%;
+  width: 80%;
   height: fit-content;
   .HoverDropShadow;
   
@@ -29,13 +29,18 @@
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    padding: @size-15;
+    padding:@size-15;
     > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
       padding-left:@size-10;
       > label {
         font-size: @size-18;
         font-weight: @weight-bold;
         color: var(--primary-text);
+        margin-bottom: 0;
+        padding-left: @size-5;
       }
     }
     > label {
@@ -68,11 +73,17 @@
         width: 80%;
         margin-bottom: @size-20;
         > div:first-of-type  {
+          display: flex;
+          flex-flow: row nowrap;
+          align-items: center;
+          justify-content: flex-start;
+          padding-right: @size-10;
           > label {
             font-size: @size-18;
             font-weight: @weight-bold;
             color: var(--primary-text);
-            padding-right: @size-20;
+            padding-left: @size-10;
+            margin-bottom: 0;
           }
         }
 
@@ -99,8 +110,7 @@
           flex-flow: column wrap;
 
           &.PoolCollateralItem {
-            padding-left: @size-8;
-            padding-right: @size-8;
+
             .HoverDropShadow;
             border: @size-1 solid var(--theme-border);
             border-radius: @size-10;
@@ -108,9 +118,11 @@
             flex-flow: row nowrap; 
             justify-content: space-evenly;
             align-items: center;
-            width:90%;
             margin-bottom:@size-20;
+            background-color: var(--tertiary-bg);
+            width: 100%;
             > div:first-of-type {
+              padding-left: @size-10;
               > div:first-of-type {
                 border-width: 0;
                 > div {
@@ -137,15 +149,28 @@
               flex-flow: column nowrap;
               justify-content: center;
               align-items: center;
+              padding-right:@size-10;
               > div {
                 padding: @size-8;
-                > label {
-                  color: var(--secondary-text);
-                  font-size: @size-16;
-                  font-weight: @weight-semi-bold;
+                > div {
+                  display: flex;
+                  flex-flow: row nowrap;
+                  > label {
+                    padding-left: @size-10;
+                    color: var(--secondary-text);
+                    font-size: @size-16;
+                    font-weight: @weight-semi-bold;
+                    margin-bottom: 0;
+                  }
+                }
+                > input {
+                  text-overflow: ellipsis;
                 }
               }
             }
+          }
+          > button {
+            background-color: var(--primary-bg);
           }
         }
 
@@ -184,6 +209,12 @@
   }
 }
 
+.DeployedLabel {
+  .ThemeBorder;
+  margin-top: @size-10;
+  padding:@size-10;
+  background-color: var(--primary-bg);
+}
 
 
 .AmountInputField {
