@@ -81,7 +81,7 @@ export const createOptionsInstrument = async (
     longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
-    console.log("shortCollateral", shortCollateral)
+    console.log("shortCollateral", new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).toFixed(20))
     console.log("longCollateral", longCollateral)
     console.log("pricePerContract", pricePerContract)
 
@@ -110,7 +110,7 @@ export const createOptionsMarket = async (
     pricePerContract,
     duration,
     vaultId,
-): Promise<TransactionResponse>  => {
+): Promise<TransactionResponse> => {
 
     const shortCollateral = new BN(longCollateral).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
     longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
@@ -121,8 +121,6 @@ export const createOptionsMarket = async (
     // get controller contract
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
-    // get market manager contract
-    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
 
     // create instrument data object that will be passed to the controller initiateMarket function
     const instrumentData = {
@@ -149,6 +147,9 @@ export const createOptionsMarket = async (
             managementFee: 0,
         }
     }
+    console.log("instrumentData", instrumentData)
+    console.log("vaultId", vaultId)
+    console.log("account", account)
 
     let tx = await controller.initiateMarket(
         account,
@@ -1332,6 +1333,20 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
+
+    const bondPool = new Contract("0xf1c2602befc7853ed6ef7d150eadadbae3e6d08c", SyntheticZCBPoolData.abi, signer);
+
+    // sigma: pp.mul(5).div(100),
+    //         alpha: pp.mul(4).div(10),
+    //         omega: pp.mul(2).div(10),
+    //         delta: pp.mul(2).div(10),
+    await bondPool.calculateInitCurveParams(
+        new BN(1).shiftedBy(18).toFixed(0),
+        new BN(2).shiftedBy(18).toFixed(0),
+        new BN(5).dividedBy(100).shiftedBy(18).toFixed(0),
+        new BN(4).dividedBy(10).shiftedBy(18).toFixed(0),
+        new BN(2).dividedBy(10).shiftedBy(18).toFixed(0)
+    )
 
     // let vault_address = await controller.getVaultfromId(1);
     // let marketIds = await controller.getMarketIds(1);

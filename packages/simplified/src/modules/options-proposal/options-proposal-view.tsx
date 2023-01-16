@@ -15,6 +15,7 @@ import { generateTooltip, ValueLabel } from '@augurproject/comps/build/component
 import { createOptionsInstrument, createOptionsMarket } from '@augurproject/comps/build/utils/contract-calls-new';
 import { ExternalLink } from '@augurproject/comps/build/utils/links/links';
 import { LinkIcon } from '@augurproject/comps/build/components/common/icons';
+import { formatBytes32String, parseBytes32String } from 'ethers/lib/utils';
 const {
   BUY,
   ApprovalAction,
@@ -94,9 +95,10 @@ const OptionsProposalView: React.FC = () => {
 
   const [deployedInstrument, setDeployedInstrument] = useState(false);
   const [optionsData, setOptionsData] = useState({
-    name: "",
+    // name: "",
     duration: "",
-    oracle: ""
+    oracle: "",
+    description:""
   });
   const [loading, setLoading] = useState(false);
 
@@ -129,22 +131,22 @@ const OptionsProposalView: React.FC = () => {
 
   const submitProposal = useCallback(async () => {
     // for each of the strike price items, create an options instrument using the parameters of optionsData and the strike price item
-    let instrumentAddresses = []
     for (const item of strikePrices) {
       if (!item.deployed) {
-        const { name, duration, oracle } = optionsData;
+        const { description, duration, oracle } = optionsData;
         const { strikePrice, pricePerContract, longCollateral } = item;
         const { address: vaultAddress } = vaults[vaultId];
         const { address: underlying } = vaults[vaultId].want;
         let _duration = new BN(duration).multipliedBy(86400).toFixed(0);
-        let description = JSON.stringify(
-          {
-            underlying: underlyingSymbol,
-            strike: strikePrice,
-            duration: duration,
-            oracle: oracle,
-          }
-        )
+        let name = `${underlyingSymbol}-CALL-${strikePrice}-${duration}d`;
+        // let description = JSON.stringify(
+        //   {
+        //     underlying: underlyingSymbol,
+        //     strike: strikePrice,
+        //     duration: duration,
+        //     oracle: oracle,
+        //   }
+        // )
         let instrumentAddress;
         try {
           const {instrumentAddress: _instrumentAddress, response} = await createOptionsInstrument(
@@ -216,7 +218,7 @@ const OptionsProposalView: React.FC = () => {
             message: "creating options market..."
           })
 
-          // set marketInitiated to true for the strike price item
+          // // set marketInitiated to true for the strike price item
           setStrikePrices((prev) => {
             return prev.map((item) => {
               if (item.strikePrice === strikePrice) {
@@ -298,6 +300,9 @@ const OptionsProposalView: React.FC = () => {
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault} />
       </div>
       <div>
+
+      </div>
+      {/* <div>
         <div>
         {generateTooltip("Name of the pool instrument", "name")}
           <label>Name: </label>
@@ -307,6 +312,21 @@ const OptionsProposalView: React.FC = () => {
             return { ...prevData, name: val }
           })
         }} />
+      </div> */}
+      <div className={Styles.Description}>
+        <label>Description: </label>
+        <textarea
+          rows="4"
+          cols="15"
+          placeholder="description..."
+          onChange={(e) => {
+            setOptionsData(prevData => {
+              return { ...prevData, description: e.target.value }
+            })
+          }
+          }
+          value={optionsData.description}
+        ></textarea>
       </div>
       <div>
         <div>
@@ -403,7 +423,7 @@ const OptionsProposalView: React.FC = () => {
                 </div>
                 <div>
                   <div>
-                    {generateTooltip("price per option contract, sets the option premium", "pricePerContract")}
+                    {generateTooltip("MUST BE BETWEEN 0 AND 1. price per option contract, sets the option premium", "pricePerContract")}
                     <label>Price Per Contract: </label>
 
                   </div>
@@ -477,15 +497,16 @@ const validPositiveNumber = (val: string) => {
 }
 
 const useOptionsFormValidation = ({
-  name,
+  //name,
+  description,
   oracle,
   duration,
 }, strikePrices) => {
   let inputError = false;
   let inputMessage = "";
-  if (name.length === 0) {
+  if (description.length === 0) {
     inputError = true;
-    inputMessage = "Name is required";
+    inputMessage = "Description is required";
   } else if (!validPositiveNumber(duration)) {
     inputError = true;
     inputMessage = "Duration invalid";
@@ -510,6 +531,9 @@ const useOptionsFormValidation = ({
       if (!validPositiveNumber(strikePrice.pricePerContract)) {
         inputError = true;
         inputMessage = "Price per contract must be greater than 0";
+      } else if (new BN(strikePrice.pricePerContract).gt(1)) {
+        inputError = true;
+        inputMessage = "Price per contract must be between 0 and 1";
       }
 
       _.forEach(strikePrices, (other, j) => {

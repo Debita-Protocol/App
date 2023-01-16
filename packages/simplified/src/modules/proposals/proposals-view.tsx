@@ -18,24 +18,26 @@ const ProposalsView = () => {
     return (
         <div className={Styles.ProposalsView}>
             <section>
-                    <TabNavItem title="General" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                    <TabNavItem title="Creditline" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                    <TabNavItem title="Options" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                    <TabNavItem title="Pool" id="3" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="Options" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="Pool" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="General" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="Creditline" id="3" activeTab={activeTab} setActiveTab={setActiveTab}/>
+
             </section>
             <section>
-                <TabContent id="0" activeTab={activeTab}>
-                    <GeneralInstrumentForm />
-                </TabContent>
-                <TabContent id="1" activeTab={activeTab} className={Styles.poolTab}> 
-                    <CreditLineProposalView />
-                </TabContent>
-                <TabContent id="2" activeTab={activeTab} className={Styles.poolTab}>
+                <TabContent id="0" activeTab={activeTab} className={Styles.poolTab}>
                     <OptionsProposalView />
                 </TabContent>
-                <TabContent id="3" activeTab={activeTab} className={Styles.PoolTab}>
+                <TabContent id="1" activeTab={activeTab} className={Styles.PoolTab}>
                     <PoolProposalView />
                 </TabContent>
+                <TabContent id="2" activeTab={activeTab}>
+                    <GeneralInstrumentForm />
+                </TabContent>
+                <TabContent id="3" activeTab={activeTab} className={Styles.poolTab}> 
+                    <CreditLineProposalView />
+                </TabContent>
+               
             </section>
 
         </div>
