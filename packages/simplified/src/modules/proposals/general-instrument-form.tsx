@@ -11,9 +11,9 @@ const GeneralInstrumentForm: React.FC = () => {
             <h2>
                 General Instrument Form
             </h2>
-            {/* <button onClick={() => { ContractSetup(account, loginAccount.library) }} text="click me">
+            <button onClick={() => { ContractSetup(account, loginAccount.library) }} text="click me">
                 click me
-            </button> */}
+            </button>
         </div>
     )
 }

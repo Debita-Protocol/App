@@ -25,26 +25,25 @@ export const marketFactoryAddress = "0x0559B2a21d6479b9a03ea835D83895f5aEE47C5f"
 /**
  * used for data fetcher
  */
-export const controller_address = "0x26e1C2C4d4D70cA76d6d4e2Df2e7151bc28BE43A";
-export const market_manager_address = "0x19B491ff3AD8D4488F495f659E2c6723F7B1D82b";
-export const vault_factory_address = "0x6e7314E77643AEDd5321e4D38bFB230Cc6437637";
+export const controller_address = "0x897eAA806d9fbd9315a5Bdc2a6C0AD3e15b5D6A0";
+export const market_manager_address = "0x3a4De62950afc758F3263f113B9436D629639401";
+export const vault_factory_address = "0xC475E88e5d5C6F497deC6798F9a89a00D6374145";
 export const creditLine_address = "0x4be7805A2b35ce177F802D88A01Fecfc686fFB38"; 
-export const pool_factory_address = "0xF280C42898446FD3c8Aa3F220fF5166cc90EB369"; 
+export const pool_factory_address = "0xed26C2515a6B97e762B6ff67D201455dF55bf112"; 
 export const usdc_address = "0xd6A5640De726a89A54ca724ac12BCc5E89600720"; 
 export const weth_address = "0x6219CC8a3E880053ea0A1398f86E226C37603239";
-export const reputation_manager_address = "0xFa79c90d8C886c144Ab473b205f24A139C1835E8";
+export const reputation_manager_address = "0x8605C9E7faCC05f853f974f5A27dd5378B4E83dD";
 export const fetcher_address =  "0x51065b5cE4E476720A223a6eb0890B9D5B5403E6";
 export const leverageModule_address = "0xf9c6A04026c30dFC56FdB72A4B8cd00fB922823b";
 export const variable_interest_rate_address = "0x541D09035CA76AE5CEA1C6ECDf098A48a8F2FDEe";
-export const validator_manager_address = "0x4E4d6707D22de83E3ec86C7373C881703a75Ea1a";
+export const validator_manager_address = "0xD10B6fB94FD51e4ACc1f494da26FAe9a536d78fe";
 
 // newest
-// Compiled 82 Solidity files successfully
-// deploying "LinearCurve" (tx: 0xd23c017e7d4156df050fcd993d71b4dea08360e5358be1620856f5bc872009bd)...: deployed at 0xC55a6F9DAd864A816A9f2c80ead5aD2121495f84 with 641478 gas
-// deploying "Controller" (tx: 0xcf682dd0b9de60cc7f4d887cdbf45158302728eb860e6c73db762343c52b659d)...: deployed at 0x26e1C2C4d4D70cA76d6d4e2Df2e7151bc28BE43A with 5042651 gas
-// deploying "MarketManager" (tx: 0x406088e416f3cb7dfc053046e1527c5f35d33b0f4966e3cacfb04b53142cdf40)...: deployed at 0x19B491ff3AD8D4488F495f659E2c6723F7B1D82b with 5442271 gas
-// deploying "VaultFactory" (tx: 0x8780ed7711b5108d00630d4241fd7156ed658eda6ef311bd14d0f3a955a39feb)...: deployed at 0x6e7314E77643AEDd5321e4D38bFB230Cc6437637 with 5306835 gas
-// deploying "ZCBFactory" (tx: 0xd5772697324a161d1d3edc4ac8ba52f973543ba1322cec3e71dc03a51c0b11ca)...: deployed at 0x8b2CB56c2073e08209c40C4cE5eCC77d3D321E31 with 1076564 gas
-// deploying "SyntheticZCBPoolFactory" (tx: 0xc60b201ddc46b4d5935414a3fae8871426e0190d5b7898219a6007acf819e1e2)...: deployed at 0xF280C42898446FD3c8Aa3F220fF5166cc90EB369 with 5302676 gas
-// deploying "ReputationManager" (tx: 0x0bbdb23e9c72a99cdd042756a3c046d52bca451e12c7da227631cb4505b0f590)...: deployed at 0xFa79c90d8C886c144Ab473b205f24A139C1835E8 with 1621262 gas
-// deploying "ValidatorManager" (tx: 0x7f608991aa845ab40dc1e4a95077ac6e8f03cb03368dda145b82c1dba6c2ba6d)...: deployed at 0x4E4d6707D22de83E3ec86C7373C881703a75Ea1a with 2263431 gas
+// deploying "LinearCurve" (tx: 0x0f07449be63e1f4d6e2feec70d2cdd2c21d5bd77b6a88b57288c8c0fbf6015b2)...: deployed at 0xF27d08527794B703D68bd127B119cE4F724793aB with 641478 gas
+// deploying "Controller" (tx: 0x0f7003893b2c8ae14c8b1b584efd2603f347ccf820f5f6b48a6df8efe5a8b7e2)...: deployed at 0x897eAA806d9fbd9315a5Bdc2a6C0AD3e15b5D6A0 with 5042651 gas
+// deploying "MarketManager" (tx: 0x0f1c301323d68a42278277df0a69b3d839519c8f12e8d49aeb136755622774e9)...: deployed at 0x3a4De62950afc758F3263f113B9436D629639401 with 5442259 gas
+// deploying "VaultFactory" (tx: 0x65ff3270a7b4a678ef8b1707256fa822cfd7d11680fa726267b0105ce319b006)...: deployed at 0xC475E88e5d5C6F497deC6798F9a89a00D6374145 with 5306859 gas
+// deploying "ZCBFactory" (tx: 0x5713261730652e8832d8372bebecfbde2e21628f937816ce72e2415dbd34a83a)...: deployed at 0x2ECA412f098AC73eF31ee489d1AF7A69B6ECb877 with 1076564 gas
+// deploying "SyntheticZCBPoolFactory" (tx: 0xa2d496fa8419972506ac3af13189ac58480982ea0e303541548aa9820502ac38)...: deployed at 0xed26C2515a6B97e762B6ff67D201455dF55bf112 with 5302664 gas
+// deploying "ReputationManager" (tx: 0x1246cb01355f3141932b793ae478be34dd9fff03d9e65ccf86dace0603d067a7)...: deployed at 0x8605C9E7faCC05f853f974f5A27dd5378B4E83dD with 1621274 gas
+// deploying "ValidatorManager" (tx: 0x14bf633d51adc120bc6e469f02462ad92a553f42fcc07a77d6d1f6fcbdbfee8b)...: deployed at 0xD10B6fB94FD51e4ACc1f494da26FAe9a536d78fe with 2263431 gas

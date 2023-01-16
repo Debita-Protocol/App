@@ -71,6 +71,7 @@ export const createOptionsInstrument = async (
     oracle,
     pricePerContract,
     duration,
+    maturityDate,
     longCollateral,
     collateral_address
 ): Promise<{ instrumentAddress: string, response: TransactionResponse }> => {
@@ -96,7 +97,8 @@ export const createOptionsInstrument = async (
         longCollateral,
         collateral_address,
         oracle,
-        duration
+        duration,
+        maturityDate
     );
     return { instrumentAddress: contract.address, response: contract.deployTransaction };
 }
@@ -109,6 +111,7 @@ export const createOptionsMarket = async (
     longCollateral,
     pricePerContract,
     duration,
+    maturityDate,
     vaultId,
 ): Promise<TransactionResponse> => {
 
@@ -136,7 +139,7 @@ export const createOptionsMarket = async (
         description: description,
         instrument_address: instrumentAddress,
         instrument_type: 1,
-        maturityDate: 0,
+        maturityDate: maturityDate,
         poolData: {
             saleAmount: 0,
             initPrice: 0,
@@ -1334,19 +1337,21 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    const bondPool = new Contract("0xf1c2602befc7853ed6ef7d150eadadbae3e6d08c", SyntheticZCBPoolData.abi, signer);
+    console.log("numVaults", await vaultFactory.numVaults());
+
+    // const bondPool = new Contract("0xf1c2602befc7853ed6ef7d150eadadbae3e6d08c", SyntheticZCBPoolData.abi, signer);
 
     // sigma: pp.mul(5).div(100),
     //         alpha: pp.mul(4).div(10),
     //         omega: pp.mul(2).div(10),
     //         delta: pp.mul(2).div(10),
-    await bondPool.calculateInitCurveParams(
-        new BN(1).shiftedBy(18).toFixed(0),
-        new BN(2).shiftedBy(18).toFixed(0),
-        new BN(5).dividedBy(100).shiftedBy(18).toFixed(0),
-        new BN(4).dividedBy(10).shiftedBy(18).toFixed(0),
-        new BN(2).dividedBy(10).shiftedBy(18).toFixed(0)
-    )
+    // await bondPool.calculateInitCurveParams(
+    //     new BN(1).shiftedBy(18).toFixed(0),
+    //     new BN(2).shiftedBy(18).toFixed(0),
+    //     new BN(5).dividedBy(100).shiftedBy(18).toFixed(0),
+    //     new BN(4).dividedBy(10).shiftedBy(18).toFixed(0),
+    //     new BN(2).dividedBy(10).shiftedBy(18).toFixed(0)
+    // )
 
     // let vault_address = await controller.getVaultfromId(1);
     // let marketIds = await controller.getMarketIds(1);
@@ -1372,27 +1377,27 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // vault.getInstrumentData();
 
 
-    tx = await reputationManager.incrementScore(account,pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore(account,pp); // validator
+    // tx.wait();
 
-    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    tx = await controller.setValidatorManager(validator_manager_address);
-    tx = await controller.testVerifyAddress(); 
-    tx.wait();
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // tx = await controller.testVerifyAddress(); 
+    // tx.wait();
 
-    console.log("F");
+    // console.log("F");
 
-    await scriptSetup(account, provider);
+    // await scriptSetup(account, provider);
 }
 
 

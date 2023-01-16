@@ -93,6 +93,8 @@ const OptionsProposalView: React.FC = () => {
   } = useUserStore();
   const { vaults } = useDataStore2();
 
+  
+
   const [deployedInstrument, setDeployedInstrument] = useState(false);
   const [optionsData, setOptionsData] = useState({
     // name: "",
@@ -138,7 +140,14 @@ const OptionsProposalView: React.FC = () => {
         const { address: vaultAddress } = vaults[vaultId];
         const { address: underlying } = vaults[vaultId].want;
         let _duration = new BN(duration).multipliedBy(86400).toFixed(0);
-        let name = `${underlyingSymbol}-CALL-${strikePrice}-${duration}d`;
+        let maturityDate = new Date((Date.now() / 1000 + parseInt(_duration)) * 1000);
+        let formattedDate = maturityDate.toISOString().split('T')[0]
+        formattedDate = formattedDate.replace(/-/g, '');
+        // remove first two characters of formattedDate
+        formattedDate = formattedDate.substring(2);
+        let name = `${underlyingSymbol}-${formattedDate}-${strikePrice}-C`;
+
+        //ETH-230116-1550-C
         // let description = JSON.stringify(
         //   {
         //     underlying: underlyingSymbol,
@@ -158,6 +167,7 @@ const OptionsProposalView: React.FC = () => {
             oracle,
             pricePerContract,
             _duration,
+            new BN(maturityDate.getTime() / 1000).toFixed(0),
             longCollateral,
             USDC_address
           )
@@ -207,7 +217,8 @@ const OptionsProposalView: React.FC = () => {
             instrumentAddress,
             longCollateral,
             pricePerContract,
-            _duration,
+            duration,
+            new BN(maturityDate.getTime() / 1000).toFixed(0),
             vaultId
           );
 
