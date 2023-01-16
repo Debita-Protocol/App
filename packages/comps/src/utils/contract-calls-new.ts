@@ -81,7 +81,7 @@ export const createOptionsInstrument = async (
     longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
-    console.log("shortCollateral", shortCollateral)
+    console.log("shortCollateral", new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).toFixed(20))
     console.log("longCollateral", longCollateral)
     console.log("pricePerContract", pricePerContract)
 
