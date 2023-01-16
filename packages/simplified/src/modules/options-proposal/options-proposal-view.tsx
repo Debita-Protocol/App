@@ -439,7 +439,7 @@ const OptionsProposalView: React.FC = () => {
           action={inputError ? null : submitProposal} />
 
         <div>
-          {_.map(strikePrices, (item, index) => {
+          {_.map([{address: "0x000000000000000000", deployed: true}, {address: "0x000000000000000000", deployed: true}, {address: "0x000000000000000000", deployed: true}, {address: "0x000000000000000000", deployed: true}], (item, index) => {
             if (!item.deployed) {
               return null;
             }
