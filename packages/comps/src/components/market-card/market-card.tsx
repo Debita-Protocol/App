@@ -150,6 +150,7 @@ export const VaultCardView = ({
   const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions","Long or Short Isolated Lending Positions"] 
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
   console.log('vaults', vaults, instruments, market_)
+  const goalApr = vaults[vaultId]?.goalAPR; 
   return (
     <article
       className={classNames(Styles.MarketCard, {
@@ -174,7 +175,7 @@ export const VaultCardView = ({
                 text={"text"}
                 disabled
               />)*/}
-          <ValueLabel label="Estimated APR" value={"-"} />
+          <ValueLabel label="Estimated APR" value={Number(goalApr) == 0 ? "10"+"%": goalApr + "%"} />
 
           {/* {marketHasNoLiquidity ? (
               <TinyThemeButton
@@ -196,7 +197,7 @@ export const VaultCardView = ({
           </div> */}
     <div>
             {(
-              <ValueLabel label="Type" value={"Credit Instruments"} />
+              <ValueLabel label="Underlying" value={vaults[vaultId]?.want.name} />
             )}
           </div>
 
