@@ -604,7 +604,7 @@ const PoolProposalView: React.FC = () => {
         <textarea
           rows="4"
           cols="15"
-          placeholder="description..."
+          placeholder="description..."  
           onChange={(e) => {
             setPoolData(prevData => {
               return { ...prevData, description: e.target.value }
