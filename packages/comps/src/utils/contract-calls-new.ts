@@ -1333,51 +1333,51 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    let vault_address = await controller.getVaultfromId(1);
-    let marketIds = await controller.getMarketIds(1);
+    // let vault_address = await controller.getVaultfromId(1);
+    // let marketIds = await controller.getMarketIds(1);
 
-    console.log("marketIds", marketIds);
-    console.log("vault_address", vault_address);
+    // console.log("marketIds", marketIds);
+    // console.log("vault_address", vault_address);
 
-    let vault = new Contract(vault_address, VaultData.abi, signer);
-    let instrumentData = await vault.fetchInstrumentData(6);
-    console.log("instrumentData", instrumentData);
+    // let vault = new Contract(vault_address, VaultData.abi, signer);
+    // let instrumentData = await vault.fetchInstrumentData(6);
+    // console.log("instrumentData", instrumentData);
 
-    let pool = new Contract("0x14Fee7AB6A172658dAFdc6208788c1c81E7AcD0D", PoolInstrumentData.abi, signer);
-    let collaterals = await pool.getAcceptedCollaterals();
-    let collateralData = await pool.collateralData("0x2C7Cb3cB22Ba9B322af60747017acb06deB10933", 0);
-    console.log("collaterals", collateralData);
+    // let pool = new Contract("0x14Fee7AB6A172658dAFdc6208788c1c81E7AcD0D", PoolInstrumentData.abi, signer);
+    // let collaterals = await pool.getAcceptedCollaterals();
+    // let collateralData = await pool.collateralData("0x2C7Cb3cB22Ba9B322af60747017acb06deB10933", 0);
+    // console.log("collaterals", collateralData);
 
-    let token = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
-    let symbol = await token.symbol();
-    console.log("symbol", symbol);
+    // let token = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
+    // let symbol = await token.symbol();
+    // console.log("symbol", symbol);
     // console.log("collaterals", collaterals);
     // console.log("collateralData", collateralData);
 
     // vault.getInstrumentData();
 
 
-    // tx = await reputationManager.incrementScore(account,pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore(account,pp); // validator
+    tx.wait();
 
-    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    tx.wait();
 
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // tx = await controller.testVerifyAddress(); 
-    // tx.wait();
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    tx = await controller.setValidatorManager(validator_manager_address);
+    tx = await controller.testVerifyAddress(); 
+    tx.wait();
 
-    // console.log("F");
+    console.log("F");
 
-    // await scriptSetup(account, provider);
+    await scriptSetup(account, provider);
 }
 
 
