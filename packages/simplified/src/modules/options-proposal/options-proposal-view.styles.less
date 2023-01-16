@@ -8,7 +8,7 @@
   background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
-  width: 70%;
+  width: 80%;
   height: fit-content;
   .HoverDropShadow;
   
@@ -65,6 +65,7 @@
       flex-flow: column nowrap;
       align-items: flex-start;
       justify-content: flex-start;
+      transition: height 100ms ease-in-out, opacity 100ms ease-in-out;
       > div:first-of-type {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -165,10 +166,17 @@
       display: flex;
       background-color: transparent;
       border: none;
+      // display: flex;
+      // flex-flow: row wrap;
+      // justify-content: space-evenly;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      width:100%;
       > div {
         display: flex;
         flex-flow: row nowrap;
-
+        margin: @size-5;
+        .HoverDropShadow;
         > label {
           font-size: @size-18;
           font-weight: @weight-bold;
@@ -388,4 +396,11 @@
 
 .ApproveButton {
   .SimplifiedActionButton;
+}
+
+.DeployedLabel {
+  .ThemeBorder;
+  margin-top: @size-10;
+  padding:@size-10;
+  background-color: var(--primary-bg);
 }

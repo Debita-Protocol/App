@@ -246,8 +246,8 @@ const CreditLineRequestForm = () => {
   //   action: createdContract ? submitProposal : createCreditline 
   // };
   const buttonProps: BaseThemeButtonProps = {
-    text: "Submit",
-    action: createCreditline
+    text: "Feature not available yet",
+    action: null//createCreditline
   }
 
   return (

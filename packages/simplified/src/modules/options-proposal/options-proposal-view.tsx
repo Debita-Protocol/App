@@ -11,9 +11,10 @@ import { isAddress } from '@ethersproject/address';
 import { Link } from "react-router-dom";
 
 import { Constants } from "@augurproject/comps";
-import { generateTooltip } from '@augurproject/comps/build/components/common/labels';
+import { generateTooltip, ValueLabel } from '@augurproject/comps/build/components/common/labels';
 import { createOptionsInstrument, createOptionsMarket } from '@augurproject/comps/build/utils/contract-calls-new';
 import { ExternalLink } from '@augurproject/comps/build/utils/links/links';
+import { LinkIcon } from '@augurproject/comps/build/components/common/icons';
 const {
   BUY,
   ApprovalAction,
@@ -90,6 +91,7 @@ const OptionsProposalView: React.FC = () => {
     actions: { addTransaction },
   } = useUserStore();
   const { vaults } = useDataStore2();
+
   const [deployedInstrument, setDeployedInstrument] = useState(false);
   const [optionsData, setOptionsData] = useState({
     name: "",
@@ -124,7 +126,6 @@ const OptionsProposalView: React.FC = () => {
 
     return _vaultOptions;
   }, [vaults]);
-  let chosenCash = vaultId !== "" ? vaults[vaultId]?.want?.name : "";
 
   const submitProposal = useCallback(async () => {
     // for each of the strike price items, create an options instrument using the parameters of optionsData and the strike price item
@@ -144,7 +145,6 @@ const OptionsProposalView: React.FC = () => {
             oracle: oracle,
           }
         )
-        console.log("description", description)
         let instrumentAddress;
         try {
           const {instrumentAddress: _instrumentAddress, response} = await createOptionsInstrument(
@@ -193,14 +193,6 @@ const OptionsProposalView: React.FC = () => {
           });
         }
         
-          // .then(({instrumentAddress, response}) => {
-            
-          // }).catch((err) => {
-            
-          // })
-
-
-        // market creation
         try {
           if (!instrumentAddress) {
             throw new Error("instrument address not found")
@@ -255,7 +247,7 @@ const OptionsProposalView: React.FC = () => {
   }, [vaultId, vaults, strikePrices, optionsData]);
 
 
-  const underlyingSymbol = vaultId !== "" ? vaults[vaultId].want.symbol : "";
+  const underlyingSymbol = vaults && vaultId !== "" ? vaults[vaultId].want.symbol : "";
 
   const { inputError, inputMessage } = useOptionsFormValidation(
     optionsData,
@@ -451,13 +443,18 @@ const OptionsProposalView: React.FC = () => {
             if (!item.deployed) {
               return null;
             }
-            let label = (<div>
-              <label>Strike Price {index + 1} Contract Address (click to open explorer): </label>
-              <span>{item.address}</span>
-            </div>);
+            let label = (
+              <div className={Styles.DeployedLabel}>
+                <span>
+                  { LinkIcon}
+                </span>
+                <ValueLabel value={item.address} label={`Contract ${index} Deployment`}/>
+              </div>
+              
+            )
             return (
               <div key={index}>
-                <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} icon={true} label={label}>
+                <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
                 </ExternalLink>
               </div>
             );

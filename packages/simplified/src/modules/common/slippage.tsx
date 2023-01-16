@@ -411,19 +411,19 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
   const isSelectedArray = useMemo(() => {
     let output = [false, false, false, false, false];
     switch (leverageFactor) {
-      case 0: {
+      case 1: {
         output[0] = true;
         break;
       }
-      case 1: {
+      case 2: {
         output[1] = true;
         break;
       }
-      case 2: {
+      case 3: {
         output[2] = true;
         break;
       }
-      case 3: {
+      case 4: {
         output[3] = true;
         break;
       }
@@ -434,7 +434,7 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
     }
     return output;
   }, [leverageFactor]);
-  const [customVal, setCustomVal] = useState(isSelectedArray[4] ? slippage : "");
+  const [customVal, setCustomVal] = useState(isSelectedArray[4] ? leverageFactor : "");
   const [error, setError] = useState("");
 
   return (
@@ -448,9 +448,9 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
         <div>
           <li>
             <TinyThemeButton
-              text=" 0.00"
+              text=" 1.00"
               action={() => {
-                setLeverageFactor(0)
+                setLeverageFactor(1)
                 // updateSettings({ slippage: "0.00" }, account);
                 setCustomVal("");
                 setError("");
@@ -462,9 +462,9 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
           </li>
           <li>
             <TinyThemeButton
-              text="1.0"
+              text="2.0"
               action={() => {
-                setLeverageFactor(1)
+                setLeverageFactor(2)
                 // updateSettings({ slippage: "1" }, account);
                 setCustomVal("");
                 setError("");
@@ -476,9 +476,9 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
           </li>
           <li>
             <TinyThemeButton
-              text="2.0"
+              text="3.0"
               action={() => {
-                setLeverageFactor(2)
+                setLeverageFactor(3)
                 // updateSettings({ slippage: "2" }, account);
                 setCustomVal("");
                 setError("");
@@ -490,9 +490,9 @@ export const PoolLeverageFactor = ({leverageFactor, setLeverageFactor}) => {
           </li>
           <li>
             <TinyThemeButton
-              text="3.0"
+              text="4.0"
               action={() => {
-                setLeverageFactor(3)
+                setLeverageFactor(4)
                 // updateSettings({ slippage: "3" }, account);
                 setCustomVal("");
                 setError("");
