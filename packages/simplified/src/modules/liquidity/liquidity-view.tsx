@@ -35,7 +35,7 @@ import {
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
 import { MarketInfo,InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
-import {InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat} from "../market/market-view"; 
+import {InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField} from "../market/market-view"; 
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
 
@@ -208,7 +208,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
  
     const [expanded, setExpanded] = useState(false);
 
-     const {actions: {setModal},} = useAppStatusStore(); 
+     const {actions: {setModal},isMobile} = useAppStatusStore(); 
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
@@ -221,9 +221,10 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
   }
 
+  const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
   const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type)}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field:instrumentField}); 
 
  return (
     <article
@@ -263,7 +264,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       </button>
       <span>{ (instrument?.isPool? "  Perpetual": "Fixed Term")}</span>
       <span>{instrument?.balance.toString() }</span>
-      <span>{roundDown((((1+ Number(instrument?.seniorAPR)*1e18/1e19)**31536000) -1)*100, 2)}{"%"}</span>
+      <span>{roundDown((((1+ Number(instrument?.seniorAPR)/1e18)**31536000) -1)*100, 2)}{"%"}</span>
       <span>
         {instrument?.exposurePercentage.toString()}{"%"}
       </span>
@@ -273,8 +274,8 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
       </span>
       <div>
         <div className={Styles.MobileLabel}>
-          <span>My Liquidity</span>
-          <span>{ "$0.00"}</span>
+          <span>Approved</span>
+          <span>{(instrument?.trusted? "  true": "false")}</span>
           {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
         </div>
 
@@ -293,7 +294,31 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
             }
           />*/}
         {/*generateTooltip("Instrument Description:"+instrument?.description, "instrument"+marketId)*/}
- <SecondaryThemeButton
+      {isMobile? 
+      (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+
+        {/*<CategoryIcon {{ "categories" } }/> */}
+        {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
+                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+
+             {<SecondaryThemeButton
+            text={instrument?.name}
+            small
+            disabled={false}
+            action={() =>
+              history.push({
+                pathname: makePath(MARKET),
+                search: makeQuery({
+                  [MARKET_ID_PARAM_NAME]: marketId,
+                  
+                }),
+              })
+            }
+          />}
+     
+      </MarketLink>)
+
+        :(<SecondaryThemeButton
           text="More Info"
           action={() =>
                setModal({
@@ -319,23 +344,24 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
             },
           
            name: "outcome", 
-           breakdowns:  [
-                instrumentBreakDown
-                // {
-                //   heading: "What you'll recieve",
-                //   infoNumbers: [
-                //     {
-                //       label: "Underlying",
-                //       value: 1,                              
-                //     },
-                //   ],
-                // },
-              ]          
+           breakdowns:  instrumentBreakDown
+           // [
+           //      instrumentBreakDown
+           //      // {
+           //      //   heading: "What you'll recieve",
+           //      //   infoNumbers: [
+           //      //     {
+           //      //       label: "Underlying",
+           //      //       value: 1,                              
+           //      //     },
+           //      //   ],
+           //      // },
+           //    ]          
               
           })
         }
           customClass={ButtonStyles.TinyTransparentButton} 
-        /> 
+        />)}
       </div>
 
 

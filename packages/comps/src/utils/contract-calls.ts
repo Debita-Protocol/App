@@ -679,14 +679,53 @@ export async function addProposal(  // calls initiate market
     return tx; 
 }
 
+// export async function getCallOptionsData(
+//   account: string, 
+//   library: Web3Provider,
+//   marketId: string 
+//   )
+// {
+//   const controller = new ethers.Contract(controller_address,
+//     controllerabi["abi"], getProviderOrSigner(library, account)
+//     );
+//   const vaultAd = await controller.getVaultAd( marketId);
+//   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account))
+
+//   const coveredcalladdress = await vault.fetchInstrument( marketId); 
+
+//  const coveredcall = new ethers.Contract(coveredcalladdress,  CoveredCallInstrumentData["abi"], getProviderOrSigner(library, account)); 
+
+ 
+// }
+
 export const faucetUnderlying = async (account: string, library: Web3Provider, address:string) => {
   const collateral = new ethers.Contract(address, cashabi["abi"], getProviderOrSigner(library, account)); 
-  await collateral.faucet(pp.mul(100000)); 
+
+  try {
+    const response: TransactionResponse = await collateral.faucet(pp.mul(100000));
+    const { hash } = response;
+    return {
+      hash,
+      // chainId: String(chainId),
+      addedTime: new Date().getTime(),
+      seen: false,
+      status: TX_STATUS.PENDING,
+      marketDescription: "Faucet ",
+      from: account,
+      message: `Faucet` + address,
+      // approval: { tokenAddress: tokenAddress, spender: spender },
+    };
+
+  } catch (error) {
+    console.debug("Failed to faucet", error);
+    throw error;
+  }
   // const { marketFactories } = PARA_CONFIG;
   // const usdcContract = marketFactories[0].collateral;
   // const amount = ethers.BigNumber.from(10).pow(10); // 10k
   // const collateral = Cash__factory.connect(usdcContract, getProviderOrSigner(library, account));
   // await collateral.faucet(String(amount));
+   
 };
 
 export async function redeemVault(
@@ -703,7 +742,26 @@ export async function redeemVault(
   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
   const scaledAmount = pp.mul(redeemAmount);
    
-  await vault.redeem(scaledAmount, account, account); 
+  try {
+    const response: TransactionResponse =   await vault.redeem(scaledAmount, account, account); 
+    const { hash } = response;
+    return {
+      hash,
+      // chainId: String(chainId),
+      addedTime: new Date().getTime(),
+      seen: false,
+      status: TX_STATUS.PENDING,
+      marketDescription: "Redeemed ",
+      from: account,
+      message: `Redeming Vault Shares` + vaultId,
+      // approval: { tokenAddress: tokenAddress, spender: spender },
+    };
+
+  } catch (error) {
+    console.debug("Failed to redeem vault", error);
+    throw error;
+  }
+
 }
 
 export async function mintVaultDS(
@@ -726,12 +784,13 @@ export async function mintVaultDS(
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
   const vaultAd = await controller.getVaultfromId(vaultId); 
-  console.log('vaultad,', vaultAd); 
+  console.log('vaultad,', vaultAd,); 
 
   const vault = new ethers.Contract(vaultAd, vaultabi["abi"], getProviderOrSigner(library, account)); 
   const collateral_address = await vault.UNDERLYING(); 
   const collateral = new ethers.Contract(collateral_address.toString(),
    cashabi["abi"], getProviderOrSigner(library, account))
+    console.log('hey', vaultId, vaultAd, collateral_address)
 
   // await collateral.approve(vaultAd, scaledAmount); 
   try {

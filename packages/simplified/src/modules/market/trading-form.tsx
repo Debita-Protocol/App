@@ -595,7 +595,7 @@ console.log('MMAllowance', MMAllowance);
             setAmount("");
           }}
         />
-     {isLogged && isNotVerified &&(
+     {isLogged && isNotVerified && false &&(
           <SecondaryThemeButton 
           text = {"Test Verify"}
           action = {testVerify}
@@ -820,16 +820,41 @@ export const ApprovalButton = ({
     }
   }, [isApproved, loginAccount, isPendingTx]);
   // console.log('?????', marketManager, underlyingAddress); 
+          console.log('underluing and spender', underlyingAddress, spender_); 
+
   const approve = 
    useCallback(async()=>{
           let approvalAction = approveERC20;
-          console.log('underlyingAddress', underlyingAddress)
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
     // let spender = marketManager//rewardContractAddress || ammFactory; 
     let spender = spender_; 
     let text = "Approving Underlying"; 
-    const tx = await approvalAction(underlyingAddress, text, spender, loginAccount);
-      addTransaction(tx);
+    const tx = await approvalAction(underlyingAddress, text, spender, loginAccount)
+      .then((response)=> {
+      const {hash} = response; 
+      addTransaction({
+          hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: loginAccount.account,
+          addedTime: new Date().getTime(),
+          message: `Approving spender`,
+          marketDescription: spender_,
+      });
+    }).catch((error)=> {
+      console.log("minting failure", error?.message); 
+        addTransaction({
+          hash: "Approve failed",
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: loginAccount.account,
+          addedTime: new Date().getTime(),
+          message: `Approving spender`,
+          marketDescription: spender_,
+        });
+    })
       setIsApprovedTrade && setIsApprovedTrade(true)
 
   } ,[cash, loginAccount, shareToken, amm])

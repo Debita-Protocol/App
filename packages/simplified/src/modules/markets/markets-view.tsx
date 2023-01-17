@@ -376,7 +376,7 @@ const MarketsView = () => {
       <SEO {...MARKETS_LIST_HEAD_TAGS} />
       <AppViewStats small liquidity trading /> 
       {/*isLogged ? <AppViewStats small liquidity trading /> : <TopBanner />*/}
-      {isMobile && (
+      {/*isMobile && (
         <div>
           <SecondaryThemeButton
             text={`filters${changedFilters ? ` (${changedFilters})` : ``}`}
@@ -391,7 +391,7 @@ const MarketsView = () => {
             selected={showFilter}
           />
         </div>
-      )}
+      )*/}
       <ul>
      {/* <button onClick={() => createmarket(  account,    loginAccount
 )}>CreateMarket</button> */}

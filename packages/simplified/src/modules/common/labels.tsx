@@ -69,7 +69,6 @@ export const AppViewStats = ({ portfolioPage = false, small = false, liquidity =
     vaultsPos += Number(vaultBalances[i]?.shares); 
   }
 
-  console.log('tvl', tvl)
 
   const verified = true; 
   const reputation = 1;

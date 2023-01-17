@@ -35,9 +35,17 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 import {Sidebar} from "../sidebar/sidebar";
-export const InstrumentBreakDownFormat = ({instrumentType})=>{
+// const collateralLink =()=>{
+//     return( 
+//       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
+//         {LinkIcon}
+//       </a>)
+
+// }
+export const InstrumentBreakDownFormat = ({instrumentType, field = null})=>{
   if (instrumentType==1){
-    return {
+
+    return [{
             heading: "Additional Information",
             infoNumbers: [
               {
@@ -65,33 +73,45 @@ export const InstrumentBreakDownFormat = ({instrumentType})=>{
 
               },
             ],
-          }
+          }]
   }
   else if(instrumentType == 2){
-    return {
-            heading: "Additional Information",
+    let infos = []; 
+    for(let i=0; i< field?.length; i++){
+      infos[i] = {
+            heading: "Collateral Information",
             infoNumbers: [
               {
                 label: "Collateral Addresses",
-                value: 1,
-                
-
+                value: field[i][0],
+                //value: collateralLink
               },
               {
-                label: "Number of Collateral",
-                value: 1,
-
-
+                label: "Collateral type",
+                value: field[i][1] == true? "ERC20": "ERC721",
               },
-            {
-                label: "Trade Date/Time",
-                value: 1,
+              { 
+                label: "Collateral Name",
+                value: field[i][2],
                 
 
               },
- 
+              { 
+                label: "Max Borrowable underlying per unit collateral",
+                value: field[i][3],
+                
+              }, 
+              { 
+                label: "TokenId",
+                value: field[i][1] == true? "-": field[i][4],
+                
+              }
             ],
           }
+
+
+    }
+    return infos; 
   }
   else return 0; 
 }
@@ -114,10 +134,26 @@ export const InstumentDescriptionFormat = ({instrumenType})=>{
     
   }
   else if(instrumenType==2){
-    return "The conditional lendingPool has "+ fields[0]+ " as collateral." 
+    return "The conditional lendingPool has the following tokens as collateral." 
 
   }
   else return null; 
+}
+export const InstrumentField = ({instrumentType, instrument})=>{
+  let fields = []
+  if(!instrument) return null; 
+
+  if(instrumentType==2){
+    const collateralinfo = instrument?.collaterals; 
+    for(let i=0; i< collateralinfo.length;  i++){
+      fields[i] = [collateralinfo[i].address,collateralinfo[i].isERC20, 
+      collateralinfo[i].name, collateralinfo[i].maxAmount, collateralinfo[i].tokenId ]
+    }
+    return fields; 
+  }
+  else{
+    return null; 
+  }
 }
 
 const FormAmountInput = ({amount, updateAmount, prepend }) => {
@@ -149,7 +185,7 @@ const FormAmountInput = ({amount, updateAmount, prepend }) => {
 const {
   SEO,
   LabelComps: { generateTooltip, WarningBanner, CategoryIcon, CategoryLabel, ReportingStateLabel, NetworkMismatchBanner },
-  Icons: { ConfirmedCheck },
+  Icons: { ConfirmedCheck, LinkIcon },
   ButtonComps: { SecondaryThemeButton },
   InputComps: { OutcomesGrid },
 } = Components;
@@ -403,6 +439,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const longZCBSupply = market_[Id]?.bondPool.longZCB.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
   const instrumentTypeWord =  market_[Id]?.instrumentType; 
+  const vaultId = instruments[Id]?.vaultId
+  const asset = vaults[vaultId]?.want.name; 
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 
@@ -413,10 +451,11 @@ const MarketView = ({ defaultMarket = null }) => {
 
   const type = market_[Id]?.instrumentType; 
 
-
+  const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instruments[Id]}); 
+  console.log('field', instrumentField); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
   const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type)}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field: instrumentField }); 
 
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
@@ -478,7 +517,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <div className={Styles.topRow}>
           {/*<CategoryIcon big categories={categories} />
           {!isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />} */}
-          {<h1>{"Instrument: " + (instruments[Id]?.name!=0? instruments[Id]?.name : "NFT Lending Pool")}</h1>}
+          {<h2>{"Instrument: " + (instruments[Id]?.name!=0? instruments[Id]?.name : "NFT Lending Pool")}</h2>}
 
 
         </div>
@@ -494,6 +533,7 @@ const MarketView = ({ defaultMarket = null }) => {
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
         <div>
               <h4>Overview</h4>
+
           <p> {/*instruments[Id]?.description*/}
           {instrumentOverview}</p>
           <SecondaryThemeButton
@@ -522,18 +562,20 @@ const MarketView = ({ defaultMarket = null }) => {
             },
           
            name: "outcome", 
-           breakdowns:  [
-                instrumentBreakDown
-                // {
-                //   heading: "What you'll recieve",
-                //   infoNumbers: [
-                //     {
-                //       label: "Underlying",
-                //       value: 1,                              
-                //     },
-                //   ],
-                // },
-              ]          
+           breakdowns:  instrumentBreakDown
+           // [
+           //      instrumentBreakDown[0]
+
+           //      // {
+           //      //   heading: "What you'll recieve",
+           //      //   infoNumbers: [
+           //      //     {
+           //      //       label: "Underlying",
+           //      //       value: 1,                              
+           //      //     },
+           //      //   ],
+           //      // },
+           //    ]          
               
           })
         }
@@ -542,8 +584,33 @@ const MarketView = ({ defaultMarket = null }) => {
           </div>
         <h3>Simulate Returns</h3>
         {(<ul className={Styles.UpperStatsRow}>
+    {!isPool &&type==1 &&(
+            <li>
+            <span>{"Price of "+ asset} </span>
+            {generateTooltip(
+              "Total amount of underlying used by the instrument  ",
+              "principal"
+                      )}
+            <span>{roundDown(principal ,2)}</span>
+
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
+          </li>)
+        }
+          {!isPool &&type==1 &&(
+            <li>
+            <span>Principal </span>
+            {generateTooltip(
+              "Total amount of underlying used by the instrument  ",
+              "principal"
+                      )}
+            <span>{roundDown(principal ,2)}</span>
+
+           {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
+          </li>)
+        }
+          
          { !isPool&& (<li>
-            <p>{"Proposed Estimated Return"}</p>
+            <span>{"Proposed Estimated Return"}</span>
               {generateTooltip(
                 "The yield the instrument would incur as proposed by the utilizer" ,
                 "estimated return")
@@ -569,12 +636,12 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
           </li>*/}
             <li>
-              <p>{isPool? "Instrument's Estimated APR":"Instrument's Estimated Return" }</p>
+              <span>{isPool? "Instrument's Estimated APR":"Instrument's Estimated Return" }</span>
                       {isPool? generateTooltip(
-                      "Actual Returns made from the instrument that automatically is allocated to its parent vault, in APR",
+                      "Actual Returns made from the instrument in APR",
                       "pr"
                     ): generateTooltip(
-                      "Actual return generated from instrument, denominated in its underlying. Could be negative, lower bounded by -(principal)",
+                      "Actual return generated from instrument, denominated in its underlying. Min: -(principal), Max: +(Proposed estiamted return)",
                       "pr2")}
              <FormAmountInput
               
@@ -602,7 +669,7 @@ const MarketView = ({ defaultMarket = null }) => {
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
             <li>
-            <p>{isPool? "longZCB Estimated APR": "longZCB estimated Redemption price"}</p>
+            <span>{isPool? "longZCB Estimated APR": "longZCB estimated Redemption price"}</span>
               {isPool?generateTooltip(
                         "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
                         "lexpected"

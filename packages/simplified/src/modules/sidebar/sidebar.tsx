@@ -115,31 +115,27 @@ const NavigationSideBar = () => {
   const path = parsePath(location.pathname)[0];
   return (
     <>
-      <SideBarHeader showLogo />
+      <SideBarHeader  />
       <div className={Styles.Body}>
         <ol>
           <li className={classNames({ [Styles.Active]: path === MARKETS })}>
             <Link onClick={() => setSidebar(null)} to={makePath(MARKETS)}>
-              Markets
+              Vaults
             </Link>
           </li>
           {isLogged && (
             <li className={classNames({ [Styles.Active]: path === PORTFOLIO })}>
               <Link onClick={() => setSidebar(null)} to={makePath(PORTFOLIO)}>
-                Portfolio
+                Profile
               </Link>
             </li>
           )}
           <li className={classNames({ [Styles.Active]: path === LIQUIDITY })}>
             <Link onClick={() => setSidebar(null)} to={makePath(LIQUIDITY)}>
-              Pools
+              Underwrite
             </Link>
           </li>
-         <li className={classNames({ [Styles.Active]: path === REDEEM })}>
-            <Link onClick={() => setSidebar(null)} to={makePath(REDEEM)}>
-              Redeem
-            </Link>
-          </li>
+         
         </ol>
       </div>
       <div className={Styles.NavigationFooter}>

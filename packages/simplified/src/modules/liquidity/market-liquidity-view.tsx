@@ -165,6 +165,29 @@ const getLeverageBreakdown = (
 };
 
 
+function getWindowDimensions() {
+  const { innerWidth: width, innerHeight: height } = window;
+  return {
+    width,
+    height
+  };
+}
+
+export  function useWindowDimensions() {
+  const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowDimensions(getWindowDimensions());
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowDimensions;
+}
+
 
 const REMOVE_FOOTER_TEXT = `Removing liquidity may return shares; these shares may be sold for USDC if there is still liquidity in the pool. Winning shares can be redeemed for USDC after the market has finalized.`;
 
@@ -290,7 +313,7 @@ export const MarketLiquidityView = () => {
 
       <ul className={Styles.StatsRow}>
       <li>
-          <span>Total Shares </span>
+          <span>Total Circulating Shares </span>
           <span>{vault.totalShares}</span>
 
           {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
@@ -406,7 +429,7 @@ const LiquidityWarningFooter = () => (
 export const ManagerWarning = () => (
   <article className={Styles.LiquidityWarningFooter}>
     <span>
-      {WarningIcon} Account is not a verified manager, first verify in profile page.
+      {WarningIcon} Account is not a verified manager, first apply to be verified from the community(discord).
     </span>
 
   </article>
@@ -495,7 +518,6 @@ const confirmMintVault = async({
   account,  loginAccount, vaultId, amount, leverageFactor, addTransaction
 
 }) => {
-  
   mintVaultDS(account, loginAccount.library, vaultId, amount, leverageFactor)
     .then((response)=> {
       const {hash} = response; 
@@ -507,7 +529,7 @@ const confirmMintVault = async({
           from: account,
           addedTime: new Date().getTime(),
           message: `Mint Vault`,
-          marketDescription: `Description`,
+          marketDescription: 'VaultId/leverageFactor: '+vaultId +"/"+ String(leverageFactor),
       });
     }).catch((error)=> {
       console.log("minting failure", error?.message); 
@@ -519,22 +541,73 @@ const confirmMintVault = async({
           from: account,
           addedTime: new Date().getTime(),
           message: `Mint Vault`,
-          marketDescription: `description`,
+          marketDescription: 'VaultId/leverageFactor: '+vaultId + "/"+ String(leverageFactor),
         });
     })
     ; 
  
 }
 const confirmRedemVault = async({
-  account, loginAccount, vaultId, amount
+  account, loginAccount, vaultId, amount, addTransaction
 })=>{
-  await  redeemVault(account, loginAccount.library, vaultId, amount); 
+  await  redeemVault(account, loginAccount.library, vaultId, amount)
+      .then((response)=> {
+      const {hash} = response; 
+      addTransaction({
+          hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Redeem Vault`,
+          marketDescription: 'VaultId: '+vaultId ,
+      });
+    }).catch((error)=> {
+      console.log("minting failure", error?.message); 
+        addTransaction({
+          hash: "Redeem failed",
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Redeem Vault`,
+          marketDescription: 'VaultId: '+vaultId,
+        });
+    })
+    ; 
   
 }
 const faucet = async({
-  account, loginAccount, underlying_address
+  account, loginAccount, underlying_address, addTransaction
 })=>{
   faucetUnderlying(account, loginAccount.library, underlying_address)
+    .then((response)=> {
+      const {hash} = response; 
+      addTransaction({
+          hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Faucet Underlying`,
+          marketDescription: underlying_address,
+      });
+    }).catch((error)=> {
+      console.log("minting failure", error?.message); 
+        addTransaction({
+          hash: "Mint failed",
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Faucet Underlying`,
+          marketDescription: underlying_address,
+        });
+    })
 }
 interface MintFormProps {
   vaultId: string; 
@@ -568,7 +641,10 @@ const MintForm = ({
 
   const {
     actions: { setModal },
+    // isMobile
   } = useAppStatusStore();
+  const dimensions = useWindowDimensions(); 
+  const isMobile = dimensions.width < 1200; 
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   // const {vaultId} = vaults; 
   // console.log('vaults', vaults[vaultId], instruments); 
@@ -640,7 +716,7 @@ const MintForm = ({
       })}
     >
       <header>
-        <button
+        {!isMobile &&(<button
           className={classNames({ [Styles.selected]: isAdd })}
           onClick={() => {
             setAmount(amount);
@@ -648,9 +724,27 @@ const MintForm = ({
           }}
         >
           {"Mint"}
-        </button>
+        </button>)}
+        {isMobile && (<button
+            className={classNames({ [Styles.selected]: false  })}
+            onClick={() => {
+              setAmount("0");
 
-          <button
+              if(isAdd){
+              setSelectedAction("mint");
+              }
+              else if(isMint){
+                setSelectedAction(REMOVE); 
+              }
+              else if(isRemove){
+                setSelectedAction(ADD); 
+              }
+            }}
+          >
+            {isMint?"Manage Leverage Form" : isRemove? "Mint Form" : "Redeem Form"}
+          </button>)}
+
+          {!isMobile && (<button
             className={classNames({ [Styles.selected]: isMint  })}
             onClick={() => {
               setAmount("0");
@@ -658,8 +752,8 @@ const MintForm = ({
             }}
           >
             Redeem
-          </button>
-        { (
+          </button>)}
+        { !isMobile && (
           <button
             className={classNames({ [Styles.selected]: isRemove })}
             onClick={() => {
@@ -843,7 +937,7 @@ const MintForm = ({
           <div className={Styles.ActionButtons}>
             {!isApproved && (
               <SecondaryThemeButton
-              action = {()=> faucet({account, loginAccount, underlying_address})}
+              action = {()=> faucet({account, loginAccount, underlying_address, addTransaction})}
               text={"Faucet Underlying"}
               />
 
@@ -866,8 +960,8 @@ const MintForm = ({
               action={ ()=> isAdd
                 ? confirmMintVault({account, loginAccount, vaultId, amount,leverageFactor, addTransaction})
                 : isMint
-                ? confirmRedemVault({account, loginAccount, vaultId, amount}) 
-                : confirmRedemVault({account, loginAccount, vaultId, amount})}
+                ? confirmRedemVault({account, loginAccount, vaultId, amount, addTransaction}) 
+                : confirmRedemVault({account, loginAccount, vaultId, amount, addTransaction})}
 
              
               disabled={false}//!isApproved || inputFormError !== ""}
