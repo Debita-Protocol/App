@@ -41,11 +41,11 @@ import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/uti
 import { Contract, ContractFactory } from "@ethersproject/contracts";
 import { TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
-import { EthersFastSubmitWallet } from "@augurproject/smart";
+// import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
 import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
 
-import { rammClient } from "../apollo-ramm/client";
+import { rammClient, localClient } from "../apollo-ramm/client";
 import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
 
 import _, { stubFalse } from "lodash"
@@ -63,44 +63,72 @@ function toDisplay(n: NumStrBigNumber, p: NumStrBigNumber = 18, d: number = 4) {
 const pp = BigNumber.from(10).pow(18);
 
 
+
 export const createOptionsInstrument = async (
     account, library,
-    underlying,
     vault,
     strikePrice,
-    oracle,
     pricePerContract,
     duration,
-    maturityDate,
-    longCollateral,
-    collateral_address
+    numContracts,
+    tradeTime,
+    cash
 ): Promise<{ instrumentAddress: string, response: TransactionResponse }> => {
     const factory = new ContractFactory(CoveredCallInstrumentData.abi, CoveredCallInstrumentData.bytecode, library.getSigner(account));
 
-    const shortCollateral = new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
+    const shortCollateral = new BN(numContracts).multipliedBy(pricePerContract).decimalPlaces(18,1).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
+    const longCollateral = new BN(numContracts).multipliedBy(pricePerContract).shiftedBy(18).toFixed(0);
     strikePrice = new BN(strikePrice).shiftedBy(18).toFixed(0)
-    longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
+    
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
     console.log("shortCollateral", new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).toFixed(20))
     console.log("longCollateral", longCollateral)
     console.log("pricePerContract", pricePerContract)
 
+    // address _vault,
+    // address _utilizer,
+    // uint256 _strikePrice, 
+    // uint256 _pricePerContract, // depends on IV, price per contract denominated in underlying  
+    // uint256 _shortCollateral, // collateral for the sold options-> this is in underlyingAsset i.e weth 
+    // uint256 _longCollateral,
+    // address _cash,  // collateral amount in underlying for long to pay. (price*quantity)
+    // uint256 duration,   
+    // uint256 _tradeTime/
 
     const contract: Contract =  await factory.deploy(
         vault,
         account,
-        underlying,
         strikePrice,
         pricePerContract,
         shortCollateral,
         longCollateral,
-        collateral_address,
-        oracle,
+        cash,
         duration,
-        maturityDate
+        tradeTime
     );
     return { instrumentAddress: contract.address, response: contract.deployTransaction };
+}
+
+// amount not in wad
+export const depositOptionsInstrument = async (
+    account, library,
+    instrumentAddress,
+    underlyingAddress,
+    longCollateral
+) => {
+    const signer = getSigner(library, account);
+    console.log("longCollateral", longCollateral)
+    const instrument = new Contract(instrumentAddress, CoveredCallInstrumentData.abi, signer);
+    const approved = await isERC20ApprovedSpender(account, library, underlyingAddress, instrumentAddress, longCollateral);
+    const erc20 = new Contract(underlyingAddress, ERC20Data.abi, signer);
+    console.log("approved", approved)
+    if (!approved) {
+        await erc20.approve(instrumentAddress, new BN(longCollateral).shiftedBy(18).toFixed(0));
+    }
+
+
+    return instrument.deposit();
 }
 
 export const createOptionsMarket = async (
@@ -108,15 +136,16 @@ export const createOptionsMarket = async (
     name,
     description,
     instrumentAddress,
-    longCollateral,
+    numContracts,
     pricePerContract,
     duration,
     maturityDate,
     vaultId,
 ): Promise<TransactionResponse> => {
 
-    const shortCollateral = new BN(longCollateral).dividedBy(new BN(pricePerContract)).shiftedBy(18).toFixed(0);
-    longCollateral = new BN(longCollateral).shiftedBy(18).toFixed(0)
+
+    const shortCollateral = new BN(numContracts).shiftedBy(18).toFixed(0);
+    const longCollateral = new BN(numContracts).multipliedBy(pricePerContract).shiftedBy(18).toFixed(0);
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
     const faceValue = new BN(longCollateral).plus(new BN(shortCollateral)).toFixed(0)
@@ -214,6 +243,8 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
         const instrumentResponse = await rammClient.query({
             query: GET_INSTRUMENTS
         });
+
+        console.log("instrumentResponse", instrumentResponse)
 
         _.forEach(instrumentResponse.data.poolInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
@@ -384,7 +415,7 @@ export const repayCreditlineInstrument = async (
     amount: string
 ) => {
     const signer = getSigner(provider, account);
-    const approved = await useIsERC20ApprovedSpender(account, provider, underlying_address, instrument_address, amount);
+    const approved = await isERC20ApprovedSpender(account, provider, underlying_address, instrument_address, amount);
 
     if (!approved) {
         await approveERC20(account, provider, underlying_address, amount, instrument_address);
@@ -1062,7 +1093,7 @@ export const createCreditlineMarket = async (
 
 /// POOL ACTIONS
 
-export const useIsERC20ApprovedSpender = async (
+export const isERC20ApprovedSpender = async (
     account: string,
     library: Web3Provider,
     tokenAddress: string,
@@ -1073,13 +1104,6 @@ export const useIsERC20ApprovedSpender = async (
     const decimals = await token.decimals();
     const allowance = await token.allowance(account, spenderAddress);
     return allowance && new BN(allowance.toString()).gt(new BN(amount).shiftedBy(new BN(decimals).toNumber())) ? true : false;
-
-    // return useMemo(async () => {
-    //     const token = new Contract(tokenAddress, ERC20Data.abi, getProviderOrSigner(library, account));
-    //     const decimals = await token.decimals();
-    //     const allowance = await token.allowance(account, spenderAddress);
-    //     return allowance && new BN(allowance.toString()).gt(new BN(amount).shiftedBy(decimals.toString())) ? true : false;
-    // }, [account, library, tokenAddress, spenderAddress]);
 }
 
 export const useIsERC721ApprovedSpender = async (
@@ -1100,6 +1124,8 @@ export const useIsERC721ApprovedSpender = async (
     // }, [account, library, tokenAddress, spenderAddress]);
 }
 
+
+// amount not in wad
 export const approveERC20 = async (
     account: string,
     library: Web3Provider,
@@ -1142,7 +1168,7 @@ export const addPoolCollateral = async (
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     console.log("A");
     if (isERC20) {
-        const approved = await useIsERC20ApprovedSpender(account, library, tokenAddress, poolAddress, amount);
+        const approved = await isERC20ApprovedSpender(account, library, tokenAddress, poolAddress, amount);
         console.log("approved: ", approved);
         if (!approved) {
             await approveERC20(account, library, tokenAddress, amount, poolAddress);
@@ -1199,7 +1225,7 @@ export const poolBorrow = async (
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     if (new BN(collateralAmount).gt(new BN(0))) {
         if (collateralIsERC20) {
-            const approved = await useIsERC20ApprovedSpender(account, library, collateralAddress, poolAddress, collateralAmount);
+            const approved = await isERC20ApprovedSpender(account, library, collateralAddress, poolAddress, collateralAmount);
             if (!approved) {
                 await approveERC20(account, library, collateralAddress, collateralAmount, poolAddress);
             }
@@ -1222,6 +1248,7 @@ export const poolBorrow = async (
 
 
 // repay is not ready yet.
+// amount is not in wad
 export const poolRepayAmount = async (
     account: string,
     library: Web3Provider,
@@ -1230,7 +1257,7 @@ export const poolRepayAmount = async (
     assetAddress: string
 ) => {
     // const { account, library } = useActiveWeb3React();
-    const approved = await useIsERC20ApprovedSpender(account, library, assetAddress, poolAddress, amount);
+    const approved = await isERC20ApprovedSpender(account, library, assetAddress, poolAddress, amount);
     if (!approved) {
         await approveERC20(account, library, assetAddress, amount, poolAddress);
     }
@@ -1310,17 +1337,38 @@ const fakeVaults = [
     }
 ]
 
-const fakePools = [
-    {
+// const fakePools = [
+//     {
 
-    }
-]
+//     }
+// ]
 
-const fakeOptionsInstrument = [
+const ONE_BN = new BN(1).shiftedBy(18);
+
+const fakeOptionsInstruments = [ //ETH-230116-1550-C
     {
         vaultId: 1,
-        cash: weth_address,
-
+        underlyingSymbol: "WETH",
+        utilizer: "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933",
+        strikePrice: ONE_BN.multipliedBy(1600).toFixed(0),
+        numContracts: 20, // long = short * pricePerContract
+        pricePerContract: "0.5",
+        cash: usdc_address,
+        duration: new BN(7*86400).toFixed(0),
+        tradeDuration: new BN(86400*2).toFixed(0), // 2 days later
+        description: "test description of the options instrument"
+    },
+    {
+        vaultId: 1,
+        underlyingSymbol: "WETH",
+        utilizer: "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933",
+        strikePrice: ONE_BN.multipliedBy(1500).toFixed(0),
+        numContracts: 16,
+        pricePerContract: "0.25",
+        cash: usdc_address,
+        duration: new BN(7*86400).toFixed(0),
+        tradeDuration: new BN(2*86400).toFixed(0), // 2 days later
+        description: "test description of the options instrument"
     }
 ]
 
@@ -1337,7 +1385,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    console.log("numVaults", await vaultFactory.numVaults());
+    // console.log("numVaults", await vaultFactory.numVaults());
 
     // const bondPool = new Contract("0xf1c2602befc7853ed6ef7d150eadadbae3e6d08c", SyntheticZCBPoolData.abi, signer);
 
@@ -1383,6 +1431,9 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
     // tx.wait();
 
+    // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
+    // tx.wait();
+
     // tx = await controller.setMarketManager(marketManager.address);
     // await tx.wait();
     // tx = await controller.setVaultFactory(vaultFactory.address);
@@ -1397,7 +1448,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
 
     // console.log("F");
 
-    // await scriptSetup(account, provider);
+    await scriptSetup(account, provider);
 }
 
 
@@ -1406,17 +1457,48 @@ const scriptSetup = async (account, provider) => {
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
 
-    for (let i = 0; i < scriptVaultNames.length; i++) {
-        const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
-        await createVault(
+    // for (let i = 0; i < scriptVaultNames.length; i++) {
+    //     const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
+    //     await createVault(
+    //         account, provider,
+    //         cash,
+    //         onlyVerified,
+    //         r,
+    //         asset_limit,
+    //         total_asset_limit,
+    //         vaultParams,
+    //         description
+    //     )
+    // }
+
+    for (let i=0; i < fakeOptionsInstruments.length; i++) {
+        const { underlyingSymbol, vaultId, strikePrice, numContracts, pricePerContract, cash, duration, tradeDuration, description } = fakeOptionsInstruments[i];
+        const vault_address = await controller.vaults(vaultId)
+        const { instrumentAddress, response } = await createOptionsInstrument(
             account, provider,
+            vault_address,
+            strikePrice,
+            pricePerContract,
+            duration,
+            numContracts,
+            tradeDuration,
             cash,
-            onlyVerified,
-            r,
-            asset_limit,
-            total_asset_limit,
-            vaultParams,
-            description
+        )
+
+        let maturityDate = new Date((Date.now() / 1000 + parseInt(duration)) * 1000);
+        let formattedDate = maturityDate.toISOString().split('T')[0]
+        let name = `${underlyingSymbol}-${formattedDate}-${strikePrice}-C`;
+
+        await createOptionsMarket(
+            account, provider,
+            name,
+            description,
+            instrumentAddress,
+            numContracts,
+            pricePerContract,
+            duration,
+            maturityDate,
+            vaultId,
         )
     }
 
@@ -1455,91 +1537,10 @@ const createVault = async (
 
 const scriptCreateOptionsInstrument = async (
     account, provider,
-    onlyReputable,
-
+    onlyReputable
 ) => {
 
 }
-
-    // let result = await controller.testApproveMarket("6");
-    // const poolInstrument = new Contract("0x433a61f5a4b35e9113c47fe3f897ef54b2ea8025", PoolInstrumentData.abi, signer);
-    // console.log("poolInstrument: ", await poolInstrument.getAcceptedCollaterals());
-    // let tx = await controller.testVerifyAddress();
-    // await tx.wait(1);
-
-    // await mintTestNFT(account, provider, "1", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
-    // await mintTestNFT(account, provider, "2", "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6");
-
-    // const cash1 = await cashFactory.deploy(
-    //     "Cash1",
-    //     "CASH1",
-    //     18
-    // );
-    // await cash1.deployed();
-    // console.log("cash1 deployed to:", cash1.address);
-    // const cash2 = await cashFactory.deploy(
-    //     "Cash2",
-    //     "CASH2",
-    //     18
-    // );
-    // await cash2.deployed();
-    // console.log("cash2 deployed to:", cash2.address);
-    // const nft1 = await nftFactroy.deploy(
-    //     "NFT1",
-    //     "NFT1"
-    // );
-    // await nft1.deployed();
-    // console.log("nft1 deployed to:", nft1.address);
-    // const nft2 = await nftFactroy.deploy(
-    //     "NFT2",
-    //     "NFT2"
-    // );
-    // await nft2.deployed();
-    // console.log("nft2 deployed to:", nft2.address);
-
-    // const pool1 = new Contract("0x55e08cff64B0659E5bBd5645D24f591446316c2e", PoolInstrumentData.abi, signer);
-    // console.log((await pool1.getAcceptedCollaterals()));
-    // const vault1 = new Contract("0xEbd3bc7CD466c262Dfe4fFA7b4Fc25fC8719Beb2", VaultData.abi, signer)
-    // console.log(await fetcher.fetchInitial(controller_address, market_manager_address, 1));
-    // const variableInterestRateFactory = new ContractFactory(VariableInterestRateData.abi, VariableInterestRateData.bytecode, provider.getSigner(account));
-    // const variableInterestRate = await variableInterestRateFactory.deploy();
-    // console.log("variableInterestRate", variableInterestRate.address);
-
-        // tx = await reputationManager.setTraderScore(account, pp);
-    // tx.wait();
-    // let tx = await controller.initiateMarket(
-    //     "0x26373F36f72B6e16F5A7860f957262677B9CB076",
-    //     {
-    //         name: utils.formatBytes32String("instrument 1"),
-    //         isPool: false,
-    //         trusted: false,
-    //         balance: 0,
-    //         faceValue: pp.add(pp.mul(5).div(100)),
-    //         marketId: 0,
-    //         principal: pp,
-    //         expectedYield: pp.mul(5).div(100),
-    //         duration: 100,
-    //         description: "description",
-    //         instrument_address: creditLine_address,
-    //         instrument_type: 0,
-    //         maturityDate: 0,
-    //         poolData: {
-    //             saleAmount: 0,
-    //             initPrice:0,
-    //             promisedReturn: 0,
-    //             inceptionTime: 0,
-    //             inceptionPrice: 0,
-    //             leverageFactor: 0,
-    //             managementFee: 0,
-    //         }
-    //     },
-    //     1
-    // )
-    // tx.wait();
-    // console.log("tx");
-    // console.log("initiateMarket");
-
-    // console.log("E")
 
 export const isValidERC20 = async (account: string, library: Web3Provider, address) => {
     // get ERC20 contract

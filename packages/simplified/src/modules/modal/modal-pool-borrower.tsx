@@ -37,7 +37,7 @@ const {ModalAmountInput} = InputComps;
 const {CloseIcon} = Icons;
 const {PrimaryThemeButton} = ButtonComps;
 const {ValueLabel} = LabelComps;
-const { poolRepayAmount, poolBorrow, useIsERC20ApprovedSpender, useIsERC721ApprovedSpender, approveERC20, approveERC721 } = ContractCalls2;
+const { poolRepayAmount, poolBorrow, isERC20ApprovedSpender, useIsERC721ApprovedSpender, approveERC20, approveERC721 } = ContractCalls2;
 
 
 const ModalPoolBorrowerAction = (

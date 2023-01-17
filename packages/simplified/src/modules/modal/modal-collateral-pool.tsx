@@ -12,7 +12,7 @@ const {ModalAmountInput} = InputComps;
 const {CloseIcon} = Icons;
 const {PrimaryThemeButton} = ButtonComps;
 const {ValueLabel} = LabelComps;
-const { useIsERC20ApprovedSpender, useIsERC721ApprovedSpender, approveERC20, approveERC721 } = ContractCalls2;
+const { isERC20ApprovedSpender, useIsERC721ApprovedSpender, approveERC20, approveERC721 } = ContractCalls2;
 
 
 const ModalCollateralPool = (

@@ -123,7 +123,7 @@ fragment basic on BaseInstrument {
     # address of the utilizer
     utilizer
     # maybe a better way to do this?
-    balance: underlyingBalance
+    # balance: underlyingBalance
     seniorAPR
     exposurePercentage
     managerStake 
@@ -141,31 +141,44 @@ query{
       ...basic
     }
     poolInstruments {
-      ...basic 
-      initPrice
-      saleAmount
-      promisedReturn
-      inceptionTime
-      inceptionPrice
-      poolLeverageFactor:leverageFactor
-      totalBorrowedAssets: totalBorrowAssets
-      totalSuppliedAssets: totalSupplyAssets
-      totalAvailableAssets
-      APR:seniorAPR
-      managementFee
-      collaterals {
-        id
-        name
-        symbol
-        decimals
-        totalSupplied
-        owner
-        isERC20
-        maxAmount
-        borrowAmount
-        tokenId
-        address: tokenAddress
-      }
+        ...basic 
+        initPrice
+        saleAmount
+        promisedReturn
+        inceptionTime
+        inceptionPrice
+        poolLeverageFactor:leverageFactor
+        totalBorrowedAssets: totalBorrowAssets
+        totalSuppliedAssets: totalSupplyAssets
+        balance: totalAvailableAssets
+        APR:seniorAPR
+        managementFee
+        collaterals {
+            id
+            name
+            symbol
+            decimals
+            totalSupplied
+            owner
+            isERC20
+            maxAmount
+            borrowAmount
+            tokenId
+            address: tokenAddress
+        }
+    }
+
+    optionsInstruments {
+        ...basic
+        strikePrice
+        pricePerContract
+        shortCollateral
+        longCollateral
+        maturityDate
+        tradeTime
+        oracle
+        balance: underlyingBalance
     }
 }
 `
+

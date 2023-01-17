@@ -228,7 +228,10 @@ export interface CoreDataState {
     [address: string]: Cash;
   },
   markets: CoreMarketInfos,
-  instruments: InstrumentInfos
+  instruments: InstrumentInfos,
+  
+  // for instrument data that must be updated continuously and and not just conditioned on events.
+  // streamedInstruments: 
 }
 
 export const DEFAULT_DATA_STATE_2: CoreDataState = {

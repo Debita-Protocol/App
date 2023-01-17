@@ -32,6 +32,14 @@
     padding: @size-15;
     > div {
       display: flex;
+      flex-flow: column nowrap;
+      align-items: center;
+      > span {
+        margin-top: @size-6;
+      }
+    }
+    > div:first-of-type {
+      display: flex;
       flex-flow: row nowrap;
       justify-content: flex-start;
       padding-left:@size-10;
@@ -84,7 +92,6 @@
           }
           padding-right: @size-10;
         }
-    
         > button {
           font-size: @size-18;
           font-weight: @weight-bold;
@@ -138,6 +145,16 @@
             }
             padding-bottom: @size-10;
           }
+
+          > div:last-of-type {
+            div {
+              width:40%;
+              display: flex;
+              flex-flow: row nowrap;
+              justify-content: space-evenly;
+            }
+          }
+
           > input {
             font-size: @size-18;
             font-weight: @weight-bold;

@@ -210,7 +210,7 @@ const PoolProposalView: React.FC = () => {
       )
       
     }
-  }, [inputError, inputMessage, collateralInfos, instrumentAddress, poolData, account, loginAccount.library])
+  }, [inputError, inputMessage, collateralInfos, instrumentAddress, poolData, account, loginAccount])
 
   const [vaultId, setVaultId] = useState("");
   const [defaultVault, setDefaultVault] = useState("");
