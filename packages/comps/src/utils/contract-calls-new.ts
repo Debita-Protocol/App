@@ -142,6 +142,7 @@ export const createOptionsMarket = async (
     // get controller contract
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
+    console.log("name: ", name)
 
     // create instrument data object that will be passed to the controller initiateMarket function
     const instrumentData = {
@@ -253,6 +254,15 @@ export const fetchRammGraphData = async (provider: Web3Provider): Promise<{
             })
         })
         _.forEach(instrumentResponse.data.creditlineInstruments, (instrument) => {
+            instruments[instrument.marketId.id] = _.assign(instrument, {
+                vaultId: instrument.vaultId.vaultId,
+                marketId: instrument.marketId.id,
+                isPool: false,
+                seniorAPR: new BN(instrument.seniorAPR).shiftedBy(18).toFixed(0)
+            })
+        })
+
+        _.forEach(instrumentResponse.data.optionsInstruments, (instrument) => {
             instruments[instrument.marketId.id] = _.assign(instrument, {
                 vaultId: instrument.vaultId.vaultId,
                 marketId: instrument.marketId.id,

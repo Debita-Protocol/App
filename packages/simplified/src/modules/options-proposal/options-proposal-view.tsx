@@ -16,6 +16,9 @@ import { approveERC20, createOptionsInstrument, createOptionsMarket, depositOpti
 import { ExternalLink } from '@augurproject/comps/build/utils/links/links';
 import { LinkIcon } from '@augurproject/comps/build/components/common/icons';
 import { formatBytes32String, parseBytes32String } from 'ethers/lib/utils';
+
+import moment from 'moment';
+
 const {
   BUY,
   ApprovalAction,
@@ -111,8 +114,9 @@ const OptionsProposalView: React.FC = () => {
 
   // const {inputError, inputMessage} = usePoolFormInputValdiation(optionsData, collateralInfos, instrumentAddress); 
   // add error handling for everything
-  let maturityDate = optionsData.duration !== "" ? new Date((Date.now() / 1000 + 86400*parseInt(optionsData.duration)) * 1000) : null;
-  let formattedDate = maturityDate ? maturityDate.toISOString() : new Date().toISOString().split('T')[0];
+  let maturityDate = optionsData.duration !== "" ? moment().add(parseInt(optionsData.duration), "days").seconds() : null;
+  let formattedDate = maturityDate ? moment().add(parseInt(optionsData.duration), "days").format('YYYY MM D, h:mm a') : moment().format('YYYY MM D, h:mm a');
+  console.log("moment: ", moment().format('YYYY MM D, h:mm:ss a'));
   console.log("maturityDate", maturityDate);
 
   const [vaultId, setVaultId] = useState("");
@@ -146,12 +150,15 @@ const OptionsProposalView: React.FC = () => {
         let _duration = new BN(duration).multipliedBy(86400).toFixed(0);
         let maturityDate = new Date((Date.now() / 1000 + parseInt(_duration)) * 1000);
         let formattedDate = maturityDate.toISOString().split('T')[0]
+        formattedDate = formattedDate.substring(2);
+        
         // remove first two characters of formattedDate
 
-        tradeTime = new BN(tradeTime).multipliedBy(86400).toFixed(0);
+        tradeTime = new BN(tradeTime).multipliedBy(60).toFixed(0);
         
-        formattedDate = formattedDate.substring(2);
+        formattedDate =  _.replace(formattedDate,new RegExp("-","g"),"")
         let name = `${underlyingSymbol}-${formattedDate}-${strikePrice}-C`;
+        console.log("name", name);
 
         //ETH-230116-1550-C
         // let description = JSON.stringify(
@@ -440,7 +447,7 @@ const OptionsProposalView: React.FC = () => {
       <div>
         <div>
           {generateTooltip("Duration of instrument assessment", "tradeTime")}
-          <label>Trade Time: </label>
+          <label>Assessment Period: </label>
         </div>
         <div>
           <FormAmountInput
@@ -453,7 +460,7 @@ const OptionsProposalView: React.FC = () => {
             }
             amount={optionsData.tradeTime}
             prepend=""
-            label={"days"}
+            label={"minutes"}
           />
         </div>
       </div>
