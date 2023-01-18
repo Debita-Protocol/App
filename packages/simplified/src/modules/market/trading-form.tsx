@@ -362,7 +362,7 @@ console.log('MMAllowance', MMAllowance);
     };
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
-
+  const isPool = instruments[marketId]?.isPool; 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || orderType;
     let subText: string | null = null;
@@ -370,7 +370,7 @@ console.log('MMAllowance', MMAllowance);
     if (!isLogged) {
       actionText = "Connect Wallet";
       disabled = true;
-    }  else if(isApproved && !isIssue){
+    }  else if(isApproved && !isIssue &&isPool){
       actionText = "Can only mint after approved"
       disabled = true; 
     }else if(typeof breakdown == "string" ){

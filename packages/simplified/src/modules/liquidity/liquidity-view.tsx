@@ -195,6 +195,11 @@ function bin2String(array) {
   }
   return result;
 }
+
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
 export const InstrumentCard = ({instrument}: any):React.FC=>{
   const {
     settings: { timeFormat },
@@ -215,17 +220,12 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   const{marketId} = instrument; 
   const type = markets[Number(marketId)]?.instrumentType; 
 
-  // console.log('instrument', instrument)
-  function roundDown(number, decimals) {
-      decimals = decimals || 0;
-      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
-  }
 
   const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
   const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
   const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field:instrumentField}); 
-
+  const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -263,19 +263,19 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </button>
       <span>{ (instrument?.isPool? "  Perpetual": "Fixed Term")}</span>
-      <span>{instrument?.balance.toString() }</span>
+      <span>{roundDown(instrument?.balance.toString(),2) }</span>
       <span>{roundDown((((1+ Number(instrument?.seniorAPR)/1e18)**31536000) -1)*100, 2)}{"%"}</span>
       <span>
         {instrument?.exposurePercentage.toString()}{"%"}
       </span>
       <span>
-        {(instrument?.trusted? "  true": "false")} 
+        {(approved? "  true": "false")} 
         {/*true && <span>{"0"}</span>*/}
       </span>
       <div>
         <div className={Styles.MobileLabel}>
           <span>Approved</span>
-          <span>{(instrument?.trusted? "  true": "false")}</span>
+          <span>{(approved? "  true": "false")}</span>
           {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
         </div>
 

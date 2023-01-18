@@ -325,7 +325,7 @@ export const MarketLiquidityView = () => {
          
           <li>
             <span>Vault Utilization Rate</span>
-            <span>{vault.utilizationRate}</span>
+            <span>{roundDown(100*Number(vault.utilizationRate), 2)}{"%"}</span>
           </li>
 
           <li>

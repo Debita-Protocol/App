@@ -152,11 +152,11 @@ export const InstrumentField = ({instrumentType, instrument})=>{
     const curtime = Math.floor((new Date()).getTime() / 1000) ; 
     const{strikePrice, shortCollateral,tradeTime, pricePerContract} = instrument; 
     fields[0] = strikePrice; 
-    fields[1] = shortCollateral * pricePerContract; 
+    fields[1] = roundDown(shortCollateral * pricePerContract,2); 
     fields[2] = shortCollateral; 
     fields[3] = pricePerContract; 
     fields[4] = Number(tradeTime) > curtime ? 
-    String(tradeTime - curtime): "Assessment Period Ended"
+    String(Number(tradeTime) - curtime): "Assessment Period Ended"
 
     return fields; 
   }
@@ -286,7 +286,10 @@ expectedYield: number, managerExpectedYield: number, alpha:number, price:number 
   return redemption_price; 
 }
 
-  
+  function roundDown(number, decimals) {
+      decimals = decimals || 0;
+      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+  }
 
 export const useMarketQueryId = () => {
   const location = useLocation();
@@ -492,10 +495,7 @@ const MarketView = ({ defaultMarket = null }) => {
   : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
     
 
-  function roundDown(number, decimals) {
-      decimals = decimals || 0;
-      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
-  }
+
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
@@ -537,7 +537,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <h3>Profit Mechanism</h3>
         <p>{isPool?
           "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
-          : "longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p> 
+          : "Buy longZCB if you believe the price of " +asset +" will be below the strikePrice by maturity."+" longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p> 
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
         {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
@@ -601,7 +601,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Total amount of underlying used by the instrument  ",
               "principal"
                       )}
-            <span>{roundDown(principal ,2)}</span>
+            <span>{roundDown(principal ,3)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>)
@@ -613,7 +613,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Total amount of underlying used by the instrument  ",
               "principal"
                       )}
-            <span>{roundDown(principal ,2)}</span>
+            <span>{roundDown(principal ,3)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>)
@@ -626,7 +626,7 @@ const MarketView = ({ defaultMarket = null }) => {
                 "estimated return")
                 }
              
-            <span>{String(roundDown(expectedYield, 2))}</span> 
+            <span>{String(roundDown(expectedYield, 3))}</span> 
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
@@ -687,7 +687,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         "The redemption price of longZCB at maturity. Equals 1 if estimated return = prooposed return.   ",
                         "lexpected")}
              
-            <span>{String(roundDown(managerExpectedYield, 2))}{isPool&&" %"}</span> 
+            <span>{String(roundDown(managerExpectedYield, 3))}{isPool&&" %"}</span> 
 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
@@ -729,7 +729,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
                         "net"
                       )}
-            <span>{roundDown(market_[Id]?.bondPool.longZCB.totalSupply,2)}/{roundDown(market_[Id]?.bondPool.shortZCB.totalSupply,2)}</span> 
+            <span>{roundDown(market_[Id]?.bondPool.longZCB.totalSupply,3)}/{roundDown(market_[Id]?.bondPool.shortZCB.totalSupply,2)}</span> 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
@@ -741,7 +741,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
                         "net"
                       )}
-            <span>{totalCollateral}/{isPool?poolData?.saleAmount:Number(principal)*Number(alpha) }</span> 
+            <span>{totalCollateral}/{isPool?roundDown(poolData?.saleAmount, 3):roundDown(Number(principal)*Number(alpha),2) }</span> 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
@@ -750,7 +750,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Start Price </span>
-            <span>{roundDown(market_[Id]?.bondPool.b,2)}</span>
+            <span>{roundDown(market_[Id]?.bondPool.b,3)}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -758,7 +758,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Price Now</span>
-            <span>{roundDown(longZCBPrice,2)}</span>
+            <span>{roundDown(longZCBPrice,3)}</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
 
@@ -770,7 +770,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Total amount of underlying used by the instrument  ",
               "principal"
                       )}
-            <span>{roundDown(principal ,2)}</span>
+            <span>{roundDown(principal ,3)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
@@ -780,12 +780,12 @@ const MarketView = ({ defaultMarket = null }) => {
               "Amount of underlying the utilizer proposed the instrument would incur, when Principal was invested ",
               "yield"
                       )}
-            <span>{roundDown(expectedYield , 2)}</span>
+            <span>{roundDown(expectedYield , 3)}</span>
           {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
             <span>Duration(days) </span>
-            <span>{roundDown(365.24*duration,1)}</span>
+            <span>{roundDown(duration/86400,3)}</span>
           </li>
 
           <li>
@@ -885,20 +885,20 @@ const MarketView = ({ defaultMarket = null }) => {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          <h4>Open Orders</h4>
+          {/*<h4>Open Orders</h4>
           <h4>Price History</h4>
-          <h4>Details</h4>
+          <h4>Details</h4>*/}
 
           {/*details.map((detail, i) => (
             <p key={`${detail.substring(5, 25)}-${i}`}>{detail}</p>
           ))*/}
-          {details.length > 1 && (
+          {/*details.length > 1 && (
             <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
               {showMoreDetails ? "Read Less" : "Read More"}
             </button>
-          )}
+          )*/}
           {details.length === 0 && <p>{description1}</p>}
-
+          
         </div>
         <div className={Styles.TransactionsTable}>
 
