@@ -38,8 +38,6 @@ export const leverageModule_address = "0xf9c6A04026c30dFC56FdB72A4B8cd00fB922823
 export const variable_interest_rate_address = "0x541D09035CA76AE5CEA1C6ECDf098A48a8F2FDEe";
 export const validator_manager_address = "0x7195Ce321B8fF5C05BCFC122e523d71E208FD953";
 
-
-
 // newest
 // deploying "LinearCurve" (tx: 0x5494b01d632c15e5bf4cab349f1a7d7db26804798a884f8812e1bd3166089a5d)...: deployed at 0x647EBD4020A0682720b0AC7De732677269915297 with 641478 gas
 // deploying "Controller" (tx: 0x3b10ec36e3bed1094fe9e572b23a15cc9613c5455b2a23f89a1ede2e7cd62d9c)...: deployed at 0xd2F0bB60140C184C2827c0E67b64B46d1C9cc27d with 5042651 gas

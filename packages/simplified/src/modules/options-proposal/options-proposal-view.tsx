@@ -112,7 +112,7 @@ const OptionsProposalView: React.FC = () => {
   // const {inputError, inputMessage} = usePoolFormInputValdiation(optionsData, collateralInfos, instrumentAddress); 
   // add error handling for everything
   let maturityDate = optionsData.duration !== "" ? new Date((Date.now() / 1000 + 86400*parseInt(optionsData.duration)) * 1000) : null;
-  let formattedDate = maturityDate ? maturityDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  let formattedDate = maturityDate ? maturityDate.toISOString() : new Date().toISOString().split('T')[0];
   console.log("maturityDate", maturityDate);
 
   const [vaultId, setVaultId] = useState("");
@@ -215,12 +215,51 @@ const OptionsProposalView: React.FC = () => {
             throw new Error("instrument address not found")
           }
 
+          const approved = await isERC20ApprovedSpender(
+            account,
+            loginAccount.library,
+            wantAddress,
+            instrumentAddress,
+            new BN(pricePerContract).multipliedBy(numContracts).toFixed(20)
+          );
+          if (!approved) {
+            const response = await approveERC20(
+              account,
+              loginAccount.library,
+              wantAddress,
+              new BN(pricePerContract).multipliedBy(numContracts).toFixed(20),
+              instrumentAddress
+              );
+            addTransaction(
+              {
+                hash: response.hash,
+                chainId: loginAccount.chainId,
+                status: TX_STATUS.PENDING,
+                message: "approving instrument deposit..."
+              }
+            );
+            await response.wait();
+          }
+        } catch(err) {
+          console.log("err: ", err);
+          addTransaction({
+            hash: "options-instrument-approval-failed",
+            chainId: loginAccount.chainId,
+            seen: false,
+            status: TX_STATUS.FAILURE,
+            from: account,
+            addedTime: new Date().getTime(),
+            message: `Failed to approve instrument ${err}`
+          });
+          return;
+        }
+        
+
+        try {
           let response = await depositOptionsInstrument(
             account,
             loginAccount.library,
-            instrumentAddress,
-            wantAddress,
-            new BN(pricePerContract).multipliedBy(numContracts).toFixed(20)
+            instrumentAddress
           )
           addTransaction({
             hash: response.hash,
@@ -237,7 +276,7 @@ const OptionsProposalView: React.FC = () => {
             status: TX_STATUS.FAILURE,
             from: account,
             addedTime: new Date().getTime(),
-            message: `Failed to create market ${err}`
+            message: `Failed to deposit into instrument ${err}`
           });
           return;
         }
@@ -251,7 +290,7 @@ const OptionsProposalView: React.FC = () => {
             instrumentAddress,
             numContracts,
             pricePerContract,
-            duration,
+            _duration,
             new BN(maturityDate.getTime() / 1000).toFixed(0),
             vaultId
           );

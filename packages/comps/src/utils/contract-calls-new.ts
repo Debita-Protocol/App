@@ -82,7 +82,7 @@ export const createOptionsInstrument = async (
     
     pricePerContract = new BN(pricePerContract).shiftedBy(18).toFixed(0)
 
-    console.log("shortCollateral", new BN(longCollateral).decimalPlaces(18, 1).dividedBy(new BN(pricePerContract)).toFixed(20))
+    console.log("shortCollateral", shortCollateral)
     console.log("longCollateral", longCollateral)
     console.log("pricePerContract", pricePerContract)
 
@@ -113,21 +113,10 @@ export const createOptionsInstrument = async (
 // amount not in wad
 export const depositOptionsInstrument = async (
     account, library,
-    instrumentAddress,
-    underlyingAddress,
-    longCollateral
-) => {
-    const signer = getSigner(library, account);
-    console.log("longCollateral", longCollateral)
+    instrumentAddress
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
     const instrument = new Contract(instrumentAddress, CoveredCallInstrumentData.abi, signer);
-    const approved = await isERC20ApprovedSpender(account, library, underlyingAddress, instrumentAddress, longCollateral);
-    const erc20 = new Contract(underlyingAddress, ERC20Data.abi, signer);
-    console.log("approved", approved)
-    if (!approved) {
-        await erc20.approve(instrumentAddress, new BN(longCollateral).shiftedBy(18).toFixed(0));
-    }
-
-
     return instrument.deposit();
 }
 
@@ -1137,7 +1126,7 @@ export const approveERC20 = async (
     const token = new Contract(tokenAddress, ERC20Data.abi, getSigner(library, account));
     const decimals = await token.decimals();
     const tx: TransactionResponse = await token.approve(spenderAddress, new BN(amount).shiftedBy(new BN(decimals).toNumber()).toString());
-    tx.wait();
+
     return tx;
 }
 
@@ -1385,6 +1374,11 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
+    const coveredCallContract = new Contract("0x559c0abf267b944e9d1d4a0d8f9cc28320195776", CoveredCallInstrumentData.abi, provider.getSigner(account));
+    console.log("covered call data: ", await coveredCallContract.instrumentStaticSnapshot());
+    // tx = await cash.approve("0x86c6Be0BfEea130C3332017749550FF626556402", 1000);
+    // await tx.wait();
+    // console.log("cash allowance", await cash.allowance(account, "0x86c6Be0BfEea130C3332017749550FF626556402"));
     // console.log("numVaults", await vaultFactory.numVaults());
 
     // const bondPool = new Contract("0xf1c2602befc7853ed6ef7d150eadadbae3e6d08c", SyntheticZCBPoolData.abi, signer);
@@ -1448,7 +1442,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
 
     // console.log("F");
 
-    await scriptSetup(account, provider);
+    // await scriptSetup(account, provider);
 }
 
 
