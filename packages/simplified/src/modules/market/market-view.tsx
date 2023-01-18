@@ -45,32 +45,29 @@ import {Sidebar} from "../sidebar/sidebar";
 export const InstrumentBreakDownFormat = ({instrumentType, field = null})=>{
   if (instrumentType==1){
 
-    return [{
+    return [{    
             heading: "Additional Information",
             infoNumbers: [
               {
                 label: "Strike Price",
-                value: 1,
-
-
-              },
-            {
-                label: "Trade Date/Time",
-                value: 1,
-                
-
-              },
-               {
-                label: "Maturity Date",
-                value: 1,
-                
-
+                value: field[0],
               },
               {
-                label: "Price per contract",
-                value: 1,
+                label: "Collateral supplied by protocol",
+                value: field[2],
+              },
+              {
+                label: "Total Premium received from selling",
+                value: field[1],             
+              },
+               {
+                label: "Price per option contract",
+                value: field[3],
                 
-
+              },
+              {
+                label: "Assessment Remaining Minutes",
+                value: Math.floor(field[4]/60),
               },
             ],
           }]
@@ -149,6 +146,18 @@ export const InstrumentField = ({instrumentType, instrument})=>{
       fields[i] = [collateralinfo[i].address,collateralinfo[i].isERC20, 
       collateralinfo[i].name, collateralinfo[i].maxAmount, collateralinfo[i].tokenId ]
     }
+    return fields; 
+  }
+  else if(instrumentType == 1){
+    const curtime = Math.floor((new Date()).getTime() / 1000) ; 
+    const{strikePrice, shortCollateral,tradeTime, pricePerContract} = instrument; 
+    fields[0] = strikePrice; 
+    fields[1] = shortCollateral * pricePerContract; 
+    fields[2] = shortCollateral; 
+    fields[3] = pricePerContract; 
+    fields[4] = Number(tradeTime) > curtime ? 
+    String(tradeTime - curtime): "Assessment Period Ended"
+
     return fields; 
   }
   else{
@@ -366,7 +375,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
-
+  console.log('date',Math.floor((new Date()).getTime() / 1000)
+ ); 
 
   const marketId = useMarketQueryId();
 
