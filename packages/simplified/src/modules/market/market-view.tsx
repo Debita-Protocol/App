@@ -729,7 +729,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
                         "net"
                       )}
-            <span>{roundDown(market_[Id]?.bondPool.longZCB.totalSupply,3)}/{roundDown(market_[Id]?.bondPool.shortZCB.totalSupply,2)}</span> 
+            <span>{roundDown(market_[Id]?.bondPool.longZCB.balance,3)}/{roundDown(market_[Id]?.bondPool.shortZCB.balance,2)}</span> 
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}

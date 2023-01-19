@@ -700,7 +700,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 description: instr.description,
                 balance: toDisplay(instr.balance.toString()),
                 principal: toDisplay(instr.principal.toString()),
-                interest: toDisplay(instr.expectedYield.toString()),
+                expectedYield: toDisplay(instr.expectedYield.toString()),
                 address: instr.instrument_address,
                 duration: instr.duration.toString(),
                 maturityDate: instr.maturityDate.toString(),

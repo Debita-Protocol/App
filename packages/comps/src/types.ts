@@ -375,7 +375,7 @@ export interface BaseInstrument {
   description: string;
   balance: string;
   principal: string;
-  interest: string;
+  expectedYield: string;
   address: string;
   duration?: string;
   maturityDate?: string;
