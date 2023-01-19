@@ -229,7 +229,9 @@ export interface CoreDataState {
   },
   markets: CoreMarketInfos,
   instruments: InstrumentInfos,
-  
+  prices: {
+    [symbol:string]: string // price in USD
+  }
   // for instrument data that must be updated continuously and and not just conditioned on events.
   // streamedInstruments: 
 }
@@ -240,7 +242,8 @@ export const DEFAULT_DATA_STATE_2: CoreDataState = {
   errors: null,
   cashes: {},
   markets: {},
-  instruments: {}
+  instruments: {},
+  prices: {}
 }
 
 // export const DATA_KEYS = {
@@ -274,7 +277,8 @@ export const DATA_KEYS_2 = {
 // };
 
 export const DATA_ACTIONS_2 = {
-  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT"
+  UPDATE_DATA_HEARTBEAT: "UPDATE_DATA_HEARTBEAT",
+  UPDATE_PRICES: "UPDATE_PRICES"
 }
 
 export const MAINNET: string = "1";

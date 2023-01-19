@@ -4,7 +4,7 @@ import { windowRef } from "../utils/window-ref";
 import { DATA_ACTIONS_2, DATA_KEYS_2, DEFAULT_DATA_STATE_2 } from "./constants-2";
 import { calculateAmmTotalVolApy } from "../utils/contract-calls";
 
-const { UPDATE_DATA_HEARTBEAT } = DATA_ACTIONS_2;
+const { UPDATE_DATA_HEARTBEAT, UPDATE_PRICES } = DATA_ACTIONS_2;
 const { VAULTS, BLOCKNUMBER, ERRORS, CASHES, MARKETS, INSTRUMENTS } = DATA_KEYS_2;
 
 export function DataReducer2(state, action) {
@@ -19,6 +19,9 @@ export function DataReducer2(state, action) {
       updatedState[MARKETS] = markets;
       updatedState[INSTRUMENTS] = instruments;
       break
+    case UPDATE_PRICES:
+      const { prices } = action;
+      updatedState["prices"] = prices;
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);
   }
@@ -48,6 +51,13 @@ export const useData2 = (cashes, defaultState = DEFAULT_DATA_STATE_2) => {
           markets,
           instruments
         }),
+      updatePrices: (prices) =>
+        dispatch(
+          {
+            type: UPDATE_PRICES,
+            prices
+          }
+        )
     },
   };
 };

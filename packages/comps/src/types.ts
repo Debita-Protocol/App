@@ -342,6 +342,7 @@ export interface  InstrumentInfos {
 
 export interface ParameterInfo {
   N: string;
+  alpha: string;
   sigma: string;
   omega: string;
   delta: string;
@@ -384,6 +385,17 @@ export interface BaseInstrument {
   approvalPrice?: string; 
   isPool?: boolean; 
   instrumentType?: string;
+}
+
+export interface OptionsInstrument extends BaseInstrument {
+  strikePrice: string;
+  pricePerContract: string;
+  shortCollateral: string;
+  longCollateral: string;
+  maturityDate: string;
+  tradeTime: string;
+  oracle: string;
+  approvalStatus: boolean;
 }
 
 export interface PoolInstrument extends BaseInstrument {
@@ -521,15 +533,16 @@ export interface BondPool {
   b_initial: string
   b: string
   discountCap: string
-  discountedReserved: string
+  discountedReserves: string
 }
 
 export interface CoreMarketInfo {
   //bondPool: string;
-  bondPool: BondPool;
+  // bondPool: BondPool;
   marketId: string;
   vaultId: string;
   creationTimestamp: string;
+  resolutionTimestamp: string;
   parameters: ParameterInfo;
   // phase?: MarketPhaseData;
   duringAssessment: boolean;
@@ -538,25 +551,27 @@ export interface CoreMarketInfo {
   alive: boolean;
   atLoss: boolean;
   base_budget: string;
-  // longZCB?: string;
-  // shortZCB?: string;
-  // longZCBprice:string;
-  // longZCBsupply: string;
+
+  // bond pool data
+  bondPool: BondPool;
+
+  marketConditionMet: boolean;
+  approvedPrincipal: string;
+  approvedYield: string;
+  managerStake: string;
   redemptionPrice: string;
   totalCollateral: string;
-  approved_principal?: string;
-  approved_yield?: string;
-  // validatorData: ValidatorData;
-  validators: string[];
-  val_cap: string;
-  avg_price: string;
-  totalSales: string;
-  totalStaked: string;
-  numApproved: string;
-  initialStake: string;
-  finalStake: string;
-  numResolved: string;
-  marketConditionMet: boolean;
+  validatorData: ValidatorData;
+  // validators: string[];
+  // val_cap: string;
+  // avg_price: string;
+  // totalSales: string;
+  // totalStaked: string;
+  // numApproved: string;
+  // initialStake: string;
+  // finalStake: string;
+  // numResolved: string;
+
   // N: string
   // sigma: string
   // alpha: string
@@ -598,13 +613,13 @@ export interface VaultInfo {
   goalAPR?: string; 
   totalProtection?: string; 
   
-  rVault: string
-  N: string
-  sigma: string
-  alpha: string
-  omega: string
-  delta: string
-  rMarket: string
+  rVault?: string
+  N?: string
+  sigma?: string
+  alpha?: string
+  omega?: string
+  delta?: string
+  rMarket?: string
 
 };
 

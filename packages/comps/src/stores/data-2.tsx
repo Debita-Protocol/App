@@ -9,7 +9,7 @@ import {
 } from "./constants-2";
 import { useData2 } from "./data-hooks-2";
 import { useUserStore, UserStore } from "./user";
-//import { getContractData } from "../utils/contract-calls-new";
+import { getContractData } from "../utils/contract-calls-new";
 import { fetchRammGraphData } from "../utils/contract-calls-new";
 import { VaultInfos, VaultInfo } from "types";
 //import { getAllTransactions } from "../apollo/client";
@@ -33,7 +33,7 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
   const configCashes = getCashesInfo();
   const state = useData2(configCashes);
   const {
-    actions: { updateDataHeartbeat },
+    actions: { updateDataHeartbeat, updatePrices },
   } = state;
 
   if (!DataStore2.actionsSet) {
@@ -63,11 +63,11 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
       let infos = { vaults: dvaults , blocknumber: dblock, instruments: dinstruments, markets: dmarkets };
 
       try {
-        // infos = await getContractData(
-        //   userAccount,
-        //   provider
-        // );
-        infos = await fetchRammGraphData(provider)
+        infos = await getContractData(
+          userAccount,
+          provider
+        );
+        // infos = await fetchRammGraphData(provider)
         console.log('infos: ', infos)
         if (isRpcDown) {
           setIsRpcDown(false);
@@ -109,6 +109,73 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
       clearInterval(intervalId);
     };
   }, []);
+
+  // useEffect(() => {
+  //   let isMounted = true;
+  //   let intervalId = null;
+  //   const getData = async () => {
+  //     console.log("getData...")
+  //     const { account: userAccount, loginAccount } = UserStore.get();
+  //     const { isRpcDown, isWalletRpc } = AppStatusStore.get();
+  //     const { 
+  //       blocknumber: dblock, 
+  //       vaults: dvaults, 
+  //       instruments: dinstruments,
+  //       markets: dmarkets
+  //     } = DataStore2.get();
+
+  //     const { actions: { setIsRpcDown } } = AppStatusStore;
+  //     const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
+  //     let infos = { vaults: dvaults , blocknumber: dblock, instruments: dinstruments, markets: dmarkets };
+
+  //     try {
+  //       infos = await getContractData(
+  //         userAccount,
+  //         provider
+  //       );
+  //       // infos = await fetchRammGraphData(provider)
+  //       console.log('infos: ', infos)
+  //       if (isRpcDown) {
+  //         setIsRpcDown(false);
+  //       }
+  //       return infos;
+  //     } catch (e) {
+  //       if (e.data?.error?.details) {
+  //         if (e.data?.error?.details.toLowerCase().indexOf("rate limit") !== -1) {
+  //           if (e.data?.error?.data?.rate_violated.toLowerCase().indexOf("700 per 1 minute") !== -1) {
+  //             setIsRpcDown(true);
+  //           }
+  //         }
+  //       }
+  //       console.log("error getting market data", e);
+  //     }
+      
+  //     return { vaults: {}, blocknumber: 1, markets: {}, instruments: {} };
+  //   };
+
+  //   getData().then(({ vaults, blocknumber, markets, instruments }) => {
+  //     isMounted &&
+  //       blocknumber &&
+  //       blocknumber > DataStore2.get().blocknumber &&
+  //       updateDataHeartbeat(vaults, blocknumber, null, markets, instruments);
+
+  //     intervalId = setInterval(() => {
+  //       getData().then(({ vaults, blocknumber, markets, instruments }) => {
+
+  //         isMounted &&
+  //           blocknumber &&
+  //           blocknumber > DataStore2.get().blocknumber &&
+  //           updateDataHeartbeat(vaults, blocknumber, null, markets, instruments);
+  //       });
+  //     }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
+  //   });
+
+  //   return () => {
+  //     isMounted = false;
+  //     clearInterval(intervalId);
+  //   };
+  // }, []);
+
 
   // removed record of transactions => need to build subgraph first
 
