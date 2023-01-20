@@ -83,9 +83,9 @@ export const ALL_CURRENCIES: string = "All Currencies";
 
 export const CASH_LABEL_FORMATS = {
   ETH: { symbol: "Ξ", prepend: true, displayDecimals: 4, icon: EthIcon },
+  WETH: { symbol: "Ξ", prepend: true, displayDecimals: 4, icon: EthIcon },
   USDC: { symbol: "$", prepend: true, displayDecimals: 2, icon: UsdIcon },
   SHARES: { symbol: "", prepend: true, displayDecimals: 4, icon: null },
-
 };
 
 // Portfolio table views

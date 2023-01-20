@@ -26,6 +26,15 @@ export interface ValueLabelProps {
   small?: boolean;
 }
 
+export const RammCategoryLabel = ({text}) => {
+  return (
+    <div className={Styles.CategoryLabel}>
+      {text}
+    </div>
+  )
+}
+
+
 export const ValueLabel = ({ large, label, sublabel, value, light, small }: ValueLabelProps) => {
   return (
     <div

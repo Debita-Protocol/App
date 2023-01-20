@@ -1,5 +1,7 @@
 import React from "react";
 import DaiIcon from "../../assets/icon/dai.svg"
+import EthIcon2 from "../../assets/icon/eth.svg"
+import UsdcIcon2 from "../../assets/icon/usdc.svg"
 
 export const AugurBetaLogo = (
   <svg viewBox="0 0 74 40" fill="none">
@@ -724,8 +726,9 @@ export const MaticIcon = (
 );
 
 export const Icon_Mapping = {
-  "USDC": USDCIcon,
-  "ETH": EthIcon,
+  "USDC": UsdcIcon2,
+  "ETH": EthIcon2,
+  "WETH": EthIcon2,
   "MATIC": MaticIcon,
   "DAI": DaiIcon
 }

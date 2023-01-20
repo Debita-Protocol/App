@@ -213,6 +213,11 @@ export function formatSimplePrice(num: NumStrBigNumber): FormattedNumber {
   });
 }
 
+export const handleValueRamm = (value, cashName = USDC) =>
+  formatCash(value, cashName, {
+    bigUnitPostfix: true,
+  }).full;
+
 export function formatDai(num: NumStrBigNumber, opts: FormattedNumberOptions = {}): FormattedNumber {
   return formatNumber(num, {
     decimals: 2,
