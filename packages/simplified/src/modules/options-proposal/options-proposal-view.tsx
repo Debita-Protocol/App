@@ -18,6 +18,8 @@ import { LinkIcon } from '@augurproject/comps/build/components/common/icons';
 import { formatBytes32String, parseBytes32String } from 'ethers/lib/utils';
 
 import moment from 'moment';
+import { useApproveCallback } from '@augurproject/comps/build/stores/use-approval-callback';
+
 
 const {
   BUY,
@@ -217,6 +219,8 @@ const OptionsProposalView: React.FC = () => {
           });
         }
 
+        // useApproveCallback(wantAddress, "options instrument", instrumentAddress,  new BN(pricePerContract).multipliedBy(numContracts).shiftedBy(18).toFixed(0))
+        // new BN(pricePerContract).multipliedBy(numContracts).toFixed(20),
         try {
           if (!instrumentAddress) {
             throw new Error("instrument address not found")
@@ -261,7 +265,6 @@ const OptionsProposalView: React.FC = () => {
           return;
         }
         
-
         try {
           let response = await depositOptionsInstrument(
             account,

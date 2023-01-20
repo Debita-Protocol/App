@@ -65,7 +65,8 @@ const useHasPendingTransaction = (account: string, tokenAddress: string, spender
 export function useApproveCallback(
   tokenAddress: string,
   approvingName: string,
-  spender: string
+  spender: string,
+  amount="",
 ): [ApprovalState, () => Promise<void>] {
   const isApproved = useIsTokenApprovedSpender(tokenAddress, spender);
   const { chainId, account, library } = useActiveWeb3React();
@@ -74,6 +75,7 @@ export function useApproveCallback(
     actions: { addTransaction },
   } = useUserStore();
   // check the current approval status
+  let APPROVAL_AMOUNT = amount !== "" ? amount : String(new BN(2 ** 255).minus(1).toFixed());
   const approvalState: ApprovalState = useMemo(() => {
     if (!tokenAddress || !spender) return ApprovalState.UNKNOWN;
 

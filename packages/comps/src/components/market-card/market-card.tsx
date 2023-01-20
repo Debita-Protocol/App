@@ -8,7 +8,7 @@ import { getMarketEndtimeFull } from "../../utils/date-utils";
 import { CategoryIcon, CategoryLabel, ReportingStateLabel, ValueLabel } from "../common/labels";
 import { MARKET_FACTORY_TYPES, MARKET_STATUS, TWELVE_HOUR_TIME } from "../../utils/constants";
 import { MarketLink,VaultLink } from "../../utils/links/links";
-import { ConfirmedCheck } from "../common/icons";
+import { ConfirmedCheck, Icon_Mapping } from "../common/icons";
 import { TinyThemeButton } from "../common/buttons";
 
 import { MarketCardContext } from './market-card-context'; 
@@ -197,7 +197,7 @@ export const VaultCardView = ({
           </div> */}
     <div>
             {(
-              <ValueLabel label="Underlying" value={vaults[vaultId]?.want.name} />
+              <ValueLabel large ={true} label="Underlying" value={vaults[vaultId]?.want.name} />
             )}
           </div>
 
@@ -208,16 +208,6 @@ export const VaultCardView = ({
 
           <ValueLabel label="TVL" value={vaults[vaultId].totalAssets} />
           <ValueLabel label="Investing Restrictions" value={ vaults[vaultId].onlyVerified? "Only Verified": "None "} />
-          {/*<ValueLabel label="Number of Instruments" value={ "-"} />*/}
-
-    { /*     <ValueLabel label="Projected Yield" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} />
-          <ValueLabel label="Term" value={marketHasNoLiquidity ? "-" : formattedLiquidity || "-"} /> */}
-
-         {/* <OutcomesTable {...{ amm }} />
-          {!hasWinner && extraOutcomes > 0 && (
-            <span className={Styles.ExtraOutcomes}>{`+ ${extraOutcomes} more Outcomes`}</span>
-          )} */}
-
         </section>
 
       </VaultLink>
