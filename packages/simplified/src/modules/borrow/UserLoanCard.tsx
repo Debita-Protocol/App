@@ -77,7 +77,7 @@ export const LoanCard: React.FC = (
         name,
         trusted,
         balance,
-        interest,
+        expectedYield,
         principal,
         duration,
         maturityDate,
@@ -158,7 +158,7 @@ export const LoanCard: React.FC = (
                 afterAction();
             },
             isBorrow: false,
-            maxValue: new BN(principal).plus(new BN(interest)).minus(new BN(balance)).toString(), // should be borrow amount remaining.
+            maxValue: new BN(principal).plus(new BN(expectedYield)).minus(new BN(balance)).toString(), // should be borrow amount remaining.
             symbol: vault.want.symbol
         });
     };
@@ -180,7 +180,7 @@ export const LoanCard: React.FC = (
                 </span>
             </div>
             <section>
-                <ValueLabel label="Notional Interest" value={interest}/>
+                <ValueLabel label="Notional Interest" value={expectedYield}/>
                 <ValueLabel label="Principal" value={principal}/>
                 <ValueLabel label="Duration" value={ new BN(duration).dividedBy(24*60*60).toFixed(4) + " days"}/>
                 {trusted && (
