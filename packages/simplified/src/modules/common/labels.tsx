@@ -29,7 +29,7 @@ const {
   ButtonComps: { TinyThemeButton },
 } = Components;
 
-const handleValue = (value, cashName = USDC) =>
+export const handleValue = (value, cashName = USDC) =>
   formatCash(value, cashName, {
     bigUnitPostfix: true,
   }).full;

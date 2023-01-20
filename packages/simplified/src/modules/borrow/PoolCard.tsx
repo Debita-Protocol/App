@@ -13,6 +13,7 @@ import {
 } from "@augurproject/comps";
 import { InstrumentInfos, VaultInfo, VaultInfos, PoolInstrument, Collateral } from "@augurproject/comps/build/types";
 import {BigNumber as BN} from "bignumber.js";
+import { handleValue } from "modules/common/labels";
 
 const {
     LabelComps: { ValueLabel }
@@ -108,12 +109,12 @@ const PoolCardView: React.FC = ({
         </td>
         <td>
             <span>
-                {totalBorrowedAssets}$
+                {handleValue(totalBorrowedAssets)}
             </span>
         </td>
         <td>
             <span>
-                {totalSuppliedAssets}$
+                {handleValue(totalSuppliedAssets)}
             </span>
         </td>
     </tr>

@@ -25,6 +25,7 @@ import {BigNumber as BN} from "bignumber.js";
 import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 import { TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
 import { BackIcon } from "@augurproject/comps/build/components/common/icons";
+import { handleValue } from "../common/labels";
 
 
 
@@ -43,8 +44,6 @@ const { USDCIcon } = Icons
 const { PathUtils: { parseQuery } } = Utils;
 const { MARKET_ID_PARAM_NAME, } = Constants;
 let timeoutId = null;
-
-
 
 const PoolView: React.FC = () => {
     const location = useLocation();
@@ -156,8 +155,8 @@ const PoolView: React.FC = () => {
                 </h3>
                 <div>
                     <ValueLabel label={"Vault"} large={true} value={vault.name + "/" + vault.want.symbol}/>
-                    <ValueLabel label={"Total Borrowed Assets"} large={true} value={"$" + totalBorrowedAssets}/>
-                    <ValueLabel label={"Total Supplied Assets"} large={true} value={"$" + totalSuppliedAssets}/>
+                    <ValueLabel label={"Total Borrowed Assets"} large={true} value={handleValue(totalBorrowedAssets)}/>
+                    <ValueLabel label={"Total Supplied Assets"} large={true} value={handleValue(totalSuppliedAssets)}/>
                     <ValueLabel label={"Utilization Rate"} large={true} value={ new BN(totalSuppliedAssets).isZero() ? "0.00%" : new BN(totalBorrowedAssets).dividedBy(new BN(totalSuppliedAssets)).multipliedBy(100).toFixed(2) + "%" }/>
                     
                 </div>
@@ -306,16 +305,16 @@ const PoolView: React.FC = () => {
                                         { asset.symbol + "/" + asset.tokenId }
                                     </td>
                                     <td>
-                                        ${ borrowAmount }
+                                        { handleValue(borrowAmount) }
                                     </td>
                                     <td>
-                                        ${ maxAmount }
+                                        { handleValue(maxAmount) }
                                     </td>
                                     <td>
-                                        ${ supplyBalance }
+                                        { handleValue(supplyBalance) }
                                     </td>
                                     <td>
-                                        ${ walletBalance }
+                                        { handleValue(walletBalance) }
                                     </td>
                                     <td>
                                         <div>
@@ -356,11 +355,11 @@ const PoolView: React.FC = () => {
                             {generateTooltip("Rate paid by borrowers", "APR")}
                         </div>
                         <div>
-                            <ValueLabel label={"Account Liquidity"} value={"$" + poolInfo.accountLiquidity}/>
+                            <ValueLabel label={"Account Liquidity"} value={handleValue(poolInfo.accountLiquidity)}/>
                             {generateTooltip("total borrowable - debt owed", "accountLiquidity")}
                         </div>
                         <div>
-                            <ValueLabel label={"Amount Borrowed: "} value={"$" + poolInfo.borrowBalance.amount}/>
+                            <ValueLabel label={"Amount Borrowed: "} value={handleValue(poolInfo.borrowBalance.amount)}/>
                             {generateTooltip("Asset borrowed", "amountBorrowed")}
                         </div>
                         <div>

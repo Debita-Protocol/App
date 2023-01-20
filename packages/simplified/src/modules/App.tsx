@@ -94,7 +94,7 @@ const AppBody = () => {
       id="mainContent"
       className={classNames(Styles.App, {
         [Styles.SidebarOut]: sidebarOut,
-        [Styles.TwoToneContent]: path === MARKET || path === PORTFOLIO,
+        // [Styles.TwoToneContent]: path === MARKET || path === PORTFOLIO,
         [Styles.ModalShowing]: modalShowing || showTradingForm,
       })}
     >
