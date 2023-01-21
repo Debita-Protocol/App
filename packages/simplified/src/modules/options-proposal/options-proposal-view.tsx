@@ -372,8 +372,9 @@ const OptionsProposalView: React.FC = () => {
   }, [strikePrices]);
 
   const godButton = useCallback(async () => {
-    let result = await getRammData(account, loginAccount.library, vaults, markets, instruments)
-    console.log("SLOW GUY: ", result);
+    // let result = await getRammData(account, loginAccount.library, vaults, markets, instruments)
+    // console.log("SLOW GUY: ", result);
+    await ContractSetup(account, loginAccount.library);
   })
 
   if (!loginAccount || !loginAccount.library) {

@@ -556,10 +556,15 @@ export const getContractData = async (account: string, provider: Web3Provider): 
     let instruments: InstrumentInfos = {};
 
     for (let i = 1; i < numVaults.toNumber()+1; i++) {
+        const gasEstimate = await fetcher.estimateGas.fetchInitial(controller_address, market_manager_address, i);
+
         const { vaultBundle, marketBundle, instrumentBundle, timestamp } = await fetcher.fetchInitial(
             controller_address, 
             market_manager_address,
-            i
+            i,
+            {
+                gasLimit: gasEstimate.mul(2).toString(),
+            }
         );
 
         // console.log("instrumentBundle: ", instrumentBundle);
@@ -1417,6 +1422,30 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
+    
+    // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
+    // console.log("STATIC:",await option.instrumentStaticSnapshot());
+    //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
+    // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
+    // for (let i = 1; i < 6; i ++) {
+    //     let vid = await controller.id_parent(i);
+    //     let vault_ad = await controller.vaults(vid);
+    //     let vault = new Contract(vault_ad, VaultData.abi, signer);
+    //     // await controller.getInstrumentSnapShot(i);
+    //     let instrument = await vault.fetchInstrument(i);
+    //     let instrumentData = await vault.fetchInstrumentData(i);
+    //     console.log("instrument: ", instrument);
+    //     if (instrumentData.isPool) {
+    //         let pool = new Contract(instrument, PoolInstrumentData.abi, signer);
+    //         console.log("ACCEPTED" ,await pool.getAcceptedCollaterals());
+    //     } else {
+    //         let option = new Contract(instrument, CoveredCallInstrumentData.abi, signer);
+    //         console.log("STATIC:",await option.instrumentStaticSnapshot());
+            
+    //     }
+    // }
+
+    // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
     // await getRammData(account, provider);
     // let data = await getContractData(account, provider);
 
@@ -1451,31 +1480,31 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // vault.getInstrumentData();
 
 
-    // tx = await reputationManager.incrementScore(account,pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore(account,pp); // validator
+    tx.wait();
 
-    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    tx.wait();
 
-    // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
-    // tx.wait();
+    tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
+    tx.wait();
 
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // await tx.wait();
-    // tx = await controller.testVerifyAddress(); 
-    // await tx.wait();
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    tx = await controller.setValidatorManager(validator_manager_address);
+    await tx.wait();
+    tx = await controller.testVerifyAddress(); 
+    await tx.wait();
 
-    // console.log("F");
+    console.log("F");
 
-    // await scriptSetup(account, provider);
+    await scriptSetup(account, provider);
 }
 
 

@@ -614,7 +614,7 @@ const PoolProposalView: React.FC = () => {
           value={poolData.description}
         ></textarea>
       </div>
-      <div>
+      {/* <div>
         <div>
           {generateTooltip("leave empty if you want the pool instrument to be created for you", "name")}
           <label>Instrument Address (optional): </label>
@@ -622,7 +622,7 @@ const PoolProposalView: React.FC = () => {
         <TextInput placeholder="0x..." value={instrumentAddress} onChange={(val) => {
           setInstrumentAddress(val)
         }} />
-      </div>
+      </div> */}
       <div>
         <SecondaryThemeButton
           text={inputError ? inputMessage : "Submit Proposal"}

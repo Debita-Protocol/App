@@ -204,11 +204,6 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   const {
     settings: { timeFormat },
   } = useSimplifiedStore();
-  const {
-    account, 
-    balances: { lpTokens, pendingRewards },
-    loginAccount,
-  } = useUserStore();
     const { markets} = useDataStore2();
  
     const [expanded, setExpanded] = useState(false);
@@ -794,12 +789,6 @@ const LiquidityView = () => {
 
         </article>
         <section>
-          {/*sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market: MarketInfo) => (
-            <LiquidityMarketCard market={market} key={market.marketId} />
-          )) */}
-          {/*Object.values(vaults).map((vaultinfo: any) => (
-            <VaultCard vault={vaultinfo} />
-          ))*/}
           {Object.values(instruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
           ))}
