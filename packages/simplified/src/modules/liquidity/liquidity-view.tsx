@@ -21,23 +21,24 @@ import ButtonStyles from "../common/buttons.styles.less";
 
 import { AppViewStats, AvailableLiquidityRewards, MaticAddMetaMaskToken } from "../common/labels";
 import {
-  MARKET, 
+  MARKET,
   categoryItems,
   MARKET_LIQUIDITY,
   ZERO,
   MARKET_TYPE_OPTIONS,
   POOL_SORT_TYPES,
   POOL_SORT_TYPE_TEXT,
-  INSTRUMENT_SORT_TYPE_TEXT, 
-  INSTRUMENT_SORT_TYPES, 
+  INSTRUMENT_SORT_TYPE_TEXT,
+  INSTRUMENT_SORT_TYPES,
   INSTRUMENT_TYPE_OPTIONS
 } from "../constants";
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
-import { MarketInfo,InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
-import {InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField} from "../market/market-view"; 
+import { MarketInfo, InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
+import { InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField } from "../market/market-view";
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
+import { Icon_Mapping } from "@augurproject/comps/build/components/common/icons";
 
 const { ADD, CREATE, REMOVE, ALL_MARKETS, OTHER, POPULAR_CATEGORIES_ICONS, SPORTS, MARKET_ID_PARAM_NAME } = Constants;
 const {
@@ -50,7 +51,7 @@ const {
   MarketCardComps: { MarketTitleArea },
   ButtonComps: { PrimaryThemeButton, SecondaryThemeButton },
 } = Components;
-const { canAddLiquidity, getMaticUsdPrice, setUpExampleController, addProposal ,setUpTestManager } = ContractCalls;
+const { canAddLiquidity, getMaticUsdPrice, setUpExampleController, addProposal, setUpTestManager } = ContractCalls;
 const {
   DateUtils: { getMarketEndtimeDate },
   Formatter: { formatApy, formatCash, formatToken },
@@ -67,23 +68,23 @@ interface LiquidityMarketCardProps {
   market: MarketInfo;
 }
 
-const setupExample = async({
-  account, loginAccount, 
+const setupExample = async ({
+  account, loginAccount,
 }) => {
 
   await setUpExampleController(account, loginAccount.library)
 
 }
-const setUpExampleManager = async({
+const setUpExampleManager = async ({
   account, loginAccount
 }) => {
   await setUpTestManager(account, loginAccount.library)
 
 }
-const addExampleProposal = async({
+const addExampleProposal = async ({
   account, loginAccount
-})=> {
-await addProposal(account, loginAccount.library); 
+}) => {
+  await addProposal(account, loginAccount.library);
 
 }
 
@@ -196,32 +197,32 @@ function bin2String(array) {
   return result;
 }
 
-  function roundDown(number, decimals) {
-      decimals = decimals || 0;
-      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
-  }
-export const InstrumentCard = ({instrument}: any):React.FC=>{
+function roundDown(number, decimals) {
+  decimals = decimals || 0;
+  return (Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals));
+}
+export const InstrumentCard = ({ instrument }: any): React.FC => {
   const {
     settings: { timeFormat },
   } = useSimplifiedStore();
-    const { markets} = useDataStore2();
- 
-    const [expanded, setExpanded] = useState(false);
+  const { markets, vaults } = useDataStore2();
 
-     const {actions: {setModal},isMobile} = useAppStatusStore(); 
+  const [expanded, setExpanded] = useState(false);
+
+  const { actions: { setModal }, isMobile } = useAppStatusStore();
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  const{marketId} = instrument; 
-  const type = markets[Number(marketId)]?.instrumentType; 
+  const { marketId, vaultId } = instrument;
+  const type = markets[Number(marketId)]?.instrumentType;
 
 
-  const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
-  const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
-  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field:instrumentField}); 
+  const instrumentField = InstrumentField({ instrumentType: Number(type), instrument: instrument });
+  const instrumentOverview = InstrumentOverviewFormat({ instrumenType: Number(type) })
+  const instrumentDescription = InstumentDescriptionFormat({ instrumenType: Number(type) });
+  const instrumentBreakDown = InstrumentBreakDownFormat({ instrumentType: Number(type), field: instrumentField });
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
- return (
+  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
         [Styles.HasUserLiquidity]: true,
@@ -231,132 +232,89 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
     >
 
       <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+        <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{height: 20, width: 20}}/>
+        <span>
+          <span>{instrument.name}</span>
+        </span>
+        {/* {<SecondaryThemeButton
+          text={instrument?.name}
+          small
+          disabled={false}
+          action={() =>
+            history.push({
+              pathname: makePath(MARKET),
+              search: makeQuery({
+                [MARKET_ID_PARAM_NAME]: marketId,
 
-        {/*<CategoryIcon {{ "categories" } }/> */}
-        {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
-                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+              }),
+            })
+          }
+        />} */}
 
-             {<SecondaryThemeButton
-            text={instrument?.name}
-            small
-            disabled={false}
-            action={() =>
-              history.push({
-                pathname: makePath(MARKET),
-                search: makeQuery({
-                  [MARKET_ID_PARAM_NAME]: marketId,
-                  
-                }),
-              })
-            }
-          />}
-     
       </MarketLink>
 
       <button onClick={() => setExpanded(!expanded)}>
-        {/*<CategoryIcon {...{ categories }} />
-                <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </button>
-      <span>{ (instrument?.isPool? "  Perpetual": "Fixed Term")}</span>
-      <span>{roundDown(instrument?.balance.toString(),2) }</span>
-      <span>{roundDown((((1+ Number(instrument?.seniorAPR)/1e18)**31536000) -1)*100, 2)}{"%"}</span>
+      <span>{(instrument?.isPool ? "Perpetual" : "Fixed Term")}</span>
+      <span>{roundDown(instrument?.balance.toString(), 2)}</span>
+      <span>{roundDown((((1 + Number(instrument?.seniorAPR) / 1e18) ** 31536000) - 1) * 100, 2)}{"%"}</span>
       <span>
         {instrument?.exposurePercentage.toString()}{"%"}
       </span>
       <span>
-        {(approved? "  true": "false")} 
+        {(approved ? "true" : "false")}
         {/*true && <span>{"0"}</span>*/}
       </span>
       <div>
         <div className={Styles.MobileLabel}>
           <span>Approved</span>
-          <span>{(approved? "  true": "false")}</span>
-          {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
+          <span>{(approved ? "true" : "false")}</span>
         </div>
+        {isMobile ?
+          (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+            <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
 
-      {/*<PrimaryThemeButton
-            text="Go to Instrument"
-            small
-            disabled={false}
+            {<SecondaryThemeButton
+              text={instrument?.name}
+              small
+              disabled={false}
+              action={() =>
+                history.push({
+                  pathname: makePath(MARKET),
+                  search: makeQuery({
+                    [MARKET_ID_PARAM_NAME]: marketId,
+
+                  }),
+                })
+              }
+            />}
+
+          </MarketLink>)
+
+          : (<SecondaryThemeButton
+            text="More Info"
             action={() =>
-              history.push({
-                pathname: makePath(MARKET),
-                search: makeQuery({
-                  [MARKET_ID_PARAM_NAME]: marketId,
-                  
-                }),
+              setModal({
+
+                type: "MODAL_CONFIRM_TRANSACTION",
+                title: "Instrument Information",
+                includeButton: false,
+                targetDescription: {
+                  //market,
+                  label: "Overview",  //isMint ? "Market" : "Pool",
+                  subLabel: instrumentDescription
+                },
+                footer:
+                {
+                  text: "-",
+                },
+
+                name: "outcome",
+                breakdowns: instrumentBreakDown
               })
             }
-          />*/}
-        {/*generateTooltip("Instrument Description:"+instrument?.description, "instrument"+marketId)*/}
-      {isMobile? 
-      (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
-
-        {/*<CategoryIcon {{ "categories" } }/> */}
-        {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
-                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
-
-             {<SecondaryThemeButton
-            text={instrument?.name}
-            small
-            disabled={false}
-            action={() =>
-              history.push({
-                pathname: makePath(MARKET),
-                search: makeQuery({
-                  [MARKET_ID_PARAM_NAME]: marketId,
-                  
-                }),
-              })
-            }
-          />}
-     
-      </MarketLink>)
-
-        :(<SecondaryThemeButton
-          text="More Info"
-          action={() =>
-               setModal({
-
-          type: "MODAL_CONFIRM_TRANSACTION",
-          title: "Instrument Information",
-          includeButton : false, 
-          // transactionButtonText: "Redeem",
-          // transactionAction: ({ onTrigger = null, onCancel = null }) => 
-          // {
-          //   onTrigger && onTrigger();
-          //   redeem({account, loginAccount, marketId, amount})
-          
-          // },
-          targetDescription: {
-            //market,
-            label: "Overview",  //isMint ? "Market" : "Pool",
-            subLabel: instrumentDescription
-          },
-          footer: 
-             {
-                text: "-",
-            },
-          
-           name: "outcome", 
-           breakdowns:  instrumentBreakDown
-           // [
-           //      instrumentBreakDown
-           //      // {
-           //      //   heading: "What you'll recieve",
-           //      //   infoNumbers: [
-           //      //     {
-           //      //       label: "Underlying",
-           //      //       value: 1,                              
-           //      //     },
-           //      //   ],
-           //      // },
-           //    ]          
-              
-          })
-        }
-          customClass={ButtonStyles.TinyTransparentButton} 
-        />)}
+            customClass={ButtonStyles.TinyTransparentButton}
+          />)}
       </div>
 
 
@@ -364,23 +322,23 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   );
 }
 
-const VaultCard = ({vault}: any):React.FC=>{
+const VaultCard = ({ vault }: any): React.FC => {
   const {
     settings: { timeFormat },
   } = useSimplifiedStore();
   const {
-    account, 
+    account,
     balances: { lpTokens, pendingRewards },
     loginAccount,
   } = useUserStore();
-    const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-    // const {actions: {setModal},} = useAppStatusStore(); 
+  // const {actions: {setModal},} = useAppStatusStore(); 
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  const{vaultId} = vault; 
- return (
+  const { vaultId } = vault;
+  return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
         [Styles.HasUserLiquidity]: true,
@@ -393,7 +351,7 @@ const VaultCard = ({vault}: any):React.FC=>{
         {/*<CategoryIcon {...{ "categories" }} />
         <MarketTitleArea {...{ ...market, timeFormat }} />*/}
 
-        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{vaultId?.toString()+" "}{"USDC"}{" Vault"}</p>
+        <p style={{ fontWeight: 'bold' }}> {"VaultId: "}{vaultId?.toString() + " "}{"USDC"}{" Vault"}</p>
 
       </MarketLink>
 
@@ -401,20 +359,20 @@ const VaultCard = ({vault}: any):React.FC=>{
         {/*<CategoryIcon {...{ categories }} />
                 <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </button>
-      <span>{ "-"}</span>
+      <span>{"-"}</span>
       <span>{"-"}</span>
       <span>{"-"}</span>
       <span>
         {"$0.00"}
       </span>
       <span>
-        {"$0.00"} 
+        {"$0.00"}
         {true && <span>{"0"}</span>}
       </span>
       <div>
         <div className={Styles.MobileLabel}>
           <span>My Liquidity</span>
-          <span>{ "$0.00"}</span>
+          <span>{"$0.00"}</span>
           {/* <span>init. value {formatCash(userHasLiquidity?.initCostUsd, currency).full}</span> */}
         </div>
         {/*<div className={Styles.MobileLabel}>
@@ -650,14 +608,14 @@ const LiquidityView = () => {
     actions: { updatePoolsViewSettings },
   } = useSimplifiedStore();
   const {
-    account, 
-    loginAccount, 
+    account,
+    loginAccount,
     balances: { lpTokens, pendingRewards },
   } = useUserStore();
   const { markets, transactions } = useDataStore();
   const { marketTypeFilter, sortBy, primaryCategory, subCategories, onlyUserLiquidity } = poolsViewSettings;
-  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  console.log('vaults', vaults, 'instruments', instruments); 
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos } = useDataStore2();
+  console.log('vaults', vaults, 'instruments', instruments);
 
   const [filter, setFilter] = useState("");
   const [filteredMarkets, setFilteredMarkets] = useState([]);
@@ -670,11 +628,11 @@ const LiquidityView = () => {
   const rewardBalance =
     pendingRewards && Object.values(pendingRewards).length
       ? String(
-          Object.values(pendingRewards).reduce(
-            (p: BigNumber, r: { balance: string; earnedBonus: string }) => p.plus(r.balance).plus(r.earnedBonus),
-            ZERO
-          )
+        Object.values(pendingRewards).reduce(
+          (p: BigNumber, r: { balance: string; earnedBonus: string }) => p.plus(r.balance).plus(r.earnedBonus),
+          ZERO
         )
+      )
       : "0";
   const handleFilterSort = () => {
     applyFiltersAndSort(Object.values(markets), setFilteredMarkets, transactions, lpTokens, pendingRewards, {
@@ -699,17 +657,7 @@ const LiquidityView = () => {
 
   return (
     <div className={Styles.LiquidityView}>
-      {/*<AppViewStats small liquidity /> */}
-      {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
-      {/*<MaticAddMetaMaskToken /> */}
- {/*<button onClick={() => setupExample( { account,loginAccount}
-)}>SetUp</button>
-  
-  <button onClick={() => setUpExampleManager( { account,loginAccount}
-)}>SetUpManager</button>
-  <button onClick={()=> addExampleProposal({account, loginAccount})}>Example Proposal</button> */}
-
-      <span></span>     
+      <span></span>
       <span></span>
       <span></span>
       <span></span>
@@ -719,21 +667,11 @@ const LiquidityView = () => {
       <span></span>
       <span></span>
       {<h1>Earn by pricing risks</h1>}
-      {/*<p>
-              Pariticipate in pricing risks and earn more <a href=".">Learn more →</a>
-            </p>*/}
       <ul>
         <SecondaryThemeButton
-  action = {()=> addExampleProposal({account, loginAccount})}
-  text = {"Example Proposal"}
-     />
-        {/*<SquareDropdown
-          onChange={(value) => {
-            updatePoolsViewSettings({ primaryCategory: value, subCategories: [] });
-          }}
-          options={categoryItems}
-          defaultValue={primaryCategory}
-        />*/}
+          action={() => addExampleProposal({ account, loginAccount })}
+          text={"Example Proposal"}
+        />
         <SquareDropdown
           onChange={(value) => {
             updatePoolsViewSettings({ marketTypeFilter: value });
@@ -749,9 +687,8 @@ const LiquidityView = () => {
             setToggle={() => updatePoolsViewSettings({ onlyUserLiquidity: !onlyUserLiquidity })}
           />
           {"My Positions"}
-          {/*`My Liquidity Positions ${userMarkets.length > 0 ? `(${userMarkets.length})` : ''}`*/}
         </label>
-       <label html-for="toggleOnlyUserLiquidity">
+        <label html-for="toggleOnlyUserLiquidity">
           <ToggleSwitch
             id="toggleOnlyUserLiquidity"
             toggle={onlyUserLiquidity}
@@ -759,7 +696,6 @@ const LiquidityView = () => {
             setToggle={() => updatePoolsViewSettings({ onlyUserLiquidity: !onlyUserLiquidity })}
           />
           {"Approved"}
-          {/*`My Liquidity Positions ${userMarkets.length > 0 ? `(${userMarkets.length})` : ''}`*/}
         </label>
         <SearchInput value={filter} onChange={(e) => setFilter(e.target.value)} clearValue={() => setFilter("")} />
       </ul>

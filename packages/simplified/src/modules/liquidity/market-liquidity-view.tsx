@@ -10,7 +10,7 @@ import CommonStyles from "../modal/modal.styles.less";
 import ButtonStyles from "../common/buttons.styles.less";
 
 // @ts-ignore
-import LiqStyles from "./liquidity-view.styles.less"; 
+import LiqStyles from "./liquidity-view.styles.less";
 import { useHistory, useLocation } from "react-router";
 import { InfoNumbers, ApprovalButton } from "../market/trading-form";
 import { BigNumber as BN } from "bignumber.js";
@@ -25,13 +25,13 @@ import {
   createBigNumber,
   useAppStatusStore,
   useScrollToTopOnMount,
-  useDataStore2, 
+  useDataStore2,
   ApprovalHooks
 } from "@augurproject/comps";
-import {  AddMetaMaskToken } from "../common/labels";
-import { Slippage, Leverage} from "../common/slippage";
+import { AddMetaMaskToken } from "../common/labels";
+import { Slippage, Leverage } from "../common/slippage";
 
-import { InstrumentInfos, VaultInfos, CoreInstrumentData , AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
+import { InstrumentInfos, VaultInfos, CoreInstrumentData, AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "../stores/simplified";
 import {
   MODAL_CONFIRM_TRANSACTION,
@@ -41,13 +41,13 @@ import {
   ADD,
   REMOVE,
   SHARES,
-  USDC,POOL_SORT_TYPES,
+  USDC, POOL_SORT_TYPES,
   POOL_SORT_TYPE_TEXT,
   INSTRUMENT_SORT_TYPES, INSTRUMENT_SORT_TYPE_TEXT
 } from "../constants";
-import {InstrumentCard, SortableHeaderButton} from "./liquidity-view"; 
-const{
- useIsTokenApprovedSpender} = ApprovalHooks; 
+import { InstrumentCard, SortableHeaderButton } from "./liquidity-view";
+const {
+  useIsTokenApprovedSpender } = ApprovalHooks;
 
 const {
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
@@ -69,11 +69,11 @@ const {
   estimateResetPrices,
   doResetPrices,
   mintVaultDS,
-faucetUnderlying , redeemVault, getERC20Allowance
+  faucetUnderlying, redeemVault, getERC20Allowance
 } = ContractCalls;
 const {
   PathUtils: { makePath, parseQuery },
-  Formatter: { formatDai,formatSimpleShares, formatEther, formatCash },
+  Formatter: { formatDai, formatSimpleShares, formatEther, formatCash },
   Calculations: { calcPricesFromOdds },
 } = Utils;
 const {
@@ -103,7 +103,7 @@ const defaultAddLiquidityBreakdown: LiquidityBreakdown = {
 };
 const MIN_PRICE = 0.02;
 
-  
+
 const TRADING_FEE_OPTIONS = [
   {
     id: 0,
@@ -131,33 +131,33 @@ const TRADING_FEE_OPTIONS = [
 const getLeverageBreakdown = (
   // totalVaultExposure: string, 
 
-  ) => {
-            // {<p>Total Vault Exposure: {"3"}</p>}
-            // {<p>Borrowed shares: {"3"}</p>}
-            // {<p>My underlying: {"3"}</p>}
-            // {<p>Borrowed underlying: {"3"}</p>}
+) => {
+  // {<p>Total Vault Exposure: {"3"}</p>}
+  // {<p>Borrowed shares: {"3"}</p>}
+  // {<p>My underlying: {"3"}</p>}
+  // {<p>Borrowed underlying: {"3"}</p>}
   return [
     {
       label: "Total Vault Exposure",
-      value: "0", 
+      value: "0",
       tooltipText: "Tooltip",
       tooltipKey: "tooltip",
     },
     {
       label: "Underlying supplied",
-      value: "0", 
+      value: "0",
       tooltipText: "Tooltip",
       tooltipKey: "tooltip",
     },
     {
       label: "Underlying borrowed",
-      value: "0", 
+      value: "0",
       tooltipText: "Tooltip",
       tooltipKey: "tooltip",
     },
     {
       label: "Vault Shares Owed",
-      value: "0", 
+      value: "0",
       tooltipText: "Amount of shares needed to repay to pay all debt",
       tooltipKey: "tooltip",
     },
@@ -173,7 +173,7 @@ function getWindowDimensions() {
   };
 }
 
-export  function useWindowDimensions() {
+export function useWindowDimensions() {
   const [windowDimensions, setWindowDimensions] = useState(getWindowDimensions());
 
   useEffect(() => {
@@ -193,7 +193,7 @@ const REMOVE_FOOTER_TEXT = `Removing liquidity may return shares; these shares m
 
 export const MarketLiquidityView = () => {
   const {
-      poolsViewSettings,
+    poolsViewSettings,
     actions: { updatePoolsViewSettings },
     settings: { timeFormat },
   } = useSimplifiedStore();
@@ -225,13 +225,13 @@ export const MarketLiquidityView = () => {
     isRemove ? shareBalance : isResetPrices ? maxWhackedCollateral?.collateralUsd : ""
   );
 
-  const vaultId = marketId; 
-  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  const vaultId = marketId;
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos } = useDataStore2();
   // console.log(Object.keys(instruments))
-  let filteredInstruments = Object.values(instruments).map((instrument:any)=>{
-      return instrument
+  let filteredInstruments = Object.values(instruments).map((instrument: any) => {
+    return instrument
   })
-  filteredInstruments = filteredInstruments.filter((instrument)=> instrument.vaultId == vaultId); 
+  filteredInstruments = filteredInstruments.filter((instrument) => instrument.vaultId == vaultId);
   // updatedFilteredMarkets.filter((market) =>
   //   market.hasWinner ? (userMarkets.includes(market.marketId) ? true : false) : true
   // );
@@ -241,14 +241,14 @@ export const MarketLiquidityView = () => {
   if (!vault) {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
-  console.log('vault', vault, instruments); 
+  console.log('vault', vault, instruments);
   const vault_address = vault?.address;
-  const underlying_address = vault?.want.address; 
-  const underlyingSymbol = vault?.want.symbol; 
-  const exchangeRate = Number(vault.totalShares) ==0? 1: Number(vault.totalAssets)/Number(vault.totalShares); 
+  const underlying_address = vault?.want.address;
+  const underlyingSymbol = vault?.want.symbol;
+  const exchangeRate = Number(vault.totalShares) == 0 ? 1 : Number(vault.totalAssets) / Number(vault.totalShares);
   function roundDown(number, decimals) {
-      decimals = decimals || 0;
-      return ( Math.floor( number * Math.pow(10, decimals) ) / Math.pow(10, decimals) );
+    decimals = decimals || 0;
+    return (Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals));
   }
   const BackToLPPageAction = () => {
     history.push({
@@ -260,41 +260,41 @@ export const MarketLiquidityView = () => {
     <div className={classNames(Styles.MarketLiquidityView)}>
       {/*<BackBar {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, setAmount, maxWhackedCollateral }} />*/}
       <MarketLink id={marketId} dontGoToMarket={true}>
-            
+
 
         {/*<CategoryIcon {...{ categories }} />
         <MarketTitleArea {...{ ...market, timeFormat }} />*/}
       </MarketLink>
- <div
-          className={classNames(Styles.Details, {
-            [Styles.isClosed]: !showMoreDetails,
-          })}
-        >
-          <h4>Vault Details</h4>
-            <p>{"Vault/Underlying Tokens"}</p>
-          <AddMetaMaskToken tokenSymbol = {"Vault"+vaultId} tokenAddress={vault_address}  />
-          <AddMetaMaskToken tokenSymbol = {underlyingSymbol} tokenAddress={underlying_address}  />          
-          {(
-            <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
-              {showMoreDetails ? "Read Less" : "Read More"}
-            </button> 
-          )}
-          <p>{"details"}</p>
+      <div
+        className={classNames(Styles.Details, {
+          [Styles.isClosed]: !showMoreDetails,
+        })}
+      >
+        <h4>Vault Details</h4>
+        <p>{"Vault/Underlying Tokens"}</p>
+        <AddMetaMaskToken tokenSymbol={"Vault" + vaultId} tokenAddress={vault_address} />
+        <AddMetaMaskToken tokenSymbol={underlyingSymbol} tokenAddress={underlying_address} />
+        {(
+          <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
+            {showMoreDetails ? "Read Less" : "Read More"}
+          </button>
+        )}
+        <p>{"details"}</p>
 
 
 
-      <ul className={Styles.StatsRow}>
-        <li>
+        <ul className={Styles.StatsRow}>
+          <li>
             <span>TVL</span>
-            <span>{"In USD: "}{formatDai(vault.totalAssets|| "0.00").full}</span>
-            <span>{vault.totalAssets}{" Underlying"}</span> 
+            <span>{"In USD: "}{formatDai(vault.totalAssets || "0.00").full}</span>
+            <span>{vault.totalAssets}{" Underlying"}</span>
           </li>
           <li>
             <span>(Estimated) APR</span>
             {generateTooltip(
-          "APR with 0 leverage, senior exposure to all connected instruments",
-          "slippageToleranceInfo"
-        )}
+              "APR with 0 leverage, senior exposure to all connected instruments",
+              "slippageToleranceInfo"
+            )}
             <span>{vaults[vaultId].goalAPR}{"%"}</span>
           </li>
           <li>
@@ -307,79 +307,80 @@ export const MarketLiquidityView = () => {
             <span>{vaults[vaultId].want.name}</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
-        {/*inception price,inception time, current value prices, current mark prices*/}
+          {/*inception price,inception time, current value prices, current mark prices*/}
 
         </ul>
 
-      <ul className={Styles.StatsRow}>
-      <li>
-          <span>Total Circulating Shares </span>
-          <span>{vault.totalShares}</span>
+        <ul className={Styles.StatsRow}>
+          <li>
+            <span>Total Circulating Shares </span>
+            <span>{vault.totalShares}</span>
 
-          {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
-        </li>
-        <li>
+            {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+          </li>
+          <li>
             <span>Exchange Rate w/ underlying</span>
             <span>{exchangeRate}</span>
           </li>
-         
+
           <li>
             <span>Vault Utilization Rate</span>
-            <span>{roundDown(100*Number(vault.utilizationRate), 2)}{"%"}</span>
+            <span>{roundDown(100 * Number(vault.utilizationRate), 2)}{"%"}</span>
           </li>
 
           <li>
             <span>Total First Loss Capital</span>
             {generateTooltip(
-          "Total amount of insurance in vault's underlying. Loss from instruments will be first deducted from this amount",
-          "firstloss"
-        )}
+              "Total amount of insurance in vault's underlying. Loss from instruments will be first deducted from this amount",
+              "firstloss"
+            )}
             <span>{roundDown(vault.totalProtection, 2)
-              }</span>
+            }</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
-        {/*inception price,inception time, current value prices, current mark prices*/}
+          {/*inception price,inception time, current value prices, current mark prices*/}
 
         </ul>
 
         <h4></h4>
-     {/*<h4>Vault Performance</h4>*/}
+        {/*<h4>Vault Performance</h4>*/}
 
-        </div> 
-        <MintForm {...{vaultId, selectedAction, setSelectedAction, amount, setAmount, 
-          underlying_address, exchangeRate}}/>
-   
+      </div>
+      <MintForm {...{
+        vaultId, selectedAction, setSelectedAction, amount, setAmount,
+        underlying_address, exchangeRate
+      }} />
+
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
       {/*<LiquidityWarningFooter />*/}
 
       <div className={LiqStyles.LiquidityView}>
-                   <h4>Instruments</h4>
+        <h4>Instruments</h4>
 
-       <section>
-        <article>
-          <span>Instrument Name</span>
-
-          {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
-            <SortableHeaderButton
-              {...{
-                sortType,
-                setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
-                sortBy,
-                text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
-                key: `${sortType}-sortable-button`,
-              }}
-            />
-          ))}
-          <span />
-        </article>
+        <section>
+          <article>
+            <span>Instrument Name</span>
+            {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
+              <SortableHeaderButton
+                {...{
+                  sortType,
+                  setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
+                  sortBy,
+                  text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
+                  key: `${sortType}-sortable-button`,
+                }}
+              />
+            ))}
+            <span />
+          </article>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
 
           ))}
         </section>
-        </div>
+      </div>
     </div>
   );
 };
@@ -461,13 +462,12 @@ const getCreateBreakdown = (breakdown, market, balances, isRemove = false) => {
       })),
     {
       label: isRemove ? "USDC" : "LP tokens",
-      value: `${
-        breakdown?.amount
+      value: `${breakdown?.amount
           ? isRemove
             ? formatCash(breakdown.amount, USDC).full
             : formatSimpleShares(breakdown.amount).formatted
           : "-"
-      }`,
+        }`,
       svg: isRemove ? USDCIcon : null,
     },
   ];
@@ -514,103 +514,103 @@ const getResetedPricesBreakdown = (outcomes) => {
     svg: null,
   }));
 };
-const confirmMintVault = async({
-  account,  loginAccount, vaultId, amount, leverageFactor, addTransaction
+const confirmMintVault = async ({
+  account, loginAccount, vaultId, amount, leverageFactor, addTransaction
 
 }) => {
   mintVaultDS(account, loginAccount.library, vaultId, amount, leverageFactor)
-    .then((response)=> {
-      const {hash} = response; 
+    .then((response) => {
+      const { hash } = response;
       addTransaction({
-          hash,
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.PENDING,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Mint Vault`,
-          marketDescription: 'VaultId/leverageFactor: '+vaultId +"/"+ String(leverageFactor),
+        hash,
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.PENDING,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Mint Vault`,
+        marketDescription: 'VaultId/leverageFactor: ' + vaultId + "/" + String(leverageFactor),
       });
-    }).catch((error)=> {
-      console.log("minting failure", error?.message); 
-        addTransaction({
-          hash: "Mint failed",
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.FAILURE,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Mint Vault`,
-          marketDescription: 'VaultId/leverageFactor: '+vaultId + "/"+ String(leverageFactor),
-        });
+    }).catch((error) => {
+      console.log("minting failure", error?.message);
+      addTransaction({
+        hash: "Mint failed",
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.FAILURE,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Mint Vault`,
+        marketDescription: 'VaultId/leverageFactor: ' + vaultId + "/" + String(leverageFactor),
+      });
     })
-    ; 
- 
+    ;
+
 }
-const confirmRedemVault = async({
+const confirmRedemVault = async ({
   account, loginAccount, vaultId, amount, addTransaction
-})=>{
-  await  redeemVault(account, loginAccount.library, vaultId, amount)
-      .then((response)=> {
-      const {hash} = response; 
+}) => {
+  await redeemVault(account, loginAccount.library, vaultId, amount)
+    .then((response) => {
+      const { hash } = response;
       addTransaction({
-          hash,
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.PENDING,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Redeem Vault`,
-          marketDescription: 'VaultId: '+vaultId ,
+        hash,
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.PENDING,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Redeem Vault`,
+        marketDescription: 'VaultId: ' + vaultId,
       });
-    }).catch((error)=> {
-      console.log("minting failure", error?.message); 
-        addTransaction({
-          hash: "Redeem failed",
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.FAILURE,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Redeem Vault`,
-          marketDescription: 'VaultId: '+vaultId,
-        });
+    }).catch((error) => {
+      console.log("minting failure", error?.message);
+      addTransaction({
+        hash: "Redeem failed",
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.FAILURE,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Redeem Vault`,
+        marketDescription: 'VaultId: ' + vaultId,
+      });
     })
-    ; 
-  
+    ;
+
 }
-const faucet = async({
+const faucet = async ({
   account, loginAccount, underlying_address, addTransaction
-})=>{
+}) => {
   faucetUnderlying(account, loginAccount.library, underlying_address)
-    .then((response)=> {
-      const {hash} = response; 
+    .then((response) => {
+      const { hash } = response;
       addTransaction({
-          hash,
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.PENDING,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Faucet Underlying`,
-          marketDescription: underlying_address,
+        hash,
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.PENDING,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Faucet Underlying`,
+        marketDescription: underlying_address,
       });
-    }).catch((error)=> {
-      console.log("minting failure", error?.message); 
-        addTransaction({
-          hash: "Mint failed",
-          chainId: loginAccount.chainId,
-          seen: false,
-          status: TX_STATUS.FAILURE,
-          from: account,
-          addedTime: new Date().getTime(),
-          message: `Faucet Underlying`,
-          marketDescription: underlying_address,
-        });
+    }).catch((error) => {
+      console.log("minting failure", error?.message);
+      addTransaction({
+        hash: "Mint failed",
+        chainId: loginAccount.chainId,
+        seen: false,
+        status: TX_STATUS.FAILURE,
+        from: account,
+        addedTime: new Date().getTime(),
+        message: `Faucet Underlying`,
+        marketDescription: underlying_address,
+      });
     })
 }
 interface MintFormProps {
-  vaultId: string; 
+  vaultId: string;
   // market: MarketInfo;
   selectedAction: string;
   setSelectedAction: Function;
@@ -618,15 +618,15 @@ interface MintFormProps {
   amount: string;
   setAmount: (string) => void;
   underlying_address: string;
-  exchangeRate : number; 
+  exchangeRate: number;
 }
 const MintForm = ({
-  vaultId, 
+  vaultId,
   selectedAction,
-  setSelectedAction, 
-  amount, 
-  setAmount, 
-  underlying_address, 
+  setSelectedAction,
+  amount,
+  setAmount,
+  underlying_address,
   exchangeRate
 }: MintFormProps) => {
   const {
@@ -634,22 +634,22 @@ const MintForm = ({
     balances,
     loginAccount,
     actions: { addTransaction },
-    ramm: { reputationScore, vaultBalances, zcbBalances}
+    ramm: { reputationScore, vaultBalances, zcbBalances }
   } = useUserStore();
-  const [vaultAllowance, setVaultAllowance] = useState(false); 
+  const [vaultAllowance, setVaultAllowance] = useState(false);
 
 
   const {
     actions: { setModal },
     // isMobile
   } = useAppStatusStore();
-  const dimensions = useWindowDimensions(); 
-  const isMobile = dimensions.width < 1200; 
-  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  const dimensions = useWindowDimensions();
+  const isMobile = dimensions.width < 1200;
+  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos } = useDataStore2();
   // const {vaultId} = vaults; 
   // console.log('vaults', vaults[vaultId], instruments); 
-  const isAdd = selectedAction === ADD; 
-  const isRemove = selectedAction === REMOVE ;
+  const isAdd = selectedAction === ADD;
+  const isRemove = selectedAction === REMOVE;
   const isMint = selectedAction === "mint";
   const isResetPrices = selectedAction === RESET_PRICES;
 
@@ -660,63 +660,63 @@ const MintForm = ({
   const [chosenCash, updateCash] = useState<string>(vaults[vaultId].want.name);
   const [breakdown, setBreakdown] = useState(defaultAddLiquidityBreakdown);
   const [estimatedLpAmount, setEstimatedLpAmount] = useState<string>("0");
-  const [leverageFactor, setLeverageFactor] = useState(0); 
+  const [leverageFactor, setLeverageFactor] = useState(0);
   const setPrices = (price, index) => {
     const newOutcomes = outcomes;
     newOutcomes[index].price = price;
     setOutcomes([...newOutcomes]);
   };
 
-  useEffect(async()=> {
-    if(account  ){
-      const maxUint = 2**255
-  
-      const allowance = await getERC20Allowance(
-        vaults[vaultId]?.want.address, 
-        loginAccount.library, 
-        account, 
-        vaults[vaultId]?.address
-        )
-      if (allowance && Number(allowance) >= maxUint)
-        setVaultAllowance(true); 
-    }
-  }, [account, amount,vaults, instruments])
+  useEffect(async () => {
+    if (account) {
+      const maxUint = 2 ** 255
 
-  const amountLabel = !isMint? "Shares": vaults[vaultId]?.want.symbol; 
-    const approvalActionType = ApprovalAction.MINT_SETS
-    // isRemove
-    // ? ApprovalAction.REMOVE_LIQUIDITY
-    // : isMint
-    // ? ApprovalAction.MINT_SETS
-    // : isResetPrices
-    // ? ApprovalAction.RESET_PRICES
-    // : ApprovalAction.ADD_LIQUIDITY;
-  const isApproved = false; 
+      const allowance = await getERC20Allowance(
+        vaults[vaultId]?.want.address,
+        loginAccount.library,
+        account,
+        vaults[vaultId]?.address
+      )
+      if (allowance && Number(allowance) >= maxUint)
+        setVaultAllowance(true);
+    }
+  }, [account, amount, vaults, instruments])
+
+  const amountLabel = !isMint ? "Shares" : vaults[vaultId]?.want.symbol;
+  const approvalActionType = ApprovalAction.MINT_SETS
+  // isRemove
+  // ? ApprovalAction.REMOVE_LIQUIDITY
+  // : isMint
+  // ? ApprovalAction.MINT_SETS
+  // : isResetPrices
+  // ? ApprovalAction.RESET_PRICES
+  // : ApprovalAction.ADD_LIQUIDITY;
+  const isApproved = false;
   const infoNumbers = []
-  const {inputFormError} = MintRedeemError({account}) 
-    const vault = vaults[Number(vaultId)]
+  const { inputFormError } = MintRedeemError({ account })
+  const vault = vaults[Number(vaultId)]
 
   // isMint
   //   ? getMintBreakdown(outcomes, amount)
   //   : isResetPrices
   //   ? getResetBreakdown(breakdown, market)
   //   : getCreateBreakdown(breakdown, market, balances, isRemove);
-  let cash: Cash; 
-  const userMaxAmount = isAdd? vaultBalances[vaultId]?.base : 
-      isMint? vaultBalances[vaultId]?.shares: vaultBalances[vaultId]?.shares
+  let cash: Cash;
+  const userMaxAmount = isAdd ? vaultBalances[vaultId]?.base :
+    isMint ? vaultBalances[vaultId]?.shares : vaultBalances[vaultId]?.shares
 
   // const vaultApproved = useIsTokenApprovedSpender(vault[vaultId]?.want.address, vault[vaultId]?.address);
 
-    return (
+  return (
     <section
       className={classNames(Styles.LiquidityForm, {
         [Styles.isRemove]: false,
-        [Styles.isMint]: isMint ||isAdd,
+        [Styles.isMint]: isMint || isAdd,
         [Styles.isResetPrices]: isResetPrices,
       })}
     >
       <header>
-        {!isMobile &&(<button
+        {!isMobile && (<button
           className={classNames({ [Styles.selected]: isAdd })}
           onClick={() => {
             setAmount(amount);
@@ -726,34 +726,34 @@ const MintForm = ({
           {"Mint"}
         </button>)}
         {isMobile && (<button
-            className={classNames({ [Styles.selected]: false  })}
-            onClick={() => {
-              setAmount("0");
+          className={classNames({ [Styles.selected]: false })}
+          onClick={() => {
+            setAmount("0");
 
-              if(isAdd){
+            if (isAdd) {
               setSelectedAction("mint");
-              }
-              else if(isMint){
-                setSelectedAction(REMOVE); 
-              }
-              else if(isRemove){
-                setSelectedAction(ADD); 
-              }
-            }}
-          >
-            {isMint?"Manage Leverage Form" : isRemove? "Mint Form" : "Redeem Form"}
-          </button>)}
+            }
+            else if (isMint) {
+              setSelectedAction(REMOVE);
+            }
+            else if (isRemove) {
+              setSelectedAction(ADD);
+            }
+          }}
+        >
+          {isMint ? "Manage Leverage Form" : isRemove ? "Mint Form" : "Redeem Form"}
+        </button>)}
 
-          {!isMobile && (<button
-            className={classNames({ [Styles.selected]: isMint  })}
-            onClick={() => {
-              setAmount("0");
-              setSelectedAction("mint");
-            }}
-          >
-            Redeem
-          </button>)}
-        { !isMobile && (
+        {!isMobile && (<button
+          className={classNames({ [Styles.selected]: isMint })}
+          onClick={() => {
+            setAmount("0");
+            setSelectedAction("mint");
+          }}
+        >
+          Redeem
+        </button>)}
+        {!isMobile && (
           <button
             className={classNames({ [Styles.selected]: isRemove })}
             onClick={() => {
@@ -768,7 +768,7 @@ const MintForm = ({
       </header>
       <main>
 
-     {isRemove && (<AmountInput
+        {isRemove && (<AmountInput
           heading={"Rewind Amount"}
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
@@ -777,24 +777,24 @@ const MintForm = ({
           chosenCash={isRemove ? SHARES : chosenCash}
           updateCash={updateCash}
           updateAmountError={() => null}
-          disabled = {false}
-          //error={hasAmountErrors}
+          disabled={false}
+        //error={hasAmountErrors}
         />)}
 
         <div className={Styles.PricesAndOutcomes}>
-  
+
           <span className={Styles.PriceInstructions}>
 
-            <span>{ "Leverage Position Info"}</span>
-                   
-                   <InfoNumbers
+            <span>{"Leverage Position Info"}</span>
 
-            infoNumbers={getLeverageBreakdown()}
-                />
+            <InfoNumbers
+
+              infoNumbers={getLeverageBreakdown()}
+            />
 
 
           </span>
-        {/*<span className={Styles.PriceInstructions}>
+          {/*<span className={Styles.PriceInstructions}>
             <span>{ "P&L"}</span>
             {<p>Borrowed Amount: {"3"}</p>}
 
@@ -810,65 +810,65 @@ const MintForm = ({
             setSelectedOutcome={() => null}
             orderType={BUY}
             nonSelectable
-            editable={true }//mustSetPrices && !hasInitialOdds}
+            editable={true}//mustSetPrices && !hasInitialOdds}
             setEditableValue={(price, index) => setPrices(price, index)}
             ammCash={cash}
             dontFilterInvalid
-            hasLiquidity={true }//!mustSetPrices || hasInitialOdds}
-           // marketFactoryType={market?.marketFactoryType}
+            hasLiquidity={true}//!mustSetPrices || hasInitialOdds}
+            // marketFactoryType={market?.marketFactoryType}
             isGrouped={false}//market?.isGrouped}
           />
 
         </div>
 
         <section className={Styles.BreakdownAndAction}>
-        {!isRemove && (<AmountInput
-          heading={!isMint?"Deposit Amount": "Redeem Amount"}
-          ammCash={cash}
-          updateInitialAmount={(amount) => setAmount(amount)}
-          initialAmount={amount}
-          maxValue={userMaxAmount}
-          chosenCash={isRemove ?  SHARES : !isMint ? chosenCash: SHARES}
-          updateCash={updateCash}
-          updateAmountError={() => null}
-          disabled = {false}
+          {!isRemove && (<AmountInput
+            heading={!isMint ? "Deposit Amount" : "Redeem Amount"}
+            ammCash={cash}
+            updateInitialAmount={(amount) => setAmount(amount)}
+            initialAmount={amount}
+            maxValue={userMaxAmount}
+            chosenCash={isRemove ? SHARES : !isMint ? chosenCash : SHARES}
+            updateCash={updateCash}
+            updateAmountError={() => null}
+            disabled={false}
           //error={hasAmountErrors}
-        />)}
-        {isAdd &&  <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>}
-         {
-              isAdd && leverageFactor>0 &&(
-                  <WarningBanner
+          />)}
+          {isAdd && <Leverage leverageFactor={leverageFactor} setLeverageFactor={setLeverageFactor} />}
+          {
+            isAdd && leverageFactor > 0 && (
+              <WarningBanner
                 className={CommonStyles.ErrorBorder}
                 title="Not enough liquidity in lendingpool to borrow"
                 subtitle={
                   "Not enough liquidity"
                 }
-                />
-                )
-            }
-          {true &&(
+              />
+            )
+          }
+          {true && (
             <>
-              {isAdd &&(<div className={Styles.Breakdown}>
+              {isAdd && (<div className={Styles.Breakdown}>
                 <InfoNumbers
                   infoNumbers={[
                     {
                       label: "Underlying Borrowing",
                       value: (Number(leverageFactor) * Number(amount)).toString()
-                    }, 
+                    },
                     {
-                      label: "Total Underlying Exposure", 
-                      value: ((Number(leverageFactor) +1 )* Number(amount)).toString()
-                    }, 
+                      label: "Total Underlying Exposure",
+                      value: ((Number(leverageFactor) + 1) * Number(amount)).toString()
+                    },
                     {
-                      label: "Current borrow rate", 
-                      value: "2.3% APR", 
-                      tooltipText: "Only applicable with non 0 leverage", 
+                      label: "Current borrow rate",
+                      value: "2.3% APR",
+                      tooltipText: "Only applicable with non 0 leverage",
                       tooltipKey: "borrowrate",
-                    }, 
+                    },
 
                     {
                       label: "Estimated APR",
-                      value: String((leverageFactor +1 ) * Number(vaults[vaultId].goalAPR) ) , 
+                      value: String((leverageFactor + 1) * Number(vaults[vaultId].goalAPR)),
                       tooltipText: "(Vault Estimated APR - borrow rate) * leverage multiplier ",
                       tooltipKey: "estimatedapr",
                       // isRemove? (Number(amount)* exchangeRate).toString()
@@ -881,42 +881,42 @@ const MintForm = ({
                 />
               </div>)}
               <div className={Styles.Breakdown}>
-                <span>{!isRemove ? "You'll receive": "Debt remaining after"}</span>
-                {leverageFactor==0?(<InfoNumbers
+                <span>{!isRemove ? "You'll receive" : "Debt remaining after"}</span>
+                {leverageFactor == 0 ? (<InfoNumbers
                   infoNumbers={[
                     {
                       label: amountLabel,
                       value: isMint
-                      ? (Number(amount)* exchangeRate).toString()
-                      :isRemove ? (Number(amount)/exchangeRate).toString()
-                      : (Number(amount)/exchangeRate).toString()
+                        ? (Number(amount) * exchangeRate).toString()
+                        : isRemove ? (Number(amount) / exchangeRate).toString()
+                          : (Number(amount) / exchangeRate).toString()
                       //value:`${formatCash(amount, USDC).full}`,
                       //svg: USDCIcon,
                     },
 
                   ]}
-                />): 
-              (<InfoNumbers
-                  infoNumbers={[
-                    {
-                      label: "Shares Total",
-                      value: isMint
-                      ? (Number(amount)* exchangeRate).toString()
-                      :isRemove ? (Number(amount)/exchangeRate).toString()
-                      : (Number(amount)/exchangeRate).toString()
-                     
-                    },
-                    {
-                      label: "Debt(Shares) Total",
-                      value: isMint
-                      ? (Number(amount)* exchangeRate).toString()
-                      :isRemove ? (Number(amount)/exchangeRate).toString()
-                      : (Number(amount)/exchangeRate).toString()
-                      
-                    }
-                  ]}
-                />)
-              }
+                />) :
+                  (<InfoNumbers
+                    infoNumbers={[
+                      {
+                        label: "Shares Total",
+                        value: isMint
+                          ? (Number(amount) * exchangeRate).toString()
+                          : isRemove ? (Number(amount) / exchangeRate).toString()
+                            : (Number(amount) / exchangeRate).toString()
+
+                      },
+                      {
+                        label: "Debt(Shares) Total",
+                        value: isMint
+                          ? (Number(amount) * exchangeRate).toString()
+                          : isRemove ? (Number(amount) / exchangeRate).toString()
+                            : (Number(amount) / exchangeRate).toString()
+
+                      }
+                    ]}
+                  />)
+                }
 
               </div>
             </>
@@ -931,14 +931,14 @@ const MintForm = ({
                 }
               />
             )}
-        { /* <span>{isRemove ? "Remove All Liquidity" : "You'll Receive"}</span>
+            { /* <span>{isRemove ? "Remove All Liquidity" : "You'll Receive"}</span>
                   <InfoNumbers infoNumbers={infoNumbers} /> */}
           </div>
           <div className={Styles.ActionButtons}>
             {!isApproved && (
               <SecondaryThemeButton
-              action = {()=> faucet({account, loginAccount, underlying_address, addTransaction})}
-              text={"Faucet Underlying"}
+                action={() => faucet({ account, loginAccount, underlying_address, addTransaction })}
+                text={"Faucet Underlying"}
               />
 
               // <ApprovalButton
@@ -949,42 +949,42 @@ const MintForm = ({
               //   ds = {true}
               // />
             )}
-            {!vaultAllowance?
-            (<ApprovalButton
-              {...{
-              spender_: vaults[vaultId]?.address, 
-              underlyingAddress:vaults[vaultId]?.want.address, 
-              }}
-            />):
-            (<SecondaryThemeButton
-              action={ ()=> isAdd
-                ? confirmMintVault({account, loginAccount, vaultId, amount,leverageFactor, addTransaction})
-                : isMint
-                ? confirmRedemVault({account, loginAccount, vaultId, amount, addTransaction}) 
-                : confirmRedemVault({account, loginAccount, vaultId, amount, addTransaction})}
+            {!vaultAllowance ?
+              (<ApprovalButton
+                {...{
+                  spender_: vaults[vaultId]?.address,
+                  underlyingAddress: vaults[vaultId]?.want.address,
+                }}
+              />) :
+              (<SecondaryThemeButton
+                action={() => isAdd
+                  ? confirmMintVault({ account, loginAccount, vaultId, amount, leverageFactor, addTransaction })
+                  : isMint
+                    ? confirmRedemVault({ account, loginAccount, vaultId, amount, addTransaction })
+                    : confirmRedemVault({ account, loginAccount, vaultId, amount, addTransaction })}
 
-             
-              disabled={false}//!isApproved || inputFormError !== ""}
-              error={inputFormError}//buttonError}
-              text={isAdd?"Mint" : isMint?"Redeem" :  "Rewind"
-                //inputFormError === "" ? (buttonError ? buttonError : actionButtonText) : inputFormError}
-              }
-              subText={""
-                // buttonError === INVALID_PRICE
-                //   ? lessThanMinPrice
-                //     ? INVALID_PRICE_GREATER_THAN_SUBTEXT
-                //     : INVALID_PRICE_ADD_UP_SUBTEXT
-                //   : null
-              }
-              customClass={ButtonStyles.ReviewTransactionButton}
-            />)}
+
+                disabled={false}//!isApproved || inputFormError !== ""}
+                error={inputFormError}//buttonError}
+                text={isAdd ? "Mint" : isMint ? "Redeem" : "Rewind"
+                  //inputFormError === "" ? (buttonError ? buttonError : actionButtonText) : inputFormError}
+                }
+                subText={""
+                  // buttonError === INVALID_PRICE
+                  //   ? lessThanMinPrice
+                  //     ? INVALID_PRICE_GREATER_THAN_SUBTEXT
+                  //     : INVALID_PRICE_ADD_UP_SUBTEXT
+                  //   : null
+                }
+                customClass={ButtonStyles.ReviewTransactionButton}
+              />)}
 
           </div>
         </section>
       </main>
     </section>
   );
-} 
+}
 
 const LiquidityForm = ({
   market,
@@ -1022,8 +1022,8 @@ const LiquidityForm = ({
   const [breakdown, setBreakdown] = useState(defaultAddLiquidityBreakdown);
   const [estimatedLpAmount, setEstimatedLpAmount] = useState<string>("0");
   const tradingFeeSelection = TRADING_FEE_OPTIONS[2].id;
- // const cash: Cash = cashes ? Object.values(cashes).find((c) => c.name === USDC) : Object.values(cashes)[0];
-    const cash: Cash = Object.values(cashes)[0];
+  // const cash: Cash = cashes ? Object.values(cashes).find((c) => c.name === USDC) : Object.values(cashes)[0];
+  const cash: Cash = Object.values(cashes)[0];
 
   const userTokenBalance = cash?.name ? balances[cash?.name]?.balance : "0";
   const shareBalance =
@@ -1037,10 +1037,10 @@ const LiquidityForm = ({
   const approvalActionType = isRemove
     ? ApprovalAction.REMOVE_LIQUIDITY
     : isMint
-    ? ApprovalAction.MINT_SETS
-    : isResetPrices
-    ? ApprovalAction.RESET_PRICES
-    : ApprovalAction.ADD_LIQUIDITY;
+      ? ApprovalAction.MINT_SETS
+      : isResetPrices
+        ? ApprovalAction.RESET_PRICES
+        : ApprovalAction.ADD_LIQUIDITY;
   const approvedMain = useApprovalStatus({
     cash,
     amm,
@@ -1132,10 +1132,10 @@ const LiquidityForm = ({
   const addTitle = isRemove
     ? "Increase Liqiudity"
     : isMint
-    ? "Mint Complete Sets"
-    : isResetPrices
-    ? "Reset Prices"
-    : "Add Liquidity";
+      ? "Mint Complete Sets"
+      : isResetPrices
+        ? "Reset Prices"
+        : "Add Liquidity";
   const now = Math.floor(new Date().getTime() / 1000);
   const pendingRewards = balances.pendingRewards?.[amm?.marketId];
   const hasPendingBonus =
@@ -1148,8 +1148,8 @@ const LiquidityForm = ({
   const infoNumbers = isMint
     ? getMintBreakdown(outcomes, amount)
     : isResetPrices
-    ? getResetBreakdown(breakdown, market)
-    : getCreateBreakdown(breakdown, market, balances, isRemove);
+      ? getResetBreakdown(breakdown, market)
+      : getCreateBreakdown(breakdown, market, balances, isRemove);
 
   const notMintOrReset = !isMint && !isResetPrices;
   const resetPricesInfoNumbers = getResetedPricesBreakdown(outcomes);
@@ -1240,15 +1240,15 @@ const LiquidityForm = ({
           )}
           <div className={Styles.Breakdown}>
             {
-              true && true &&(
-                  <WarningBanner
-                className={CommonStyles.ErrorBorder}
-                title="Not enough liquidity in lendingpool to borrow"
-                subtitle={
-                  "Not enough liquidity"
-                }
+              true && true && (
+                <WarningBanner
+                  className={CommonStyles.ErrorBorder}
+                  title="Not enough liquidity in lendingpool to borrow"
+                  subtitle={
+                    "Not enough liquidity"
+                  }
                 />
-                )
+              )
             }
             {isRemove && hasPendingBonus && (
               <WarningBanner
@@ -1269,7 +1269,7 @@ const LiquidityForm = ({
                 cash={cash}
                 actionType={approvalActionType}
                 customClass={ButtonStyles.ReviewTransactionButton}
-                ds = {true}
+                ds={true}
               />
             )}
             <SecondaryThemeButton
@@ -1279,10 +1279,10 @@ const LiquidityForm = ({
                   title: isRemove
                     ? "Remove Liquidity"
                     : isMint
-                    ? "Mint Complete Sets"
-                    : isResetPrices
-                    ? "Reset Prices"
-                    : "Add Liquidity",
+                      ? "Mint Complete Sets"
+                      : isResetPrices
+                        ? "Reset Prices"
+                        : "Add Liquidity",
                   transactionButtonText: isRemove ? "Remove" : isMint ? "Mint" : isResetPrices ? "Reset Prices" : "Add",
                   transactionAction: ({ onTrigger = null, onCancel = null }) => {
                     onTrigger && onTrigger();
@@ -1312,28 +1312,28 @@ const LiquidityForm = ({
                   },
                   footer: isRemove
                     ? {
-                        text: REMOVE_FOOTER_TEXT,
-                      }
+                      text: REMOVE_FOOTER_TEXT,
+                    }
                     : null,
                   breakdowns: isRemove
                     ? [
-                        {
-                          heading: "What you are removing:",
-                          infoNumbers: [
-                            {
-                              label: "Pooled USDC",
-                              value: `${formatCash(liquidityUSD, USDC).full}`,
-                              svg: USDCIcon,
-                            },
-                          ],
-                        },
-                        {
-                          heading: "What you'll recieve",
-                          infoNumbers,
-                        },
-                      ]
+                      {
+                        heading: "What you are removing:",
+                        infoNumbers: [
+                          {
+                            label: "Pooled USDC",
+                            value: `${formatCash(liquidityUSD, USDC).full}`,
+                            svg: USDCIcon,
+                          },
+                        ],
+                      },
+                      {
+                        heading: "What you'll recieve",
+                        infoNumbers,
+                      },
+                    ]
                     : isMint
-                    ? [
+                      ? [
                         {
                           heading: "What you are depositing",
                           infoNumbers: [
@@ -1349,52 +1349,52 @@ const LiquidityForm = ({
                           infoNumbers,
                         },
                       ]
-                    : isResetPrices
-                    ? [
-                        {
-                          heading: "New Prices",
-                          infoNumbers: resetPricesInfoNumbers,
-                        },
-                        {
-                          heading: "USDC Needed to reset the prices",
-                          infoNumbers: [
-                            {
-                              label: "amount",
-                              value: `${formatCash(amount, USDC).full}`,
-                              svg: USDCIcon,
-                            },
-                          ],
-                        },
-                        {
-                          heading: "What you'll recieve",
-                          infoNumbers,
-                        },
-                      ]
-                    : [
-                        {
-                          heading: "What you are depositing",
-                          infoNumbers: [
-                            {
-                              label: "amount",
-                              value: `${formatCash(amount, USDC).full}`,
-                              svg: USDCIcon,
-                            },
-                          ],
-                        },
-                        {
-                          heading: "What you'll recieve",
-                          infoNumbers,
-                        },
-                        {
-                          heading: "Pool Details",
-                          infoNumbers: [
-                            {
-                              label: "Trading Fee",
-                              value: `${amm?.feeInPercent}%`,
-                            },
-                          ],
-                        },
-                      ],
+                      : isResetPrices
+                        ? [
+                          {
+                            heading: "New Prices",
+                            infoNumbers: resetPricesInfoNumbers,
+                          },
+                          {
+                            heading: "USDC Needed to reset the prices",
+                            infoNumbers: [
+                              {
+                                label: "amount",
+                                value: `${formatCash(amount, USDC).full}`,
+                                svg: USDCIcon,
+                              },
+                            ],
+                          },
+                          {
+                            heading: "What you'll recieve",
+                            infoNumbers,
+                          },
+                        ]
+                        : [
+                          {
+                            heading: "What you are depositing",
+                            infoNumbers: [
+                              {
+                                label: "amount",
+                                value: `${formatCash(amount, USDC).full}`,
+                                svg: USDCIcon,
+                              },
+                            ],
+                          },
+                          {
+                            heading: "What you'll recieve",
+                            infoNumbers,
+                          },
+                          {
+                            heading: "Pool Details",
+                            infoNumbers: [
+                              {
+                                label: "Trading Fee",
+                                value: `${amm?.feeInPercent}%`,
+                              },
+                            ],
+                          },
+                        ],
                 })
               }
               disabled={!isApproved || inputFormError !== ""}
@@ -1432,7 +1432,7 @@ const confirmAction = async ({
   amm,
   isRemove,
   estimatedLpAmount,
-  afterSigningAction = () => {},
+  afterSigningAction = () => { },
   onCancel = null,
   isMint,
   isResetPrices,
@@ -1574,10 +1574,10 @@ const confirmAction = async ({
 
 const MIN_LIQUIDITY_ADD_AMOUNT = "200.00";
 
-const MintRedeemError = ({account})=>{
+const MintRedeemError = ({ account }) => {
   let inputFormError = "";
   if (!account) inputFormError = "Connect Account";
-  return {inputFormError}; 
+  return { inputFormError };
 
 }
 const useErrorValidation = ({ isRemove, outcomes, amount, actionType, isGrouped, userMaxAmount, account }) => {
@@ -1587,8 +1587,8 @@ const useErrorValidation = ({ isRemove, outcomes, amount, actionType, isGrouped,
   const priceErrors = isRemove
     ? []
     : outcomes.filter((outcome) => {
-        return parseFloat(outcome.price) >= 1 || isInvalidNumber(outcome.price);
-      });
+      return parseFloat(outcome.price) >= 1 || isInvalidNumber(outcome.price);
+    });
   const hasPriceErrors = priceErrors.length > 0;
   const hasAmountErrors = isInvalidNumber(amount);
   if (hasAmountErrors) {
