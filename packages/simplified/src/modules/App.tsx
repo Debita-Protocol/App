@@ -120,7 +120,7 @@ function App() {
       <ConnectAccountProvider>
         <UserProvider>
           <DataProvider2>
-          {/* <DataProvider> */}
+          <DataProvider>
             <AppStatusProvider>
               <SimplifiedProvider>
                 <MarketCardProvider>
@@ -128,7 +128,7 @@ function App() {
                 </MarketCardProvider>
               </SimplifiedProvider>
             </AppStatusProvider>
-          {/* </DataProvider> */}
+          </DataProvider>
           </DataProvider2>
         </UserProvider>
       </ConnectAccountProvider>
