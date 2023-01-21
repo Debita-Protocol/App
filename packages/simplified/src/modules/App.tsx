@@ -57,8 +57,8 @@ const AppBody = () => {
   // RAMM
   const { vaults, markets: _markets, instruments } = useDataStore2();
 
-  useRammData({blocknumber, vaults, markets: _markets, instruments, isWalletRpc});
-  const { ramm } = useUserStore();
+  // useRammData({blocknumber, vaults, markets: _markets, instruments, isWalletRpc});
+  // const { ramm } = useUserStore();
 
   useEffect(() => {
     const parsedQueryString = parseQuery(window.location.search);
@@ -120,7 +120,7 @@ function App() {
       <ConnectAccountProvider>
         <UserProvider>
           <DataProvider2>
-          <DataProvider>
+          {/* <DataProvider> */}
             <AppStatusProvider>
               <SimplifiedProvider>
                 <MarketCardProvider>
@@ -128,7 +128,7 @@ function App() {
                 </MarketCardProvider>
               </SimplifiedProvider>
             </AppStatusProvider>
-          </DataProvider>
+          {/* </DataProvider> */}
           </DataProvider2>
         </UserProvider>
       </ConnectAccountProvider>

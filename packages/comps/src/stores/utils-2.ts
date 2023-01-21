@@ -13,7 +13,7 @@ export const useRammData = ({markets, blocknumber, vaults, instruments, isWallet
         const fetchRammData = async (library, account, vaults, markets, instruments) => {
             const provider = isWalletRpc ? library : getDefaultProvider() || library;
             const currentBlockNumber = library ? await library.getBlockNumber() : 0;
-            return getRammData(account, provider, vaults, markets, instruments, currentBlockNumber);
+            return getRammData(account, provider, vaults, markets, instruments);
         }
         
 

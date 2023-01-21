@@ -19,7 +19,7 @@ import { VaultBalances, ZCBBalances } from "@augurproject/comps/build/types";
 import { Link } from "react-router-dom";
 import { AppViewStats } from "../common/labels";
 
-const { ContractSetup } = ContractCalls2;
+const { ContractSetup, getRammData } = ContractCalls2;
 const { ValueLabel } = LabelComps;
 const { getFormattedInstrumentData } = ContractCalls
 
@@ -65,10 +65,6 @@ const ProfileView: React.FC = () => {
 
     return (
         <div className={Styles.ProfileView}>
-
-            {/*<button onClick={()=> {console.log("Here"); ContractSetup(account, loginAccount.library)}}>
-                Click Me
-            </button>*/}
 
             <section className={Styles.UserDetailsView}>
                 <ValueLabel label={"Reputation Score: "} value={reputationScore}/>

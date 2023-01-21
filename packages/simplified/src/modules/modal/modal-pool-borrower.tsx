@@ -109,7 +109,7 @@ const ModalPoolBorrowerAction = (
         value: ""
     })
 
-    let maxDeposit = collateral === "" ? "0" : walletBalances[collateral.split("-")[0]][collateral.split("-")[1]];
+    let maxDeposit = collateral === "" ? "0" : walletBalances[collateral];
     let dropdown =(<SmallDropdown options={options} defaultValue="" onChange={(val)=> {
         setCollateral(val);
         if (val !== "") {

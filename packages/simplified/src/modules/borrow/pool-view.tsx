@@ -97,9 +97,12 @@ const PoolView: React.FC = () => {
         Instrument does not exist
     </h2>);
 
-    if (!instrument || !poolInfo || !vault) return (<h2>
-        Fetching Data
-    </h2>);
+    if (!instrument || !poolInfo || !vault) return (
+        <div className={Styles.PoolView}>
+            <h2>
+        Fetching Data...
+    </h2>
+    </div>);
 
     // grab id from query, then get pool data from instruments
     const { 
@@ -189,12 +192,6 @@ const PoolView: React.FC = () => {
                                 </span>
                                 {generateTooltip("Amount of collateral supplied to the pool", "user supplied amount")}
                             </th>
-                            {/* <th>
-                                <span>
-                                    Total Supplied Amount
-                                </span>
-                                {generateTooltip("Amount of collateral supplied to the pool", "Supplied")}
-                            </th> */}
                             <th>Wallet</th>
                         </tr>
                     </thead>
@@ -202,8 +199,8 @@ const PoolView: React.FC = () => {
                         { collaterals.length > 0? (
                             collaterals.map((asset, i) => { // className CollateralSupplyCard, error handling.
                                 // console.log(asset);
-                                const supplyBalance = poolInfo.supplyBalances[asset.address][asset.tokenId];
-                                const walletBalance = poolInfo.walletBalances[asset.address][asset.tokenId];
+                                const supplyBalance = poolInfo.supplyBalances[asset.address+ "-" + asset.tokenId];
+                                const walletBalance = poolInfo.walletBalances[asset.address+ "-" + asset.tokenId];
                                 console.log("walletBalance: ", walletBalance);
                                 const { borrowAmount, maxAmount } = asset;
                                 const addAction = () => {

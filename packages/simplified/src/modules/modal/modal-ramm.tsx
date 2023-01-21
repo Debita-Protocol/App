@@ -59,11 +59,8 @@ const ModalPoolCollateraView = ({
   const [amount, setAmount] = useState("0");
   const { account, loginAccount, ramm: {poolInfos}, actions: { addTransaction }, } = useUserStore();
   const poolInfo = poolInfos[instrument.marketId];
-  const { walletBalances: { [collateral.address]: {
-    [collateral.tokenId]: walletBalance
-  }}, supplyBalances: { [collateral.address]: {
-    [collateral.tokenId]: supplyBalance
-  }}, accountLiquidity} = poolInfo as UserPoolInfo;
+  const { walletBalances: { [collateral.address + "-" + collateral.tokenId]: walletBalance}, 
+  supplyBalances: { [collateral.address + "-" + collateral.tokenId]: supplyBalance}, accountLiquidity} = poolInfo as UserPoolInfo;
 
 
   return (

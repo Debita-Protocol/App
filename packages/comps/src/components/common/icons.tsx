@@ -3,6 +3,10 @@ import DaiIcon from "../../assets/icon/dai.svg"
 import EthIcon2 from "../../assets/icon/eth.svg"
 import UsdcIcon2 from "../../assets/icon/usdc.svg"
 
+import PendingIcon from "../../assets/icon/pending-svgrepo-com.svg"
+
+export const PENDINGIcon  = PendingIcon;
+
 export const AugurBetaLogo = (
   <svg viewBox="0 0 74 40" fill="none">
     <g>

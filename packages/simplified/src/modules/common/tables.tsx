@@ -13,6 +13,7 @@ import {
   Formatter,
   ContractCalls,
   Components,
+  useDataStore2,
 } from "@augurproject/comps";
 import {
   AmmExchange,
@@ -27,6 +28,8 @@ import {
 } from "@augurproject/comps/build/types";
 import getUSDC from "../../utils/get-usdc";
 import { useSimplifiedStore } from "../stores/simplified";
+import { handleValue } from "./labels";
+import { ConfirmedCheck, Icon_Mapping, PENDINGIcon } from "@augurproject/comps/build/components/common/icons";
 const {
   LabelComps: { MovementLabel, generateTooltip, WarningBanner, ReportingStateLabel },
   PaginationComps: { sliceByPage, Pagination, useQueryPagination },
@@ -1237,3 +1240,366 @@ export const NFTPositionsLiquidityViewSwitcher = ({
 //   timestamp: number;
 //   marketId: string;
 // }
+
+
+
+
+
+
+
+//  RAMM CUSTOM COMPONENTS.
+interface PositionFooterProps {
+  claimableWinnings?: Winnings;
+  market: MarketInfo;
+  showTradeButton?: boolean;
+}
+
+export const ZCBPositionFooter = ({
+  claimableWinnings,
+  market: { settlementFee, marketId, amm, marketFactoryAddress, turboId, title, description },
+  showTradeButton,
+}: PositionFooterProps) => {
+  const { cashes } = useDataStore();
+  const {
+    account,
+    loginAccount,
+    actions: { addTransaction },
+    balances,
+    transactions,
+  } = useUserStore();
+  const [pendingCashOut, setPendingCashOut] = useState(false);
+  const [pendingClaim, setPendingClaim] = useState(false);
+  const [pendingCashOutHash, setPendingCashOutHash] = useState(null);
+  const [pendingClaimHash, setPendingClaimHash] = useState(null);
+  const ammCash = getUSDC(cashes);
+
+  const hasWinner = amm?.market?.hasWinner;
+  const disableClaim =
+    pendingClaim ||
+    Boolean(
+      transactions.find(
+        (t) =>
+          t.status === TX_STATUS.PENDING && (t.hash === pendingClaimHash || t.message === getClaimAllMessage(ammCash))
+      )
+    );
+  const disableCashOut =
+    pendingCashOut ||
+    (pendingCashOutHash &&
+      Boolean(transactions.find((t) => t.hash === pendingCashOutHash && t.status === TX_STATUS.PENDING)));
+
+  useEffect(() => {
+    if (!disableClaim && pendingClaimHash) {
+      setPendingClaimHash(null);
+    }
+
+    if (!disableCashOut && pendingCashOutHash) {
+      setPendingCashOutHash(null);
+    }
+  }, [pendingCashOutHash, pendingClaimHash, disableClaim, disableCashOut, transactions]);
+
+  const claim = async () => {
+    if (amm && account) {
+      setPendingClaim(true);
+      claimWinnings(account, loginAccount?.library, [String(turboId)], marketFactoryAddress)
+        .then((response) => {
+          // handle transaction response here
+          setPendingClaim(false);
+          if (response) {
+            const { hash } = response;
+            addTransaction({
+              hash,
+              chainId: loginAccount?.chainId,
+              seen: false,
+              status: TX_STATUS.PENDING,
+              from: account,
+              addedTime: new Date().getTime(),
+              message: `Claim Winnings`,
+              marketDescription: `${title} ${description}`,
+            });
+            setPendingClaimHash(hash);
+          }
+        })
+        .catch((error) => {
+          setPendingClaim(false);
+          console.error("Error when trying to claim winnings: ", error?.message);
+          addTransaction({
+            hash: `claim-failed${Date.now()}`,
+            chainId: loginAccount?.chainId,
+            seen: false,
+            status: TX_STATUS.FAILURE,
+            from: account,
+            addedTime: new Date().getTime(),
+            message: `Claim Winnings`,
+            marketDescription: `${title} ${description}`,
+          });
+        });
+    }
+  };
+
+  const cashOut = async () => {
+    setPendingCashOut(true);
+    cashOutAllShares(
+      account,
+      loginAccount?.library,
+      balances?.marketShares[marketId]?.outcomeSharesRaw,
+      String(turboId),
+      amm?.shareFactor,
+      amm?.marketFactoryAddress
+    )
+      .then((res) => {
+        setPendingCashOut(false);
+        if (res) {
+          const { hash } = res;
+          addTransaction({
+            hash,
+            chainId: loginAccount?.chainId,
+            seen: false,
+            status: TX_STATUS.PENDING,
+            from: account,
+            addedTime: new Date().getTime(),
+            message: `Cashed Out Shares`,
+            marketDescription: `${title} ${description}`,
+          });
+          setPendingCashOutHash(hash);
+        }
+      })
+      .catch((error) => {
+        setPendingCashOut(false);
+        console.error("Error when trying to claim winnings: ", error?.message);
+        addTransaction({
+          hash: `cash-out-failed${Date.now()}`,
+          chainId: loginAccount?.chainId,
+          seen: false,
+          status: TX_STATUS.FAILURE,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Cashed Out Shares`,
+          marketDescription: `${title} ${description}`,
+        });
+      });
+  };
+  const hasCompleteSets =
+    getCompleteSetsAmount(balances?.marketShares[marketId]?.outcomeShares, amm?.ammOutcomes) !== "0";
+
+  if (!claimableWinnings && !showTradeButton && !hasCompleteSets) return null;
+
+  return (
+    <div className={Styles.PositionFooter}>
+      <span>
+        {claimableWinnings && <p>{`${formatPercent(settlementFee).full} fee charged on settlement`}</p>}
+        {hasCompleteSets && <p>No fee charged when cashing out shares</p>}
+      </span>
+      {hasCompleteSets && !hasWinner && (
+        <PrimaryThemeButton
+          text={pendingCashOut ? AWAITING_CONFIRM : "Cash Out Shares"}
+          action={cashOut}
+          subText={pendingCashOut && AWAITING_CONFIRM_SUBTEXT}
+          disabled={disableCashOut}
+        />
+      )}
+      {claimableWinnings && (
+        <>
+          <PrimaryThemeButton
+            text={
+              !pendingClaim
+                ? `Claim Winnings (${formatCash(claimableWinnings?.claimableBalance, amm?.cash?.name).full})`
+                : AWAITING_CONFIRM
+            }
+            subText={pendingClaim && AWAITING_CONFIRM_SUBTEXT}
+            action={claim}
+            disabled={disableClaim}
+          />
+        </>
+      )}
+      {showTradeButton && (
+        <MarketLink id={marketId} ammId={amm?.id}>
+          <SecondaryThemeButton text={!hasWinner ? "trade" : "view"} />
+        </MarketLink>
+      )}
+    </div>
+  );
+};
+
+const ZCBMarketTableHeader = ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => (
+  <div className={Styles.MarketTableHeader}>
+      <span className={Styles.MarketTitle}>
+        {<span>{title}</span>}
+        {<span>{description}</span>}
+      </span>
+  </div>
+);
+
+const ZCBPositionHeader = () => {
+  const { isMobile } = useAppStatusStore();
+  return (
+    <ul className={Styles.ZCBPositionHeader}>
+      <li>instrument</li>
+      <li>approved</li>
+      <li>resolved</li>
+      <li>
+        longZCB balance
+      </li>
+      <li>
+        shortZCB balance
+      </li>
+      <li> cur. longZCB{isMobile ? <br /> : " "}price</li>
+      <li> cur. shortZCB{isMobile ? <br /> : " "}price</li>
+    </ul>
+  );
+};
+
+
+const ZCBPositionRow = ({
+  position,
+  hasLiquidity = true,
+}: {
+  position: {
+    long: string,
+    short: string,
+    name: string,
+    resolved: boolean,
+    approved: boolean,
+    longPrice: string,
+    shortPrice: string,
+  };
+  hasLiquidity: boolean;
+  key?: string;
+}) => {
+  const pending = <img src={PENDINGIcon} style={{width: 30, height: 30}} alt="pending" />;
+  return (
+    <ul className={Styles.ZCBPositionRow}>
+      <li>{position.name}</li>
+      <li>{position.approved ? ConfirmedCheck : pending}</li>
+      <li>{position.resolved ? ConfirmedCheck : pending }</li>
+      <li>{position.long}</li>
+      <li>{position.short}</li>
+      <li>{handleValue(position.longPrice)}</li>
+      <li>{handleValue(position.shortPrice)}</li>
+    </ul>
+  );
+}
+
+interface ZCBPosition {
+  name: string; // instrument name
+  long: string;
+  short: string;
+  longPrice:string;
+  shortPrice:string;
+  visible: boolean;
+  approved: boolean;
+  resolved: boolean;
+}
+
+export const ZCBPositionTable = ({
+  positions
+}: {positions: ZCBPosition[]}) => {
+
+  return (
+    <>
+      <div className={Styles.PositionTable}>
+        <ZCBMarketTableHeader title={"ZCB Balances"} description={""} />
+        <ZCBPositionHeader />
+        {positions.length === 0 && <span>No positions to show</span>}
+        {positions &&
+          positions
+            .filter((p) => p.visible)
+            .map((position, id) => <ZCBPositionRow key={String(id)} position={position} hasLiquidity={false} />)}
+      </div>
+    </>
+  );
+};
+
+const VaultMarketTableHeader = ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => (
+  <div className={Styles.MarketTableHeader}>
+      <span className={Styles.MarketTitle}>
+        {<span>{title}</span>}
+        {<span>{description}</span>}
+      </span>
+  </div>
+);
+
+const VaultPositionHeader = () => {
+  const { isMobile } = useAppStatusStore();
+  return (
+    <ul className={Styles.VaultPositionHeader}>
+      <li>vault</li>
+      <li>underlying</li>
+      <li>tvl</li>
+      <li>exchange rate</li>
+      <li>est. apr</li>
+      <li>
+        shares
+      </li>
+      
+    </ul>
+  );
+};
+
+
+const VaultPositionRow = ({
+  position
+}: {
+  position: VaultPosition;
+  key?: string;
+}) => {
+  const pending = <img src={PENDINGIcon} style={{width: 30, height: 30}} alt="pending" />;
+  const svg = Icon_Mapping[position.symbol];
+  const icon = (
+    <img src={svg} style={{height: 30, width:30}} />
+  )
+  return (
+    <ul className={Styles.VaultPositionRow}>
+      <li>{position.name}</li>
+      <li>
+        <span>{position.symbol}</span>
+        <span>{icon}</span>
+      </li>
+      <li>{handleValue(position.totalAssets)}</li>
+      <li>{position.exchangeRate}</li>
+      <li>{handleValue(position.totalEstimatedAPR)}</li>
+      <li>{position.shares}</li>
+    </ul>
+  );
+}
+
+interface VaultPosition {
+  name: string; // instrument name
+  vaultId: string;
+  totalEstimatedAPR: string;
+  shares: string;
+  exchangeRate: string;
+  totalAssets: string;
+  visible: boolean;
+  symbol: string;
+}
+
+export const VaultPositionTable = ({
+  positions
+}: {positions: VaultPosition[]}) => {
+
+  return (
+    <>
+      <div className={Styles.PositionTable}>
+        <VaultMarketTableHeader title={"Info"} description={""} />
+        <VaultPositionHeader />
+        {positions.length === 0 && <span>No positions to show</span>}
+        {positions &&
+          positions
+            .filter((p) => p.visible)
+            .map((position, id) => <VaultPositionRow key={String(id)} position={position} />)}
+      </div>
+    </>
+  );
+};

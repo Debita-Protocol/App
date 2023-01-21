@@ -40,7 +40,7 @@ const {
   TX_STATUS,
 } = Constants;
 
-const { createPoolMarket, createPoolInstrument, ContractSetup } = ContractCalls2;
+const { createPoolMarket, createPoolInstrument, ContractSetup, getRammData } = ContractCalls2;
 const {
   SelectionComps: { SquareDropdown, SingleCheckbox },
   ButtonComps: { SecondaryThemeButton, TinyThemeButton },
@@ -96,7 +96,7 @@ const OptionsProposalView: React.FC = () => {
     loginAccount,
     actions: { addTransaction },
   } = useUserStore();
-  const { vaults } = useDataStore2();
+  const { vaults, markets, instruments } = useDataStore2();
 
 
 
@@ -118,8 +118,6 @@ const OptionsProposalView: React.FC = () => {
   // add error handling for everything
   let maturityDate = optionsData.duration !== "" ? moment().add(parseInt(optionsData.duration), "days").seconds() : null;
   let formattedDate = maturityDate ? moment().add(parseInt(optionsData.duration), "days").format('YYYY MM D, h:mm a') : moment().format('YYYY MM D, h:mm a');
-  console.log("moment: ", moment().format('YYYY MM D, h:mm:ss a'));
-  console.log("maturityDate", maturityDate);
 
   const [vaultId, setVaultId] = useState("");
   const [defaultVault, setDefaultVault] = useState("");
@@ -160,7 +158,7 @@ const OptionsProposalView: React.FC = () => {
         
         formattedDate =  _.replace(formattedDate,new RegExp("-","g"),"")
         let name = `${underlyingSymbol}-${formattedDate}-${strikePrice}-C`;
-        console.log("name", name);
+        // console.log("name", name);
 
         //ETH-230116-1550-C
         // let description = JSON.stringify(
@@ -350,8 +348,8 @@ const OptionsProposalView: React.FC = () => {
     strikePrices
   )
 
-  console.log("OPTIONS: ", optionsData, strikePrices)
-  console.log("optionsData.duration: ", optionsData.duration)
+  // console.log("OPTIONS: ", optionsData, strikePrices)
+  // console.log("optionsData.duration: ", optionsData.duration)
 
   const addOptionItem = useCallback((e) => {
     e.preventDefault();
@@ -373,6 +371,11 @@ const OptionsProposalView: React.FC = () => {
     });
   }, [strikePrices]);
 
+  const godButton = useCallback(async () => {
+    let result = await getRammData(account, loginAccount.library, vaults, markets, instruments)
+    console.log("SLOW GUY: ", result);
+  })
+
   if (!loginAccount || !loginAccount.library) {
     return <h2>
       Please connect your wallet to use this feature
@@ -386,7 +389,7 @@ const OptionsProposalView: React.FC = () => {
         <h3>
           Covered Call Proposal Form
         </h3>
-        <button onClick={() => ContractSetup(account, loginAccount.library)}>
+        <button onClick={godButton}>
           God button
         </button>
       </div>

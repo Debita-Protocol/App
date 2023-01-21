@@ -486,19 +486,13 @@ export interface Auction {
 // user pool data
 export interface UserPoolInfo {
   supplyBalances: {
-    [address: string]: {
-      [tokenId: string]: string;
-    };
+    [id: string]: string; // id is token address + '-' + tokenId
   };
   removableCollateral: {
-    [address: string]: {
-      [tokenId: string]: string;
-    }
+    [id: string]: string; // id is token address + '-' + tokenId
   }
   walletBalances? : {
-    [address: string]: {
-      [tokenId: string]: string;
-    };
+    [id: string]: string; // id is token address + '-' + tokenId
   };
   borrowBalance: {
     shares: string;

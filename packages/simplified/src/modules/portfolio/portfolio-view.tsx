@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 // @ts-ignore
 import Styles from "./portfolio-view.styles.less";
 import Activity from "./activity";
-import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher } from "../common/tables";
+import { PositionsLiquidityViewSwitcher, NFTPositionsLiquidityViewSwitcher, ZCBPositionTable, VaultPositionTable } from "../common/tables";
 import { PositionsView } from "../common/portfolio"
 import { AppViewStats } from "../common/labels";
+import _ from "lodash";
+import { BigNumber as BN} from "bignumber.js";
 import {
   ContractCalls,
   Formatter,
@@ -16,6 +18,7 @@ import {
   ButtonComps,
   LabelComps,
   Utils,
+  useDataStore2,
 } from "@augurproject/comps";
 import { PORTFOLIO_HEAD_TAGS } from "../seo-config";
 import { Cash } from "@augurproject/comps/build/types";
@@ -221,14 +224,63 @@ export const ClaimWinningsSection = () => {
 
 export const PortfolioView = () => {
   const { isMobile } = useAppStatusStore();
+  const { ramm: { reputationScore, vaultBalances, zcbBalances}} = useUserStore();
+  const { markets, instruments, vaults } = useDataStore2()
   const [view, setView] = useState(TABLES);
+
+  const _zcbBalances = useMemo(() => {
+    if (Object.entries(zcbBalances).length > 0) {
+      return _.map(zcbBalances, (item, key) => {
+        console.log("item", item);
+        const { duringAssessment, alive, resolved, bondPool: {
+          longZCBPrice,
+        } } = markets[key]
+
+        const { name } = instruments[key]
+
+        const shortZCBPrice = new BN(1).minus(new BN(longZCBPrice)).toFixed(4);
+        return {
+          name: name,
+          long: item.longZCB,
+          short: item.shortZCB,
+          marketId: key,
+          approved: alive && duringAssessment ? false : true,
+          resolved: alive && resolved ? true : false,
+          visible: alive && (Number(item.longZCB) > 0 || Number(item.shortZCB) > 0) ? true : false,
+          longPrice: longZCBPrice,
+          shortPrice: shortZCBPrice,
+        }
+      })
+    }
+    return [];
+  }, [zcbBalances])
+
+  const _vaultBalances = useMemo(() => {
+    if (Object.entries(vaultBalances).length > 0) {
+      return _.map(vaultBalances, (item, key) => {
+        const { name, totalEstimatedAPR, exchangeRate, totalAssets, want: {symbol }} = vaults[key]
+        const { base, shares} = item;
+        return {
+          name: name,
+          symbol: symbol,
+          shares: shares,
+          totalAssets: totalAssets,
+          totalEstimatedAPR: totalEstimatedAPR,
+          exchangeRate: exchangeRate,
+          visible: Number(shares) > 0 ? true : false,
+          vaultId: key
+        }
+      })
+    }
+    return [];
+  }, [vaults, vaultBalances])
+  console.log("vaultBalances", _vaultBalances)
 
   useScrollToTopOnMount();
 
   useEffect(() => {
     if (!isMobile) setView(TABLES);
   }, [isMobile]);
-//zcb, vaults, 
   return (
     <div className={Styles.PortfolioView}>
       <SEO {...PORTFOLIO_HEAD_TAGS} />
@@ -245,7 +297,19 @@ export const PortfolioView = () => {
         
         {view === ACTIVITY && <Activity />}
         {/*<PositionsView portfolioPage = {true} />*/}
-        <ProfileView/>
+        {/* <ProfileView/> */}
+        <div className={Styles.zcb}>
+          <h2>Manager Positions</h2>
+          <br />
+          <ZCBPositionTable positions={_zcbBalances}/>
+        </div>
+        
+        <div className={Styles.VaultBalances}>
+          <h2>Vault Positions</h2>
+          <br />
+          <VaultPositionTable positions={_vaultBalances}/>
+        </div>
+
 
 
         {view === ACTIVITY && <Activity />}

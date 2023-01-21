@@ -770,9 +770,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         vaults[vault.vaultId] = vault;
     }
     // can filter markets here, if dead markets for example.
-    console.log("vaults", vaults);
-    console.log("markets", markets);
-    console.log("instruments", instruments);
+    // console.log("vaults", vaults);
+    // console.log("markets", markets);
+    // console.log("instruments", instruments);
     return { vaults, markets, instruments, blocknumber };
 }
 
@@ -803,12 +803,12 @@ export const getRammPrices = async (account: string, provider: Web3Provider): Pr
     })
 
     const results: ContractCallResults = await multicall.call(contractCalls);
-    console.log("results", results);
+    // console.log("results", results);
     let prices = {};
     _.forEach(results.results, (value: any, key) => {
         prices[key] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
     })
-    console.log("prices", prices);
+    // console.log("prices", prices);
 }
 
 function isNumeric(str) {
@@ -839,9 +839,13 @@ export const getRammData = async (
     provider: Web3Provider,
     vaults: VaultInfos,
     markets: CoreMarketInfos,
-    instruments: InstrumentInfos,
-    blocknumber: number
-): Promise<CoreUserState> => {
+    instruments: InstrumentInfos
+): Promise<{
+    reputationScore: string;
+  vaultBalances: VaultBalances;
+  zcbBalances: ZCBBalances;
+  poolInfos: UserPoolInfos;
+}> => {
     // get reputation score
     const controller = new Contract(controller_address, ControllerData.abi, provider);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, provider);
@@ -850,52 +854,42 @@ export const getRammData = async (
 
     // get vault balances
     let vaultBalances: VaultBalances = {};
-    // console.log('A')
-    for (const [key, value] of Object.entries(vaults)) {
+    await Promise.all(_.map(vaults, async (value, key) => {
         const vault = new Contract(value.address, VaultData.abi, getProviderOrSigner(provider, account));
         const balance = await vault.balanceOf(account);
         const base = new Contract(value.want.address, ERC20Data.abi, getProviderOrSigner(provider, account));
         const baseBalance = await base.balanceOf(account);
-        console.log('getting user balances', key, value, balance.toString(), baseBalance.toString())
+        vaultBalances[key] = {
+            shares: toDisplay(balance.toString()),
+            base: toDisplay(baseBalance.toString())
+        }
+      }));
 
-        Object.assign(vaultBalances, {
-            [key]: {
-                shares: toDisplay(balance.toString()),
-                base: toDisplay(baseBalance.toString())
-            }
-        })
-    }
-    // console.log('B')
 
-    // get zcb balances
+    // // get zcb balances
     let zcbBalances: ZCBBalances = {};
-    for (const [key, market] of Object.entries(markets as CoreMarketInfos)) {
+    await Promise.all(_.map(markets, async (market, key) => {
         const { bondPool: { longZCB: { address: longZCBAddress }, shortZCB: { address: shortZCBAddress } } } = market;
         const longZCBContract = new Contract(longZCBAddress, ERC20Data.abi, getProviderOrSigner(provider, account));
         const shortZCBContract = new Contract(shortZCBAddress, ERC20Data.abi, getProviderOrSigner(provider, account));
         const longZCBBalance = await longZCBContract.balanceOf(account);
         const shortZCBBalance = await shortZCBContract.balanceOf(account);
-        console.log('zcbbalances', longZCBBalance.toString())
-        Object.assign(zcbBalances, {
-            [key]: {
-                longZCB: toDisplay(longZCBBalance.toString()),
-                shortZCB: toDisplay(shortZCBBalance.toString())
-            }
-        })
-    };
-    // console.log("C")
+
+        zcbBalances[key] = {
+            longZCB: toDisplay(longZCBBalance.toString()),
+            shortZCB: toDisplay(shortZCBBalance.toString())
+        };
+    }));
 
     // get pool data
     let poolInfos: UserPoolInfos = {};
 
-    for (const [key, instrument] of Object.entries(instruments as InstrumentInfos)) {
+    await Promise.all(_.map(instruments, async (instrument, key) => {
         if ("poolLeverageFactor" in instrument) {
             // multicall w/ all the collateral balances + all the pool data
             const multicall = new Multicall({ ethersProvider: provider });
 
-            // console.log("pool leverage Factor")
-
-            const walletBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
+            const walletBalancesContractCalls: ContractCallContext[] = _.map(instrument.collaterals,(c) => {
                 return c.isERC20 ? {
                     reference: "wallet-" + c.address + "-" + c.tokenId,
                     contractAddress: c.address,
@@ -921,7 +915,7 @@ export const getRammData = async (
                 }
             });
 
-            const supplyBalancesContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
+            const supplyBalancesContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
                 const methodParameters = c.isERC20 ? [c.address, account] : [c.address, c.tokenId];
                 return {
                     reference: "supply-" + c.address + "-" + c.tokenId,
@@ -949,7 +943,7 @@ export const getRammData = async (
                     }]
             }
 
-            const removableCollateralContractCalls: ContractCallContext[] = instrument.collaterals.map((c) => {
+            const removableCollateralContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
                 return {
                     reference: "removable-" + c.address + "-" + c.tokenId,
                     contractAddress: instrument.address,
@@ -993,7 +987,7 @@ export const getRammData = async (
             let supplyBalances = {};
             let removableCollaterals = {};
 
-            instrument.collaterals.map((c) => {
+            _.forEach(instrument.collaterals, (c) => {
 
                 let walletBalance;
                 let supplyBalance;
@@ -1005,64 +999,27 @@ export const getRammData = async (
                     walletBalance = results["wallet-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
                     supplyBalance = results["supply-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0] === account ? "1" : "0";
                 }
-                // I hate javascript and this whole hack data structure.
-                if (walletBalances[c.address]) {
-                    let obj2 = Object.assign({}, walletBalances[c.address], {
-                        [c.tokenId]: walletBalance
-                    })
-                    let obj3 = Object.assign({}, supplyBalances[c.address], {
-                        [c.tokenId]: supplyBalance
-                    })
-                    let obj4 = Object.assign({}, removableCollateral[c.address], {
-                        [c.tokenId]: removableCollateral
-                    });
-                    walletBalances = Object.assign(walletBalances, {
-                        [c.address]: obj2
-                    })
-                    supplyBalances = Object.assign(supplyBalances, {
-                        [c.address]: obj3
-                    });
-                    removableCollaterals = Object.assign(removableCollateral, {
-                        [c.address]: obj4
-                    });
-                } else {
-                    Object.assign(walletBalances, {
-                        [c.address]: {
-                            [c.tokenId]: walletBalance
-                        }
-                    })
-                    Object.assign(supplyBalances, {
-                        [c.address]: {
-                            [c.tokenId]: supplyBalance
-                        }
-                    })
-                    Object.assign(removableCollaterals, {
-                        [c.address]: {
-                            [c.tokenId]: removableCollateral
-                        }
-                    })
-                }
+                walletBalances[c.address + "-" + c.tokenId] = walletBalance;
+                supplyBalances[c.address + "-" + c.tokenId] = supplyBalance;
+                removableCollaterals[c.address + "-" + c.tokenId] = removableCollateral;
             });
 
             const userSnapshot = results["userSnapshot"].callsReturnContext[0].returnValues as any;
             const maxBorrowable = toDisplay(results["maxBorrowable"].callsReturnContext[0].returnValues[0].toString());
 
-            Object.assign(poolInfos, {
-                [instrument.marketId]: {
-                    walletBalances,
-                    supplyBalances,
-                    borrowBalance: {
-                        shares: toDisplay(userSnapshot._userBorrowShares.toString()),
-                        amount: toDisplay(userSnapshot._userBorrowAmount.toString())
-                    },
-                    accountLiquidity: toDisplay(userSnapshot._userAccountLiquidity.toString()),
-                    maxBorrowable,
-                    removableCollateral: removableCollaterals
-                }
-            });
+            poolInfos[instrument.marketId] = {
+                walletBalances,
+                supplyBalances,
+                borrowBalance: {
+                    shares: toDisplay(userSnapshot._userBorrowShares.toString()),
+                    amount: toDisplay(userSnapshot._userBorrowAmount.toString())
+                },
+                accountLiquidity: toDisplay(userSnapshot._userAccountLiquidity.toString()),
+                maxBorrowable,
+                removableCollateral: removableCollaterals
+            };
         }
-
-    }
+    }))
 
     return {
         reputationScore,
@@ -1460,7 +1417,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
-    await getRammPrices(account, provider);
+    // await getRammData(account, provider);
     // let data = await getContractData(account, provider);
 
     // const coveredCallContract = new Contract("0x559c0abf267b944e9d1d4a0d8f9cc28320195776", CoveredCallInstrumentData.abi, provider.getSigner(account));

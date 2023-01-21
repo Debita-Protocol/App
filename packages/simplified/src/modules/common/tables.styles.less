@@ -5,15 +5,12 @@
   display: block;
   border-bottom: @size-1 solid var(--theme-border);
   min-width: @size-320;
-
-  > a {
     align-items: center;
     display: flex;
     flex: 1;
     text-decoration: none;
-  }
 
-  > a > span:first-of-type {
+   > span:first-of-type {
     .text-16-semi-bold;
 
     color: var(--primary-text);
@@ -22,7 +19,7 @@
     text-decoration: none;
   }
 
-  > a > svg {
+  > svg {
     width: @size-20;
     height: @size-20;
     justify-self: flex-end;
@@ -177,12 +174,61 @@
   .PositionRowHeader;
 }
 
+.ZCBPositionRow {
+  .RowHeaderSharedStyles;
+  .RowSharedStyles;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.VaultPositionRow {
+  .RowHeaderSharedStyles;
+  .RowSharedStyles;
+  grid-template-columns: repeat(6, 1fr);
+  > li:nth-of-type(2) {
+    display: flex;
+    flex-flow: row;
+    align-items: center;
+    justify-content: flex-end;
+    span:first-of-type {
+      margin-right: @size-4;
+    }
+  }
+}
+
 .PositionHeader {
   .RowHeaderSharedStyles;
   .HeaderSharedStyles;
   .PositionRowHeader;
 
   > li > span {
+    margin-left: @size-4;
+
+    > div {
+      text-align: center;
+    }
+  }
+}
+
+.ZCBPositionHeader {
+  .RowHeaderSharedStyles;
+  .HeaderSharedStyles;
+  grid-template-columns: repeat(7, 1fr);
+
+  > li {
+    margin-left: @size-4;
+
+    > div {
+      text-align: center;
+    }
+  }
+}
+
+.VaultPositionHeader {
+  .RowHeaderSharedStyles;
+  .HeaderSharedStyles;
+  grid-template-columns: repeat(6, 1fr);
+
+  > li {
     margin-left: @size-4;
 
     > div {
