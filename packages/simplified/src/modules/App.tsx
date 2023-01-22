@@ -27,9 +27,15 @@ import {
   useUserStore
 } from "@augurproject/comps";
 import { SimpleFooter } from "./common/simple-footer";
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+import { rammClient } from "@augurproject/comps/build/apollo-ramm/client";
+
+
 const { MARKET, PORTFOLIO } = Constants;
 const { parsePath, parseQuery } = PathUtils;
 const {MarketCardProvider} = Components
+
+
 // const express = require("express");
 // const app = express()
 // const cors = require("cors");
@@ -119,6 +125,7 @@ function App() {
     <HashRouter hashType="hashbang">
       <ConnectAccountProvider>
         <UserProvider>
+          <ApolloProvider client={rammClient}>
           <DataProvider2>
           <DataProvider>
             <AppStatusProvider>
@@ -130,6 +137,7 @@ function App() {
             </AppStatusProvider>
           </DataProvider>
           </DataProvider2>
+          </ApolloProvider>
         </UserProvider>
       </ConnectAccountProvider>
     </HashRouter>

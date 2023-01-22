@@ -182,3 +182,17 @@ query{
 }
 `
 
+export const GET_PRICES = gql`
+    query marketSnapshots($marketId:ID!){
+        market(id:$marketId) {
+            id
+            snapshots {
+                id
+                totalCollateral
+                longZCBPrice
+                timestamp
+            }
+        }
+    }
+`
+
