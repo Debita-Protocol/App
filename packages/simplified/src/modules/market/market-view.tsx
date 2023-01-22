@@ -121,13 +121,15 @@ export const InstrumentOverviewFormat = ({ instrumenType}) =>{
   }
 }
 
-export const InstumentDescriptionFormat = ({instrumenType})=>{
-  const fields =["ETH", "1100", "1/20/2023", "1" ]
+export const InstumentDescriptionFormat = ({instrumenType, fields})=>{
+  // const fields =["ETH", "1100", "1/20/2023", "1" ]
+
   if (instrumenType == 1){
-    return "The covered call instrument for "+ fields[0] + " has a strike price of "
-    + fields[1] + " and a maturity date at " +fields[2] + ". The redemption price of longZCB of this bet, if correct, is "
-    + fields[3] + ". Given the payoff, If you want to bet on the price of ETH to be below "
-    + fields[1] + " by " + fields[2] +" then buy longZCB."
+    const date = timeConverter(fields[5]); 
+    return "This covered call short instrument has a strike price of "
+    + fields[0] + " and a maturity date at " + date + ". The redemption price of longZCB of this bet, if correct, is "
+    + "1" + ". Given the payoff, If you want to bet on the price of ETH to be below "
+    + fields[0] + " by " + date +" then buy longZCB."
     
   }
   else if(instrumenType==2){
@@ -150,18 +152,33 @@ export const InstrumentField = ({instrumentType, instrument})=>{
   }
   else if(instrumentType == 1){
     const curtime = Math.floor((new Date()).getTime() / 1000) ; 
-    const{strikePrice, shortCollateral,tradeTime, pricePerContract} = instrument; 
+    const{strikePrice, shortCollateral,tradeTime, pricePerContract, maturityDate} = instrument; 
     fields[0] = strikePrice; 
     fields[1] = roundDown(shortCollateral * pricePerContract,2); 
     fields[2] = shortCollateral; 
     fields[3] = pricePerContract; 
     fields[4] = Number(tradeTime) > curtime ? 
     String(Number(tradeTime) - curtime): "Assessment Period Ended"
-
+    fields[5] = Number(maturityDate); 
     return fields; 
   }
   else{
     return null; 
+  }
+}
+export const InstrumentType = ({instrumenType})=> {
+  let types = []; 
+  if (instrumenType==0){
+    return "none"; 
+  }
+  else if (instrumenType==1){
+    return "Covered Call : FIXED RATE/TERM INSTRUMENT"; 
+  }
+  else if (instrumenType==2){
+    return "Conditional Lending Pool"
+  }
+  else {
+    return "none"; 
   }
 }
 
@@ -230,15 +247,23 @@ export const getWinningOutcome = (ammOutcomes: AmmOutcome[], marketOutcomes: Mar
     ({ payoutNumerator }) => payoutNumerator !== null && payoutNumerator !== "0"
   );
 
-const WinningOutcomeLabel = ({ winningOutcome }) => (
+const WinningOutcomeLabel = ({ winningOutcome, type, remainingTime }) => (
   <span className={Styles.WinningOutcomeLabel}>
     <span>Instrument Status</span>
+   <span>
+      {/*winningOutcome.name*/}
+      {winningOutcome==0? 
+        type==1?'Assessment remaining time: ' + remainingTime  + " minutes": 'Assessment: ': winningOutcome==1? "Approval Condition Met": "Approved"}
+      {winningOutcome==2 && ConfirmedCheck}
+    </span>
     <span>
       {/*winningOutcome.name*/}
 
-      {winningOutcome==0?'Assessment': winningOutcome==1? "Approval Condition Met": "Approved"}
+      {winningOutcome==0? 
+        'Assessment ' : winningOutcome==1? "Approval Condition Met": "Approved"}
       {winningOutcome==2 && ConfirmedCheck}
     </span>
+
   </span>
 );
 const estimatedReturnsPerp = (
@@ -284,6 +309,22 @@ expectedYield: number, managerExpectedYield: number, alpha:number, price:number 
 
 
   return redemption_price; 
+}
+const estimateReturnsCoveredCall = (
+  strikePrice: number, 
+  managerStrikePrice: number, 
+   totalSupply:number, principal: number, expectedYield: number, alpha:number, price:number
+  )=> {
+  // if price below strike price, expected yield is proposed yield 
+
+  const managerExpectedYield = managerStrikePrice <= strikePrice ? expectedYield 
+  : Number(expectedYield) + (principal * strikePrice)/managerStrikePrice - principal
+
+  return estimatedReturnsFixed(totalSupply, principal, expectedYield, managerExpectedYield, 
+    alpha, price); 
+
+  // 500 ETH as collateral 500*1600 = 800000. 800000/1660 = 490 500-490 = yield. 
+//1660-1600 1660/
 }
 
   function roundDown(number, decimals) {
@@ -430,8 +471,8 @@ const MarketView = ({ defaultMarket = null }) => {
     }
   }, [market]);
 
-  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  console.log('instruments!', instruments, market_, loginAccount); 
+  const { vaults: vaults, instruments: instruments, markets: market_, prices } = useDataStore2()
+  console.log('instruments!', instruments, market_, vaults, prices); 
   // if (!instruments) {
   //   return <div >Vault Not Found.</div>;
   // }
@@ -451,9 +492,11 @@ const MarketView = ({ defaultMarket = null }) => {
   const outcomeLabel = isApproved? 2: (canbeApproved&&!isApproved) ?1 : 0; 
   const longZCBSupply = market_[Id]?.bondPool.longZCB.longZCBsupply; 
   const instrumentBalance = instruments[Id]?.balance; 
-  const instrumentTypeWord =  market_[Id]?.instrumentType; 
   const vaultId = instruments[Id]?.vaultId
   const asset = vaults[vaultId]?.want.name; 
+  const strikePrice = instruments[Id]?.strikePrice; 
+  const type = Number(instruments[Id]?.instrumentType); 
+
   // const instrumenType = 
   //   console.log('isApproved', isApproved, canbeApproved)
 
@@ -462,14 +505,15 @@ const MarketView = ({ defaultMarket = null }) => {
   const longZCB_ad = market_[marketId]?.longZCB
   const shortZCB_ad = market_[marketId]?.shortZCB; 
 
-  const type = market_[Id]?.instrumentType; 
 
-  const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instruments[Id]}); 
+  const instrumentField = InstrumentField({instrumentType: type, instrument: instruments[Id]}); 
   console.log('field', instrumentField); 
-  const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
-  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field: instrumentField }); 
-
+  const instrumentOverview = InstrumentOverviewFormat({instrumenType: type})
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: type, fields: instrumentField}); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: type, field: instrumentField }); 
+  const instrumentTypeWord = InstrumentType({instrumenType: type}); 
+  console.log('field/breakdown', instrumentField, instrumentBreakDown); 
+  const remainingTime = (type == 1)? roundDown(instrumentField[4]/60, 0) : 1000
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
   // if (!market) return <EmptyMarketView />;
@@ -490,10 +534,18 @@ const MarketView = ({ defaultMarket = null }) => {
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
   const [estimatedYield, setEstimatedYield] = useState(0); 
   console.log('promisedReturnee', instruments[marketId]?.promisedReturn); 
-  const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn, 
+  // const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn, 
+  //   poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
+  // : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
+  let managerExpectedYield = 0; 
+  if(type == 1){
+    console.log("input", strikePrice, estimatedYield, longZCBSupply, principal, expectedYield, Number(alpha), Number(longZCBPrice))
+    managerExpectedYield = estimateReturnsCoveredCall(
+      Number(strikePrice), estimatedYield, longZCBSupply, principal, expectedYield, Number(alpha), Number(longZCBPrice)); 
+  } else if (type==2){
+    managerExpectedYield =  estimatedReturnsPerp(instruments[marketId]?.promisedReturn, 
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
-  : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
-    
+  }
 
 
   const redeem = () =>{
@@ -531,9 +583,9 @@ const MarketView = ({ defaultMarket = null }) => {
 
 
         </div>
-          { <p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>}
+          { /*<p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>*/}
 
-        <span>Instrument Type: {isPool? "Perpetual Instrument": "Fixed Rate/Term Instrument"}</span>
+        <span>Instrument Type: {instrumentTypeWord}</span>
         <h3>Profit Mechanism</h3>
         <p>{isPool?
           "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
@@ -554,6 +606,7 @@ const MarketView = ({ defaultMarket = null }) => {
           type: "MODAL_CONFIRM_TRANSACTION",
           title: "Instrument Information",
           includeButton : false, 
+
           // transactionButtonText: "Redeem",
           // transactionAction: ({ onTrigger = null, onCancel = null }) => 
           // {
@@ -571,7 +624,7 @@ const MarketView = ({ defaultMarket = null }) => {
                 text: "-",
             },
           
-           name: "outcome", 
+           name: "Details", 
            breakdowns:  instrumentBreakDown
            // [
            //      instrumentBreakDown[0]
@@ -594,32 +647,52 @@ const MarketView = ({ defaultMarket = null }) => {
           </div>
         <h3>Simulate Returns</h3>
         {(<ul className={Styles.UpperStatsRow}>
-    {!isPool &&type==1 &&(
+        {type==1 &&(
             <li>
-            <span>{"Price of "+ asset} </span>
+            <span>{"Cur. Price of "+ asset} </span>
             {generateTooltip(
               "Total amount of underlying used by the instrument  ",
-              "principal"
+              "curprice"
                       )}
-            <span>{roundDown(principal ,3)}</span>
+            <span>{roundDown(prices?.ETH ,2)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
-          </li>)
-        }
-          {!isPool &&type==1 &&(
-            <li>
-            <span>Principal </span>
+          </li>)}
+          {type==1 && (<li>
+            <span>{"End Price of "+ asset} </span>
             {generateTooltip(
-              "Total amount of underlying used by the instrument  ",
-              "principal"
+              "Price of underlying at when the options expire  ",
+              "endprice"
                       )}
-            <span>{roundDown(principal ,3)}</span>
-
+            <FormAmountInput
+              
+                updateAmount = {setEstimatedYield}
+                // {
+                //   (val) => {
+                //   console.log("val: ", estimatedYield);
+                //   setEstimatedYield(
+                //       val
+                      
+                //     )
+                //   // if (/^\d*\.?\d*$/.test(val)) {
+                //   //   setEstimatedYield(
+                //   //     val
+                      
+                //   //   )
+                //   // }
+                // }}
+                prepend={isPool?"%":""}
+                amount={estimatedYield}
+              />
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
-          </li>)
-        }
+          </li>)}
+
           
-         { !isPool&& (<li>
+
+        
+          
+          
+         { false&& (<li>
             <span>{"Proposed Estimated Return"}</span>
               {generateTooltip(
                 "The yield the instrument would incur as proposed by the utilizer" ,
@@ -645,7 +718,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
           </li>*/}
-            <li>
+            {false && (<li>
               <span>{isPool? "Instrument's Estimated APR":"Instrument's Estimated Return" }</span>
                       {isPool? generateTooltip(
                       "Actual Returns made from the instrument in APR",
@@ -677,14 +750,14 @@ const MarketView = ({ defaultMarket = null }) => {
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
-          </li>
+          </li>)}
             <li>
             <span>{isPool? "longZCB Estimated APR": "longZCB estimated Redemption price"}</span>
               {isPool?generateTooltip(
                         "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
                         "lexpected"
                       ): generateTooltip(
-                        "The redemption price of longZCB at maturity. Equals 1 if estimated return = prooposed return.   ",
+                        "The redemption price of longZCB at maturity. Equals 1 if instrument successfully matures.   ",
                         "lexpected")}
              
             <span>{String(roundDown(managerExpectedYield, 3))}{isPool&&" %"}</span> 
@@ -696,7 +769,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
         </ul>)}
 
-        <WinningOutcomeLabel winningOutcome={outcomeLabel} />
+        <WinningOutcomeLabel winningOutcome={outcomeLabel} type ={type} remainingTime ={remainingTime} />
 
         <div
           className={classNames(Styles.Details, {

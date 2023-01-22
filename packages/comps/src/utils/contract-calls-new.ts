@@ -543,7 +543,10 @@ export const getContractData = async (account: string, provider: Web3Provider): 
     vaults: VaultInfos, 
     markets: CoreMarketInfos, 
     instruments: InstrumentInfos,
-    blocknumber: number
+    blocknumber: number,
+    prices: {
+        [symbol:string]: string
+    }
 }> => {
     const blocknumber = await provider.getBlockNumber();
 
@@ -774,17 +777,16 @@ export const getContractData = async (account: string, provider: Web3Provider): 
 
         vaults[vault.vaultId] = vault;
     }
-    // can filter markets here, if dead markets for example.
-    // console.log("vaults", vaults);
-    // console.log("markets", markets);
-    // console.log("instruments", instruments);
-    return { vaults, markets, instruments, blocknumber };
+    let prices = await getRammPrices(account, provider);
+    return { vaults, markets, instruments, blocknumber, prices };
 }
 
 // Promise<{
 //     [symbol:string]: string // price in USD
 //   }>
-export const getRammPrices = async (account: string, provider: Web3Provider): Promise<void> => {
+export const getRammPrices = async (account: string, provider: Web3Provider): Promise<{
+    [symbol: string]: string
+}> => {
     const multicall = new Multicall({ ethersProvider: provider });
     
     let contractCalls: ContractCallContext[] = _.map(ORACLE_MAPPING, (value, key) => {
@@ -813,7 +815,8 @@ export const getRammPrices = async (account: string, provider: Web3Provider): Pr
     _.forEach(results.results, (value: any, key) => {
         prices[key] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
     })
-    // console.log("prices", prices);
+
+    return prices;
 }
 
 function isNumeric(str) {

@@ -38,6 +38,7 @@ import { MarketInfo,InstrumentInfos, VaultInfos, CoreInstrumentData } from "@aug
 import {InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField} from "../market/market-view"; 
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
+import { Icon_Mapping } from "@augurproject/comps/build/components/common/icons";
 
 const { ADD, CREATE, REMOVE, ALL_MARKETS, OTHER, POPULAR_CATEGORIES_ICONS, SPORTS, MARKET_ID_PARAM_NAME } = Constants;
 const {
@@ -204,7 +205,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   const {
     settings: { timeFormat },
   } = useSimplifiedStore();
-    const { markets} = useDataStore2();
+    const { markets, vaults} = useDataStore2();
  
     const [expanded, setExpanded] = useState(false);
 
@@ -212,14 +213,15 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
   const history = useHistory();
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  const{marketId} = instrument; 
-  const type = markets[Number(marketId)]?.instrumentType; 
+  const{marketId, vaultId} = instrument;
+  const type = instrument?.instrumentType; 
 
 
   const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
-  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field:instrumentField}); 
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type),fields:instrumentField }); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field: instrumentField }); 
+
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
  return (
     <article
@@ -234,7 +236,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
         {/*<CategoryIcon {{ "categories" } }/> */}
         {/*<MarketTitleArea {...{ ...market, timeFormat }} />*/}
-                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+                {/* <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
 
              {<SecondaryThemeButton
             text={instrument?.name}
@@ -249,7 +251,11 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 }),
               })
             }
-          />}
+          />} */}
+          <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{height: 20, width: 20}}/>
+        <span>
+          <span>{instrument.name}</span>
+        </span>
      
       </MarketLink>
 
@@ -338,7 +344,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 text: "-",
             },
           
-           name: "outcome", 
+           name: "Details", 
            breakdowns:  instrumentBreakDown
            // [
            //      instrumentBreakDown

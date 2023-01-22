@@ -12,16 +12,17 @@ export function DataReducer2(state, action) {
   console.log("data reducer action: ", action)
   switch (action.type) {
     case UPDATE_DATA_HEARTBEAT:
-      const { vaults, blocknumber, errors, markets, instruments} = action;
+      const { vaults, blocknumber, errors, markets, instruments, prices } = action;
       updatedState[VAULTS] = vaults;
       updatedState[BLOCKNUMBER] = blocknumber;
       updatedState[ERRORS] = errors;
       updatedState[MARKETS] = markets;
       updatedState[INSTRUMENTS] = instruments;
+      updatedState["prices"] = prices;
       break
     case UPDATE_PRICES:
-      const { prices } = action;
-      updatedState["prices"] = prices;
+      const { prices: p } = action;
+      updatedState["prices"] = p;
     default:
       console.log(`Error: ${action.type} not caught by Graph Data reducer`);
   }
@@ -42,14 +43,15 @@ export const useData2 = (cashes, defaultState = DEFAULT_DATA_STATE_2) => {
   return {
     ...state,
     actions: {
-      updateDataHeartbeat: (vaults, blocknumber, errors, markets, instruments) =>
+      updateDataHeartbeat: (vaults, blocknumber, errors, markets, instruments, prices) =>
         dispatch({
           type: UPDATE_DATA_HEARTBEAT,
           vaults,
           blocknumber,
           errors,
           markets,
-          instruments
+          instruments,
+          prices
         }),
       updatePrices: (prices) =>
         dispatch(

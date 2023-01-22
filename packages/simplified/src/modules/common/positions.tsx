@@ -723,14 +723,14 @@ export const PositionsView = ({
           {"My Positions"}
         </span>
         <span />
-        {showActivityButton && (
+        {false && (
           <TinyThemeButton
             action={() => {
-              setTableView(null);
-              setActivity && setActivity();
+              // setTableView(null);
+              // setActivity && setActivity();
             }}
             text="your activity"
-            selected={tableView === null}
+            // selected={tableView === null}
           />
         )}
       </div>
