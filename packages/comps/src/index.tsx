@@ -72,6 +72,7 @@ import {
 } from "./stores/utils-2";
 import * as _ApprovalHooks from "./stores/use-approval-callback";
 import * as _GraphClient from "./apollo/client";
+import * as _RammGraphClient from "./apollo-ramm/client";
 import ModalConnectWallet from "./components/modal/modal-connect-wallet";
 import { ToggleSwitch, BuySellToggleSwitch } from "./components/common/toggle-switch";
 import { Toasts } from "./components/toasts/toasts";
@@ -83,6 +84,7 @@ export const ContractCalls2 = _ContractCalls2;
 export const Calculations = _Calculations;
 export const DerivedMarketData = _DerivedMarketData;
 export const GraphClient = _GraphClient;
+export const RammGraphClient = _RammGraphClient;
 export const Stores = {
   AppStatus: _AppStatusStore,
   Data: _DataStore,
