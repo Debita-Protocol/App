@@ -471,8 +471,8 @@ const MarketView = ({ defaultMarket = null }) => {
     }
   }, [market]);
 
-  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  console.log('instruments!', instruments, market_, vaults); 
+  const { vaults: vaults, instruments: instruments, markets: market_, prices } = useDataStore2()
+  console.log('instruments!', instruments, market_, vaults, prices); 
   // if (!instruments) {
   //   return <div >Vault Not Found.</div>;
   // }
@@ -654,7 +654,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Total amount of underlying used by the instrument  ",
               "curprice"
                       )}
-            <span>{roundDown(principal ,3)}</span>
+            <span>{roundDown(prices?.ETH ,2)}</span>
 
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>)}

@@ -55,12 +55,13 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
         blocknumber: dblock, 
         vaults: dvaults, 
         instruments: dinstruments,
-        markets: dmarkets
+        markets: dmarkets,
+        prices: dprices
       } = DataStore2.get();
 
       const { actions: { setIsRpcDown } } = AppStatusStore;
       const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
-      let infos = { vaults: dvaults , blocknumber: dblock, instruments: dinstruments, markets: dmarkets };
+      let infos = { vaults: dvaults , blocknumber: dblock, instruments: dinstruments, markets: dmarkets, prices: dprices };
 
       try {
         infos = await getContractData(
@@ -84,22 +85,22 @@ export const DataProvider2 = ({ loadType = MARKET_LOAD_TYPE.SIMPLIFIED, children
         console.log("error getting market data", e);
       }
       
-      return { vaults: {}, blocknumber: 1, markets: {}, instruments: {} };
+      return { vaults: {}, blocknumber: 1, markets: {}, instruments: {}, prices: {} };
     };
 
-    getData().then(({ vaults, blocknumber, markets, instruments }) => {
+    getData().then(({ vaults, blocknumber, markets, instruments, prices }) => {
       isMounted &&
         blocknumber &&
         blocknumber > DataStore2.get().blocknumber &&
-        updateDataHeartbeat(vaults, blocknumber, null, markets, instruments);
+        updateDataHeartbeat(vaults, blocknumber, null, markets, instruments, prices);
 
       intervalId = setInterval(() => {
-        getData().then(({ vaults, blocknumber, markets, instruments }) => {
+        getData().then(({ vaults, blocknumber, markets, instruments, prices }) => {
 
           isMounted &&
             blocknumber &&
             blocknumber > DataStore2.get().blocknumber &&
-            updateDataHeartbeat(vaults, blocknumber, null, markets, instruments);
+            updateDataHeartbeat(vaults, blocknumber, null, markets, instruments, prices);
         });
       }, NETWORK_BLOCK_REFRESH_TIME[networkId]);
     });

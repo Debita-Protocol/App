@@ -388,7 +388,7 @@ const CreditLineProposalView = () => {
   if (false) {
     return (
       <>
-      <div className={Styles.CreditLineProposalView}>
+      <div>
         <h2>
           Please connect your account to see this page...
         </h2>
