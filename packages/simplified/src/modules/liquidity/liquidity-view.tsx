@@ -213,13 +213,14 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   const{marketId} = instrument; 
-  const type = markets[Number(marketId)]?.instrumentType; 
+  const type = instrument?.instrumentType; 
 
 
   const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
-  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type)}); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field:instrumentField}); 
+  const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type),fields:instrumentField }); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field: instrumentField }); 
+
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
  return (
     <article
@@ -338,7 +339,7 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
                 text: "-",
             },
           
-           name: "outcome", 
+           name: "Details", 
            breakdowns:  instrumentBreakDown
            // [
            //      instrumentBreakDown
