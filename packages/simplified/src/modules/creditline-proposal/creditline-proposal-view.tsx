@@ -241,13 +241,11 @@ const CreditLineRequestForm = () => {
     }
   ]
 
-  // const buttonProps: BaseThemeButtonProps = {
-  //   text: createdContract ? "Submit" : "Create Contract",
-  //   action: createdContract ? submitProposal : createCreditline 
-  // };
+
+
   const buttonProps: BaseThemeButtonProps = {
-    text: "Feature not available yet",
-    action: null//createCreditline
+    text: "Submit",
+    action: createCreditline
   }
 
   return (

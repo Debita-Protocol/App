@@ -1430,9 +1430,10 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
     // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
+    await controller.testApproveMarket(6)
 
-    let data = await marketManager.getMarket(4);
-    console.log("data timestamp: ", data.creationTimestamp.toString());
+    // let data = await marketManager.getMarket(4);
+    // console.log("data timestamp: ", data.creationTimestamp.toString());
     // for (let i = 1; i < 6; i ++) {
     //     let vid = await controller.id_parent(i);
     //     let vault_ad = await controller.vaults(vid);

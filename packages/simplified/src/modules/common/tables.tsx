@@ -1475,8 +1475,8 @@ const ZCBPositionRow = ({
   return (
     <ul className={Styles.ZCBPositionRow}>
       <li>{position.name}</li>
-      <li>{position.approved ? ConfirmedCheck : pending}</li>
-      <li>{position.resolved ? ConfirmedCheck : pending }</li>
+      <li>{position.approved ? ConfirmedCheck : "-"}</li>
+      <li>{position.resolved ? ConfirmedCheck : "-" }</li>
       <li>{position.long}</li>
       <li>{position.short}</li>
       <li>{handleValue(position.longPrice)}</li>

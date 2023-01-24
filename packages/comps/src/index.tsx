@@ -37,6 +37,7 @@ import _parseQuery from "./utils/links/parse-query";
 import _makePath from "./utils/links/make-path";
 import _makeQuery from "./utils/links/make-query";
 import _parseStringToArray from "./utils/links/parse-string-to-array";
+import * as queries from "./apollo-ramm/queries";
 import {
   getCategoryIconLabel,
   CATEGORIES_ICON_MAP as _CATEGORIES_ICON_MAP,
@@ -124,6 +125,8 @@ export const Stores = {
   },
   Constants: _StoreConstants,
 };
+
+export const GRAPH_QUERIES = queries;
 
 
 export const marketManager = market_manager_address; 
