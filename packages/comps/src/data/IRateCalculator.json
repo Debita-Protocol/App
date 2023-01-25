@@ -1,0 +1,527 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getConstants",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "_calldata",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_data",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_initData",
+          "type": "bytes"
+        }
+      ],
+      "name": "getNewRate",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "_newRatePerSec",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "name",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_initData",
+          "type": "bytes"
+        }
+      ],
+      "name": "requireValidInitData",
+      "outputs": [],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "getConstants()": "9a295e73",
+    "getNewRate(bytes,bytes)": "1b54c1a3",
+    "name()": "06fdde03",
+    "requireValidInitData(bytes)": "453f31d5"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"getConstants\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"_calldata\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_data\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"_initData\",\"type\":\"bytes\"}],\"name\":\"getNewRate\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"_newRatePerSec\",\"type\":\"uint64\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_initData\",\"type\":\"bytes\"}],\"name\":\"requireValidInitData\",\"outputs\":[],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/instruments/IRateCalculator.sol\":\"IRateCalculator\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":@prb/math/=lib/prb-math/src/\",\":@prb/test/=lib/prb-math/lib/prb-test/src/\",\":ds-test/=lib/forge-std/lib/ds-test/src/\",\":forge-std/=lib/forge-std/src/\",\":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/\",\":prb-math/=lib/prb-math/src/\",\":prb-test/=lib/prb-math/lib/prb-test/src/\",\":solmate/=lib/solmate/src/\",\":src/=lib/prb-math/src/\"]},\"sources\":{\"contracts/instruments/IRateCalculator.sol\":{\"keccak256\":\"0xf12adc4ffcf31a867fabcc2cfcebf8edf7bc35def82f9dbfdcb9eccf3e0e14a6\",\"license\":\"ISC\",\"urls\":[\"bzz-raw://d72065c6fa2868b53d0356a5b3ec6b46dd7f001221fbd38867581a7302bc079a\",\"dweb:/ipfs/QmWEXvf8R6VieBUaVUmiAThDsaHk2KWuo9R1UMw9Smdjk1\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.17+commit.8df45f5f"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "getConstants",
+          "outputs": [
+            {
+              "internalType": "bytes",
+              "name": "_calldata",
+              "type": "bytes"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_data",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "_initData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "getNewRate",
+          "outputs": [
+            {
+              "internalType": "uint64",
+              "name": "_newRatePerSec",
+              "type": "uint64"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "name",
+          "outputs": [
+            {
+              "internalType": "string",
+              "name": "",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_initData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "requireValidInitData"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":@prb/math/=lib/prb-math/src/",
+        ":@prb/test/=lib/prb-math/lib/prb-test/src/",
+        ":ds-test/=lib/forge-std/lib/ds-test/src/",
+        ":forge-std/=lib/forge-std/src/",
+        ":openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+        ":prb-math/=lib/prb-math/src/",
+        ":prb-test/=lib/prb-math/lib/prb-test/src/",
+        ":solmate/=lib/solmate/src/",
+        ":src/=lib/prb-math/src/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/instruments/IRateCalculator.sol": "IRateCalculator"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/instruments/IRateCalculator.sol": {
+        "keccak256": "0xf12adc4ffcf31a867fabcc2cfcebf8edf7bc35def82f9dbfdcb9eccf3e0e14a6",
+        "urls": [
+          "bzz-raw://d72065c6fa2868b53d0356a5b3ec6b46dd7f001221fbd38867581a7302bc079a",
+          "dweb:/ipfs/QmWEXvf8R6VieBUaVUmiAThDsaHk2KWuo9R1UMw9Smdjk1"
+        ],
+        "license": "ISC"
+      }
+    },
+    "version": 1
+  },
+  "ast": {
+    "absolutePath": "contracts/instruments/IRateCalculator.sol",
+    "id": 6617,
+    "exportedSymbols": {
+      "IRateCalculator": [
+        6616
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "32:389:7",
+    "nodes": [
+      {
+        "id": 6591,
+        "nodeType": "PragmaDirective",
+        "src": "32:25:7",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          ">=",
+          "0.8",
+          ".16"
+        ]
+      },
+      {
+        "id": 6616,
+        "nodeType": "ContractDefinition",
+        "src": "59:361:7",
+        "nodes": [
+          {
+            "id": 6596,
+            "nodeType": "FunctionDefinition",
+            "src": "91:54:7",
+            "nodes": [],
+            "functionSelector": "06fdde03",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "name",
+            "nameLocation": "100:4:7",
+            "parameters": {
+              "id": 6592,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "104:2:7"
+            },
+            "returnParameters": {
+              "id": 6595,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6594,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6596,
+                  "src": "130:13:7",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 6593,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "130:6:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "129:15:7"
+            },
+            "scope": 6616,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 6601,
+            "nodeType": "FunctionDefinition",
+            "src": "151:70:7",
+            "nodes": [],
+            "functionSelector": "453f31d5",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "requireValidInitData",
+            "nameLocation": "160:20:7",
+            "parameters": {
+              "id": 6599,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6598,
+                  "mutability": "mutable",
+                  "name": "_initData",
+                  "nameLocation": "196:9:7",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6601,
+                  "src": "181:24:7",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 6597,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "181:5:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "180:26:7"
+            },
+            "returnParameters": {
+              "id": 6600,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "220:0:7"
+            },
+            "scope": 6616,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 6606,
+            "nodeType": "FunctionDefinition",
+            "src": "227:71:7",
+            "nodes": [],
+            "functionSelector": "9a295e73",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getConstants",
+            "nameLocation": "236:12:7",
+            "parameters": {
+              "id": 6602,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "248:2:7"
+            },
+            "returnParameters": {
+              "id": 6605,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6604,
+                  "mutability": "mutable",
+                  "name": "_calldata",
+                  "nameLocation": "287:9:7",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6606,
+                  "src": "274:22:7",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 6603,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "274:5:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "273:24:7"
+            },
+            "scope": 6616,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 6615,
+            "nodeType": "FunctionDefinition",
+            "src": "304:114:7",
+            "nodes": [],
+            "functionSelector": "1b54c1a3",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getNewRate",
+            "nameLocation": "313:10:7",
+            "parameters": {
+              "id": 6611,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6608,
+                  "mutability": "mutable",
+                  "name": "_data",
+                  "nameLocation": "339:5:7",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6615,
+                  "src": "324:20:7",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 6607,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "324:5:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 6610,
+                  "mutability": "mutable",
+                  "name": "_initData",
+                  "nameLocation": "361:9:7",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6615,
+                  "src": "346:24:7",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_calldata_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 6609,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "346:5:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "323:48:7"
+            },
+            "returnParameters": {
+              "id": 6614,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6613,
+                  "mutability": "mutable",
+                  "name": "_newRatePerSec",
+                  "nameLocation": "402:14:7",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6615,
+                  "src": "395:21:7",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 6612,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "395:6:7",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "394:23:7"
+            },
+            "scope": 6616,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "canonicalName": "IRateCalculator",
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          6616
+        ],
+        "name": "IRateCalculator",
+        "nameLocation": "69:15:7",
+        "scope": 6617,
+        "usedErrors": []
+      }
+    ],
+    "license": "ISC"
+  },
+  "id": 7
+}

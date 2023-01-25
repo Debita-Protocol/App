@@ -408,12 +408,22 @@ export interface PoolInstrument extends BaseInstrument {
   totalBorrowedAssets: string;
   totalSuppliedAssets: string;
   totalAvailableAssets: string;
-  APR: string;
+  lastRateUpdate: string;
+  ratePerSec: string;
+  rateContract: string;
+  rateName: string;
   managementFee?: string;
   collaterals: Collateral[]; 
   auctions?: Auction[];
   psu?: string;
   pju?: string;
+
+  // rate constants
+  MIN_UTIL?: number;
+  MAX_UTIL?: number;
+  MIN_INT?: number;
+  MAX_INT?: number;
+  INT_HALF_LIFE?: number;
 }
 
 export interface CoreInstrumentData {

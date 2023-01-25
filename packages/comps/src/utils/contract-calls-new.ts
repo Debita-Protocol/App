@@ -35,6 +35,7 @@ import TestNFTData from "../data/TestNFT.json";
 import SyntheticZCBPoolData from "../data/SyntheticZCBPool.json";
 import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
 import AggregatorV3InterfaceData from "../data/AggregatorV3Interface.json";
+import IRateCalculatorData from "../data/IRateCalculator.json";
 
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
@@ -45,7 +46,7 @@ import { TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
 // import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
-import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
+import { formatBytes32String, parseBytes32String, defaultAbiCoder } from "ethers/lib/utils";
 
 import { rammClient, localClient } from "../apollo-ramm/client";
 import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
@@ -569,8 +570,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 gasLimit: gasEstimate.mul(2).toString(),
             }
         );
-
         console.log("vaultBundle: ", vaultBundle);
+        console.log("marketBundle: ", marketBundle);
+        console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -702,6 +704,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             }
 
             if (instr.instrument_type.toString() === "2") {
+                console.log("instr: ", instr);
                 let l = instr.poolData.collaterals.length;
                 let collaterals: Collateral[] = [];
                 for (let z=0; z < l; z++) {
@@ -718,6 +721,21 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     })
                     collaterals.push(c);
                 }
+
+                //TODO: include other interest models other than just variable rate v2.
+                let rateCalculator = new Contract(instr.poolData.rateContract, IRateCalculatorData.abi, provider);
+
+                let encodedConstants = await rateCalculator.getConstants();
+
+                //uint32 MIN_UTIL, uint32 MAX_UTIL, uint32 UTIL_PREC, uint64 MIN_INT, uint64 MAX_INT, uint256 INT_HALF_LIFE
+                let decodedConstants = defaultAbiCoder.decode(["uint32", "uint32","uint32", "uint64", "uint64", "uint256"], encodedConstants)
+
+                let minUtil = Number(decodedConstants[0] / decodedConstants[2])
+                let maxUtil = Number(decodedConstants[1] / decodedConstants[2])
+                let minInt = new BN(decodedConstants[3].toString()).shiftedBy(-18).toNumber();
+                let maxInt = new BN(decodedConstants[4].toString()).shiftedBy(-18).toNumber();
+                let intHalfLife = new BN(decodedConstants[5].toString()).toNumber();
+                // console.log("minInt APR: ", Math.exp(365*60*60*24*Math.log(minInt+ 1) - 1));
                 instrument = _.assign(
                     instrument,
                     {  
@@ -734,10 +752,19 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
                         totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
                         // totalAvailableAssets: "0",
-                        APR: toDisplay(instr.poolData.APR.toString()),
-                        collaterals
+                        ratePerSecond: toDisplay(instr.poolData.ratePerSec.toString()),
+                        rateContract: instr.poolData.rateContract,
+                        rateName: instr.poolData.rateName,
+                        collaterals,
+                        MIN_UTIL: minUtil,
+                        MAX_UTIL: maxUtil,
+                        MIN_INT: minInt,
+                        MAX_INT: maxInt,
+                        INT_HALF_LIFE: intHalfLife,
                     }
                 )
+            // get rate constants.
+
             } else if (instr.instrument_type.toString() === "1") {
                 instrument = _.assign(
                     instrument,

@@ -30,13 +30,6 @@ import { handleValue } from "../common/labels";
 
 
 const { testFullApprove, mintTestNFT,   mintCashToken ,poolBorrow, poolRepayAmount, poolAddInterest, addPoolCollateral, removePoolCollateral } = ContractCalls2;
-const TokenIconMap = {
-    "USDC": "../../assets/images/usdc.png",
-    "DAI": "../../assets/images/dai.png",
-    "ETH": "../../assets/images/eth.png",
-    "FRAX": "../../assets/images/frax.png",
-    "CRV": "../../assets/images/curve.png",
-}
 
 const { IconLabel, ValueLabel }  = LabelComps;
 const { SecondaryThemeButton } = ButtonComps;
@@ -373,6 +366,12 @@ const PoolView: React.FC = () => {
                     </section>
                 </section>
             </div>
+            <div>
+                <h3>
+                    CHART SECTION
+                </h3>
+
+            </div>
             {/* <div>
                 <h3>
                     Auctions
@@ -407,33 +406,5 @@ const PoolView: React.FC = () => {
         </div>
     )
     };
-
-const CollateralSupplyCard: React.FC = ({
-    symbol,
-    maxLTV,
-    balance, // balance of nft.
-    APY
-}): {
-    symbol: string,
-    address: string,
-    maxLTV: string,
-    balance: string,
-    APY: string
-} => {
-    return (
-        <tr>
-            <td>
-                { symbol }/{ maxLTV }
-            </td>
-            <td>
-                { APY }
-            </td>
-            <td>
-                { balance }
-            </td>
-        </tr>
-    );
-}
-
 
 export default PoolView;
