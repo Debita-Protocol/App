@@ -229,7 +229,7 @@ const { getCombinedMarketTransactionsFormatted } = ProcessData;
 const{ fetchTradeData, getHedgePrice, getInstrumentData_, 
   // getTotalCollateral, 
   redeemZCB, getZCBBalances, approveUtilizer, 
-canApproveUtilizer, getERCBalance} = ContractCalls; 
+canApproveUtilizer, getERCBalance, testVerifyToggle} = ContractCalls; 
 const{testApproveMarket} = ContractCalls2; 
 
 let timeoutId = null;
@@ -547,7 +547,13 @@ const MarketView = ({ defaultMarket = null }) => {
     poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   }
 
+  const testVerifyToggle_ = ()=>{
+    testVerifyToggle(account, loginAccount.library).then((response)=>{
+      console.log('tradingresponse', response)}).catch((error)=>{
+        console.log('Trading Error', error)
+      }); 
 
+  }
   const redeem = () =>{
     redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response)=>{
       console.log('tradingresponse', response)}).catch((error)=>{
@@ -718,7 +724,7 @@ const MarketView = ({ defaultMarket = null }) => {
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
           </li>*/}
-            {false && (<li>
+            {isPool && (<li>
               <span>{isPool? "Instrument's Estimated APR":"Instrument's Estimated Return" }</span>
                       {isPool? generateTooltip(
                       "Actual Returns made from the instrument in APR",
@@ -1025,6 +1031,14 @@ const MarketView = ({ defaultMarket = null }) => {
           }
           customClass={ButtonStyles.BuySellButton}
         />}
+        {account=="0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
+          text="Verify Toggle"
+          action={testVerifyToggle_
+            //() => setShowTradingForm(true)
+          }
+          customClass={ButtonStyles.BuySellButton}
+        />}
+
       </section>
     </div>
   );
