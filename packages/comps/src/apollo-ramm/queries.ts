@@ -196,3 +196,21 @@ export const GET_MARKET_PRICES = gql`
     }
 `
 
+export const GET_VAULT_SNAPSHOTS = gql`
+    query vaultSnapshots($vaultAddress: ID!) {
+        vault(id: $vaultAddress) {
+            id
+            snapshots {
+                id
+                timestamp
+                exchangeRate
+                totalAssets
+                totalProtection
+                utilizationRate
+                totalEstimatedAPR
+                totalInstrumentHoldings
+                earnings
+            }
+        }
+    }
+`

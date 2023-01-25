@@ -14,6 +14,8 @@ import LiqStyles from "./liquidity-view.styles.less";
 import { useHistory, useLocation } from "react-router";
 import { InfoNumbers, ApprovalButton } from "../market/trading-form";
 import { BigNumber as BN } from "bignumber.js";
+import { TabNavItem, TabContent } from "../common/tabs"
+import _ from "lodash";
 import {
   ContractCalls,
   useDataStore,
@@ -26,13 +28,14 @@ import {
   useAppStatusStore,
   useScrollToTopOnMount,
   useDataStore2,
-  ApprovalHooks
+  ApprovalHooks,
+  GRAPH_QUERIES
 } from "@augurproject/comps";
 import { AddMetaMaskToken } from "../common/labels";
 import { Slippage, Leverage } from "../common/slippage";
 
 import { InstrumentInfos, VaultInfos, CoreInstrumentData, AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
-import { useSimplifiedStore } from "../stores/simplified";
+import { SimplifiedStore, useSimplifiedStore } from "../stores/simplified";
 import {
   MODAL_CONFIRM_TRANSACTION,
   LIQUIDITY,
@@ -46,6 +49,14 @@ import {
   INSTRUMENT_SORT_TYPES, INSTRUMENT_SORT_TYPE_TEXT
 } from "../constants";
 import { InstrumentCard, SortableHeaderButton } from "./liquidity-view";
+import { useQuery } from '@apollo/client';
+import { GET_VAULT_SNAPSHOTS } from "@augurproject/comps/build/apollo-ramm/queries";
+import { constants } from "buffer";
+import { VaultChartSection, VaultHistoryChart } from "../common/charts";
+import { getDayFormat, getTimeFormat } from "@augurproject/comps/build/utils/date-utils";
+import { formatCashPrice, optionsBlank } from "@augurproject/comps/build/utils/format-number";
+
+
 const {
   useIsTokenApprovedSpender } = ApprovalHooks;
 
@@ -226,22 +237,19 @@ export const MarketLiquidityView = () => {
   );
 
   const vaultId = marketId;
-  const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos } = useDataStore2();
-  // console.log(Object.keys(instruments))
+  const { vaults: vaults, instruments: instruments, prices }: { vaults: VaultInfos, instruments: InstrumentInfos, prices: any } = useDataStore2();
   let filteredInstruments = Object.values(instruments).map((instrument: any) => {
     return instrument
   })
   filteredInstruments = filteredInstruments.filter((instrument) => instrument.vaultId == vaultId);
-  // updatedFilteredMarkets.filter((market) =>
-  //   market.hasWinner ? (userMarkets.includes(market.marketId) ? true : false) : true
-  // );
-  // .filter((instrument)=> instrument.vaultId == vaultId); 
-  // console.log('filteredInstruments', filteredInstruments); 
+
   const vault = vaults[Number(vaultId)]
+
+
   if (!vault) {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
-  console.log('vault', vault, instruments);
+
   const vault_address = vault?.address;
   const underlying_address = vault?.want.address;
   const underlyingSymbol = vault?.want.symbol;
@@ -256,6 +264,7 @@ export const MarketLiquidityView = () => {
     });
     closeModal();
   };
+
   return (
     <div className={classNames(Styles.MarketLiquidityView)}>
       {/*<BackBar {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, setAmount, maxWhackedCollateral }} />*/}
@@ -381,6 +390,7 @@ export const MarketLiquidityView = () => {
           ))}
         </section>
       </div>
+      <ChartsSection vault={vault} prices={prices} />
     </div>
   );
 };
@@ -463,10 +473,10 @@ const getCreateBreakdown = (breakdown, market, balances, isRemove = false) => {
     {
       label: isRemove ? "USDC" : "LP tokens",
       value: `${breakdown?.amount
-          ? isRemove
-            ? formatCash(breakdown.amount, USDC).full
-            : formatSimpleShares(breakdown.amount).formatted
-          : "-"
+        ? isRemove
+          ? formatCash(breakdown.amount, USDC).full
+          : formatSimpleShares(breakdown.amount).formatted
+        : "-"
         }`,
       svg: isRemove ? USDCIcon : null,
     },
@@ -1629,3 +1639,348 @@ const useErrorValidation = ({ isRemove, outcomes, amount, actionType, isGrouped,
     hasAmountErrors,
   };
 };
+
+
+const ChartsSection = ({ vault, prices }) => {
+  const { address, want } = vault;
+  const [activeTab, setActiveTab] = useState("0");
+
+
+  const { loading, error, data } = useQuery(GRAPH_QUERIES.GET_VAULT_SNAPSHOTS, {
+    variables: {
+      vaultAddress: address.toLowerCase()
+    }
+  })
+
+  console.log("symbol:", want.symbol);
+  console.log("vault: ", vault);
+  console.log("prices: ", prices);
+
+
+  let exchangeFormattedOutcomes = [
+    {
+      id: 1,
+      label: "exchange rate",
+      lastValue: vault.exchangeRate,
+      outcomeIdx: 0
+    }
+  ]
+
+  let assetFormattedOutcomes = [
+    {
+      id: 1,
+      label: "TVL",
+      lastValue: convertToUSD(vault.totalAssets, want.symbol, prices),
+      outcomeIdx: 0
+    },
+    {
+      id: 2,
+      label: "instrument holdings",
+      lastValue: convertToUSD(vault.totalInstrumentHoldings, want.symbol, prices),
+      outcomeIdx: 1
+    },
+    {
+      id: 3,
+      label: "accumulated protection",
+      lastValue: convertToUSD(vault.totalProtection, want.symbol, prices),
+      outcomeIdx: 2
+    }
+  ];
+
+  let utilizationRateFormattedOutcomes = [
+    {
+      id: 1,
+      label: "utilization rate",
+      lastValue: vault.utilizationRate,
+      outcomeIdx: 0
+    }
+  ]
+  let aprRateFormattedOutcomes = [
+    {
+      id: 2,
+      label: "projected apr",
+      lastValue: vault.totalEstimatedAPR,
+      outcomeIdx: 1
+    }
+  ]
+  let exchangeRateArray = [];
+  let assetArray = [];
+  let ratesArray = [];
+  console.log("data: ", data);
+  data && data.vault && _.forEach(data.vault.snapshots, (item) => {
+    let timestamp = item.timestamp;
+    exchangeRateArray.push({
+      timestamp,
+      value: item.exchangeRate,
+      outcome: 1
+    })
+
+    assetArray = _.concat(assetArray,
+      [{
+        timestamp,
+        value: convertToUSD(item.totalAssets, want.symbol, prices),
+        outcome: 1
+      },
+      {
+        timestamp,
+        value: convertToUSD(item.totalInstrumentHoldings, want.symbol, prices),
+        outcome: 2
+      },
+      {
+        timestamp,
+        value: convertToUSD(item.totalProtection, want.symbol, prices),
+        outcome: 3
+      }]
+    )
+
+    ratesArray = _.concat(ratesArray, [
+      {
+        timestamp,
+        value: item.utilizationRate,
+        outcome: 1
+      },
+      {
+        timestamp,
+        value: item.totalEstimatedAPR
+      }
+    ])
+  })
+
+  let options = useAssetGetOptions(assetArray);
+  console.log("exchangeRateArray: ", exchangeRateArray);
+  // exchange rate chart
+  let optionsExchange = useExchangeGetOptions(exchangeRateArray);
+  let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
+
+  return (<section>
+    {loading ? (
+      <h2>
+        Loading
+      </h2>
+    ) : (
+      <div className={Styles.ChartsSection}>
+        <div>
+        <h3>
+          TVL
+        </h3>
+        <VaultChartSection options={options} vaultId={vault.vaultId} snapshots={assetArray} formattedOutcomes={assetFormattedOutcomes} />
+        </div>
+        <div>
+        <h3>
+          Exchange Rate
+        </h3>
+        <VaultHistoryChart {...{ rangeSelection: 3, selectedOutcomes: [true], creationTimestamp, options:optionsExchange, snapshots:exchangeRateArray, formattedOutcomes:exchangeFormattedOutcomes, colors:[1], gradients:[1]}}/>
+        </div>
+      </div>
+
+    )
+
+    }
+
+  </section>)
+}
+
+export const convertToUSD = (amount: string, symbol: string, prices) => {
+  return new BN(amount).multipliedBy(new BN(prices[symbol])).toFixed(4);
+}
+
+
+const useAssetGetOptions = (arr) => {
+  let maxItem = _.maxBy(_.flatten(arr), (item: any) => Number(item.value))
+  let minItem = _.minBy(_.flatten(arr), (item: any) => Number(item.value))
+  let maxValue;
+  let minValue;
+  // it max and min are the same, add 1 to max and subtract 1 from min
+  if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
+    maxValue = Number(maxItem.value) + Number(maxItem.value)/2;
+    minValue = Number(minItem.value) - Number(minItem.value)/2;
+  } else if (maxItem && minItem){
+    let delta = Number(maxItem.value) - Number(minItem.value);
+    maxValue = Math.max(Number(maxItem.value) + delta/20,0);
+    minValue = Math.max(Number(minItem.value) - delta/20,0);
+  }
+
+  return useMemo(() => {
+    if (!maxItem || !minItem) {
+      return {}
+    } 
+    let options = {
+      lang: {
+        noData: "No Chart Data",
+      },
+      title: {
+        text: ""
+      },
+      chart: {
+        alignTicks: false,
+        backgroundColor: "transparent",
+        type: "areaspline",
+        styledMode: false,
+        animation: true,
+        reflow: true,
+        spacing: [8, 0, 8, 0],
+        panning: { enabled: false },
+        zoomType: undefined,
+        pinchType: undefined,
+        panKey: undefined,
+        zoomKey: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        areaspline: {
+          threshold: null,
+          animation: true,
+        },
+      },
+      scrollbar: { enabled: false },
+      navigator: { enabled: false },
+      xAxis: {
+        ordinal: false,
+        tickLength: 0,
+        gridLineWidth: 0,
+        gridLineColor: null,
+        lineWidth: 0,
+        labels: false,
+      },
+      yAxis: {
+        showEmpty: true,
+        opposite: false,
+        max: maxValue.toFixed(2),
+        min: minValue.toFixed(2),
+        gridLineWidth: 0,
+        gridLineColor: null,
+        labels: false,
+      },
+      tooltip: {
+        enabled: true,
+        shape: "square",
+        shared: true,
+        split: false,
+        useHTML: true,
+        valueDecimals: 4,
+        formatter() {
+          const {
+            settings: { timeFormat },
+          } = SimplifiedStore.get();
+          const that = this as any;
+          const date = `${getDayFormat(that.x)}, ${getTimeFormat(that.x, timeFormat)}`;
+          let out = `<h5>${date}</h5><ul>`;
+          that.points.forEach((point) => {
+            out += `<li><span style="color:${point.color}">&#9679;</span><b>${point.series.name}</b><span>${formatCashPrice(createBigNumber(point.y), "USDC").full
+              }</span></li>`;
+          });
+          out += "</ul>";
+          return out;
+      }},
+      time: {
+        useUTC: false,
+      },
+      rangeSelector: {
+        enabled: false,
+      }
+    }
+    return options;
+  }, [maxValue, minValue])
+}
+
+const useExchangeGetOptions = (arr) => {
+  let maxItem = _.maxBy(_.flatten(arr), (item: any) => Number(item.value))
+  let minItem = _.minBy(_.flatten(arr), (item: any) => Number(item.value))
+  let maxValue;
+  let minValue;
+  // it max and min are the same, add 1 to max and subtract 1 from min
+  if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
+    maxValue = Number(maxItem.value) + Number(maxItem.value)/2;
+    minValue = Number(minItem.value) - Number(minItem.value)/2;
+  } else if (maxItem && minItem){
+    let delta = Number(maxItem.value) - Number(minItem.value);
+    maxValue = Math.max(Number(maxItem.value) + delta/20,0);
+    minValue = Math.max(Number(minItem.value) - delta/20,0);
+  }
+
+  return useMemo(() => {
+    if (!maxItem || !minItem) {
+      return {}
+    } 
+    let options = {
+      lang: {
+        noData: "No Chart Data",
+      },
+      title: {
+        text: ""
+      },
+      chart: {
+        alignTicks: false,
+        backgroundColor: "transparent",
+        type: "areaspline",
+        styledMode: false,
+        animation: true,
+        reflow: true,
+        spacing: [8, 0, 8, 0],
+        panning: { enabled: false },
+        zoomType: undefined,
+        pinchType: undefined,
+        panKey: undefined,
+        zoomKey: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      plotOptions: {
+        areaspline: {
+          threshold: null,
+          animation: true,
+        },
+      },
+      scrollbar: { enabled: false },
+      navigator: { enabled: false },
+      xAxis: {
+        ordinal: false,
+        tickLength: 0,
+        gridLineWidth: 0,
+        gridLineColor: null,
+        lineWidth: 0,
+        labels: false,
+      },
+      yAxis: {
+        showEmpty: true,
+        opposite: false,
+        max: maxValue.toFixed(2),
+        min: minValue.toFixed(2),
+        gridLineWidth: 0,
+        gridLineColor: null,
+        labels: false,
+      },
+      tooltip: {
+        enabled: true,
+        shape: "square",
+        shared: true,
+        split: false,
+        useHTML: true,
+        valueDecimals: 4,
+        formatter() {
+          const {
+            settings: { timeFormat },
+          } = SimplifiedStore.get();
+          const that = this as any;
+          const date = `${getDayFormat(that.x)}, ${getTimeFormat(that.x, timeFormat)}`;
+          let out = `<h5>${date}</h5><ul>`;
+          that.points.forEach((point) => {
+            out += `<li><span style="color:${point.color}">&#9679;</span><b>${point.series.name}</b><span>${formatCashPrice(createBigNumber(point.y), "USDC").full
+              }</span></li>`;
+          });
+          out += "</ul>";
+          return out;
+        }},
+      time: {
+        useUTC: false,
+      },
+      rangeSelector: {
+        enabled: false,
+      }
+    }
+    return options;
+  }, [maxValue, minValue])
+}
