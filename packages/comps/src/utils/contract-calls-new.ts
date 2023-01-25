@@ -570,7 +570,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             }
         );
 
-        // console.log("instrumentBundle: ", instrumentBundle);
+        console.log("vaultBundle: ", vaultBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -603,26 +603,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         want.displayDecimals = 6;
 
         // // add vault
-        let vault = {
-            address: vaultBundle.vault_address,
-            vaultId: vaultBundle.vaultId.toString(),
-            marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
-            onlyVerified: vaultBundle.onlyVerified,
-            want: want,
-            default_params: default_params,
-            r: toDisplay(vaultBundle.r.toString()),
-            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
-            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
-            totalShares: toDisplay(vaultBundle.totalShares.toString()),
-            name: vaultBundle.name,
-            symbol: vaultBundle.symbol,
-            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
-            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
-            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
-            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
-            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
-            totalProtection: toDisplay(vaultBundle.totalProtection.toString())
-        };
+
 
         for (let j = 0; j < marketBundle.length; j++) {
             // add market
@@ -775,7 +756,27 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             instruments[instrument.marketId] = instrument;
         }
 
-        vaults[vault.vaultId] = vault;
+        vaults[vaultBundle.vaultId] = {
+            address: vaultBundle.vault_address,
+            vaultId: vaultBundle.vaultId.toString(),
+            marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
+            onlyVerified: vaultBundle.onlyVerified,
+            want: want,
+            default_params: default_params,
+            // r: toDisplay(vaultBundle.r.toString()),
+            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
+            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
+            totalShares: toDisplay(vaultBundle.totalShares.toString()),
+            name: vaultBundle.name,
+            symbol: vaultBundle.symbol,
+            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
+            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
+            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
+            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
+            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
+            totalProtection: toDisplay(vaultBundle.totalProtection.toString()),
+            totalInstrumentHoldings: toDisplay(vaultBundle.totalInstrumentHoldings.toString())
+        };;
     }
     let prices = await getRammPrices(account, provider);
     return { vaults, markets, instruments, blocknumber, prices };
@@ -814,6 +815,9 @@ export const getRammPrices = async (account: string, provider: Web3Provider): Pr
     let prices = {};
     _.forEach(results.results, (value: any, key) => {
         prices[key] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
+        if (key === "ETH") {
+            prices["WETH"] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
+        }
     })
 
     return prices;
@@ -1430,9 +1434,10 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
     // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
+    // await controller.testApproveMarket(6)
 
-    let data = await marketManager.getMarket(4);
-    console.log("data timestamp: ", data.creationTimestamp.toString());
+    // let data = await marketManager.getMarket(4);
+    // console.log("data timestamp: ", data.creationTimestamp.toString());
     // for (let i = 1; i < 6; i ++) {
     //     let vid = await controller.id_parent(i);
     //     let vault_ad = await controller.vaults(vid);

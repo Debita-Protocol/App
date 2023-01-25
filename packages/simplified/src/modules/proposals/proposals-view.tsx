@@ -20,8 +20,8 @@ const ProposalsView = () => {
             <section>
                     <TabNavItem title="Options" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
                     <TabNavItem title="Pool" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                    {/* <TabNavItem title="General" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
-                    <TabNavItem title="Creditline" id="3" activeTab={activeTab} setActiveTab={setActiveTab}/> */}
+                    <TabNavItem title="General" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
+                    <TabNavItem title="Creditline" id="3" activeTab={activeTab} setActiveTab={setActiveTab}/>
             </section>
             <section>
                 <TabContent id="0" activeTab={activeTab} className={Styles.poolTab}>
@@ -30,12 +30,12 @@ const ProposalsView = () => {
                 <TabContent id="1" activeTab={activeTab} className={Styles.PoolTab}>
                     <PoolProposalView />
                 </TabContent>
-                {/* <TabContent id="2" activeTab={activeTab}>
+                <TabContent id="2" activeTab={activeTab}>
                     <GeneralInstrumentForm />
                 </TabContent>
                 <TabContent id="3" activeTab={activeTab} className={Styles.poolTab}> 
                     <CreditLineProposalView />
-                </TabContent> */}
+                </TabContent>
                
             </section>
 

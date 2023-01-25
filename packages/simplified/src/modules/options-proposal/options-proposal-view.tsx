@@ -390,9 +390,9 @@ const OptionsProposalView: React.FC = () => {
         <h3>
           Covered Call Proposal Form
         </h3>
-        {/* <button onClick={godButton}>
+        <button onClick={godButton}>
           God button
-        </button> */}
+        </button>
       </div>
       <div>
         <div>

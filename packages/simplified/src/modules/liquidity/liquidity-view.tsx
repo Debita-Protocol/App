@@ -663,7 +663,8 @@ const LiquidityView = () => {
   const { markets, transactions } = useDataStore();
   const { marketTypeFilter, sortBy, primaryCategory, subCategories, onlyUserLiquidity } = poolsViewSettings;
   const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
-  console.log('vaults', vaults, 'instruments', instruments); 
+
+  
 
   const [filter, setFilter] = useState("");
   const [filteredMarkets, setFilteredMarkets] = useState([]);

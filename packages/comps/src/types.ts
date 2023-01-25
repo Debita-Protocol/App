@@ -606,6 +606,7 @@ export interface VaultInfo {
   totalEstimatedAPR?: string; 
   goalAPR?: string; 
   totalProtection?: string; 
+  totalInstrumentHoldings?: string;
   
   rVault?: string
   N?: string

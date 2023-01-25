@@ -87,8 +87,8 @@ export function formatCashPrice(
 ): FormattedNumber {
   const { prepend, symbol } = getCashFormat(cashName);
   return formatNumber(num, {
-    decimals: 2,
-    decimalsRounded: 2,
+    decimals: 4,
+    decimalsRounded: 4,
     denomination: (v) => (prepend ? `${symbol}${v}` : `${v} ${symbol}`),
     positiveSign: false,
     zeroStyled: false,
