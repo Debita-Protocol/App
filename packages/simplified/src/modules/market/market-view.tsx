@@ -7,12 +7,13 @@ import Styles from "./market-view.styles.less";
 // @ts-ignore
 import ButtonStyles from "../common/buttons.styles.less";
 import classNames from "classnames";
-import SimpleChartSection from "../common/charts";
+import { ZCBPriceChartSection } from "../common/charts";
 import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tables";
 import {  AddMetaMaskToken } from "../common/labels";
 import {PositionsView} from "../common/positions"; 
 import {ManagerWarning} from "../liquidity/market-liquidity-view"
 import {TradingForm,IssueForm} from "./trading-form";
+import { useQuery } from "@apollo/client";
 import {
   Constants,
   useAppStatusStore,
@@ -25,7 +26,7 @@ import {
   Stores,
   ContractCalls, 
   ContractCalls2, 
-  useUserStore, useDataStore2
+  useUserStore, useDataStore2, GRAPH_QUERIES
 } from "@augurproject/comps";
 import type { MarketInfo, AmmOutcome, MarketOutcome, AmmExchange, 
 InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
@@ -438,6 +439,12 @@ const MarketView = ({ defaultMarket = null }) => {
   const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   // const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
   const selectedOutcome = DefaultMarketOutcomes[1];
+
+  const { loading, error, data } = useQuery(GRAPH_QUERIES.GET_MARKET_PRICES, {
+    variables: {
+      marketId: marketId
+    }
+  })
 
   // console.log('amm', amm, amm?.ammOutcomes)
 
@@ -979,6 +986,17 @@ const MarketView = ({ defaultMarket = null }) => {
           {details.length === 0 && <p>{description1}</p>}
           
         </div>
+        {!loading && data.market && Object.entries(market_).length > 0 &&  (
+          <div>
+          <h4>
+            Price History
+          </h4>
+          <ZCBPriceChartSection marketId={marketId} snapshots={data.market.snapshots}/>
+        </div>
+        )
+        }
+        
+
         <div className={Styles.TransactionsTable}>
 
          <span>Activity</span>

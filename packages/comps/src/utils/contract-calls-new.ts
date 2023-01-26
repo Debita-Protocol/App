@@ -723,19 +723,21 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 }
 
                 //TODO: include other interest models other than just variable rate v2.
-                let rateCalculator = new Contract(instr.poolData.rateContract, IRateCalculatorData.abi, provider);
+                // let rateCalculator = new Contract(instr.poolData.rateContract, IRateCalculatorData.abi, provider);
 
-                let encodedConstants = await rateCalculator.getConstants();
+                // let encodedConstants = await rateCalculator.getConstants();
 
-                //uint32 MIN_UTIL, uint32 MAX_UTIL, uint32 UTIL_PREC, uint64 MIN_INT, uint64 MAX_INT, uint256 INT_HALF_LIFE
-                let decodedConstants = defaultAbiCoder.decode(["uint32", "uint32","uint32", "uint64", "uint64", "uint256"], encodedConstants)
+                // //uint32 MIN_UTIL, uint32 MAX_UTIL, uint32 UTIL_PREC, uint64 MIN_INT, uint64 MAX_INT, uint256 INT_HALF_LIFE
+                // let decodedConstants = defaultAbiCoder.decode(["uint32", "uint32","uint32", "uint64", "uint64", "uint256"], encodedConstants)
 
-                let minUtil = Number(decodedConstants[0] / decodedConstants[2])
-                let maxUtil = Number(decodedConstants[1] / decodedConstants[2])
-                let minInt = new BN(decodedConstants[3].toString()).shiftedBy(-18).toNumber();
-                let maxInt = new BN(decodedConstants[4].toString()).shiftedBy(-18).toNumber();
-                let intHalfLife = new BN(decodedConstants[5].toString()).toNumber();
-                // console.log("minInt APR: ", Math.exp(365*60*60*24*Math.log(minInt+ 1) - 1));
+                // let minUtil = Number(decodedConstants[0] / decodedConstants[2])
+                // let maxUtil = Number(decodedConstants[1] / decodedConstants[2])
+                // let minInt = new BN(decodedConstants[3].toString()).shiftedBy(-18).toNumber();
+                // let maxInt = new BN(decodedConstants[4].toString()).shiftedBy(-18).toNumber();
+                // let intHalfLife = new BN(decodedConstants[5].toString()).toNumber();
+                let formattedRate = new BN(instr.poolData.ratePerSec.toString()).shiftedBy(-18).toNumber()
+                
+                let borrowAPR = String(Math.exp(31536000*Math.log(formattedRate + 1)) - 1);
                 instrument = _.assign(
                     instrument,
                     {  
@@ -750,17 +752,20 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         psu: toDisplay(instr.poolData.psu.toString()),
                         totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
                         totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
+                        utilizationRate: toDisplay(instr.poolData.utilizationRate.toString()),
                         totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
                         // totalAvailableAssets: "0",
                         ratePerSecond: toDisplay(instr.poolData.ratePerSec.toString()),
                         rateContract: instr.poolData.rateContract,
                         rateName: instr.poolData.rateName,
                         collaterals,
-                        MIN_UTIL: minUtil,
-                        MAX_UTIL: maxUtil,
-                        MIN_INT: minInt,
-                        MAX_INT: maxInt,
-                        INT_HALF_LIFE: intHalfLife,
+                        exchangeRate: toDisplay(instr.poolData.exchangeRate.toString()),
+                        // MIN_UTIL: minUtil,
+                        // MAX_UTIL: maxUtil,
+                        // MIN_INT: minInt,
+                        // MAX_INT: maxInt,
+                        // INT_HALF_LIFE: intHalfLife,
+                        borrowAPR
                     }
                 )
             // get rate constants.

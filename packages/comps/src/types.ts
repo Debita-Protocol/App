@@ -406,10 +406,12 @@ export interface PoolInstrument extends BaseInstrument {
   inceptionPrice: string;
   poolLeverageFactor: string;
   totalBorrowedAssets: string;
-  totalSuppliedAssets: string;
+  totalSuppliedAssets: string; 
+  utilizationRate: string;
   totalAvailableAssets: string;
   lastRateUpdate: string;
   ratePerSec: string;
+  borrowAPR: string;
   rateContract: string;
   rateName: string;
   managementFee?: string;
@@ -417,13 +419,14 @@ export interface PoolInstrument extends BaseInstrument {
   auctions?: Auction[];
   psu?: string;
   pju?: string;
+  exchangeRate: string;
 
   // rate constants
-  MIN_UTIL?: number;
-  MAX_UTIL?: number;
-  MIN_INT?: number;
-  MAX_INT?: number;
-  INT_HALF_LIFE?: number;
+  // MIN_UTIL?: number;
+  // MAX_UTIL?: number;
+  // MIN_INT?: number;
+  // MAX_INT?: number;
+  // INT_HALF_LIFE?: number;
 }
 
 export interface CoreInstrumentData {

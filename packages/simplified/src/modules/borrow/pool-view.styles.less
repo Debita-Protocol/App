@@ -212,3 +212,76 @@
     border-radius: @size-10;
     background-color:var(--primary-bg);
 }
+
+.PoolRatesSimulator {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: space-evenly;
+    justify-content: flex-start;
+    grid-column: span 2;
+    width:80%;
+
+    .ThemeBorder;
+    background-color: var(--primary-bg);
+    padding-left: @size-10;
+    padding-right: @size-10;
+    > div {
+        width:100%;
+        display: grid;
+        grid-template-columns: 0.3fr 0.2fr 1fr;
+        padding-top: @size-8;
+        padding-bottom: @size-8;
+        > span:first-of-type {
+            font-size: @size-14;
+            padding-left: @size-16;
+            font-weight: @weight-light;
+            color: var(--primary-text);
+            grid-column: 1;
+            justify-self: start;
+            align-self: center;
+        }
+        > span:nth-of-type(2) {
+            grid-column: 2;
+            font-size: @size-14;
+            font-weight: @weight-bold;
+            color: var(--primary-text);
+            padding-right: @size-16;
+            padding-left: @size-16;
+            grid-column: 2;
+            justify-self: center;
+            align-self: center;
+        }
+        > div {
+            padding-bottom: @size-36;
+            grid-column: 3;
+            justify-self: end;
+        }
+    }
+    > div:first-of-type {
+        > div {
+            > div:nth-of-type(3) {
+                border: 8px solid var(--inverted-primary-bg);
+            }
+        }
+    }
+    > div:nth-of-type(2) {
+        >div {
+            > div:first-of-type {
+                background: var(--theme-outcome-2);
+            }
+            > div:nth-of-type(3) {
+                display:none;
+            }
+        }
+    }
+    > div:nth-of-type(3) {
+        >div {
+            > div:first-of-type {
+                background: var(--theme-outcome-3);
+            }
+            > div:nth-of-type(3) {
+                display:none;
+            }
+        }
+    }
+}
