@@ -449,7 +449,7 @@ const PoolRatesSimulator = ({ instrument, market }) => {
             <div>
                 <span>Utilization</span>
                 <span>{utilizationRate}%</span>
-                <BaseSlider onChange={(value) => setUtilizationRate(value)} step={1} defaultValue={Number(_utilizationRate) * 100} />
+                <BaseSlider onChange={(value) => setUtilizationRate(value)} step={0.1} defaultValue={Number(_utilizationRate) * 100} max={100} />
             </div>
             <div>
                 <span>Supply APR</span>

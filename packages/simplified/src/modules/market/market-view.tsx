@@ -177,7 +177,7 @@ export const InstrumentType = ({ instrumenType }) => {
     return "Creditline";
   }
   else if (instrumenType == 1) {
-    return "Covered Call : FIXED RATE/TERM INSTRUMENT";
+    return "Covered Call";
   }
   else if (instrumenType == 2) {
     return "Conditional Lending Pool"
@@ -663,7 +663,11 @@ const MarketView = ({ defaultMarket = null }) => {
           />
         </div>
         { type === 0  &&(
-          <CreditlineInfoTable instrument={instruments[Id]} vault={vaults[vaultId]}/>
+          <section>
+            <CreditlineRequestInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
+            <CreditlineLoanInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
+          </section>
+          
         )}
 
         <h3>Simulate Returns</h3>
@@ -1073,7 +1077,7 @@ const MarketView = ({ defaultMarket = null }) => {
 export default MarketView;
 
 
-const CreditlineInfoTable = ({
+const CreditlineRequestInfo = ({
   instrument,
   vault
 }) => {
@@ -1091,14 +1095,17 @@ const CreditlineInfoTable = ({
   const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
   return (
     <section className={Styles.CreditlineTable}>
+      <h3>
+        Request Details
+      </h3>
        <div>
-          <span>Tenor</span>
+          <span>Duration</span>
           <span>{tenor} days</span>
         </div>
-        <div>
+        {/* <div>
           <span>Collateral Type</span>
           <span>{collateralTypeMapping[Number(collateralType)]}</span>
-        </div>
+        </div> */}
         {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
         <div>
           <span>Collateral</span>
@@ -1115,11 +1122,71 @@ const CreditlineInfoTable = ({
         </div>
         }
         <div>
-          <span>Principal</span>
+          <span>Requested Amount</span>
           <span>{handleValue(principal, vault.want.symbol)}</span>
         </div>
         <div>
-          <span>Notional Interest</span>
+          <span>Expected Yield</span>
+          <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+        </div>
+        {/* <div>
+          <span>Amount Repaid</span>
+          <span>{handleValue(amountRepaid, vault.want.symbol)}</span>
+        </div> */}
+    </section>
+  )
+}
+
+const CreditlineLoanInfo = ({
+  instrument,
+  vault
+}) => {
+  const { collateral, duration, collateralType, oracle, principal, expectedYield} = instrument;
+  console.log("collateral: ", collateral);
+  const collateralTypeMapping = {
+    0: "liquidatable",
+    1: "nonLiquid",
+    2: "ownership",
+    3: "none"
+  }
+
+  // <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
+  //               </ExternalLink>
+  const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
+  return (
+    <section className={Styles.CreditlineTable}>
+      <h3>
+        Loan Info
+      </h3>
+       <div>
+          <span>Expiration</span>
+          <span>{tenor} days</span>
+        </div>
+        {/* <div>
+          <span>Collateral Type</span>
+          <span>{collateralTypeMapping[Number(collateralType)]}</span>
+        </div> */}
+        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+        <div>
+          <span>Collateral</span>
+          <span>
+            <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + collateral} label={collateral} icon={true}>
+            </ExternalLink>
+          </span>
+        </div>
+        }
+        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+        <div>
+          <span>Oracle</span>
+          <span>{oracle}</span>
+        </div>
+        }
+        <div>
+          <span>Expected Repayment</span>
+          <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+        </div>
+        <div>
+          <span>Amount Repaid</span>
           <span>{handleValue(expectedYield, vault.want.symbol)}</span>
         </div>
     </section>
