@@ -364,7 +364,7 @@ export interface CoreMarketInfos {
   [marketId: string]: CoreMarketInfo;
 }
 
-export type Instrument = BaseInstrument | PoolInstrument;
+export type Instrument = BaseInstrument | PoolInstrument | CreditlineInstrument;
 
 export interface BaseInstrument {
   name: string;
@@ -396,6 +396,14 @@ export interface OptionsInstrument extends BaseInstrument {
   tradeTime: string;
   oracle: string;
   approvalStatus: boolean;
+}
+
+export interface CreditlineInstrument extends BaseInstrument {
+  collateral: string;
+  collateralBalance: string;
+  oracle: string;
+  loanStatus: string;
+  collateralType: string;  
 }
 
 export interface PoolInstrument extends BaseInstrument {

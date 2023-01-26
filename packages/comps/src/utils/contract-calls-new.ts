@@ -784,6 +784,17 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         approvalStatus: instr.optionsData.approvalStatus,
                     }
                 )
+            } else if (instr.instrument_type.toString() === "0") {
+                instrument = _.assign(
+                    instrument,
+                    {
+                        collateral: instr.creditlineData.collateral,
+                        collateralBalance: toDisplay(instr.creditlineData.collateralBalance.toString()),
+                        oracle: instr.creditlineData.oracle,
+                        loanStatus: instr.creditlineData.loanStatus,
+                        collateralType: instr.creditlineData.collateralType,
+                    }
+                )
             }
             instruments[instrument.marketId] = instrument;
         }

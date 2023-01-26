@@ -26,9 +26,9 @@ export interface ValueLabelProps {
   small?: boolean;
 }
 
-export const RammCategoryLabel = ({text}) => {
+export const RammCategoryLabel = ({text, big=false}) => {
   return (
-    <div className={Styles.CategoryLabel}>
+    <div data-big={big} className={Styles.CategoryLabel}>
       {text}
     </div>
   )
@@ -111,6 +111,7 @@ export const CategoryLabel = ({ categories, big = false }: CategoriesProps) => (
     {/*{!!categories[2] ? categories[2] : !!categories[1] ? categories[1] : categories[0]}*/}
   </div>
 );
+
 
 export const CategoryIcon = ({ categories, big = false }: CategoriesProps) => {
   const prime = CATEGORIES_ICON_MAP[categories[0]?.toLowerCase()];
