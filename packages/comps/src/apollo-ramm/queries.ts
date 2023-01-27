@@ -214,3 +214,13 @@ export const GET_VAULT_SNAPSHOTS = gql`
         }
     }
 `
+
+export const GET_MANAGER_SCORES = gql`
+    query managerScores($amount: Int!) {
+        managers(first: $amount, orderBy: reputationScore, orderDirection: desc) {
+            address: id
+            reputationScore
+        }
+    }
+`
+

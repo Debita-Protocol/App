@@ -113,7 +113,7 @@ const breakdowns_ = [
         
         <TargetDescription {...{ targetDescription }} />
         {!includeInput ?
-          (breakdowns.map(({ heading, infoNumbers }) => (
+          (breakdowns_.map(({ heading, infoNumbers }) => (
             <section key={`${heading}-breakdown`}>
               <h5>{heading}</h5>
               <InfoNumbers {...{ infoNumbers }} />

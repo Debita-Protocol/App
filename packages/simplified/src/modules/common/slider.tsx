@@ -14,7 +14,11 @@ export const BaseSlider = (
         defaultValue=0,
         disabled=false,
         step=1,
-        value
+        value,
+        renderMark,
+        marks=[],
+        markClassName="",
+        renderTrack
     }: {
         max?: number,
         min?: number,
@@ -24,7 +28,11 @@ export const BaseSlider = (
         defaultValue?: number,
         disabled?: boolean,
         step?: number,
-        value?: number
+        value?: number,
+        renderMark?: Function,
+        marks?: any[],
+        markClassName?: string,
+        renderTrack?: Function
     }
 ) => {
     let props: any ={
@@ -36,12 +44,26 @@ export const BaseSlider = (
         step,
         max,
         min,
-        defaultValue
+        defaultValue,
+        marks,
+        markClassName,
     }
-    if (value) {
+    if (!isNaN(value)) {
         props = {
             ...props,
             value
+        }
+    }
+    if (!renderMark) {
+        props = {
+            ...props,
+            renderMark
+        }
+    }
+    if (!renderTrack) {
+        props ={
+            ...props,
+            renderTrack
         }
     }
     

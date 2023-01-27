@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router";
 
 // @ts-ignore
@@ -40,6 +40,7 @@ import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../sidebar/sidebar";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
+import { BaseSlider } from "../common/slider";
 // const collateralLink =()=>{
 //     return( 
 //       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
@@ -424,6 +425,11 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
+  
+  // simulation vars
+  const [ simAmountRepaid, setSimAmountRepaid] = useState(0);
+  const [netPerformance, setNetPerformance] = useState()
+
   console.log('date', Math.floor((new Date()).getTime() / 1000)
   );
 
@@ -494,6 +500,10 @@ const MarketView = ({ defaultMarket = null }) => {
   const duration = instruments[Id]?.duration
   const expectedYield = instruments[Id]?.expectedYield
   const principal = instruments[Id]?.principal
+
+  const approvedPrincipal = market_[Id]?.approvedPrincipal;
+  const approvedYield = market_[Id]?.approvedYield;
+
   const trusted = instruments[Id]?.trusted ? 0 : 1;
   const totalCollateral = market_[Id]?.totalCollateral;
   const alpha = market_[Id]?.parameters.alpha;
@@ -501,7 +511,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const isApproved = (!market_[Id]?.duringAssessment && market_[Id]?.alive);
   const canbeApproved = market_[Id]?.marketConditionMet
   const outcomeLabel = isApproved ? 2 : (canbeApproved && !isApproved) ? 1 : 0;
-  const longZCBSupply = market_[Id]?.bondPool.longZCB.longZCBsupply;
+  const longZCBSupply = market_[Id]?.bondPool.longZCB.balance;
+  const shortZCBSupply = market_[Id]?.bondPool.shortZCB.balance;
   const instrumentBalance = instruments[Id]?.balance;
   const vaultId = instruments[Id]?.vaultId
   const asset = vaults[vaultId]?.want.name;
@@ -588,7 +599,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
     " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
-  return (
+  
+  
+    return (
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
       <section>
@@ -669,9 +682,15 @@ const MarketView = ({ defaultMarket = null }) => {
           </section>
           
         )}
-
-        <h3>Simulate Returns</h3>
-        {(<ul className={Styles.UpperStatsRow}>
+        {(type === 0 && Object.entries(market_).length > 0) && (
+          <CreditlineSimulation market={market_[Id]} instrument={instruments[Id]} vault={vaults[vaultId]} />
+        )}
+        {type !== 0 && (
+                  <h3>Simulate Returns</h3>
+        )
+        }
+        {type !== 0 && (
+        (<ul className={Styles.UpperStatsRow}>
           {type == 1 && (
             <li>
               <span>{"Cur. Price of " + asset} </span>
@@ -680,8 +699,6 @@ const MarketView = ({ defaultMarket = null }) => {
                 "curprice"
               )}
               <span>{roundDown(prices?.ETH, 2)}</span>
-
-              {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
             </li>)}
           {type == 1 && (<li>
             <span>{"End Price of " + asset} </span>
@@ -690,33 +707,11 @@ const MarketView = ({ defaultMarket = null }) => {
               "endprice"
             )}
             <FormAmountInput
-
               updateAmount={setEstimatedYield}
-              // {
-              //   (val) => {
-              //   console.log("val: ", estimatedYield);
-              //   setEstimatedYield(
-              //       val
-
-              //     )
-              //   // if (/^\d*\.?\d*$/.test(val)) {
-              //   //   setEstimatedYield(
-              //   //     val
-
-              //   //   )
-              //   // }
-              // }}
               prepend={isPool ? "%" : ""}
               amount={estimatedYield}
             />
-            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>)}
-
-
-
-
-
-
           {false && (<li>
             <span>{"Proposed Estimated Return"}</span>
             {generateTooltip(
@@ -725,24 +720,7 @@ const MarketView = ({ defaultMarket = null }) => {
             }
 
             <span>{String(roundDown(expectedYield, 3))}</span>
-
-            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>)}
-          {/* <li>
-
-            <p>(Senior) Promised Return</p>
-            {generateTooltip(
-                      "Returns made from the instrument that automatically is allocated to its parent vault, in APR",
-                      "pr"
-                    )}
-            <span>{poolData?.promisedReturn}{" %"}</span> 
-
-            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-          {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span>
-          </li>*/}
           {isPool && (<li>
             <span>{isPool ? "Instrument's Estimated APR" : "Instrument's Estimated Return"}</span>
             {isPool ? generateTooltip(
@@ -754,45 +732,22 @@ const MarketView = ({ defaultMarket = null }) => {
             <FormAmountInput
 
               updateAmount={setEstimatedYield}
-              // {
-              //   (val) => {
-              //   console.log("val: ", estimatedYield);
-              //   setEstimatedYield(
-              //       val
-
-              //     )
-              //   // if (/^\d*\.?\d*$/.test(val)) {
-              //   //   setEstimatedYield(
-              //   //     val
-
-              //   //   )
-              //   // }
-              // }}
               prepend={isPool ? "%" : ""}
               amount={estimatedYield}
             />
-
-            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>)}
           <li>
-            <span>{isPool ? "longZCB Estimated APR" : "longZCB estimated Redemption price"}</span>
-            {isPool ? generateTooltip(
+            <span>{isPool && "longZCB Estimated APR"}</span>
+            {isPool && generateTooltip(
               "The returns longZCB would incur when the instrument makes its estimated returns. Instrument Expected Return - promisedReturn ",
               "lexpected"
-            ) : generateTooltip(
-              "The redemption price of longZCB at maturity. Equals 1 if instrument successfully matures.   ",
-              "lexpected")}
+            )}
 
             <span>{String(roundDown(managerExpectedYield, 3))}{isPool && " %"}</span>
-
-            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
           </li>
 
-        </ul>)}
+        </ul>)
+        )}
 
         <WinningOutcomeLabel winningOutcome={outcomeLabel} type={type} remainingTime={remainingTime} />
 
@@ -1189,6 +1144,58 @@ const CreditlineLoanInfo = ({
           <span>Amount Repaid</span>
           <span>{handleValue(expectedYield, vault.want.symbol)}</span>
         </div>
+    </section>
+  )
+}
+
+const CreditlineSimulation = ({
+  market,
+  instrument,
+  vault
+}) => {
+  const isApproved = (!market?.duringAssessment && market?.alive);
+  const { approvedPrincipal, approvedYield, bondPool: { longZCB: { balance: longZCBSupply}, longZCBPrice}} = market;
+  const { principal, expectedYield } = instrument;
+  const faceValue = isApproved ? new BN(Number(approvedPrincipal) + Number(approvedYield)).toFixed(4) : new BN(Number(principal) + Number(expectedYield)).toFixed(4)
+  const [simAmountRepaid, setSimAmountRepaid] = useState(0);
+
+  const newRedemptionPrice = useMemo(() => {
+    let loss = Number(faceValue) - Number(simAmountRepaid);
+    return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
+  }, [simAmountRepaid, longZCBSupply, faceValue])
+  console.log("newRedemptionPrice", newRedemptionPrice, simAmountRepaid, longZCBSupply, faceValue, longZCBPrice);
+  return (
+    <section className={Styles.CreditlineSimulation}>
+      <h3>
+        Simulate Returns
+      </h3>
+      <div>
+        <span>
+          Amount Repaid
+        </span>
+        <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
+            setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
+        }} />}  /{faceValue}</span>
+        <BaseSlider 
+          max={Number(faceValue)} 
+          min={Number(0)} 
+          value={simAmountRepaid}
+          step={0.0001} 
+          onChange={(value) => setSimAmountRepaid(value)}
+        />
+      </div>
+      <div>
+        <span>Current LongZCB Price</span>
+        <span>{longZCBPrice}</span>
+      </div>
+      <div>
+        <span>Calculated LongZCB Redemption Price</span>
+        <span>{newRedemptionPrice}</span>
+      </div>
+      <div>
+        <span>LongZCB P/L %</span>
+        <span>{new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
+      </div>
     </section>
   )
 }
