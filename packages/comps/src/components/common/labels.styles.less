@@ -214,6 +214,40 @@
   }
 }
 
+.RammCategoryLabel {
+  .DefaultLabelHeight;
+  .text-14;
+  .ThemeBorder;
+
+  color: var(--primary-text);
+  max-width: @size-136;
+  overflow: hidden;
+  padding: @size-7 @size-8;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+
+  @media @breakpoint-mobile-tablet {
+    max-width: @size-180;
+  }
+
+  &[data-big="true"] {
+    .text-16;
+
+    padding: @size-11 @size-16;
+    max-width: @size-320;
+
+    @media @breakpoint-mobile-tablet {
+      .text-12;
+
+      padding: @size-9 @size-8;
+      max-width: @size-180;
+    }
+  }
+}
+
 .CurrencyLabel {
   .text-16;
 
