@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import classNames from "classnames";
+import Highcharts from "highcharts/highstock";
 
 // @ts-ignore
 import Styles from "./market-liquidity-view.styles.less";
@@ -356,10 +357,18 @@ export const MarketLiquidityView = () => {
         {/*<h4>Vault Performance</h4>*/}
 
       </div>
+      <section>
+        <div>
+        <ExchangeChartSection vault={vault} prices={prices}/>
+        <ChartsSection vault={vault} prices={prices}/>
+        </div>
+        
       <MintForm {...{
         vaultId, selectedAction, setSelectedAction, amount, setAmount,
         underlying_address, exchangeRate
       }} />
+      </section>
+
 
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
@@ -390,7 +399,7 @@ export const MarketLiquidityView = () => {
           ))}
         </section>
       </div>
-      <ChartsSection vault={vault} prices={prices} />
+      {/* <ChartsSection vault={vault} prices={prices} /> */}
     </div>
   );
 };
@@ -717,6 +726,24 @@ const MintForm = ({
 
   // const vaultApproved = useIsTokenApprovedSpender(vault[vaultId]?.want.address, vault[vaultId]?.address);
 
+  // {isMobile && (<button
+  //   className={classNames({ [Styles.selected]: false })}
+  //   onClick={() => {
+  //     setAmount("0");
+
+  //     if (isAdd) {
+  //       setSelectedAction("mint");
+  //     }
+  //     else if (isMint) {
+  //       setSelectedAction(REMOVE);
+  //     }
+  //     else if (isRemove) {
+  //       setSelectedAction(ADD);
+  //     }
+  //   }}
+  // >
+  //   {isMint ? "Manage Leverage Form" : isRemove ? "Mint Form" : "Redeem Form"}
+  // </button>)}
   return (
     <section
       className={classNames(Styles.LiquidityForm, {
@@ -726,7 +753,7 @@ const MintForm = ({
       })}
     >
       <header>
-        {!isMobile && (<button
+        {(<button
           className={classNames({ [Styles.selected]: isAdd })}
           onClick={() => {
             setAmount(amount);
@@ -735,26 +762,8 @@ const MintForm = ({
         >
           {"Mint"}
         </button>)}
-        {isMobile && (<button
-          className={classNames({ [Styles.selected]: false })}
-          onClick={() => {
-            setAmount("0");
 
-            if (isAdd) {
-              setSelectedAction("mint");
-            }
-            else if (isMint) {
-              setSelectedAction(REMOVE);
-            }
-            else if (isRemove) {
-              setSelectedAction(ADD);
-            }
-          }}
-        >
-          {isMint ? "Manage Leverage Form" : isRemove ? "Mint Form" : "Redeem Form"}
-        </button>)}
-
-        {!isMobile && (<button
+        { (<button
           className={classNames({ [Styles.selected]: isMint })}
           onClick={() => {
             setAmount("0");
@@ -763,7 +772,7 @@ const MintForm = ({
         >
           Redeem
         </button>)}
-        {!isMobile && (
+        {(
           <button
             className={classNames({ [Styles.selected]: isRemove })}
             onClick={() => {
@@ -771,7 +780,7 @@ const MintForm = ({
               setSelectedAction(REMOVE);
             }}
           >
-            Manage Leverage
+            Leverage
           </button>
         )}
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
@@ -791,7 +800,7 @@ const MintForm = ({
         //error={hasAmountErrors}
         />)}
 
-        <div className={Styles.PricesAndOutcomes}>
+        {isRemove && <div className={Styles.PricesAndOutcomes}>
 
           <span className={Styles.PriceInstructions}>
 
@@ -829,7 +838,7 @@ const MintForm = ({
             isGrouped={false}//market?.isGrouped}
           />
 
-        </div>
+        </div>}
 
         <section className={Styles.BreakdownAndAction}>
           {!isRemove && (<AmountInput
@@ -1657,15 +1666,6 @@ const ChartsSection = ({ vault, prices }) => {
   console.log("prices: ", prices);
 
 
-  let exchangeFormattedOutcomes = [
-    {
-      id: 1,
-      label: "exchange rate",
-      lastValue: vault.exchangeRate,
-      outcomeIdx: 0
-    }
-  ]
-
   let assetFormattedOutcomes = [
     {
       id: 1,
@@ -1687,22 +1687,6 @@ const ChartsSection = ({ vault, prices }) => {
     }
   ];
 
-  let utilizationRateFormattedOutcomes = [
-    {
-      id: 1,
-      label: "utilization rate",
-      lastValue: vault.utilizationRate,
-      outcomeIdx: 0
-    }
-  ]
-  let aprRateFormattedOutcomes = [
-    {
-      id: 2,
-      label: "projected apr",
-      lastValue: vault.totalEstimatedAPR,
-      outcomeIdx: 1
-    }
-  ]
   let exchangeRateArray = [];
   let assetArray = [];
   let ratesArray = [];
@@ -1760,21 +1744,11 @@ const ChartsSection = ({ vault, prices }) => {
     ) : (
       <div className={Styles.ChartsSection}>
         <div>
-        <h3>
-          TVL
-        </h3>
-        <VaultChartSection options={options} vaultId={vault.vaultId} snapshots={assetArray} formattedOutcomes={assetFormattedOutcomes} />
-        </div>
-        <div>
-        <h3>
-          Exchange Rate
-        </h3>
-        <VaultHistoryChart {...{ rangeSelection: 3, selectedOutcomes: [true], creationTimestamp, options:optionsExchange, snapshots:exchangeRateArray, formattedOutcomes:exchangeFormattedOutcomes, colors:[1], gradients:[1]}}/>
+        <VaultChartSection title={"TVL"} options={options} vaultId={vault.vaultId} snapshots={assetArray} formattedOutcomes={assetFormattedOutcomes} />
         </div>
       </div>
 
     )
-
     }
 
   </section>)
@@ -1782,6 +1756,99 @@ const ChartsSection = ({ vault, prices }) => {
 
 export const convertToUSD = (amount: string, symbol: string, prices) => {
   return new BN(amount).multipliedBy(new BN(prices[symbol])).toFixed(4);
+}
+
+const ExchangeChartSection = ({ vault, prices }) => {
+  const { address, want, vaultId } = vault;
+  const [activeTab, setActiveTab] = useState("0");
+
+
+  const { loading, error, data } = useQuery(GRAPH_QUERIES.GET_VAULT_SNAPSHOTS, {
+    variables: {
+      vaultAddress: address.toLowerCase()
+    }
+  })
+
+  // console.log("symbol:", want.symbol);
+  // console.log("vault: ", vault);
+  // console.log("prices: ", prices);
+
+
+  let exchangeFormattedOutcomes = [
+    {
+      id: 1,
+      label: "exchange rate",
+      lastValue: vault.exchangeRate,
+      outcomeIdx: 0
+    }
+  ]
+
+  let exchangeRateArray = [];
+  let assetArray = [];
+  let ratesArray = [];
+  console.log("data: ", data);
+  data && data.vault && _.forEach(data.vault.snapshots, (item) => {
+    let timestamp = item.timestamp;
+    exchangeRateArray.push({
+      timestamp,
+      value: item.exchangeRate,
+      outcome: 1
+    })
+
+    assetArray = _.concat(assetArray,
+      [{
+        timestamp,
+        value: convertToUSD(item.totalAssets, want.symbol, prices),
+        outcome: 1
+      },
+      {
+        timestamp,
+        value: convertToUSD(item.totalInstrumentHoldings, want.symbol, prices),
+        outcome: 2
+      },
+      {
+        timestamp,
+        value: convertToUSD(item.totalProtection, want.symbol, prices),
+        outcome: 3
+      }]
+    )
+
+    ratesArray = _.concat(ratesArray, [
+      {
+        timestamp,
+        value: item.utilizationRate,
+        outcome: 1
+      },
+      {
+        timestamp,
+        value: item.totalEstimatedAPR
+      }
+    ])
+  })
+
+  let options = useAssetGetOptions(assetArray);
+  console.log("exchangeRateArray: ", exchangeRateArray);
+  // exchange rate chart
+  let optionsExchange = useExchangeGetOptions(exchangeRateArray);
+  let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
+
+  return (<section>
+    {loading ? (
+      <h2>
+        Loading
+      </h2>
+    ) : (
+      <div className={Styles.ChartsSection}>
+        <div>
+        <VaultChartSection title={"Exchange Rate History"} options={optionsExchange} vaultId={vaultId} snapshots={exchangeRateArray} formattedOutcomes={exchangeFormattedOutcomes} selectableOutcomes={false} />
+
+        {/* <VaultHistoryChart {...{ rangeSelection: 3, selectedOutcomes: [true], creationTimestamp, options:optionsExchange, snapshots:exchangeRateArray, formattedOutcomes:exchangeFormattedOutcomes, colors:[1], gradients:[1]}}/> */}
+        </div>
+      </div>
+    )
+    }
+
+  </section>)
 }
 
 
@@ -1842,7 +1909,18 @@ const useAssetGetOptions = (arr) => {
         gridLineWidth: 0,
         gridLineColor: null,
         lineWidth: 0,
-        labels: false,
+        labels: {
+          formatter () {
+            const that = this as any;
+            let timestamp = that.value;
+            const {
+              settings: { timeFormat },
+            } = SimplifiedStore.get();
+            const date = `${getDayFormat(timestamp)}`;
+
+            return date;
+          }
+        }
       },
       yAxis: {
         showEmpty: true,
@@ -1909,7 +1987,10 @@ const useExchangeGetOptions = (arr) => {
         noData: "No Chart Data",
       },
       title: {
-        text: ""
+        text: "",
+        style: {
+          fontSize: '30px'
+        }
       },
       chart: {
         alignTicks: false,
@@ -1923,7 +2004,7 @@ const useExchangeGetOptions = (arr) => {
         zoomType: undefined,
         pinchType: undefined,
         panKey: undefined,
-        zoomKey: undefined,
+        zoomKey: undefined
       },
       credits: {
         enabled: false,
@@ -1942,7 +2023,18 @@ const useExchangeGetOptions = (arr) => {
         gridLineWidth: 0,
         gridLineColor: null,
         lineWidth: 0,
-        labels: false,
+        labels: {
+          formatter () {
+            const that = this as any;
+            let timestamp = that.value;
+            const {
+              settings: { timeFormat },
+            } = SimplifiedStore.get();
+            const date = `${getDayFormat(timestamp)}`;
+
+            return date;
+          }
+        }
       },
       yAxis: {
         showEmpty: true,
@@ -1973,7 +2065,8 @@ const useExchangeGetOptions = (arr) => {
           });
           out += "</ul>";
           return out;
-        }},
+        }
+      },
       time: {
         useUTC: false,
       },

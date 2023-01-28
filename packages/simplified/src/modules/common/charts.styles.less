@@ -249,6 +249,258 @@
   }
 }
 
+.VaultChart {
+  display: flex;
+  flex-flow: column nowrap;
+  grid-gap: @size-24;
+  max-width: 100vw;
+  width:425px;
+  height: @size-240;
+  max-height: @size-240;
+  .ThemeBorder;
+
+  div {
+    :global {
+      width: 100% !important;
+
+      .highcharts-tooltip {
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: center;
+        justify-content: stretch;
+
+        > span {
+          flex: 1 100%;
+          border: @size-1 solid var(--theme-border);
+          border-radius: @size-8;
+          background: rgba(var(--quaternary-bg-rgb), 0.9);
+          padding: @size-8;
+
+          > h5 {
+            .text-12;
+
+            color: var(--primary-text);
+            margin: 0;
+            padding: 0;
+            margin-bottom: @size-4;
+          }
+
+          > ul {
+            display: grid;
+            grid-gap: @size-4;
+
+            > li {
+              display: grid;
+              grid-template-columns: 0fr 1fr;
+              grid-gap: @size-4;
+
+              > span:first-of-type {
+                grid-column: 1;
+                grid-row: 1;
+              }
+
+              > b {
+                .text-14-bold;
+
+                grid-column: 2;
+                grid-row: 1;
+                text-transform: capitalize;
+                color: var(--primary-text);
+              }
+
+              > span:last-of-type {
+                .text-12;
+
+                grid-column: 2;
+                grid-row: 2;
+                color: var(--primary-text);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  svg {
+    :global {
+      width: 100%;
+
+      .highcharts-background {
+        fill: transparent;
+      }
+
+      .highcharts-no-data {
+        .text-12;
+
+        font-weight: 400;
+        color: var(--primary-text);
+
+        > text,
+        > text > tspan {
+          .text-12;
+
+          font-weight: 400;
+          fill: var(--primary-text);
+        }
+      }
+
+      .highcharts-crosshair-label {
+        background-color: var(--primary-text);
+        border-radius: @size-5;
+        color: var(--primary-text);
+        font-size: @size-10;
+        z-index: @above-all-content;
+        // ugh... we need !important here because inline styles are inserted.
+        > text {
+          color: var(--primary-text) !important;
+          fill: var(--primary-text) !important;
+
+          > tspan {
+            color: var(--primary-text) !important;
+            fill: var(--primary-text) !important;
+          }
+        }
+      }
+
+      g.highcharts-yaxis-labels > g.highcharts-crosshair-label {
+        > path {
+          transform: translateX(@size-38);
+        }
+
+        > text {
+          .text-12;
+
+          fill: var(--primary-text);
+          transform: translateX(@size-38);
+
+          > tspan {
+            color: var(--primary-text);
+            fill: var(--primary-text);
+          }
+        }
+      }
+
+      g.highcharts-xaxis-labels > g.highcharts-crosshair-label > path {
+        transform: translateY(@size-4);
+      }
+
+      g.highcharts-xaxis-labels > g.highcharts-crosshair-label > text {
+        .mono-9;
+
+        fill: var(--primary-text);
+        transform: translateY(@size-4);
+      }
+
+      .highcharts-crosshair {
+        stroke: var(--primary-text);
+
+        opacity: 0.3;
+      }
+
+      .highcharts-tooltip {
+        display: none;
+      }
+
+      .highcharts-halo {
+        fill: none;
+        stroke: none;
+      }
+
+      // --- mulitple line styling
+      .highcharts-line-series.highcharts-color-0,
+      .highcharts-area-series.highcharts-color-0 {
+        fill: var(--theme-outcome-0);
+      }
+
+      g.highcharts-line-series.highcharts-color-0 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-0 > path.highcharts-graph {
+        stroke: var(--theme-outcome-0);
+      }
+
+      .highcharts-line-series.highcharts-color-1,
+      .highcharts-area-series.highcharts-color-1 {
+        fill: var(--theme-outcome-1);
+      }
+
+      g.highcharts-line-series.highcharts-color-1 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-1 > path.highcharts-graph {
+        stroke: var(--theme-outcome-1);
+      }
+
+      .highcharts-line-series.highcharts-color-2,
+      .highcharts-area-series.highcharts-color-2 {
+        fill: var(--theme-outcome-2);
+      }
+
+      g.highcharts-line-series.highcharts-color-2 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-2 > path.highcharts-graph {
+        stroke: var(--theme-outcome-2);
+      }
+
+      .highcharts-line-series.highcharts-color-3,
+      .highcharts-area-series.highcharts-color-3 {
+        fill: var(--theme-outcome-3);
+      }
+
+      g.highcharts-line-series.highcharts-color-3 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-3 > path.highcharts-graph {
+        stroke: var(--theme-outcome-3);
+      }
+
+      .highcharts-line-series.highcharts-color-4,
+      .highcharts-area-series.highcharts-color-4 {
+        fill: var(--theme-outcome-4);
+      }
+
+      g.highcharts-line-series.highcharts-color-4 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-4 > path.highcharts-graph {
+        stroke: var(--theme-outcome-4);
+      }
+
+      .highcharts-line-series.highcharts-color-5,
+      .highcharts-area-series.highcharts-color-5 {
+        fill: var(--theme-outcome-5);
+      }
+
+      g.highcharts-line-series.highcharts-color-5 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-5 > path.highcharts-graph {
+        stroke: var(--theme-outcome-5);
+      }
+
+      .highcharts-line-series.highcharts-color-6,
+      .highcharts-area-series.highcharts-color-6 {
+        fill: var(--theme-outcome-6);
+      }
+
+      g.highcharts-line-series.highcharts-color-6 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-6 > path.highcharts-graph {
+        stroke: var(--theme-outcome-6);
+      }
+
+      .highcharts-line-series.highcharts-color-7,
+      .highcharts-area-series.highcharts-color-7 {
+        fill: var(--theme-outcome-7);
+      }
+
+      g.highcharts-line-series.highcharts-color-7 > path.highcharts-graph,
+      g.highcharts-area-series.highcharts-color-7 > path.highcharts-graph {
+        stroke: var(--theme-outcome-7);
+      }
+
+      text.highcharts-title tspan,
+      text.highcharts-title > tspan {
+        .text-10;
+
+        color: var(--primary-text);
+        fill: var(--primary-text);
+        text-transform: capitalize;
+      }
+    }
+  }
+}
+
+
 .IlliquidMarketChart {
   .PrimaryBorderRadius;
   .text-12;
@@ -271,6 +523,59 @@
   > div,
   > ul {
     margin-bottom: @size-16;
+  }
+
+  > section {
+    margin-bottom: @size-8;
+  }
+
+  > div {
+    display: flex;
+    flex-flow: row wrap;
+
+    > button {
+      margin: @size-8 @size-8 0 0;
+    }
+  }
+
+  > ul {
+    align-self: flex-end;
+  }
+
+  > button {
+    .text-16-bold;
+
+    color: var(--primary-text);
+    border: none;
+    background: transparent;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  @media @breakpoint-mobile-tablet {
+    > div > button {
+      margin: 0 0 @size-8 0;
+    }
+  }
+}
+
+.VaultChartSection {
+  display: flex;
+  flex-flow: column nowrap;
+  // width: 100%;
+  > div,
+  > ul {
+    margin-bottom: @size-16;
+  }
+
+  > div:first-of-type {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    > h3 {
+      margin-right: @size-8;
+      font-size: @size-18;
+    }
   }
 
   > section {

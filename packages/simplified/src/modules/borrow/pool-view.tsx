@@ -354,7 +354,7 @@ const PoolView: React.FC = () => {
                             {generateTooltip("Asset borrowed", "amountBorrowed")}
                         </div>
                         <div>
-                            <ValueLabel label={"Borrow Capcity: "} value={borrowCapacity + "%"} />
+                            <ValueLabel label={"Borrow Capacity: "} value={borrowCapacity + "%"} />
                             {generateTooltip("(amount borrowed)/(maxBorrowableAmount)", "borrowCapacity")}
                         </div>
                         <div>

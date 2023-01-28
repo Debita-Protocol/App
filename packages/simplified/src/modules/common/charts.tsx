@@ -799,7 +799,7 @@ const processZCBPriceTimeData = (snapshots = [], market, rangeSelection) => {
 // 2: totalAssets + totalInstrumentHoldings + totalProtection
 // 3: utilization rate + totalEstimatedAPR
 // 4: total protection
-export const VaultChartSection = ({ vaultId, snapshots, formattedOutcomes, options}) => {
+export const VaultChartSection = ({ title, vaultId, snapshots, formattedOutcomes, options, selectableOutcomes=true}) => {
   const { vaults } = useDataStore2();
 
   const { want } = vaults[vaultId];
@@ -820,12 +820,18 @@ export const VaultChartSection = ({ vaultId, snapshots, formattedOutcomes, optio
   let colors = [1,2,3];
   let gradients = [1,2,3];
   return (
-    <section className={Styles.SimpleChartSection}>
-      <MultiButtonSelection
+    <section className={Styles.VaultChartSection}>
+      <div>
+        <h3>
+          {title}
+        </h3>
+        <MultiButtonSelection
         options={RANGE_OPTIONS}
         selection={rangeSelection}
         setSelection={(id) => setRangeSelection(id)}
       />
+      </div>
+      
       <VaultHistoryChart
         {...{
           creationTimestamp,
@@ -839,7 +845,7 @@ export const VaultChartSection = ({ vaultId, snapshots, formattedOutcomes, optio
         }}
       />
       <div>
-        {formattedOutcomes.map((outcome, index) =>
+        {selectableOutcomes && formattedOutcomes.map((outcome, index) =>
           !showMore && index >= 6 ? null : (
             <SelectOutcomeButton
               key={outcome.label}
@@ -908,7 +914,7 @@ export const VaultHistoryChart = ({
 
   return (
     <section
-      className={Styles.PriceHistoryChart}
+      className={Styles.VaultChart}
       ref={container}
     />
   );
