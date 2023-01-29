@@ -43,10 +43,8 @@ export const UserProvider = ({ children }: any) => {
       const provider = isWalletRpc ? loginAccount?.library : getDefaultProvider() || loginAccount?.library;
 
       if ( account) {
-        console.log("HERE BABY")
         try {
           const rammData = await  getRammData(account, provider, vaults, markets, instruments);
-          console.log("rammData", rammData)
   
           return rammData;
         } catch (e) {

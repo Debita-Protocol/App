@@ -182,16 +182,44 @@ query{
 }
 `
 
-export const GET_PRICES = gql`
+export const GET_MARKET_PRICES = gql`
     query marketSnapshots($marketId:ID!){
-        market(id:$marketId) {
+        market(id: $marketId) {
             id
             snapshots {
                 id
                 totalCollateral
-                longZCBPrice
+                price: longZCBPrice
                 timestamp
             }
+        }
+    }
+`
+
+export const GET_VAULT_SNAPSHOTS = gql`
+    query vaultSnapshots($vaultAddress: ID!) {
+        vault(id: $vaultAddress) {
+            id
+            snapshots {
+                id
+                timestamp
+                exchangeRate
+                totalAssets
+                totalProtection
+                utilizationRate
+                totalEstimatedAPR
+                totalInstrumentHoldings
+                earnings
+            }
+        }
+    }
+`
+
+export const GET_MANAGER_SCORES = gql`
+    query managerScores($amount: Int!) {
+        managers(first: $amount, orderBy: reputationScore, orderDirection: desc) {
+            address: id
+            reputationScore
         }
     }
 `

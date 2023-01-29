@@ -35,6 +35,7 @@ import TestNFTData from "../data/TestNFT.json";
 import SyntheticZCBPoolData from "../data/SyntheticZCBPool.json";
 import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
 import AggregatorV3InterfaceData from "../data/AggregatorV3Interface.json";
+import IRateCalculatorData from "../data/IRateCalculator.json";
 
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
@@ -45,7 +46,7 @@ import { TransactionResponse, Web3Provider } from "@ethersproject/providers";
 import { isDataTooOld } from "./date-utils";
 // import { EthersFastSubmitWallet } from "@augurproject/smart";
 import { useActiveWeb3React } from "../components/ConnectAccount/hooks";
-import { formatBytes32String, parseBytes32String } from "ethers/lib/utils";
+import { formatBytes32String, parseBytes32String, defaultAbiCoder } from "ethers/lib/utils";
 
 import { rammClient, localClient } from "../apollo-ramm/client";
 import { GET_VAULTS, GET_INSTRUMENTS, GET_MARKETS } from "../apollo-ramm/queries";
@@ -569,8 +570,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 gasLimit: gasEstimate.mul(2).toString(),
             }
         );
-
-        // console.log("instrumentBundle: ", instrumentBundle);
+        console.log("vaultBundle: ", vaultBundle);
+        console.log("marketBundle: ", marketBundle);
+        console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -603,26 +605,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         want.displayDecimals = 6;
 
         // // add vault
-        let vault = {
-            address: vaultBundle.vault_address,
-            vaultId: vaultBundle.vaultId.toString(),
-            marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
-            onlyVerified: vaultBundle.onlyVerified,
-            want: want,
-            default_params: default_params,
-            r: toDisplay(vaultBundle.r.toString()),
-            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
-            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
-            totalShares: toDisplay(vaultBundle.totalShares.toString()),
-            name: vaultBundle.name,
-            symbol: vaultBundle.symbol,
-            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
-            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
-            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
-            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
-            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
-            totalProtection: toDisplay(vaultBundle.totalProtection.toString())
-        };
+
 
         for (let j = 0; j < marketBundle.length; j++) {
             // add market
@@ -721,6 +704,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             }
 
             if (instr.instrument_type.toString() === "2") {
+                console.log("instr: ", instr);
                 let l = instr.poolData.collaterals.length;
                 let collaterals: Collateral[] = [];
                 for (let z=0; z < l; z++) {
@@ -737,6 +721,23 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                     })
                     collaterals.push(c);
                 }
+
+                //TODO: include other interest models other than just variable rate v2.
+                // let rateCalculator = new Contract(instr.poolData.rateContract, IRateCalculatorData.abi, provider);
+
+                // let encodedConstants = await rateCalculator.getConstants();
+
+                // //uint32 MIN_UTIL, uint32 MAX_UTIL, uint32 UTIL_PREC, uint64 MIN_INT, uint64 MAX_INT, uint256 INT_HALF_LIFE
+                // let decodedConstants = defaultAbiCoder.decode(["uint32", "uint32","uint32", "uint64", "uint64", "uint256"], encodedConstants)
+
+                // let minUtil = Number(decodedConstants[0] / decodedConstants[2])
+                // let maxUtil = Number(decodedConstants[1] / decodedConstants[2])
+                // let minInt = new BN(decodedConstants[3].toString()).shiftedBy(-18).toNumber();
+                // let maxInt = new BN(decodedConstants[4].toString()).shiftedBy(-18).toNumber();
+                // let intHalfLife = new BN(decodedConstants[5].toString()).toNumber();
+                let formattedRate = new BN(instr.poolData.ratePerSec.toString()).shiftedBy(-18).toNumber()
+                
+                let borrowAPR = String(Math.exp(31536000*Math.log(formattedRate + 1)) - 1);
                 instrument = _.assign(
                     instrument,
                     {  
@@ -751,12 +752,24 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         psu: toDisplay(instr.poolData.psu.toString()),
                         totalBorrowedAssets: toDisplay(instr.poolData.totalBorrowedAssets.toString()),
                         totalSuppliedAssets: toDisplay(instr.poolData.totalSuppliedAssets.toString()),
+                        utilizationRate: toDisplay(instr.poolData.utilizationRate.toString()),
                         totalAvailableAssets: toDisplay(instr.poolData.totalAvailableAssets.toString()),
                         // totalAvailableAssets: "0",
-                        APR: toDisplay(instr.poolData.APR.toString()),
-                        collaterals
+                        ratePerSecond: toDisplay(instr.poolData.ratePerSec.toString()),
+                        rateContract: instr.poolData.rateContract,
+                        rateName: instr.poolData.rateName,
+                        collaterals,
+                        exchangeRate: toDisplay(instr.poolData.exchangeRate.toString()),
+                        // MIN_UTIL: minUtil,
+                        // MAX_UTIL: maxUtil,
+                        // MIN_INT: minInt,
+                        // MAX_INT: maxInt,
+                        // INT_HALF_LIFE: intHalfLife,
+                        borrowAPR
                     }
                 )
+            // get rate constants.
+
             } else if (instr.instrument_type.toString() === "1") {
                 instrument = _.assign(
                     instrument,
@@ -771,11 +784,42 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         approvalStatus: instr.optionsData.approvalStatus,
                     }
                 )
+            } else if (instr.instrument_type.toString() === "0") {
+                instrument = _.assign(
+                    instrument,
+                    {
+                        collateral: instr.creditlineData.collateral,
+                        collateralBalance: toDisplay(instr.creditlineData.collateralBalance.toString()),
+                        oracle: instr.creditlineData.oracle,
+                        loanStatus: instr.creditlineData.loanStatus,
+                        collateralType: instr.creditlineData.collateralType,
+                    }
+                )
             }
             instruments[instrument.marketId] = instrument;
         }
 
-        vaults[vault.vaultId] = vault;
+        vaults[vaultBundle.vaultId] = {
+            address: vaultBundle.vault_address,
+            vaultId: vaultBundle.vaultId.toString(),
+            marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),
+            onlyVerified: vaultBundle.onlyVerified,
+            want: want,
+            default_params: default_params,
+            // r: toDisplay(vaultBundle.r.toString()),
+            asset_limit: toDisplay(vaultBundle.asset_limit.toString()),
+            total_asset_limit: toDisplay(vaultBundle.total_asset_limit.toString()),
+            totalShares: toDisplay(vaultBundle.totalShares.toString()),
+            name: vaultBundle.name,
+            symbol: vaultBundle.symbol,
+            exchangeRate: toDisplay(vaultBundle.exchangeRate.toString()),
+            utilizationRate: toDisplay(vaultBundle.utilizationRate.toString()),
+            totalAssets: toDisplay(vaultBundle.totalAssets.toString()),
+            totalEstimatedAPR: toDisplay(vaultBundle.totalEstimatedAPR.toString()), 
+            goalAPR: toDisplay(vaultBundle.goalAPR.toString()), 
+            totalProtection: toDisplay(vaultBundle.totalProtection.toString()),
+            totalInstrumentHoldings: toDisplay(vaultBundle.totalInstrumentHoldings.toString())
+        };;
     }
     let prices = await getRammPrices(account, provider);
     return { vaults, markets, instruments, blocknumber, prices };
@@ -814,6 +858,9 @@ export const getRammPrices = async (account: string, provider: Web3Provider): Pr
     let prices = {};
     _.forEach(results.results, (value: any, key) => {
         prices[key] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
+        if (key === "ETH") {
+            prices["WETH"] = toDisplay(value.callsReturnContext[0].returnValues.answer.toString(), value.callsReturnContext[1].returnValues[0].toString());
+        }
     })
 
     return prices;
@@ -1051,11 +1098,11 @@ export const createCreditLineInstrument = async (
 ): Promise<string> => {
     const creditlineFactory = new ContractFactory(CreditlineData.abi, CreditlineData.bytecode, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(notionalInterest)).toString();
-    // console.log("vault: ", vault);
-    // console.log("account: ", account);
-    // console.log("principal: ", principal);
-    // console.log("faceValue: ", faceValue);
-    // console.log("duration: ", duration);
+    console.log("vault: ", vault);
+    console.log("account: ", account);
+    console.log("principal: ", principal);
+    console.log("faceValue: ", faceValue);
+    console.log("duration: ", duration);
     const creditline = await creditlineFactory.deploy(
         vault,
         account,
@@ -1426,13 +1473,16 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
     console.log("market manager address: ", market_manager_address);
+
+    
     // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
     // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
+    // await controller.testApproveMarket(6)
 
-    let data = await marketManager.getMarket(4);
-    console.log("data timestamp: ", data.creationTimestamp.toString());
+    // let data = await marketManager.getMarket(4);
+    // console.log("data timestamp: ", data.creationTimestamp.toString());
     // for (let i = 1; i < 6; i ++) {
     //     let vid = await controller.id_parent(i);
     //     let vault_ad = await controller.vaults(vid);
@@ -1487,7 +1537,19 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("collateralData", collateralData);
 
     // vault.getInstrumentData();
-
+    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+"0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+"0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+"0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+"0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+"0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+"0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+"0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+    
+    for (let i=0; i < early_managers.length; i++) {
+        let tx = await controller.verifyAddress(early_managers[i]);
+        await tx.wait();
+    }
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();

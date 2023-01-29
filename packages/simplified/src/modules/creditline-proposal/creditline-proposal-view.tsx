@@ -197,9 +197,17 @@ const CreditLineRequestForm = () => {
         } catch (err) {
           console.log(err);
         }
+      } else if (collateralType === "0") {
+        let instrument_address = await createCreditLineInstrument(
+          account, loginAccount.library, vaults[vaultId].address , _principal, _interest, total_duration, collateral, collateralBalance, collateralType
+        );
+        await createCreditlineMarket(
+          account, loginAccount.library, name, instrument_address, vaultId, _principal, _interest, description, total_duration
+        );
       }
     }
-  })
+  },[interestRate, principal, description, name, collateralType, collateral, collateralBalance, vaultId, vaults]);
+
 
   
   let vaultOptions = useMemo(() => {
@@ -241,13 +249,11 @@ const CreditLineRequestForm = () => {
     }
   ]
 
-  // const buttonProps: BaseThemeButtonProps = {
-  //   text: createdContract ? "Submit" : "Create Contract",
-  //   action: createdContract ? submitProposal : createCreditline 
-  // };
+
+
   const buttonProps: BaseThemeButtonProps = {
-    text: "Feature not available yet",
-    action: null//createCreditline
+    text: "Still Prototyping... sry!",
+    action: null //createCreditline
   }
 
   return (

@@ -190,11 +190,12 @@ interface CanTradeProps {
 //   defaultPrice?: string;
 // }
 
-const getOutcomes = (price) =>{
+const getOutcomes = (price, isPool) =>{
   const outcome = {} as AmmOutcome
   outcome.id = 0; 
   outcome.price = roundDown(price,4).toString(); 
   outcome.name = "longZCB"
+  if(isPool) {return [outcome]; }
   const outcome2 = {} as AmmOutcome
   outcome2.id = 1; 
   outcome2.price = roundDown(1-price, 4).toString(); 
@@ -239,8 +240,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const [isNotVerified, setIsNotVerified] = useState(false); 
 
   const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
+  const isPool = instruments[marketId]?.isPool; 
 
-  const outcomes = getOutcomes(market_[marketId]?.bondPool.longZCBPrice);
+  const outcomes = getOutcomes(market_[marketId]?.bondPool.longZCBPrice, isPool);
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);
@@ -362,7 +364,6 @@ console.log('MMAllowance', MMAllowance);
     };
   }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, amm?.volumeTotal, amm?.liquidity, userBalance]);
 
-  const isPool = instruments[marketId]?.isPool; 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || orderType;
     let subText: string | null = null;
@@ -595,7 +596,7 @@ console.log('MMAllowance', MMAllowance);
             setAmount("");
           }}
         />
-     {isLogged && isNotVerified && false &&(
+     {isLogged && isNotVerified  &&(
           <SecondaryThemeButton 
           text = {"Test Verify"}
           action = {testVerify}
@@ -608,7 +609,7 @@ console.log('MMAllowance', MMAllowance);
         {instruments[marketId]?.isPool && isApproved&& <TinyThemeButton
           action={toggleIssueField}
           text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
-        <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>
+        {!isPool && <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>}
         <div
           onClick={() => {
             setShowTradingForm(false);

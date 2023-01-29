@@ -1,0 +1,42 @@
+@import (reference) "~assets/styles/shared";
+
+.BaseHorizontalSlider {
+    width: 100%;
+    max-width: 500px;
+    > div:first-of-type { // left track
+        position: relative;
+        background: var(--buy);
+        height:3px;
+    }
+    >div:nth-of-type(2) { // right track 
+        position:relative;
+        background:var(--tertiary-text);
+        height:3px
+    }
+    >div:nth-of-type(3) {
+        cursor: pointer;
+        position: absolute;
+        z-index: 100;
+        background: #ffffff;
+        border: 6px solid var(--inverted-primary-bg);
+        border-radius: 100%;
+        display: block;
+        box-shadow: 0 0 2px 0 rgb(0 0 0 / 44%);
+    }
+}
+
+.BaseThumb {
+}
+
+.BaseHorizontalSlider .BaseTrack {
+    top: 16px;
+    height: 8px;
+}
+
+.BaseHorizontalSlider .BaseThumb {
+    top: 12px;
+    width: 10px;
+    outline: none;
+    height: 10px;
+    line-height: 38px;
+}

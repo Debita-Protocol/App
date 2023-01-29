@@ -364,7 +364,7 @@ export interface CoreMarketInfos {
   [marketId: string]: CoreMarketInfo;
 }
 
-export type Instrument = BaseInstrument | PoolInstrument;
+export type Instrument = BaseInstrument | PoolInstrument | CreditlineInstrument;
 
 export interface BaseInstrument {
   name: string;
@@ -398,6 +398,14 @@ export interface OptionsInstrument extends BaseInstrument {
   approvalStatus: boolean;
 }
 
+export interface CreditlineInstrument extends BaseInstrument {
+  collateral: string;
+  collateralBalance: string;
+  oracle: string;
+  loanStatus: string;
+  collateralType: string;  
+}
+
 export interface PoolInstrument extends BaseInstrument {
   saleAmount: string;
   initPrice: string;
@@ -406,14 +414,27 @@ export interface PoolInstrument extends BaseInstrument {
   inceptionPrice: string;
   poolLeverageFactor: string;
   totalBorrowedAssets: string;
-  totalSuppliedAssets: string;
+  totalSuppliedAssets: string; 
+  utilizationRate: string;
   totalAvailableAssets: string;
-  APR: string;
+  lastRateUpdate: string;
+  ratePerSec: string;
+  borrowAPR: string;
+  rateContract: string;
+  rateName: string;
   managementFee?: string;
   collaterals: Collateral[]; 
   auctions?: Auction[];
   psu?: string;
   pju?: string;
+  exchangeRate: string;
+
+  // rate constants
+  // MIN_UTIL?: number;
+  // MAX_UTIL?: number;
+  // MIN_INT?: number;
+  // MAX_INT?: number;
+  // INT_HALF_LIFE?: number;
 }
 
 export interface CoreInstrumentData {
@@ -606,6 +627,7 @@ export interface VaultInfo {
   totalEstimatedAPR?: string; 
   goalAPR?: string; 
   totalProtection?: string; 
+  totalInstrumentHoldings?: string;
   
   rVault?: string
   N?: string

@@ -11,8 +11,7 @@ import { InfoNumbers, InfoNumberType } from "../market/trading-form";
 import { MarketInfo, VaultInfo, PoolInstrument, Collateral, UserPoolInfo } from "@augurproject/comps/build/types";
 import { useSimplifiedStore } from "modules/stores/simplified";
 import { AmountInput } from "@augurproject/comps/build/components/common/inputs";
-import { ApprovalAction } from "modules/constants";
-import { assertType } from "graphql";
+
 
 
 const {

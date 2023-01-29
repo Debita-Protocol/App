@@ -62,7 +62,8 @@ const PoolCardView: React.FC = ({
     dontGoToMarket?: boolean,
     key: string
 }) => {
-    const { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, APR, name } = instrument;
+    const { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, ratePerSec, name } = instrument;
+    let APR = "10"
     const { name: vaultName, want } = vault;
     const history = useHistory();
 

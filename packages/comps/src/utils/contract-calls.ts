@@ -473,6 +473,16 @@ export async function setUpManager(
     reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
   await reputation.setTraderScore(account, pp); 
 }
+export async function testVerifyToggle(
+    account: string, library: Web3Provider
+
+    ){
+const controller = new ethers.Contract(controller_address,
+    controllerabi["abi"], getProviderOrSigner(library, account)
+    );
+await controller.canSelfVerify(); 
+
+}
 
 export async function setUpExampleController(account: string, library: Web3Provider){
   interface DefaultParams {

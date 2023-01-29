@@ -149,7 +149,6 @@ export const VaultCardView = ({
   const titles = ["Flint Dao Creditline", "USDC lending in Fuse pool #3", "OTM BTC Put Short Position in weekly expiries", "Looping Yield Protocol fixed rate lending", "Kao Dao Creditline", "ETH+BTC Spot", "USDC lending in Fuse pool #3"];
   const descriptions = ["Assess Flint Dao's creditworthiness", "Long or Short Isolated Lending Positions", "Long or Short Options selling positions", "Long or Short Leveraged Yield positions", "Assess Kao Dao's creditworthiness", "Long or Short Spot Positions", "Long or Short Isolated Lending Positions"]
   const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
-  console.log('vaults', vaults, instruments, market_)
   const goalApr = vaults[vaultId]?.goalAPR;
   const totalEstimatedAPR = vaults[vaultId]?.totalEstimatedAPR;
   return (

@@ -122,8 +122,10 @@ export const LoanCard: React.FC = (
 
     const repayAction = () => {
         setModal({
-            type: MODAL_POOL_BORROWER_ACTION,
-            action: async (amount: string, afterAction: Function) => {
+            type: "MODAL_CREDITLINE_REPAY",
+            instrument: instrument,
+            collateral: vault.want,
+            transactionAction: async (amount: string, afterAction: Function) => {
                 let tx = await repayCreditlineInstrument(
                     account, 
                     loginAccount.library, 
@@ -155,7 +157,6 @@ export const LoanCard: React.FC = (
                       marketDescription: `${instrument?.name} ${instrument?.description}`,
                     });
                   });
-                afterAction();
             },
             isBorrow: false,
             maxValue: new BN(principal).plus(new BN(expectedYield)).minus(new BN(balance)).toString(), // should be borrow amount remaining.
