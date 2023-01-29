@@ -412,7 +412,20 @@ export async function tradeZCB(
   issue:boolean ,
   slippageLimit: number = 1, 
   underlyingAddress: string = "", 
+  leverageFactor : number = 1
   ): Promise<TransactionResponse>{
+    const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
+  let tx;
+  console.log('leverageFactor??', leverageFactor); 
+  if(leverageFactor > 1){
+
+   const leverageModule = new ethers.Contract(
+      leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) ); 
+   tx = await leverageModule.issuePerpBondLevered(marketId, scaledAmount, leverageFactor); 
+
+   return tx; 
+       
+  }
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
@@ -422,10 +435,8 @@ export async function tradeZCB(
   const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
   const marketmanager = new ethers.Contract(market_manager_address, 
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
-  const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
   console.log('issue???', issue, marketId); 
   // await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
-  let tx;
   if(issue){
     console.log('issue???', marketId); 
     tx = await marketmanager.issuePoolBond( marketId, scaledAmount); 

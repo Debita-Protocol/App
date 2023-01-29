@@ -472,7 +472,7 @@ console.log('MMAllowance', MMAllowance);
     setShowTradingForm(false);
     const isShort = selectedOutcomeId ==1? false:true
     console.log('isissue', isIssue); 
-    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue )
+    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue, leverageFactor+1 )
       .then((response) => {
         console.log('trading response', response)
         if (response) {
@@ -688,7 +688,7 @@ console.log('MMAllowance', MMAllowance);
 
 
         }
-        {!isLimit && !isIssue && <Slippage />}
+        {!isLimit && !isIssue && false&& <Slippage />}
         <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>
         {/* {isBuy && <Slippage />} */}
         {/*isBuy && (<Budget 
