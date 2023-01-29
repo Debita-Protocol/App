@@ -15,6 +15,7 @@ import { ManagerWarning } from "../liquidity/market-liquidity-view"
 import { TradingForm, IssueForm } from "./trading-form";
 import { useQuery } from "@apollo/client";
 import { BigNumber as BN } from "bignumber.js";
+import moment from "moment";
 import {
   Constants,
   useAppStatusStore,
@@ -1096,7 +1097,7 @@ const CreditlineLoanInfo = ({
   instrument,
   vault
 }) => {
-  const { collateral, duration, collateralType, oracle, principal, expectedYield} = instrument;
+  const { collateral, duration, collateralType, oracle, principal, expectedYield, maturityDate} = instrument;
   console.log("collateral: ", collateral);
   const collateralTypeMapping = {
     0: "liquidatable",
@@ -1108,6 +1109,7 @@ const CreditlineLoanInfo = ({
   // <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
   //               </ExternalLink>
   const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
+  const expiry = moment().add(duration, "seconds").format("MMM Do YY");
   return (
     <section className={Styles.CreditlineTable}>
       <h3>
@@ -1115,7 +1117,7 @@ const CreditlineLoanInfo = ({
       </h3>
        <div>
           <span>Expiration</span>
-          <span>{tenor} days</span>
+          <span>{expiry}</span>
         </div>
         {/* <div>
           <span>Collateral Type</span>
@@ -1142,7 +1144,7 @@ const CreditlineLoanInfo = ({
         </div>
         <div>
           <span>Amount Repaid</span>
-          <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+          <span>{0}</span>
         </div>
     </section>
   )
@@ -1189,12 +1191,12 @@ const CreditlineSimulation = ({
         <span>{longZCBPrice}</span>
       </div>
       <div>
-        <span>Calculated LongZCB Redemption Price</span>
-        <span>{newRedemptionPrice}</span>
+        <span>Calculated LongZCB Redemption Price {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : newRedemptionPrice}</span>
       </div>
       <div>
-        <span>LongZCB P/L %</span>
-        <span>{new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
+        <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
       </div>
     </section>
   )

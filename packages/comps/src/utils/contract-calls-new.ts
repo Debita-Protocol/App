@@ -1098,11 +1098,11 @@ export const createCreditLineInstrument = async (
 ): Promise<string> => {
     const creditlineFactory = new ContractFactory(CreditlineData.abi, CreditlineData.bytecode, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(notionalInterest)).toString();
-    // console.log("vault: ", vault);
-    // console.log("account: ", account);
-    // console.log("principal: ", principal);
-    // console.log("faceValue: ", faceValue);
-    // console.log("duration: ", duration);
+    console.log("vault: ", vault);
+    console.log("account: ", account);
+    console.log("principal: ", principal);
+    console.log("faceValue: ", faceValue);
+    console.log("duration: ", duration);
     const creditline = await creditlineFactory.deploy(
         vault,
         account,
@@ -1473,6 +1473,8 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
     console.log("market manager address: ", market_manager_address);
+
+    
     // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
@@ -1535,7 +1537,19 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("collateralData", collateralData);
 
     // vault.getInstrumentData();
-
+    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+"0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+"0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+"0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+"0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+"0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+"0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+"0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+    
+    for (let i=0; i < early_managers.length; i++) {
+        let tx = await controller.verifyAddress(early_managers[i]);
+        await tx.wait();
+    }
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();
