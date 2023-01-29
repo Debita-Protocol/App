@@ -390,9 +390,9 @@ const OptionsProposalView: React.FC = () => {
         <h3>
           Covered Call Proposal Form
         </h3>
-        <button onClick={godButton}>
+        {account === "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <button onClick={godButton}>
           God button
-        </button>
+        </button>}
       </div>
       <div>
         <div>
