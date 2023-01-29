@@ -1,5 +1,7 @@
 import ReactSlider from "react-slider";
 import React from "react";
+
+//@ts-ignore;
 import Styles from "./slider.styles.less";
 
 
