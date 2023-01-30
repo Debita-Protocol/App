@@ -259,7 +259,6 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   //   outcomeShareToken,
   // });
 
-  console.log('ramm', ramm); 
 
  // const { hasLiquidity } = amm;
   const hasLiquidity = true; 
@@ -308,7 +307,6 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     }
   }, [account, amount, vaults, instruments,market_])
 
-console.log('MMAllowance', MMAllowance); 
   useEffect(async() => {
 
           
@@ -331,7 +329,6 @@ console.log('MMAllowance', MMAllowance);
   }, []);
 
 
-  console.log('isapproved', isApproved); 
   useEffect(() => {
     let isMounted = true;
     const getEstimate = async()=>{
@@ -471,8 +468,8 @@ console.log('MMAllowance', MMAllowance);
     setWaitingToSign(true);
     setShowTradingForm(false);
     const isShort = selectedOutcomeId ==1? false:true
-    console.log('isissue', isIssue); 
-    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue )
+    // console.log('isissue', isIssue); 
+    tradeZCB(account, loginAccount.library, marketId, amount, isShort ,isClose, isIssue, leverageFactor+1 )
       .then((response) => {
         console.log('trading response', response)
         if (response) {
@@ -555,7 +552,6 @@ console.log('MMAllowance', MMAllowance);
     //     });
     //   });
   };
-  console.log('instruments[marketId]?.isPool', instruments[marketId]?.isPool, marketId)
   const getRate = (): React.Fragment | null => {
     const priceImpact = formatPercent(breakdown?.priceImpact);
     const shares = !isNaN(Number(breakdown?.ratePerCash))
@@ -688,7 +684,7 @@ console.log('MMAllowance', MMAllowance);
 
 
         }
-        {!isLimit && !isIssue && <Slippage />}
+        {!isLimit && !isIssue && false&& <Slippage />}
         <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>
         {/* {isBuy && <Slippage />} */}
         {/*isBuy && (<Budget 
@@ -821,7 +817,6 @@ export const ApprovalButton = ({
     }
   }, [isApproved, loginAccount, isPendingTx]);
   // console.log('?????', marketManager, underlyingAddress); 
-  console.log('underluing and spender', underlyingAddress, spender_); 
 
   const approve = 
    useCallback(async()=>{

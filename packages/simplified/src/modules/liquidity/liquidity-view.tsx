@@ -214,13 +214,13 @@ export const InstrumentCard = ({instrument}: any):React.FC=>{
 
   // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
   const{marketId, vaultId} = instrument;
-  const type = instrument?.instrumentType; 
+  const type = Number(instrument?.instrumentType);
 
 
   const instrumentField = InstrumentField({instrumentType: Number(type), instrument: instrument}); 
   const instrumentOverview = InstrumentOverviewFormat({instrumenType: Number(type)})
   const instrumentDescription = InstumentDescriptionFormat({instrumenType: Number(type),fields:instrumentField }); 
-  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: Number(type), field: instrumentField }); 
+  const instrumentBreakDown = InstrumentBreakDownFormat({instrumentType: type, field: instrumentField }); 
 
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
  return (
@@ -706,6 +706,7 @@ const LiquidityView = () => {
 
   return (
     <div className={Styles.LiquidityView}>
+
       {/*<AppViewStats small liquidity /> */}
       {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
       {/*<MaticAddMetaMaskToken /> */}
