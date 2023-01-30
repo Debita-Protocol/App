@@ -126,7 +126,8 @@ import {
   creditLine_address, 
   reputation_manager_address, 
   leverageModule_address,
-  weth_address
+  weth_address, 
+  leverage_manager_address
 } from "../data/constants";
 
 
@@ -144,7 +145,7 @@ import marketmanagerabi from "../data/marketmanager.json";
 import reputationManagerAbi from "../data/ReputationManager.json"; 
 import leverageModuleAbi from "../data/leverageModule.json"; 
 import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
-
+import leverageManagerAbi from "../data/LeverageManager.json"; 
 
 const precision = 1e10; 
 const pp = BigNumber.from(10).pow(18);
@@ -286,7 +287,7 @@ export async function estimateTrade  (
   library: Web3Provider, 
   marketId: number, 
   amount: string, 
-  // leverageFactor: number, 
+  leverageFactor: number, 
   isUnderlying: boolean = false, 
   isShort: boolean, 
   open: boolean, 
@@ -305,10 +306,40 @@ export async function estimateTrade  (
   let maxProfit; 
   let ratePerCash; 
   let priceImpact; 
-  // if(leverageFactor>1){
+  if(leverageFactor>1){
+   const scaledLeverage = pp.mul(Number(leverageFactor)*precision).div(precision); 
+   const leverageManager = new ethers.Contract(
+      leverage_manager_address,leverageManagerAbi["abi"], getProviderOrSigner(library, account) );
+    result = await leverageManager.callStatic.buyBondLevered(marketId, scaledAmount, pp.mul(100), scaledLeverage)
+        .catch((e)=>{
+        console.log(e); 
+        error = e
+      }); 
+      if(error!=null){
+        return error?.data?.message
+      }else{
 
-  //   result = 
-  // }
+
+        const tokensIn = result[0]; 
+        const tokensOut = result[1]; 
+
+  // const tokensIn
+        const avgPrice = tokensIn.mul(pp).div(tokensOut); 
+
+        return {
+        outputValue: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))),
+        tradeFees: "0", 
+        averagePrice: trimDecimalValue(sharesOnChainToDisplay(String(avgPrice.toString() || "0"))),
+        maxProfit, 
+        ratePerCash,
+        priceImpact,
+        debt: String(((leverageFactor -1) *Number(tokensIn.div(pp).toString()))/leverageFactor), 
+        totalUnderlyingPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensIn.toString() || "0"))), 
+        totalBondPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))), 
+      };
+    }
+
+  }
   if(issue){
     console.log('isissue', issue)
     result = await marketmanager.callStatic.issuePoolBond(marketId,scaledAmount)
@@ -422,13 +453,14 @@ export async function tradeZCB(
     const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
   let tx;
   console.log('leverageFactor????', leverageFactor); 
+
   if(leverageFactor > 1){
     const scaledLeverage = pp.mul(leverageFactor * precision).div(precision); 
-   const leverageModule = new ethers.Contract(
-      leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) );
+   const leverageManager = new ethers.Contract(
+      leverage_manager_address,leverageManagerAbi["abi"], getProviderOrSigner(library, account) );
    if(issue) 
-   tx = await leverageModule.issuePerpBondLevered(marketId, scaledAmount, scaledLeverage); 
-   else tx = await leverageModule.buyBondLevered(marketId, scaledAmount, pp.mul(slippageLimit*100), scaledLeverage); 
+   tx = await leverageManager.issuePerpBondLevered(marketId, scaledAmount, scaledLeverage); 
+   else tx = await leverageManager.buyBondLevered(marketId, scaledAmount, pp.mul(slippageLimit*100), scaledLeverage); 
        
 
    return tx; 
@@ -531,7 +563,7 @@ export async function setUpExampleController(account: string, library: Web3Provi
   // await controller.setVaultFactory(vault_factory_address);
   // await controller.setPoolFactory(pool_factory_address); 
   // await controller.setReputationManager(reputation_manager_address); 
-  await controller.setLeverageManager(leverageModule_address); 
+  await controller.setLeverageManager(leverage_manager_address); 
   // const reputation = new ethers.Contract(reputation_manager_address, 
   //   reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
   // await reputation.incrementScore(account, pp);

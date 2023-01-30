@@ -834,6 +834,12 @@ export interface EstimateTradeResult {
   priceImpact: string;
   outcomeShareTokensIn?: string[];
   maxSellAmount?: string;
+
+
+  debt?: string; 
+  totalUnderlyingPosition?: string; 
+  totalBondPosition?: string; 
+
 }
 
 export interface PriceTimeSeriesData {

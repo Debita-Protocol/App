@@ -19,7 +19,7 @@ import {
   useApprovalStatus,
   ApprovalHooks,
   PARA_CONFIG,
-  useDataStore2, marketManager
+  useDataStore2, marketManager, leverageManager
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
 import { Slippage,Leverage, LimitOrderSelector} from "../common/slippage";
@@ -99,7 +99,32 @@ export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
 };
 
 const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult | null, cash: Cash) => {
+  const isLeverage = Number(breakdown?.debt)>0; 
   return [
+    isLeverage&&{
+      label: "Total Underlying to pay", 
+      value : (Number(breakdown?.totalUnderlyingPosition)>0 
+        ? formatSimpleShares(Number(breakdown?.totalUnderlyingPosition) - Number(breakdown?.debt) ||0).full : "-"), 
+      tooltipText: "Total Underlying I am depositing for this leveraged position",
+      tooltipKey: "pay",}, 
+    isLeverage &&
+    {
+      label: "Total Underlying Position", 
+      value: (Number(breakdown?.totalUnderlyingPosition)>0 ? formatSimpleShares(breakdown.totalUnderlyingPosition ||0).full: "-" ), 
+      tooltipText: "How much total position, denominated in underlying, am I getting", 
+      tooltipKey: "Underlying Position"
+    }, 
+    isLeverage &&
+    {
+      label: "Total Underlying Debt", 
+      value: (Number(breakdown?.debt)>0 ? formatSimpleShares(breakdown.debt ||0).full: "-" )
+    }, 
+    isLeverage&&
+    {
+      label: "Total ZCB Position", 
+      value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
+    }, 
+
     {
       label: "Average Price",
       value: !isNaN(Number(breakdown?.averagePrice))
@@ -108,7 +133,7 @@ const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult
       tooltipText: AVG_PRICE_TIP,
       tooltipKey: "averagePrice",
     },
-    {
+    !isLeverage &&{
       label: isUnderlying? "Estimated ZCB returned": "Estimated Underlying required",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
@@ -121,6 +146,7 @@ const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult
       label: `Estimated Fees`,
       value: !isNaN(Number(breakdown?.tradeFees)) ? formatCash(breakdown?.tradeFees || 0, cash?.name).full : "-",
     },
+
   ];
 };
 
@@ -148,6 +174,7 @@ const getExitBreakdown = (breakdown: EstimateTradeResult | null, cash: Cash) => 
       label: "Estimated Fees (Shares)",
       value: !isNaN(Number(breakdown?.tradeFees)) ? formatSimpleShares(breakdown?.tradeFees || 0).full : "-",
     },
+
   ];
 };
 
@@ -214,9 +241,14 @@ const getOutcomes = (price, isPool) =>{
 export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}: TradingFormProps) => {
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
-  const { vaults: vaults, instruments: instruments, markets: market_ } = useDataStore2()
+  const { vaults: vaults, instruments: instruments, markets: market_  
+      
+} = useDataStore2()
+
   const vaultId = market_[marketId]?.vaultId; 
   const underlying_address = vaults[vaultId]?.want.address; 
+  const underlying_name = vaults[vaultId]?.want.name; 
+
   const {
     showTradingForm,
     actions: { setShowTradingForm },
@@ -227,7 +259,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     loginAccount,
     balances,
     actions: { addTransaction },
-      ramm
+      ramm: { reputationScore, vaultBalances, zcbBalances }
 
   } = useUserStore();
   const [orderType, setOrderType] = useState(BUY);
@@ -276,7 +308,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const [userBalance, setUserBalance] = useState("1"); 
   const [leverageFactor, setLeverageFactor] = useState(0); 
   const [MMAllowance, setMMAllowance] = useState(false); 
-
+  const userMaxAmount = vaultBalances[vaultId]?.base
   // const userBalance = String(
   //   useMemo(() => {
   //     return isBuy
@@ -302,7 +334,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
       if (allowance && Number(allowance) >= maxUint)
         setMMAllowance(true); 
 
-      if (ramm.reputationScore =="0") setIsNotVerified(true); 
+      if (reputationScore =="0") setIsNotVerified(true); 
       else setIsNotVerified(false); 
     }
   }, [account, amount, vaults, instruments,market_])
@@ -335,8 +367,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
       const isShort = selectedOutcomeId ==0? false:true
 
       const breakdown = isBuy
-        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort,true, isIssue)
-        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, isUnderlying, isShort, false, isIssue)
+        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor+1, isUnderlying, isShort,true, isIssue)
+        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor+1, isUnderlying, isShort, false, isIssue)
         isMounted&& setBreakdown(breakdown); 
     }
     // const getEstimate = async () => {
@@ -642,17 +674,17 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           text={!isUnderlying?"Specify in Underlying":"Specify in ZCB"}/>*/}
         {isUnderlying?(<AmountInput
           heading={"In Underlying"}
-          chosenCash={ammCash?.name}
+          chosenCash={underlying_name}
           updateInitialAmount={setAmount}
           initialAmount={amount}
           error={amountError}
-          maxValue={null}
+          maxValue={userMaxAmount}
           ammCash={ammCash}
           //disabled={!hasLiquidity || hasWinner}
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-          toggleUnderlying={toggleUnderlying}
+          toggleUnderlying={null}
         />):
         (<AmountInput
           heading={"In ZCB"}
@@ -824,6 +856,7 @@ export const ApprovalButton = ({
     let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
     // let spender = marketManager//rewardContractAddress || ammFactory; 
     let spender = spender_; 
+    console.log('spender', spender, underlyingAddress); 
     let text = "Approving Underlying"; 
     const tx = await approvalAction(underlyingAddress, text, spender, loginAccount)
       .then((response)=> {
@@ -936,7 +969,6 @@ export const ApprovalButton = ({
       buttonText = `Approve Underlying`;
       break;
   }
-  console.log('buttontext', buttonText)
   return (
     <SecondaryThemeButton
       disabled={isPendingTx}

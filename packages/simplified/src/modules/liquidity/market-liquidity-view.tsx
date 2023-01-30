@@ -1282,7 +1282,7 @@ const LiquidityForm = ({
             <InfoNumbers infoNumbers={infoNumbers} />
           </div>
           <div className={Styles.ActionButtons}>
-            {!isApproved && (
+            {/*!isApproved && (
               <ApprovalButton
                 amm={amm}
                 cash={cash}
@@ -1290,7 +1290,7 @@ const LiquidityForm = ({
                 customClass={ButtonStyles.ReviewTransactionButton}
                 ds={true}
               />
-            )}
+            )*/}
             <SecondaryThemeButton
               action={() =>
                 setModal({
