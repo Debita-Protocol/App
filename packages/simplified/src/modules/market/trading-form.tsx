@@ -117,7 +117,7 @@ const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult
     isLeverage &&
     {
       label: "Total Underlying Debt", 
-      value: (Number(breakdown?.debt)>0 ? formatSimpleShares(breakdown.debt ||0).full: "-" )
+      value: (Number(breakdown?.debt)>0 ? breakdown.debt : "-" )
     }, 
     isLeverage&&
     {

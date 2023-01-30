@@ -325,7 +325,7 @@ export async function estimateTrade  (
 
   // const tokensIn
         const avgPrice = tokensIn.mul(pp).div(tokensOut); 
-
+        console.log('tokensin', tokensIn.toString()/1e18); 
         return {
         outputValue: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))),
         tradeFees: "0", 
@@ -333,7 +333,7 @@ export async function estimateTrade  (
         maxProfit, 
         ratePerCash,
         priceImpact,
-        debt: String(((leverageFactor -1) *Number(tokensIn.div(pp).toString()))/leverageFactor), 
+        debt: trimDecimalValue(String( ((leverageFactor -1) *Number(amount))/leverageFactor)), 
         totalUnderlyingPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensIn.toString() || "0"))), 
         totalBondPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))), 
       };
