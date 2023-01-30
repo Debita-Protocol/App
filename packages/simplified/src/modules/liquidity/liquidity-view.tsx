@@ -706,6 +706,7 @@ const LiquidityView = () => {
 
   return (
     <div className={Styles.LiquidityView}>
+
       {/*<AppViewStats small liquidity /> */}
       {/*<AvailableLiquidityRewards balance={rewardBalance} /> */}
       {/*<MaticAddMetaMaskToken /> */}

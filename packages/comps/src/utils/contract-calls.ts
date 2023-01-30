@@ -286,10 +286,11 @@ export async function estimateTrade  (
   library: Web3Provider, 
   marketId: number, 
   amount: string, 
+  // leverageFactor: number, 
   isUnderlying: boolean = false, 
   isShort: boolean, 
   open: boolean, 
-  issue:boolean = false ,
+  issue:boolean = false 
 
   ) : Promise<EstimateTradeResult|string>{
 
@@ -304,6 +305,10 @@ export async function estimateTrade  (
   let maxProfit; 
   let ratePerCash; 
   let priceImpact; 
+  // if(leverageFactor>1){
+
+  //   result = 
+  // }
   if(issue){
     console.log('isissue', issue)
     result = await marketmanager.callStatic.issuePoolBond(marketId,scaledAmount)
@@ -410,18 +415,21 @@ export async function tradeZCB(
   long: boolean, 
   close: boolean, 
   issue:boolean ,
+  leverageFactor : number,
   slippageLimit: number = 1, 
   underlyingAddress: string = "", 
-  leverageFactor : number = 1
   ): Promise<TransactionResponse>{
     const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
   let tx;
-  console.log('leverageFactor??', leverageFactor); 
+  console.log('leverageFactor????', leverageFactor); 
   if(leverageFactor > 1){
-
+    const scaledLeverage = pp.mul(leverageFactor * precision).div(precision); 
    const leverageModule = new ethers.Contract(
-      leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) ); 
-   tx = await leverageModule.issuePerpBondLevered(marketId, scaledAmount, leverageFactor); 
+      leverageModule_address,leverageModuleAbi["abi"], getProviderOrSigner(library, account) );
+   if(issue) 
+   tx = await leverageModule.issuePerpBondLevered(marketId, scaledAmount, scaledLeverage); 
+   else tx = await leverageModule.buyBondLevered(marketId, scaledAmount, pp.mul(slippageLimit*100), scaledLeverage); 
+       
 
    return tx; 
        
@@ -435,7 +443,6 @@ export async function tradeZCB(
   const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
   const marketmanager = new ethers.Contract(market_manager_address, 
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
-  console.log('issue???', issue, marketId); 
   // await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
   if(issue){
     console.log('issue???', marketId); 
@@ -524,10 +531,10 @@ export async function setUpExampleController(account: string, library: Web3Provi
   // await controller.setVaultFactory(vault_factory_address);
   // await controller.setPoolFactory(pool_factory_address); 
   // await controller.setReputationManager(reputation_manager_address); 
-
-  const reputation = new ethers.Contract(reputation_manager_address, 
-    reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
-  await reputation.incrementScore(account, pp);
+  await controller.setLeverageManager(leverageModule_address); 
+  // const reputation = new ethers.Contract(reputation_manager_address, 
+  //   reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
+  // await reputation.incrementScore(account, pp);
   // await reputation.incrementScore("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", pp);
 
   // await controller.testVerifyAddress(); 

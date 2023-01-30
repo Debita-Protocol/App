@@ -34,7 +34,7 @@ export const usdc_address = "0xd6A5640De726a89A54ca724ac12BCc5E89600720";
 export const weth_address = "0x6219CC8a3E880053ea0A1398f86E226C37603239";
 export const reputation_manager_address = "0x88Eb71Bb9cd9997c4815eFC704Aa3Ee09d4F0F53";
 export const fetcher_address =  "0x01c8E1DE7A03264685b62ed74d7DDaC169d2a3e7";
-export const leverageModule_address = "0xf9c6A04026c30dFC56FdB72A4B8cd00fB922823b";
+export const leverageModule_address = "0x493553c206C5e53C2396791486E33099b9908B4F";
 export const variable_interest_rate_address = "0x541D09035CA76AE5CEA1C6ECDf098A48a8F2FDEe";
 export const validator_manager_address = "0x8C73fB98088e5109F021C553f1c9a43c29F03337";
 
