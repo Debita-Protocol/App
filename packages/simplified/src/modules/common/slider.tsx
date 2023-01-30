@@ -48,7 +48,7 @@ export const BaseSlider = (
         min,
         defaultValue,
         marks,
-        markClassName,
+        markClassName: markClassName === "" ? Styles.BaseMark : {markClassName},
     }
     if (!isNaN(value)) {
         props = {

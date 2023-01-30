@@ -42,6 +42,7 @@ import { Link } from "react-router-dom";
 import { Sidebar } from "../sidebar/sidebar";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
 import { BaseSlider } from "../common/slider";
+import { Leverage } from "../common/slippage";
 // const collateralLink =()=>{
 //     return( 
 //       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
@@ -116,8 +117,8 @@ export const InstrumentBreakDownFormat = ({ instrumentType, field = null }) => {
 
     }
     return infos;
-  }else if(instrumentType ==0) {
-return [{
+  } else if (instrumentType == 0) {
+    return [{
       heading: "Additional Information",
       infoNumbers: [
         {
@@ -144,7 +145,7 @@ return [{
 export const InstrumentOverviewFormat = ({ instrumenType }) => {
   if (instrumenType == 1) {
     return "Managers who think the price of the underlying asset would be below the proposed strike price by maturity should buy longZCB. When the option is not exercised, the proposed estimated return will be fully paid by the utilizer, and redemption price of longZCB will be 1. "
-  } else if(instrumenType == 0){
+  } else if (instrumenType == 0) {
     return "As a manager, those who think the given collateral or credit conditions of the borrower is sound enough for the requested principal or interest rate should buy longZCB. Otherwise, vault holders can buy shortZCB to hedge.    "
   }
   else {
@@ -192,14 +193,14 @@ export const InstrumentField = ({ instrumentType, instrument }) => {
       String(Number(tradeTime) - curtime) : "Assessment Period Ended"
     fields[5] = Number(maturityDate);
     return fields;
-  } else if(instrumentType == 0){
+  } else if (instrumentType == 0) {
     const curtime = Math.floor((new Date()).getTime() / 1000);
-    const{collateral, utilizer,  expectedYield, duration, principal } = instrument; 
-    fields[0] = utilizer; 
-    fields[1] = collateral; 
-    fields[2] = String(roundDown(100* (365/(Number(duration)/86400)) * Number(expectedYield)/Number(principal),2)) + "% APR"
-    fields[3] = "-" 
-    return fields; 
+    const { collateral, utilizer, expectedYield, duration, principal } = instrument;
+    fields[0] = utilizer;
+    fields[1] = collateral;
+    fields[2] = String(roundDown(100 * (365 / (Number(duration) / 86400)) * Number(expectedYield) / Number(principal), 2)) + "% APR"
+    fields[3] = "-"
+    return fields;
   }
   else {
     return null;
@@ -458,9 +459,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const [marketNotFound, setMarketNotFound] = useState(false);
   const [storedCollateral, setstoredCollateral] = useState(false);
   const [Yield, setYield] = useState("");
-  
+
   // simulation vars
-  const [ simAmountRepaid, setSimAmountRepaid] = useState(0);
+  const [simAmountRepaid, setSimAmountRepaid] = useState(0);
   const [netPerformance, setNetPerformance] = useState()
 
   console.log('date', Math.floor((new Date()).getTime() / 1000)
@@ -499,7 +500,7 @@ const MarketView = ({ defaultMarket = null }) => {
     ramm: { reputationScore, vaultBalances, zcbBalances }
 
   } = useUserStore();
-  const isManager = reputationScore >0 ; 
+  const isManager = reputationScore > 0;
   const Id = Number(marketId)
   useEffect(() => {
     if (!market) {
@@ -633,9 +634,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const utilizer_description = "Assess riskiness of lending to fuse isolated pool #3. Some of the collaterals in this pool are not liquid and may incur bad debt. ";
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
     " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
-  
-  
-    return (
+
+
+  return (
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
       <section>
@@ -709,12 +710,12 @@ const MarketView = ({ defaultMarket = null }) => {
             customClass={ButtonStyles.TinyTransparentButton}
           />
         </div>
-        { type === 0  ? (
+        {type === 0 ? (
           <section>
-            <CreditlineRequestInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
-            <CreditlineLoanInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
+            <CreditlineRequestInfo instrument={instruments[Id]} vault={vaults[vaultId]} />
+            <CreditlineLoanInfo instrument={instruments[Id]} vault={vaults[vaultId]} />
           </section>
-          
+
         ) : (<section></section>)}
         {(type === 0 && Object.entries(market_).length > 0) && (
           <CreditlineSimulation market={market_[Id]} instrument={instruments[Id]} vault={vaults[vaultId]} />
@@ -967,13 +968,13 @@ const MarketView = ({ defaultMarket = null }) => {
         <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
         {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
         lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
-                {!loading && data.market && Object.entries(market_).length > 0 &&  (
+        {!loading && data.market && Object.entries(market_).length > 0 && (
           <div>
-          <h4>
-            Price History
-          </h4>
-          <ZCBPriceChartSection marketId={marketId} snapshots={data.market.snapshots}/>
-        </div>
+            <h4>
+              Price History
+            </h4>
+            <ZCBPriceChartSection marketId={marketId} snapshots={data.market.snapshots} />
+          </div>
         )
         }
 
@@ -1073,7 +1074,7 @@ const CreditlineRequestInfo = ({
   instrument,
   vault
 }) => {
-  const { collateral, duration, collateralType, oracle, principal, expectedYield} = instrument;
+  const { collateral, duration, collateralType, oracle, principal, expectedYield } = instrument;
   console.log("collateral: ", collateral);
   const collateralTypeMapping = {
     0: "liquidatable",
@@ -1090,15 +1091,15 @@ const CreditlineRequestInfo = ({
       <h3>
         Request Details
       </h3>
-       <div>
-          <span>Duration</span>
-          <span>{tenor} days</span>
-        </div>
-        {/* <div>
+      <div>
+        <span>Duration</span>
+        <span>{tenor} days</span>
+      </div>
+      {/* <div>
           <span>Collateral Type</span>
           <span>{collateralTypeMapping[Number(collateralType)]}</span>
         </div> */}
-        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Collateral</span>
           <span>
@@ -1106,24 +1107,24 @@ const CreditlineRequestInfo = ({
             </ExternalLink>
           </span>
         </div>
-        }
-        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+      }
+      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Oracle</span>
           <span> <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + collateral} label={"Chainlink"} icon={true}>
-            </ExternalLink>
+          </ExternalLink>
           </span>
         </div>
-        }
-        <div>
-          <span>Requested Amount</span>
-          <span>{handleValue(principal, vault.want.symbol)}</span>
-        </div>
-        <div>
-          <span>Expected Yield</span>
-          <span>{handleValue(expectedYield, vault.want.symbol)}</span>
-        </div>
-        {/* <div>
+      }
+      <div>
+        <span>Requested Amount</span>
+        <span>{handleValue(principal, vault.want.symbol)}</span>
+      </div>
+      <div>
+        <span>Expected Yield</span>
+        <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+      </div>
+      {/* <div>
           <span>Amount Repaid</span>
           <span>{handleValue(amountRepaid, vault.want.symbol)}</span>
         </div> */}
@@ -1135,7 +1136,7 @@ const CreditlineLoanInfo = ({
   instrument,
   vault
 }) => {
-  const { collateral, duration, collateralType, oracle, principal, expectedYield, maturityDate} = instrument;
+  const { collateral, duration, collateralType, oracle, principal, expectedYield, maturityDate } = instrument;
   console.log("collateral: ", collateral);
   const collateralTypeMapping = {
     0: "liquidatable",
@@ -1153,15 +1154,15 @@ const CreditlineLoanInfo = ({
       <h3>
         Loan Info
       </h3>
-       <div>
-          <span>Expiration</span>
-          <span>{expiry}</span>
-        </div>
-        {/* <div>
+      <div>
+        <span>Expiration</span>
+        <span>{expiry}</span>
+      </div>
+      {/* <div>
           <span>Collateral Type</span>
           <span>{collateralTypeMapping[Number(collateralType)]}</span>
         </div> */}
-        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Collateral</span>
           <span>
@@ -1169,21 +1170,21 @@ const CreditlineLoanInfo = ({
             </ExternalLink>
           </span>
         </div>
-        }
-        {( Number(collateralType) === 0 || Number(collateralType) === 1 )&& 
+      }
+      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Oracle</span>
           <span>{oracle}</span>
         </div>
-        }
-        <div>
-          <span>Expected Repayment</span>
-          <span>{handleValue(expectedYield, vault.want.symbol)}</span>
-        </div>
-        <div>
-          <span>Amount Repaid</span>
-          <span>{0}</span>
-        </div>
+      }
+      <div>
+        <span>Expected Repayment</span>
+        <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+      </div>
+      <div>
+        <span>Amount Repaid</span>
+        <span>{0}</span>
+      </div>
     </section>
   )
 }
@@ -1194,16 +1195,19 @@ const CreditlineSimulation = ({
   vault
 }) => {
   const isApproved = (!market?.duringAssessment && market?.alive);
-  const { approvedPrincipal, approvedYield, bondPool: { longZCB: { balance: longZCBSupply}, longZCBPrice}} = market;
+  const { approvedPrincipal, approvedYield, bondPool: { longZCB: { balance: longZCBSupply }, longZCBPrice } } = market;
   const { principal, expectedYield } = instrument;
   const faceValue = isApproved ? new BN(Number(approvedPrincipal) + Number(approvedYield)).toFixed(4) : new BN(Number(principal) + Number(expectedYield)).toFixed(4)
   const [simAmountRepaid, setSimAmountRepaid] = useState(0);
+  const [leverageFactor, setLeverageFactor] = useState(1);
 
   const newRedemptionPrice = useMemo(() => {
     let loss = Number(faceValue) - Number(simAmountRepaid);
     return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
   }, [simAmountRepaid, longZCBSupply, faceValue])
   console.log("newRedemptionPrice", newRedemptionPrice, simAmountRepaid, longZCBSupply, faceValue, longZCBPrice);
+
+
   return (
     <section className={Styles.CreditlineSimulation}>
       <h3>
@@ -1214,13 +1218,13 @@ const CreditlineSimulation = ({
           Amount Repaid
         </span>
         <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
-            setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
+          setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
         }} />}  /{faceValue}</span>
-        <BaseSlider 
-          max={Number(faceValue)} 
-          min={Number(0)} 
+        <BaseSlider
+          max={Number(faceValue)}
+          min={Number(0)}
           value={simAmountRepaid}
-          step={0.0001} 
+          step={0.0001}
           onChange={(value) => setSimAmountRepaid(value)}
         />
       </div>
@@ -1234,7 +1238,19 @@ const CreditlineSimulation = ({
       </div>
       <div>
         <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100).toFixed(3) + "%"}</span>
+      </div>
+      <div>
+        <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor).toFixed(3) + "%"}</span>
+        <BaseSlider
+          max={4}
+          min={1}
+          marks={[1, 2, 3, 4]}
+          step={0.1}
+          value={leverageFactor}
+          onChange={(value) => setLeverageFactor(value)}
+        />
       </div>
     </section>
   )
@@ -1247,34 +1263,52 @@ const PoolSimulation = ({
   vault
 }) => {
   const isApproved = (!market?.duringAssessment && market?.alive);
-  const { approvedPrincipal, approvedYield, bondPool: { longZCB: { balance: longZCBSupply}, longZCBPrice}} = market;
-  const { principal, expectedYield } = instrument;
-  const faceValue = isApproved ? new BN(Number(approvedPrincipal) + Number(approvedYield)).toFixed(4) : new BN(Number(principal) + Number(expectedYield)).toFixed(4)
-  const [simAmountRepaid, setSimAmountRepaid] = useState(0);
+  let { borrowAPR, psu, pju, totalSuppliedAssets, utilizationRate: _utilizationRate, poolLeverageFactor, exchangeRate, inceptionPrice } = instrument;
+  let { bondPool: { longZCB: { balance: longZCBSupply }, longZCBPrice } } = market
+  const [leverageFactor, setLeverageFactor] = useState(1);
+  // borrowAPR = 0.06;
 
-  const newRedemptionPrice = useMemo(() => {
-    let loss = Number(faceValue) - Number(simAmountRepaid);
-    return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
-  }, [simAmountRepaid, longZCBSupply, faceValue])
-  console.log("newRedemptionPrice", newRedemptionPrice, simAmountRepaid, longZCBSupply, faceValue, longZCBPrice);
+  longZCBSupply = 10;
+  totalSuppliedAssets = 10;
+
+  const [utilizationRate, setUtilizationRate] = useState(Number(_utilizationRate) * 100);
+  const longZCBRates = useMemo(
+    () => {
+      if (Number(totalSuppliedAssets) === 0 || Number(longZCBSupply) === 0) return {
+        apr: new BN(0).toFixed(2),
+        max: new BN(100).toFixed(2)
+      };
+      let poolAPR = Number(utilizationRate) * Number(borrowAPR) / 100;
+      let seniorSupply = Number(poolLeverageFactor) * Number(longZCBSupply);
+      let scaledAssets = (seniorSupply + Number(longZCBSupply)) * Number(exchangeRate) * Number(inceptionPrice);
+      let delta = (scaledAssets * (1 + poolAPR) - Number(seniorSupply) * Number(psu)) / Number(longZCBSupply) - Number(pju);
+      let maxDelta = (scaledAssets * (1 + borrowAPR) - Number(seniorSupply) * Number(psu)) / Number(longZCBSupply) - Number(pju)
+      if (delta < 0) delta = 0;
+      return {
+        apr: new BN(delta / Number(pju) * 100).toFixed(2),
+        max: new BN(maxDelta / Number(pju) * 100).toNumber()
+      }
+    }
+    , [utilizationRate, borrowAPR, psu, longZCBSupply, totalSuppliedAssets, poolLeverageFactor, exchangeRate, inceptionPrice])
+
   return (
-    <section className={Styles.CreditlineSimulation}>
+    <section className={Styles.PoolSimulation}>
       <h3>
         Simulate Returns
       </h3>
       <div>
         <span>
-          Amount Repaid
+          Utilization Rate
         </span>
-        <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
-            setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
-        }} />}  /{faceValue}</span>
-        <BaseSlider 
-          max={Number(faceValue)} 
-          min={Number(0)} 
-          value={simAmountRepaid}
-          step={0.0001} 
-          onChange={(value) => setSimAmountRepaid(value)}
+        <span>{<input type="number" placeholder={Number(utilizationRate)} onChange={(e) => {
+          setUtilizationRate(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
+        }} />}  /100%</span>
+        <BaseSlider
+          max={Number(100)}
+          min={Number(0)}
+          value={utilizationRate}
+          step={0.0001}
+          onChange={(value) => setUtilizationRate(value)}
         />
       </div>
       <div>
@@ -1282,12 +1316,20 @@ const PoolSimulation = ({
         <span>{longZCBPrice}</span>
       </div>
       <div>
-        <span>Calculated LongZCB Redemption Price {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : newRedemptionPrice}</span>
+        <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : longZCBRates.apr + "%"}</span>
       </div>
       <div>
-        <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
+        <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN(Number(longZCBRates.apr) *  leverageFactor).toFixed(3) + "%"}</span>
+        <BaseSlider
+          max={4}
+          min={1}
+          marks={[1, 2, 3, 4]}
+          step={0.1}
+          value={leverageFactor}
+          onChange={(value) => setLeverageFactor(value)}
+        />
       </div>
     </section>
   )
