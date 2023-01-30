@@ -16,7 +16,9 @@ import {
     creditLine_address,
     variable_interest_rate_address,
     validator_manager_address,
-    ORACLE_MAPPING
+    ORACLE_MAPPING,
+    leverage_manager_address,
+    storage_handler_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -376,6 +378,10 @@ export const createPoolInstrument = async (
             maxBorrowAmount: new BN(collateralInfo.borrowAmount).shiftedBy(18).toFixed(0),
             maxAmount: new BN(collateralInfo.maxAmount).shiftedBy(18).toFixed(0),
             isERC20: collateralInfo.isERC20,
+            tau: 0,
+            cusp: 0,
+            tail: 0,
+            buf: 0 
         });
     })
 
@@ -384,9 +390,9 @@ export const createPoolInstrument = async (
 
     const poolInstrument = await poolInstrumentFactory.deploy(
         vault,
-        controller_address,
+        reputation_manager_address,
+        0,
         account,
-        asset,
         name,
         symbol,
         variable_interest_rate_address,
@@ -971,7 +977,8 @@ export const getRammData = async (
             });
 
             const supplyBalancesContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
-                const methodParameters = c.isERC20 ? [c.address, account] : [c.address, c.tokenId];
+                let id = utils.solidityKeccak256(["address", "uint256"], [c.address, c.tokenId]);
+                const methodParameters = c.isERC20 ? [id, account] : [id];
                 return {
                     reference: "supply-" + c.address + "-" + c.tokenId,
                     contractAddress: instrument.address,
@@ -979,7 +986,7 @@ export const getRammData = async (
                     calls: [
                         {
                             reference: "balanceOf",
-                            methodName: c.isERC20 ? "userCollateralERC20" : "userCollateralNFTs",
+                            methodName: c.isERC20 ? "userERC20s" : "userERC721s",
                             methodParameters,
                         }
                     ]
@@ -1537,19 +1544,19 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("collateralData", collateralData);
 
     // vault.getInstrumentData();
-    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
-"0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
-"0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
-"0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
-"0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
-"0xF5c7e89021183cb51409829f07EedB855c6b83DE",
-"0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
-"0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+//     let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+// "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+// "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+// "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+// "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+// "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+// "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+// "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
     
-    for (let i=0; i < early_managers.length; i++) {
-        let tx = await controller.verifyAddress(early_managers[i]);
-        await tx.wait();
-    }
+//     for (let i=0; i < early_managers.length; i++) {
+//         let tx = await controller.verifyAddress(early_managers[i]);
+//         await tx.wait();
+//     }
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();
@@ -1560,22 +1567,27 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
     // tx.wait();
 
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // await tx.wait();
-    // tx = await controller.testVerifyAddress(); 
-    // await tx.wait();
+    tx = await controller.setMarketManager(marketManager.address);
+    await tx.wait();
+    tx = await controller.setVaultFactory(vaultFactory.address);
+    await tx.wait();
+    tx = await controller.setPoolFactory(pool_factory_address);
+    await tx.wait();
+    tx = await controller.setLeverageManager(leverage_manager_address);
+    await tx.wait();
+    tx = await controller.setReputationManager(reputation_manager_address);
+    await tx.wait();
+    tx = await controller.setValidatorManager(validator_manager_address);
+    await tx.wait();
+    tx = await controller.setDataStore(storage_handler_address);
+    await tx.wait();
+
+    tx = await controller.verifyAddress(account); 
+    await tx.wait();
 
     // console.log("F");
 
-    // await scriptSetup(account, provider);
+    await scriptSetup(account, provider);
 }
 
 

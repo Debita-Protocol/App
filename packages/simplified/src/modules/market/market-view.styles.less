@@ -56,7 +56,7 @@
         // creditline info tables;
         width: 100%;
         display: flex;
-        flex-flow: row nowrap;
+        flex-flow: column nowrap;
         justify-content: space-between;
       }
     }
@@ -422,6 +422,10 @@
     }
 
     > section:first-of-type {
+      > section:first-of-type {
+        flex-flow: row nowrap;
+
+      }
       > button {
         display: flex;
         position: fixed;
@@ -704,10 +708,12 @@
   border-radius: @size-8;
   display: flex;
   flex-direction: column;
-  width: 48%;
-
+  width: 100%;
+  margin-left: @size-8;
+  margin-right: @size-8;
+  margin-top: @size-20;
   >h3 {
-    margin-bottom: @size-20;
+    margin-bottom: @size-10;
   }
 
   > div {

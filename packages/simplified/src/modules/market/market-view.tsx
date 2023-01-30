@@ -28,7 +28,7 @@ import {
   Stores,
   ContractCalls,
   ContractCalls2,
-  useUserStore, useDataStore2, GRAPH_QUERIES
+  useUserStore, useDataStore2, GRAPH_QUERIES, SelectionComps
 } from "@augurproject/comps";
 import type {
   MarketInfo, AmmOutcome, MarketOutcome, AmmExchange,
@@ -676,21 +676,24 @@ const MarketView = ({ defaultMarket = null }) => {
             customClass={ButtonStyles.TinyTransparentButton}
           />
         </div>
-        { type === 0  &&(
+        { type === 0  ? (
           <section>
             <CreditlineRequestInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
             <CreditlineLoanInfo instrument={instruments[Id]} vault={vaults[vaultId]}/>
           </section>
           
-        )}
+        ) : (<section></section>)}
         {(type === 0 && Object.entries(market_).length > 0) && (
           <CreditlineSimulation market={market_[Id]} instrument={instruments[Id]} vault={vaults[vaultId]} />
         )}
-        {type !== 0 && (
+        {type === 2 && (
+          <PoolSimulation market={market_[Id]} instrument={instruments[Id]} vault={vaults[vaultId]} />
+        )}
+        {/* {type !== 0 && (
                   <h3>Simulate Returns</h3>
         )
-        }
-        {type !== 0 && (
+        } */}
+        {/* {type !== 0 && (
         (<ul className={Styles.UpperStatsRow}>
           {type == 1 && (
             <li>
@@ -748,7 +751,7 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
         </ul>)
-        )}
+        )} */}
 
         <WinningOutcomeLabel winningOutcome={outcomeLabel} type={type} remainingTime={remainingTime} />
 
@@ -1151,6 +1154,59 @@ const CreditlineLoanInfo = ({
 }
 
 const CreditlineSimulation = ({
+  market,
+  instrument,
+  vault
+}) => {
+  const isApproved = (!market?.duringAssessment && market?.alive);
+  const { approvedPrincipal, approvedYield, bondPool: { longZCB: { balance: longZCBSupply}, longZCBPrice}} = market;
+  const { principal, expectedYield } = instrument;
+  const faceValue = isApproved ? new BN(Number(approvedPrincipal) + Number(approvedYield)).toFixed(4) : new BN(Number(principal) + Number(expectedYield)).toFixed(4)
+  const [simAmountRepaid, setSimAmountRepaid] = useState(0);
+
+  const newRedemptionPrice = useMemo(() => {
+    let loss = Number(faceValue) - Number(simAmountRepaid);
+    return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
+  }, [simAmountRepaid, longZCBSupply, faceValue])
+  console.log("newRedemptionPrice", newRedemptionPrice, simAmountRepaid, longZCBSupply, faceValue, longZCBPrice);
+  return (
+    <section className={Styles.CreditlineSimulation}>
+      <h3>
+        Simulate Returns
+      </h3>
+      <div>
+        <span>
+          Amount Repaid
+        </span>
+        <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
+            setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
+        }} />}  /{faceValue}</span>
+        <BaseSlider 
+          max={Number(faceValue)} 
+          min={Number(0)} 
+          value={simAmountRepaid}
+          step={0.0001} 
+          onChange={(value) => setSimAmountRepaid(value)}
+        />
+      </div>
+      <div>
+        <span>Current LongZCB Price</span>
+        <span>{longZCBPrice}</span>
+      </div>
+      <div>
+        <span>Calculated LongZCB Redemption Price {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : newRedemptionPrice}</span>
+      </div>
+      <div>
+        <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN( (Number(newRedemptionPrice) - Number(longZCBPrice))/ Number(longZCBPrice) * 100 ).toFixed(3) + "%"}</span>
+      </div>
+    </section>
+  )
+}
+
+
+const PoolSimulation = ({
   market,
   instrument,
   vault
