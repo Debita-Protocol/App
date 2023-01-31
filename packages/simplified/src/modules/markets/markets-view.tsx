@@ -319,7 +319,7 @@ const MarketsView = () => {
     itemsPerPage: PAGE_LIMIT,
     itemCount: filteredMarkets.length,
   });
-  console.log('vaults', vaults, vaults.length, vaults) 
+  // console.log('vaults', vaults, vaults.length, vaults) 
   // const marketKeys = Object.keys(markets);
   // const {amm} = markets;
 

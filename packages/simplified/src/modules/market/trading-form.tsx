@@ -637,7 +637,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
         {instruments[marketId]?.isPool && isApproved&& <TinyThemeButton
           action={toggleIssueField}
           text={!isIssue ? "Mint New LongZCB" : " Trade" }/>}
-        {!isPool && <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>}
+        {/*!isPool && <LimitOrderSelector isLimit = {isLimit} setIsLimit = {setIsLimit}/>*/}
         <div
           onClick={() => {
             setShowTradingForm(false);

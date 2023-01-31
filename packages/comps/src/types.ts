@@ -1082,8 +1082,8 @@ export interface CoreUserState {
   reputationScore: string;
   vaultBalances: VaultBalances;
   zcbBalances: ZCBBalances;
-  leveragePosition?: LeveragePosition
   poolInfos: UserPoolInfos;
+  leveragePosition?: LeverageBonds; 
   //loans here idk how to get them though.
 }
 
@@ -1098,6 +1098,13 @@ export interface LeveragePosition{
   borrowedCapital: string; 
   borrowTimeStamp: string; 
   endStateBalance: string; 
+}
+
+export interface LeverageBonds{
+  [marketId : string]: {
+    debt: string; 
+    amount: string; 
+  }
 }
 
 export interface VaultBalances {

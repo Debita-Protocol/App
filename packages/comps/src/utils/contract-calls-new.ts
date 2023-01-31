@@ -1,7 +1,8 @@
 import { BigNumber as BN } from "bignumber.js";
 import {
     CoreMarketInfo, VaultInfos, CoreMarketInfos, InstrumentInfos, VaultInfo, CoreInstrumentData,
-    CoreUserState, VaultBalances, ZCBBalances, Instrument, UserPoolInfos, Collateral, UserPoolInfo
+    CoreUserState, VaultBalances, ZCBBalances, Instrument, UserPoolInfos, Collateral, UserPoolInfo,
+    LeverageBonds, 
 } from "../types";
 import { useMemo } from "react";
 import {
@@ -38,7 +39,7 @@ import SyntheticZCBPoolData from "../data/SyntheticZCBPool.json";
 import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
 import AggregatorV3InterfaceData from "../data/AggregatorV3Interface.json";
 import IRateCalculatorData from "../data/IRateCalculator.json";
-
+import LeverageManagerData from "../data/LeverageManager.json"; 
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
@@ -576,9 +577,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 gasLimit: gasEstimate.mul(2).toString(),
             }
         );
-        console.log("vaultBundle: ", vaultBundle);
-        console.log("marketBundle: ", marketBundle);
-        console.log("instrumentBundle: ", instrumentBundle);
+        // console.log("vaultBundle: ", vaultBundle);
+        // console.log("marketBundle: ", marketBundle);
+        // console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -710,7 +711,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
             }
 
             if (instr.instrument_type.toString() === "2") {
-                console.log("instr: ", instr);
+                // console.log("instr: ", instr);
                 let l = instr.poolData.collaterals.length;
                 let collaterals: Collateral[] = [];
                 for (let z=0; z < l; z++) {
@@ -906,6 +907,7 @@ export const getRammData = async (
   vaultBalances: VaultBalances;
   zcbBalances: ZCBBalances;
   poolInfos: UserPoolInfos;
+  leveragePositions: LeverageBonds; 
 }> => {
     // get reputation score
     const controller = new Contract(controller_address, ControllerData.abi, provider);
@@ -941,6 +943,17 @@ export const getRammData = async (
             shortZCB: toDisplay(shortZCBBalance.toString())
         };
     }));
+
+    let leveragePositions: LeverageBonds = {};
+    const leverageManager = new Contract(leverage_manager_address, LeverageManagerData["abi"], getProviderOrSigner(provider, account)); 
+    await Promise.all(_.map(markets, async (market, key)=>{
+        const {marketId} = market; 
+        const position = await leverageManager.leveragePosition(marketId, account); 
+        leveragePositions[key] = {
+            debt: toDisplay(position[0].toString()), 
+            amount: toDisplay(position[1].toString())
+        }
+    }))
 
     // get pool data
     let poolInfos: UserPoolInfos = {};
@@ -1044,7 +1057,7 @@ export const getRammData = async (
                     maxBorrowableContractCall
                 ]
             );
-            console.log('results', results);
+            // console.log('results', results);
             let walletBalances = {};
             let supplyBalances = {};
             let removableCollaterals = {};
@@ -1087,7 +1100,8 @@ export const getRammData = async (
         reputationScore,
         vaultBalances,
         zcbBalances,
-        poolInfos
+        poolInfos, 
+        leveragePositions
     }
 }
 

@@ -95,14 +95,11 @@ const PositionHeader = () => {
   return (
     <ul className={Styles.PositionHeader}>
     <li>type</li>
-      <li>Average Price</li>
-      
+      <li>Debt (In Underlying)</li>
+
         <li>
         Amount
-        {generateTooltip(
-          "Display values might be rounded. Dashes are displayed when liquidity is depleted.",
-          "pnltip-positionheader"
-        )}
+    
       </li> 
     
 
@@ -142,6 +139,7 @@ const PositionRow = ({
   claimable , 
   portfolio = false , 
   zcbAmount , 
+  amount2, 
 isApproved, 
 }: {
   zcbAmount?: string; 
@@ -155,7 +153,8 @@ isApproved,
   quantity?: string; 
   averagePricePurchased?:string; 
   address?: string; 
-  portfolio?: boolean; 
+  portfolio?: boolean;
+  amount2?: string;  
 isApproved?:  boolean; 
 }) => {
   const {actions: {setModal},} = useAppStatusStore(); 
@@ -176,7 +175,7 @@ return (
 
     <li >{outcome}{limitOrder!=null? limitOrder==0?" Bid" : " Ask" : ""} </li>
 
-    <li>{"-  "} </li>
+    <li>{amount2||"-"} </li>
     <li>{zcbAmount} </li>
     <li>{!portfolio?(<TinyThemeButton
     // action={() => {
@@ -537,7 +536,7 @@ export const PositionTable = ({
   const {
     seenPositionWarnings,
     actions: { updateSeenPositionWarning },
-    ramm: { reputationScore, vaultBalances, zcbBalances}
+    ramm: { reputationScore, vaultBalances, zcbBalances, leveragePositions}
 
   } = useUserStore();
   const {
@@ -550,8 +549,10 @@ export const PositionTable = ({
  
   
 
-console.log('zcbBalances', ); 
+console.log('zcbBalances',leveragePositions ); 
   let position; 
+  const debtamount = leveragePositions? leveragePositions[marketId.toString()]?.amount : 0; 
+  const debt = leveragePositions? leveragePositions[marketId.toString()]?.debt : 0;  
   return (
     <>
       <div className={Styles.PositionTable}>
@@ -566,6 +567,9 @@ console.log('zcbBalances', );
         {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
         zcbAmount = {zcbBalances[marketId]?.shortZCB }isApproved = {isApproved}
         claimable = {true} key={String(1)} hasLiquidity={true} outcome={"shortZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
+        {<PositionRow  marketId = {marketId} portfolio = {portfolioPage} 
+        zcbAmount = {debtamount}isApproved = {isApproved}
+        amount2 = {debt}claimable = {true} key={String(1)} hasLiquidity={true} outcome={"Levered LongZCB"} quantity={"sb"} averagePricePurchased={"0.1"} address={"."}/>}
         
         {false &&!portfolioPage && <PositionRow claimable= {true} limitOrder={0} key={String(2)} hasLiquidity={true} outcome={"Limit Order"} quantity={"lb"} averagePricePurchased={"0.9"} address={"."}/>}
 
