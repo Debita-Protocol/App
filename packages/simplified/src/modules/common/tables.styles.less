@@ -166,6 +166,7 @@
 }
 .PositionTable {
   .SharedTable;
+  
 }
 
 .PositionRow {
@@ -175,13 +176,21 @@
 }
 
 .ZCBPositionRow {
-  .RowHeaderSharedStyles;
-  .RowSharedStyles;
-  grid-template-columns: repeat(7, 1fr);
+  > a {
+    .RowHeaderSharedStyles;
+    .RowSharedStyles;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  &:hover {
+    background: var(--quaternary-bg);
+  }
+
 }
 
 .VaultPositionRow {
-  .RowHeaderSharedStyles;
+  > a {
+    .RowHeaderSharedStyles;
   .RowSharedStyles;
   grid-template-columns: repeat(6, 1fr);
   > li:nth-of-type(2) {
@@ -193,6 +202,12 @@
       margin-right: @size-4;
     }
   }
+  }
+  
+  &:hover {
+    background: var(--quaternary-bg);
+  }
+
 }
 
 .PositionHeader {

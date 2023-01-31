@@ -1862,7 +1862,10 @@ const useAssetGetOptions = (arr) => {
   let maxValue;
   let minValue;
   // it max and min are the same, add 1 to max and subtract 1 from min
-  if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
+  if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value) && Number(maxItem.value) === 0) {
+    maxValue = 1;
+    minValue = 0;
+  } else if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
     maxValue = Number(maxItem.value) + Number(maxItem.value)/2;
     minValue = Number(minItem.value) - Number(minItem.value)/2;
   } else if (maxItem && minItem){
@@ -1870,6 +1873,7 @@ const useAssetGetOptions = (arr) => {
     maxValue = Math.max(Number(maxItem.value) + delta/20,0);
     minValue = Math.max(Number(minItem.value) - delta/20,0);
   }
+
 
   return useMemo(() => {
     if (!maxItem || !minItem) {

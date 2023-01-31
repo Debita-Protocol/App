@@ -43,6 +43,7 @@ import { Sidebar } from "../sidebar/sidebar";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
 import { BaseSlider } from "../common/slider";
 import { Leverage } from "../common/slippage";
+import { fetchAssetSymbol } from "@augurproject/comps/build/utils/contract-calls-new";
 // const collateralLink =()=>{
 //     return( 
 //       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
@@ -287,15 +288,19 @@ export const getWinningOutcome = (ammOutcomes: AmmOutcome[], marketOutcomes: Mar
     ({ payoutNumerator }) => payoutNumerator !== null && payoutNumerator !== "0"
   );
 
+
+
+
+//   <span>
+//   {/*winningOutcome.name*/}
+//   {winningOutcome == 0 ?
+//     type == 1 ? 'Assessment remaining time: ' + remainingTime + " minutes" : 'Assessment: ' : winningOutcome == 1 ? "Approval Condition Met" : "Approved"}
+//   {winningOutcome == 2 && ConfirmedCheck}
+// </span>
 const WinningOutcomeLabel = ({ winningOutcome, type, remainingTime }) => (
   <span className={Styles.WinningOutcomeLabel}>
     <span>Instrument Status</span>
-    <span>
-      {/*winningOutcome.name*/}
-      {winningOutcome == 0 ?
-        type == 1 ? 'Assessment remaining time: ' + remainingTime + " minutes" : 'Assessment: ' : winningOutcome == 1 ? "Approval Condition Met" : "Approved"}
-      {winningOutcome == 2 && ConfirmedCheck}
-    </span>
+
     <span>
       {/*winningOutcome.name*/}
 
@@ -827,12 +832,12 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
           <li>
-            <span>Net Collateral/Required Collateral</span>
+            <span>Net/Required Collateral</span>
             {generateTooltip(
               "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
               "net"
             )}
-            <span>{totalCollateral}/{isPool ? roundDown(poolData?.saleAmount, 3) : roundDown(Number(principal) * Number(alpha), 2)}</span>
+            <span>{handleValue(totalCollateral, asset)}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
             {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
                         <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
             {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
@@ -841,7 +846,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Start Price </span>
-            <span>{roundDown(market_[Id]?.bondPool.b, 3)}</span>
+            <span>{handleValue(roundDown(market_[Id]?.bondPool.b, 3), asset)}</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
@@ -849,7 +854,7 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <li>
             <span>longZCB Price Now</span>
-            <span>{roundDown(longZCBPrice, 3)}</span>
+            <span>{handleValue(roundDown(longZCBPrice, 3), asset)}</span>
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
           </li>
 
@@ -861,7 +866,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Total amount of underlying used by the instrument  ",
               "principal"
             )}
-            <span>{roundDown(principal, 3)}</span>
+            <span>{handleValue(roundDown(principal, 3), asset)}</span>
 
             {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
           </li>
@@ -871,7 +876,7 @@ const MarketView = ({ defaultMarket = null }) => {
               "Amount of underlying the utilizer proposed the instrument would incur, when Principal was invested ",
               "yield"
             )}
-            <span>{roundDown(expectedYield, 3)}</span>
+            <span>{handleValue(roundDown(expectedYield, 3), asset)}</span>
             {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
           <li>
@@ -1074,14 +1079,35 @@ const CreditlineRequestInfo = ({
   instrument,
   vault
 }) => {
-  const { collateral, duration, collateralType, oracle, principal, expectedYield } = instrument;
-  console.log("collateral: ", collateral);
+  const { account, loginAccount } = useUserStore();
+  const { collateral, duration, collateralType, oracle, principal, expectedYield, collateralBalance } = instrument;
+
+  const [collateralSymbol, setCollateralSymbol] = useState("");
   const collateralTypeMapping = {
-    0: "liquidatable",
-    1: "nonLiquid",
+    0: "liquid",
+    1: "non liquid",
     2: "ownership",
     3: "none"
   }
+
+  useEffect(() =>{
+    const fetchSymbol = async () => {
+      return await fetchAssetSymbol(account, loginAccount.library, collateral)
+    }
+    console.log("collateralType: ", collateralType)
+    console.log("collateral: ", collateral)
+    if (collateral && Number(collateralType) === 0) {
+      console.log("fetching...")
+      fetchSymbol().then(
+        (symbol) => {
+          setCollateralSymbol(symbol)
+        }
+      )
+    }
+    
+  }, [account, loginAccount, instrument])
+
+  console.log("collateralSymbol: ", collateralSymbol)
 
   // <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
   //               </ExternalLink>
@@ -1095,10 +1121,10 @@ const CreditlineRequestInfo = ({
         <span>Duration</span>
         <span>{tenor} days</span>
       </div>
-      {/* <div>
+      <div>
           <span>Collateral Type</span>
           <span>{collateralTypeMapping[Number(collateralType)]}</span>
-        </div> */}
+        </div>
       {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Collateral</span>
@@ -1106,6 +1132,12 @@ const CreditlineRequestInfo = ({
             <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + collateral} label={"mumbai scan"} icon={true}>
             </ExternalLink>
           </span>
+        </div>
+      }
+      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
+        <div>
+          <span>Collateral Required</span>
+          <span>{handleValue(collateralBalance, "") + " " + collateralSymbol}</span>
         </div>
       }
       {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
@@ -1136,7 +1168,7 @@ const CreditlineLoanInfo = ({
   instrument,
   vault
 }) => {
-  const { collateral, duration, collateralType, oracle, principal, expectedYield, maturityDate } = instrument;
+  const { collateral, duration, collateralType, oracle, principal, expectedYield, maturityDate, principalRepayed, interestRepayed } = instrument;
   console.log("collateral: ", collateral);
   const collateralTypeMapping = {
     0: "liquidatable",
@@ -1158,32 +1190,13 @@ const CreditlineLoanInfo = ({
         <span>Expiration</span>
         <span>{expiry}</span>
       </div>
-      {/* <div>
-          <span>Collateral Type</span>
-          <span>{collateralTypeMapping[Number(collateralType)]}</span>
-        </div> */}
-      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
-        <div>
-          <span>Collateral</span>
-          <span>
-            <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + collateral} label={collateral} icon={true}>
-            </ExternalLink>
-          </span>
-        </div>
-      }
-      {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
-        <div>
-          <span>Oracle</span>
-          <span>{oracle}</span>
-        </div>
-      }
       <div>
         <span>Expected Repayment</span>
-        <span>{handleValue(expectedYield, vault.want.symbol)}</span>
+        <span>{handleValue(String(Number(expectedYield) + Number(principal)), vault.want.symbol)}</span>
       </div>
       <div>
         <span>Amount Repaid</span>
-        <span>{0}</span>
+        <span>{String(Number(principalRepayed) + Number(interestRepayed))}</span>
       </div>
     </section>
   )
@@ -1219,7 +1232,7 @@ const CreditlineSimulation = ({
         </span>
         <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
           setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
-        }} />}  /{faceValue}</span>
+        }} />}  /{handleValue(faceValue, vault.want.symbol)}</span>
         <BaseSlider
           max={Number(faceValue)}
           min={Number(0)}
@@ -1230,11 +1243,11 @@ const CreditlineSimulation = ({
       </div>
       <div>
         <span>Current LongZCB Price</span>
-        <span>{longZCBPrice}</span>
+        <span>{handleValue(longZCBPrice, vault.want.symbol)}</span>
       </div>
       <div>
         <span>Calculated LongZCB Redemption Price {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : newRedemptionPrice}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : handleValue(newRedemptionPrice, vault.want.symbol)}</span>
       </div>
       <div>
         <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>

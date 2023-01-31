@@ -28,7 +28,7 @@ import VaultFactoryData from "../data/VaultFactory.json";
 import FetcherData from "../data/Fetcher.json";
 import ERC20Data from "../data/ERC20.json";
 import ERC721Data from "../data/ERC721.json";
-import CreditlineData from "../data/CreditLine.json";
+import CreditlineData from "../data/CreditLineNew.json";
 import PoolInstrumentData from "../data/poolInstrument.json";
 import VariableInterestRateData from "../data/VariableInterestRate.json";
 import PRBTestData from "../data/PRBTest.json";
@@ -68,7 +68,12 @@ function toDisplay(n: NumStrBigNumber, p: number = 18, d: number = 4) {
 }
 const pp = BigNumber.from(10).pow(18);
 
-
+export const fetchAssetSymbol = async (account: string, library: Web3Provider, asset: string) => {
+    const signer = library.getSigner(account);
+    const assetContract = new Contract(asset, ERC20Data.abi, signer);
+    let symbol = await assetContract.symbol();
+    return symbol;
+}
 
 export const createOptionsInstrument = async (
     account, library,
@@ -577,9 +582,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 gasLimit: gasEstimate.mul(2).toString(),
             }
         );
-        // console.log("vaultBundle: ", vaultBundle);
-        // console.log("marketBundle: ", marketBundle);
-        // console.log("instrumentBundle: ", instrumentBundle);
+        console.log("vaultBundle: ", vaultBundle);
+        console.log("marketBundle: ", marketBundle);
+        console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -800,6 +805,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         oracle: instr.creditlineData.oracle,
                         loanStatus: instr.creditlineData.loanStatus,
                         collateralType: instr.creditlineData.collateralType,
+                        principalRepayed: toDisplay(instr.creditlineData.principalRepayed.toString()),
+                        interestRepayed: toDisplay(instr.creditlineData.interestRepayed.toString()),
+                        totalOwed: toDisplay(instr.creditlineData.totalOwed.toString()),
                     }
                 )
             }
@@ -1496,7 +1504,11 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     let tx;
     console.log("market manager address: ", market_manager_address);
 
-    
+    let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
+    let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
+    let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
+
+    console.log("stuff: ", await fetcher.makeEmptyVaultBundle());
     // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
@@ -1582,27 +1594,27 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
     // tx.wait();
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    tx = await controller.setLeverageManager(leverage_manager_address);
-    await tx.wait();
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    tx = await controller.setValidatorManager(validator_manager_address);
-    await tx.wait();
-    tx = await controller.setDataStore(storage_handler_address);
-    await tx.wait();
+    // tx = await controller.setMarketManager(marketManager.address);
+    // await tx.wait();
+    // tx = await controller.setVaultFactory(vaultFactory.address);
+    // await tx.wait();
+    // tx = await controller.setPoolFactory(pool_factory_address);
+    // await tx.wait();
+    // tx = await controller.setLeverageManager(leverage_manager_address);
+    // await tx.wait();
+    // tx = await controller.setReputationManager(reputation_manager_address);
+    // await tx.wait();
+    // tx = await controller.setValidatorManager(validator_manager_address);
+    // await tx.wait();
+    // tx = await controller.setDataStore(storage_handler_address);
+    // await tx.wait();
 
-    tx = await controller.verifyAddress(account); 
-    await tx.wait();
+    // tx = await controller.verifyAddress(account); 
+    // await tx.wait();
 
-    // console.log("F");
+    // // console.log("F");
 
-    await scriptSetup(account, provider);
+    // await scriptSetup(account, provider);
 }
 
 
