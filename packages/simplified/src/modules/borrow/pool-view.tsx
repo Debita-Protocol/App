@@ -209,7 +209,7 @@ const PoolView: React.FC = () => {
                                         transactionButtonText: "Add",
                                         transactionAction: async (amount) => {
                                             await addPoolCollateral(
-                                                account, loginAccount.library, asset.addres, asset.tokenId, amount, poolAddress, asset.isERC20, Number(asset.decimals)
+                                                account, loginAccount.library, asset.address, asset.tokenId, amount, poolAddress, asset.isERC20, Number(asset.decimals)
                                             )
                                         },
                                         targetDescription: {
@@ -435,7 +435,6 @@ const PoolRatesSimulator = ({ instrument, market }) => {
         }
     , [utilizationRate, borrowAPR, psu, longZCBSupply, totalSuppliedAssets, poolLeverageFactor, exchangeRate, inceptionPrice])
 
-    console.log("longZCBRates", longZCBRates)
     /**
      * 
      * what is lognZCBAPR defined as? -> growth of longZCBAPR redeemable amount for 1 longZCB over 1 year with a given util + borrow rate.
@@ -461,7 +460,6 @@ const PoolRatesSimulator = ({ instrument, market }) => {
                 <span>{longZCBRates.apr}%</span>
                 <BaseSlider disabled={true} value={longZCBRates.apr} step={0.01} max={longZCBRates.max}/>
             </div>
-
         </section>
     )
 }

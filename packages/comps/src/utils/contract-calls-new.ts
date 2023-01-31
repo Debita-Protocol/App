@@ -1285,6 +1285,7 @@ export const addPoolCollateral = async (
 ) => {
     const pool = new Contract(poolAddress, PoolInstrumentData.abi, getSigner(library, account));
     console.log("A");
+    console.log("tokenAddress: ", tokenAddress);
     if (isERC20) {
         const approved = await isERC20ApprovedSpender(account, library, tokenAddress, poolAddress, amount);
         console.log("approved: ", approved);
@@ -1301,7 +1302,8 @@ export const addPoolCollateral = async (
         tokenAddress,
         tokenId,
         new BN(amount).shiftedBy(decimals).toString(),
-        account
+        account,
+        true
     );
     tx.wait();
     return tx;
@@ -1322,7 +1324,8 @@ export const removePoolCollateral = async (
         tokenAddress,
         tokenId,
         new BN(amount).shiftedBy(decimals).toString(),
-        account
+        account,
+        true
     );
     tx.wait();
     return tx;
@@ -1359,7 +1362,8 @@ export const poolBorrow = async (
         collateralAddress,
         collateralTokenId,
         collateralIsERC20 ? new BN(collateralAmount).shiftedBy(collateralDecimals).toFixed(0) : "0",
-        account
+        account,
+        true
     );
     return tx;
 }
