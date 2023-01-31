@@ -144,6 +144,10 @@ const determineLastPrice = (sortedOutcomeTrades, startTime) => {
 };
 
 const determineLastValue = (sortedOutcomeTrades, startTime) => {
+  console.log("sortedOutcomeTrades: ", sortedOutcomeTrades)
+  console.log(
+    "startTime: ", startTime
+  )
   let lastPrice = 0;
   const index = sortedOutcomeTrades.sort((a, b) => b.timestamp - a.timestamp).findIndex((t) => startTime > t.timestamp);
   const sortTS = sortedOutcomeTrades[index]?.timestamp;
@@ -816,6 +820,7 @@ export const VaultChartSection = ({ title, vaultId, snapshots, formattedOutcomes
   const [showMore, setShowMore] = useState(false);
   console.log('snapshots: ', snapshots)
   let creationTimestamp = snapshots.length > 0 ? Number(_.minBy(_.flatten(snapshots), (item:any) => item.timestamp).timestamp) : 0;
+  console.log("creationTimestamp: ", creationTimestamp)
 
   let colors = [1,2,3];
   let gradients = [1,2,3];
@@ -878,7 +883,7 @@ export const VaultHistoryChart = ({
   // console.log all the arguments of the processVaultTimeData function
 
   const { priceTimeArray } = processVaultTimeData(snapshots,formattedOutcomes, creationTimestamp, rangeSelection);
-
+  console.log("priceTimeArray: ", priceTimeArray)
   useMemo(() => {
     const chartContainer = container.current;
     if (chartContainer) {
@@ -929,13 +934,15 @@ const processVaultTimeData = (transactions = [], formattedOutcomes, creationTime
     const sortedOutcomeTrades = trades
       .filter((t) => Number(t.outcome) === Number(outcome?.id))
       .sort((a, b) => a?.timestamp - b?.timestamp);
+
     let newLastValue = determineLastValue(sortedOutcomeTrades, startTime);
+    // console.log("sortedOutcomeTrades: ", sortedOutcomeTrades, newLastValue, startTime, formattedOutcomes);
     for (let i = 0; i < totalTicks; i++) {
       const curTick = startTime + tick * i;
       const nextTick = curTick + tick;
       const matchingTrades = sortedOutcomeTrades.filter((trade) => {
         const tradeTime = trade.timestamp;
-        return tradeTime > curTick && nextTick > tradeTime;
+        return tradeTime > curTick && nextTick >= tradeTime;
       });
       let valueToUse = newLastValue;
       let amountToUse = 0;
@@ -943,6 +950,10 @@ const processVaultTimeData = (transactions = [], formattedOutcomes, creationTime
         const FinalTradeOfPeriod = matchingTrades[matchingTrades.length - 1];
         valueToUse = FinalTradeOfPeriod.value;
         amountToUse = FinalTradeOfPeriod.amount;
+
+        if (formattedOutcomes[0].label = "exchange rate") {
+          console.log("here: ", valueToUse, amountToUse);
+        }
       }
       const nextValue = createBigNumber(valueToUse).toFixed(4);
       newArray.push({

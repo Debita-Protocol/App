@@ -614,6 +614,7 @@ export interface VaultInfo {
   marketIds: string[],
   onlyVerified: boolean,
   default_params: ParameterInfo,
+  description: string,
   // r: string,
   asset_limit: string;
   total_asset_limit: string;

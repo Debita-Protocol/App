@@ -807,6 +807,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         }
 
         vaults[vaultBundle.vaultId] = {
+            description: vaultBundle.description,
             address: vaultBundle.vault_address,
             vaultId: vaultBundle.vaultId.toString(),
             marketIds: vaultBundle.marketIds.map((id: BigNumber) => id.toString()),

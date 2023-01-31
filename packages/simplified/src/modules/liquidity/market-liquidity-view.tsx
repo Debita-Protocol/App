@@ -32,7 +32,7 @@ import {
   ApprovalHooks,
   GRAPH_QUERIES
 } from "@augurproject/comps";
-import { AddMetaMaskToken } from "../common/labels";
+import { AddMetaMaskToken, handleValue } from "../common/labels";
 import { Slippage, Leverage } from "../common/slippage";
 
 import { InstrumentInfos, VaultInfos, CoreInstrumentData, AmmOutcome, MarketInfo, Cash, LiquidityBreakdown, DataState } from "@augurproject/comps/build/types";
@@ -251,10 +251,12 @@ export const MarketLiquidityView = () => {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
 
+  const {name, description, exchangeRate, want} = vault;
+
   const vault_address = vault?.address;
   const underlying_address = vault?.want.address;
   const underlyingSymbol = vault?.want.symbol;
-  const exchangeRate = Number(vault.totalShares) == 0 ? 1 : Number(vault.totalAssets) / Number(vault.totalShares);
+  // const exchangeRate = Number(vault.totalShares) == 0 ? 1 : Number(vault.totalAssets) / Number(vault.totalShares);
   function roundDown(number, decimals) {
     decimals = decimals || 0;
     return (Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals));
@@ -280,24 +282,23 @@ export const MarketLiquidityView = () => {
           [Styles.isClosed]: !showMoreDetails,
         })}
       >
-        <h4>Vault Details</h4>
-        <p>{"Vault/Underlying Tokens"}</p>
+        <h4>{name}</h4>
+        <h5>{description}</h5>
+        <p>{"Vault/Underlying Tokens: "}</p>
         <AddMetaMaskToken tokenSymbol={"Vault" + vaultId} tokenAddress={vault_address} />
         <AddMetaMaskToken tokenSymbol={underlyingSymbol} tokenAddress={underlying_address} />
-        {(
+        {/* {(
           <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
             {showMoreDetails ? "Read Less" : "Read More"}
           </button>
         )}
-        <p>{"details"}</p>
-
-
+        <p>{"details"}</p> */}
 
         <ul className={Styles.StatsRow}>
           <li>
             <span>TVL</span>
-            <span>{"In USD: "}{formatDai(vault.totalAssets || "0.00").full}</span>
-            <span>{vault.totalAssets}{" Underlying"}</span>
+            <span>{"In USD: "}{handleValue(convertToUSD(vault.totalAssets, want.symbol, prices) || "0.00")}</span>
+            <span>{handleValue(vault.totalAssets, want.symbol)}</span>
           </li>
           <li>
             <span>(Estimated) APR</span>
@@ -344,7 +345,7 @@ export const MarketLiquidityView = () => {
               "Total amount of insurance in vault's underlying. Loss from instruments will be first deducted from this amount",
               "firstloss"
             )}
-            <span>{roundDown(vault.totalProtection, 2)
+            <span>{handleValue(String(roundDown(vault.totalProtection, 2)), want.symbol)
             }</span>
 
             {/*<span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>*/}
@@ -365,7 +366,7 @@ export const MarketLiquidityView = () => {
         
       <MintForm {...{
         vaultId, selectedAction, setSelectedAction, amount, setAmount,
-        underlying_address, exchangeRate
+        underlying_address, exchangeRate: Number(exchangeRate)
       }} />
       </section>
 
@@ -686,18 +687,21 @@ const MintForm = ({
     setOutcomes([...newOutcomes]);
   };
 
-  useEffect(async () => {
-    if (account) {
+  useEffect(() => {
+    const fetchAllowance =  async () => {
       const maxUint = 2 ** 255
-
       const allowance = await getERC20Allowance(
         vaults[vaultId]?.want.address,
         loginAccount.library,
         account,
         vaults[vaultId]?.address
       )
-      if (allowance && Number(allowance) >= maxUint)
+      if (allowance && Number(allowance) >= maxUint) {
         setVaultAllowance(true);
+      }
+    }
+     if (account) {
+      fetchAllowance();
     }
   }, [account, amount, vaults, instruments])
 
@@ -791,7 +795,7 @@ const MintForm = ({
           heading={"Rewind Amount"}
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
-          initialAmount={amount}
+          initialAmount={""}
           maxValue={userMaxAmount}
           chosenCash={isRemove ? SHARES : chosenCash}
           updateCash={updateCash}
@@ -845,7 +849,7 @@ const MintForm = ({
             heading={!isMint ? "Deposit Amount" : "Redeem Amount"}
             ammCash={cash}
             updateInitialAmount={(amount) => setAmount(amount)}
-            initialAmount={amount}
+            initialAmount={""}
             maxValue={userMaxAmount}
             chosenCash={isRemove ? SHARES : !isMint ? chosenCash : SHARES}
             updateCash={updateCash}
@@ -1208,7 +1212,7 @@ const LiquidityForm = ({
           heading="Deposit Amount"
           ammCash={cash}
           updateInitialAmount={(amount) => setAmount(amount)}
-          initialAmount={amount}
+          initialAmount={""}
           maxValue={userMaxAmount}
           chosenCash={isRemove ? SHARES : chosenCash}
           updateCash={updateCash}
@@ -1733,8 +1737,8 @@ const ChartsSection = ({ vault, prices }) => {
   let options = useAssetGetOptions(assetArray);
   console.log("exchangeRateArray: ", exchangeRateArray);
   // exchange rate chart
-  let optionsExchange = useExchangeGetOptions(exchangeRateArray);
-  let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
+  // let optionsExchange = useExchangeGetOptions(exchangeRateArray);
+  // let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
 
   return (<section>
     {loading ? (
@@ -1786,7 +1790,7 @@ const ExchangeChartSection = ({ vault, prices }) => {
   let exchangeRateArray = [];
   let assetArray = [];
   let ratesArray = [];
-  console.log("data: ", data);
+  console.log("data Exchange: ", data);
   data && data.vault && _.forEach(data.vault.snapshots, (item) => {
     let timestamp = item.timestamp;
     exchangeRateArray.push({
