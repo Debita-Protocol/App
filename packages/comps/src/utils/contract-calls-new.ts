@@ -998,6 +998,8 @@ export const getRammData = async (
                 }
             });
 
+            console.log("walletBalancesContractCalls", walletBalancesContractCalls);
+
             const supplyBalancesContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
                 let id = utils.solidityKeccak256(["address", "uint256"], [c.address, c.tokenId]);
                 const methodParameters = c.isERC20 ? [id, account] : [id];
@@ -1059,20 +1061,19 @@ export const getRammData = async (
             ];
 
             const { results }: ContractCallResults = await multicall.call(
-                [...walletBalancesContractCalls,
+                [
+                ...walletBalancesContractCalls,
                 ...supplyBalancesContractCalls,
                 ...userSnapshotContractCall,
                 ...removableCollateralContractCalls,
                     maxBorrowableContractCall
                 ]
             );
-            // console.log('results', results);
             let walletBalances = {};
             let supplyBalances = {};
             let removableCollaterals = {};
 
             _.forEach(instrument.collaterals, (c) => {
-
                 let walletBalance;
                 let supplyBalance;
                 let removableCollateral = toDisplay(results["removable-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
@@ -1502,17 +1503,16 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
     const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
-    const cash = new Contract(usdc_address, ERC20Data.abi, signer);
+    const cash = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
+    const nft = new Contract("0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6", TestNFTData.abi, signer);
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
-    console.log("market manager address: ", market_manager_address);
 
-    let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
-    let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
-    let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
+    // let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
+    // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
+    // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 
-    console.log("stuff: ", await fetcher.makeEmptyVaultBundle());
     // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
     // console.log("STATIC:",await option.instrumentStaticSnapshot());
     //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
@@ -1575,19 +1575,19 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // console.log("collateralData", collateralData);
 
     // vault.getInstrumentData();
-//     let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
-// "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
-// "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
-// "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
-// "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
-// "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
-// "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
-// "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+"0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+"0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+"0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+"0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+"0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+"0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+"0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
     
-//     for (let i=0; i < early_managers.length; i++) {
-//         let tx = await controller.verifyAddress(early_managers[i]);
-//         await tx.wait();
-//     }
+    for (let i=0; i < early_managers.length; i++) {
+        let tx = await controller.verifyAddress(early_managers[i]);
+        await tx.wait();
+    }
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();
@@ -1616,7 +1616,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
-    // // console.log("F");
+    // console.log("F");
 
     // await scriptSetup(account, provider);
 }

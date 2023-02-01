@@ -1735,7 +1735,9 @@ const ChartsSection = ({ vault, prices }) => {
   })
 
   let options = useAssetGetOptions(assetArray);
-  console.log("exchangeRateArray: ", exchangeRateArray);
+
+  console.log("assetArray: ", assetArray);
+  console.log("options: ", options);
   // exchange rate chart
   // let optionsExchange = useExchangeGetOptions(exchangeRateArray);
   // let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;

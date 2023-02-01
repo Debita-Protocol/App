@@ -128,7 +128,6 @@ const ModalPoolBorrowerAction = (
     }}/>);
 
     const borrowAction = useCallback(async() => {
-        console.log("collateral: ", collateral);
         if (collateral === "") {
             poolBorrow(account, loginAccount.library, amount, depositAmount, constants.AddressZero, "0", false, 0, instrument.address)
             .then((response) => {

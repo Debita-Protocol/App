@@ -883,7 +883,6 @@ export const VaultHistoryChart = ({
   // console.log all the arguments of the processVaultTimeData function
 
   const { priceTimeArray } = processVaultTimeData(snapshots,formattedOutcomes, creationTimestamp, rangeSelection);
-  console.log("priceTimeArray: ", priceTimeArray)
   useMemo(() => {
     const chartContainer = container.current;
     if (chartContainer) {
@@ -950,10 +949,6 @@ const processVaultTimeData = (transactions = [], formattedOutcomes, creationTime
         const FinalTradeOfPeriod = matchingTrades[matchingTrades.length - 1];
         valueToUse = FinalTradeOfPeriod.value;
         amountToUse = FinalTradeOfPeriod.amount;
-
-        if (formattedOutcomes[0].label = "exchange rate") {
-          console.log("here: ", valueToUse, amountToUse);
-        }
       }
       const nextValue = createBigNumber(valueToUse).toFixed(4);
       newArray.push({
