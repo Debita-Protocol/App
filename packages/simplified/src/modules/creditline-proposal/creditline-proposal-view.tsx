@@ -253,7 +253,7 @@ const CreditLineRequestForm = () => {
 
   const buttonProps: BaseThemeButtonProps = {
     text: "Still Prototyping... sry!",
-    action: null //createCreditline
+    action: null//createCreditline
   }
 
   return (

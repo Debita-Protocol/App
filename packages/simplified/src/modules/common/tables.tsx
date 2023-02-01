@@ -30,6 +30,7 @@ import getUSDC from "../../utils/get-usdc";
 import { useSimplifiedStore } from "../stores/simplified";
 import { handleValue } from "./labels";
 import { ConfirmedCheck, Icon_Mapping, PENDINGIcon } from "@augurproject/comps/build/components/common/icons";
+import { VaultLink } from "@augurproject/comps/build/utils/links/links";
 const {
   LabelComps: { MovementLabel, generateTooltip, WarningBanner, ReportingStateLabel },
   PaginationComps: { sliceByPage, Pagination, useQueryPagination },
@@ -1467,6 +1468,7 @@ const ZCBPositionRow = ({
     approved: boolean,
     longPrice: string,
     shortPrice: string,
+    marketId: string
   };
   hasLiquidity: boolean;
   key?: string;
@@ -1474,13 +1476,15 @@ const ZCBPositionRow = ({
   const pending = <img src={PENDINGIcon} style={{width: 30, height: 30}} alt="pending" />;
   return (
     <ul className={Styles.ZCBPositionRow}>
-      <li>{position.name}</li>
-      <li>{position.approved ? ConfirmedCheck : "-"}</li>
-      <li>{position.resolved ? ConfirmedCheck : "-" }</li>
-      <li>{position.long}</li>
-      <li>{position.short}</li>
-      <li>{handleValue(position.longPrice)}</li>
-      <li>{handleValue(position.shortPrice)}</li>
+      <MarketLink id={position.marketId}>
+        <li>{position.name}</li>
+        <li>{position.approved ? ConfirmedCheck : "-"}</li>
+        <li>{position.resolved ? ConfirmedCheck : "-" }</li>
+        <li>{position.long}</li>
+        <li>{position.short}</li>
+        <li>{handleValue(position.longPrice)}</li>
+        <li>{handleValue(position.shortPrice)}</li>
+      </MarketLink>
     </ul>
   );
 }
@@ -1494,6 +1498,7 @@ interface ZCBPosition {
   visible: boolean;
   approved: boolean;
   resolved: boolean;
+  marketId: string;
 }
 
 export const ZCBPositionTable = ({
@@ -1561,6 +1566,7 @@ const VaultPositionRow = ({
   )
   return (
     <ul className={Styles.VaultPositionRow}>
+      <VaultLink id={position.vaultId}>
       <li>{position.name}</li>
       <li>
         <span>{position.symbol}</span>
@@ -1570,6 +1576,7 @@ const VaultPositionRow = ({
       <li>{position.exchangeRate}</li>
       <li>{handleValue(position.totalEstimatedAPR)}</li>
       <li>{position.shares}</li>
+      </VaultLink>
     </ul>
   );
 }

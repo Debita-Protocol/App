@@ -614,6 +614,7 @@ export interface VaultInfo {
   marketIds: string[],
   onlyVerified: boolean,
   default_params: ParameterInfo,
+  description: string,
   // r: string,
   asset_limit: string;
   total_asset_limit: string;
@@ -834,6 +835,12 @@ export interface EstimateTradeResult {
   priceImpact: string;
   outcomeShareTokensIn?: string[];
   maxSellAmount?: string;
+
+
+  debt?: string; 
+  totalUnderlyingPosition?: string; 
+  totalBondPosition?: string; 
+
 }
 
 export interface PriceTimeSeriesData {
@@ -1076,8 +1083,8 @@ export interface CoreUserState {
   reputationScore: string;
   vaultBalances: VaultBalances;
   zcbBalances: ZCBBalances;
-  leveragePosition?: LeveragePosition
   poolInfos: UserPoolInfos;
+  leveragePosition?: LeverageBonds; 
   //loans here idk how to get them though.
 }
 
@@ -1092,6 +1099,13 @@ export interface LeveragePosition{
   borrowedCapital: string; 
   borrowTimeStamp: string; 
   endStateBalance: string; 
+}
+
+export interface LeverageBonds{
+  [marketId : string]: {
+    debt: string; 
+    amount: string; 
+  }
 }
 
 export interface VaultBalances {

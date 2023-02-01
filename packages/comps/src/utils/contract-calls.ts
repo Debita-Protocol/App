@@ -126,7 +126,8 @@ import {
   creditLine_address, 
   reputation_manager_address, 
   leverageModule_address,
-  weth_address
+  weth_address, 
+  leverage_manager_address
 } from "../data/constants";
 
 
@@ -144,7 +145,7 @@ import marketmanagerabi from "../data/marketmanager.json";
 import reputationManagerAbi from "../data/ReputationManager.json"; 
 import leverageModuleAbi from "../data/leverageModule.json"; 
 import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
-
+import leverageManagerAbi from "../data/LeverageManager.json"; 
 
 const precision = 1e10; 
 const pp = BigNumber.from(10).pow(18);
@@ -286,10 +287,11 @@ export async function estimateTrade  (
   library: Web3Provider, 
   marketId: number, 
   amount: string, 
+  leverageFactor: number, 
   isUnderlying: boolean = false, 
   isShort: boolean, 
   open: boolean, 
-  issue:boolean = false ,
+  issue:boolean = false 
 
   ) : Promise<EstimateTradeResult|string>{
 
@@ -304,6 +306,40 @@ export async function estimateTrade  (
   let maxProfit; 
   let ratePerCash; 
   let priceImpact; 
+  if(leverageFactor>1){
+   const scaledLeverage = pp.mul(Number(leverageFactor)*precision).div(precision); 
+   const leverageManager = new ethers.Contract(
+      leverage_manager_address,leverageManagerAbi["abi"], getProviderOrSigner(library, account) );
+    result = await leverageManager.callStatic.buyBondLevered(marketId, scaledAmount, pp.mul(100), scaledLeverage)
+        .catch((e)=>{
+        console.log(e); 
+        error = e
+      }); 
+      if(error!=null){
+        return error?.data?.message
+      }else{
+
+
+        const tokensIn = result[0]; 
+        const tokensOut = result[1]; 
+
+  // const tokensIn
+        const avgPrice = tokensIn.mul(pp).div(tokensOut); 
+        console.log('tokensin', tokensIn.toString()/1e18); 
+        return {
+        outputValue: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))),
+        tradeFees: "0", 
+        averagePrice: trimDecimalValue(sharesOnChainToDisplay(String(avgPrice.toString() || "0"))),
+        maxProfit, 
+        ratePerCash,
+        priceImpact,
+        debt: trimDecimalValue(String( ((leverageFactor -1) *Number(amount))/leverageFactor)), 
+        totalUnderlyingPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensIn.toString() || "0"))), 
+        totalBondPosition: trimDecimalValue(sharesOnChainToDisplay(String(tokensOut.toString() || "0"))), 
+      };
+    }
+
+  }
   if(issue){
     console.log('isissue', issue)
     result = await marketmanager.callStatic.issuePoolBond(marketId,scaledAmount)
@@ -410,9 +446,26 @@ export async function tradeZCB(
   long: boolean, 
   close: boolean, 
   issue:boolean ,
+  leverageFactor : number,
   slippageLimit: number = 1, 
   underlyingAddress: string = "", 
   ): Promise<TransactionResponse>{
+    const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
+  let tx;
+  console.log('leverageFactor????', leverageFactor); 
+
+  if(leverageFactor > 1){
+    const scaledLeverage = pp.mul(leverageFactor * precision).div(precision); 
+   const leverageManager = new ethers.Contract(
+      leverage_manager_address,leverageManagerAbi["abi"], getProviderOrSigner(library, account) );
+   if(issue) 
+   tx = await leverageManager.issuePerpBondLevered(marketId, scaledAmount, scaledLeverage); 
+   else tx = await leverageManager.buyBondLevered(marketId, scaledAmount, pp.mul(slippageLimit*100), scaledLeverage); 
+       
+
+   return tx; 
+       
+  }
   const controller = new ethers.Contract(controller_address,
     controllerabi["abi"], getProviderOrSigner(library, account)
     );
@@ -422,10 +475,7 @@ export async function tradeZCB(
   const collateral = new ethers.Contract(underlyingAddress, cashabi["abi"], getProviderOrSigner(library, account)); 
   const marketmanager = new ethers.Contract(market_manager_address, 
   marketmanagerabi["abi"], getProviderOrSigner(library, account));
-  const scaledAmount = pp.mul(Number(amount)*precision).div(precision); 
-  console.log('issue???', issue, marketId); 
   // await (await collateral.approve(market_manager_address, pp.mul(1000000000000))).wait(); 
-  let tx;
   if(issue){
     console.log('issue???', marketId); 
     tx = await marketmanager.issuePoolBond( marketId, scaledAmount); 
@@ -513,10 +563,10 @@ export async function setUpExampleController(account: string, library: Web3Provi
   // await controller.setVaultFactory(vault_factory_address);
   // await controller.setPoolFactory(pool_factory_address); 
   // await controller.setReputationManager(reputation_manager_address); 
-
-  const reputation = new ethers.Contract(reputation_manager_address, 
-    reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
-  await reputation.incrementScore(account, pp);
+  await controller.setLeverageManager(leverage_manager_address); 
+  // const reputation = new ethers.Contract(reputation_manager_address, 
+  //   reputationManagerAbi["abi"], getProviderOrSigner(library, account)); 
+  // await reputation.incrementScore(account, pp);
   // await reputation.incrementScore("0x70997970C51812dc3A010C7d01b50e0d17dc79C8", pp);
 
   // await controller.testVerifyAddress(); 
