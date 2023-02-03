@@ -176,13 +176,13 @@ const CreditLineRequestForm = () => {
       collateralBalance,
       // instrumentAddress
     )) {
-      console.log("creating instrument");
+      // console.log("creating instrument");
       let _principal = new BN(principal).shiftedBy(18).toFixed(0);
-      console.log("principal: ", _principal);
+      // console.log("principal: ", _principal);
       let _interest = new BN(interest).shiftedBy(18).toFixed(0);
-      console.log("interes: ", _interest);
-      console.log("collateral type: ", collateralType);
-      console.log("name: ", formatBytes32String(name));
+      // console.log("interes: ", _interest);
+      // console.log("collateral type: ", collateralType);
+      // console.log("name: ", formatBytes32String(name));
       if (collateralType === "3") {
         try {
           let instrument_address = await createCreditLineInstrument(
@@ -248,8 +248,7 @@ const CreditLineRequestForm = () => {
       value: "3"
     }
   ]
-
-
+  
 
   const buttonProps: BaseThemeButtonProps = {
     text: "Still Prototyping... sry!",

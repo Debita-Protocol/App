@@ -2,8 +2,13 @@ import React from "react";
 import DaiIcon from "../../assets/icon/dai.svg"
 import EthIcon2 from "../../assets/icon/eth.svg"
 import UsdcIcon2 from "../../assets/icon/usdc.svg"
+import _WhiteArrows from "../../assets/icon/noun-two-arrows-1136526-FFFFFF.svg";
+import _BlackArrows from "../../assets/icon/noun-two-arrows-1136526.svg";
 
 import PendingIcon from "../../assets/icon/pending-svgrepo-com.svg"
+
+export const BlackArrows =  _BlackArrows;
+export const WhiteArrows = _WhiteArrows;
 
 export const PENDINGIcon  = PendingIcon;
 

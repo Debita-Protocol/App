@@ -1,0 +1,46 @@
+@import (reference) '~assets/styles/shared';
+
+
+.ReputationBoardView {
+    display: flex;
+    padding: @size-40 @size-88 @size-48;
+    flex-direction: column;
+    align-items: center;
+    > h3 {
+        margin-bottom: @size-24;
+        font-size: @size-30;
+        font-weight: 600;
+    }
+}
+
+.LeaderBoard {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+    > thead {
+        display: table-header-group;
+        vertical-align: middle;
+        border-color: inherit;
+        > tr {
+            > th{
+                font-size: @size-20;
+                font-weight: 600;
+                color: var(--secondary-text);
+                padding: @size-16 @size-24;
+            }
+        }
+    }
+    > tbody {
+        > tr {
+            > td{
+                padding: @size-16 @size-24;
+                border-bottom: 0.1px dashed var(--primary-text);
+            }
+        }
+
+        > tr:nth-child(even) {
+            background-color: var(--primary-bg);
+        }
+    }
+}
