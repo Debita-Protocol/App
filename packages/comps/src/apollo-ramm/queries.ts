@@ -220,6 +220,8 @@ export const GET_MANAGER_SCORES = gql`
         managers(first: $amount, orderBy: reputationScore, orderDirection: desc) {
             address: id
             reputationScore
+            lastUpdated
+            delta
         }
     }
 `

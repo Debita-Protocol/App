@@ -24,6 +24,8 @@ import {
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurproject/comps/build/types";
 import { Slippage,Leverage, LimitOrderSelector} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
+import { AddMetaMaskToken } from "modules/common/labels";
+
 const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,
   //estimateZCBBuyTrade, 
@@ -74,6 +76,7 @@ interface InfoNumbersProps {
 }
 
 export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
+  console.log("InfoNumbers", infoNumbers)
   return (
     <div
       className={classNames(Styles.OrderInfo, {
@@ -100,31 +103,51 @@ export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
 
 const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult | null, cash: Cash) => {
   const isLeverage = Number(breakdown?.debt)>0; 
-  return [
-    isLeverage&&{
-      label: "Total Underlying to pay", 
-      value : (Number(breakdown?.totalUnderlyingPosition)>0 
-        ? formatSimpleShares(Number(breakdown?.totalUnderlyingPosition) - Number(breakdown?.debt) ||0).full : "-"), 
-      tooltipText: "Total Underlying I am depositing for this leveraged position",
-      tooltipKey: "pay",}, 
-    isLeverage &&
-    {
-      label: "Total Underlying Position", 
-      value: (Number(breakdown?.totalUnderlyingPosition)>0 ? formatSimpleShares(breakdown.totalUnderlyingPosition ||0).full: "-" ), 
-      tooltipText: "How much total position, denominated in underlying, am I getting", 
-      tooltipKey: "Underlying Position"
-    }, 
-    isLeverage &&
-    {
-      label: "Total Underlying Debt", 
-      value: (Number(breakdown?.debt)>0 ? breakdown.debt : "-" )
-    }, 
-    isLeverage&&
-    {
-      label: "Total ZCB Position", 
-      value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
-    }, 
+  if (isLeverage) {
+    return [
+      {
+        label: "Total Underlying to pay", 
+        value : (Number(breakdown?.totalUnderlyingPosition)>0 
+          ? formatSimpleShares(Number(breakdown?.totalUnderlyingPosition) - Number(breakdown?.debt) ||0).full : "-"), 
+        tooltipText: "Total Underlying I am depositing for this leveraged position",
+        tooltipKey: "pay",}, 
 
+      {
+        label: "Total Underlying Position", 
+        value: (Number(breakdown?.totalUnderlyingPosition)>0 ? formatSimpleShares(breakdown.totalUnderlyingPosition ||0).full: "-" ), 
+        tooltipText: "How much total position, denominated in underlying, am I getting", 
+        tooltipKey: "Underlying Position"
+      }, 
+
+      {
+        label: "Total Underlying Debt", 
+        value: (Number(breakdown?.debt)>0 ? breakdown.debt : "-" )
+      }, 
+      {
+        label: "Total ZCB Position", 
+        value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
+      }, 
+  
+      {
+        label: "Average Price",
+        value: !isNaN(Number(breakdown?.averagePrice))
+          ? formatCashPrice(breakdown?.averagePrice || 0, cash?.name).full
+          : "-",
+        tooltipText: AVG_PRICE_TIP,
+        tooltipKey: "averagePrice",
+      },
+      {
+        label: "Reputation Gains",
+        value: "-",
+      },
+      {
+        //label: `Estimated Fees (${cash.name})`,
+        label: `Estimated Fees`,
+        value: !isNaN(Number(breakdown?.tradeFees)) ? formatCash(breakdown?.tradeFees || 0, cash?.name).full : "-",
+      }, 
+    ]
+  }
+  return [
     {
       label: "Average Price",
       value: !isNaN(Number(breakdown?.averagePrice))
@@ -137,10 +160,10 @@ const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult
       label: isUnderlying? "Estimated ZCB returned": "Estimated Underlying required",
       value: !isNaN(Number(breakdown?.outputValue)) ? formatSimpleShares(breakdown?.outputValue || 0).full : "-",
     },
-    // {
-    //   label: "Estimated Returns",
-    //   value: !isNaN(Number(breakdown?.maxProfit)) ? formatCash(breakdown?.maxProfit || 0, cash?.name).full : "-",
-    // },
+    {
+      label: "Reputation Gains",
+      value: "-",
+    },
     {
       //label: `Estimated Fees (${cash.name})`,
       label: `Estimated Fees`,
@@ -246,6 +269,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
 } = useDataStore2()
 
   const vaultId = market_[marketId]?.vaultId; 
+  const longZCB_ad = market_[marketId]?.bondPool?.longZCB?.address;
+  const shortZCB_ad = market_[marketId]?.bondPool?.shortZCB?.address;
   const underlying_address = vaults[vaultId]?.want.address; 
   const underlying_name = vaults[vaultId]?.want.name; 
 
@@ -263,7 +288,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
 
   } = useUserStore();
   const [orderType, setOrderType] = useState(BUY);
-  const [selectedOutcome, setSelectedOutcome] = useState(initialSelectedOutcome);
+  
   const [breakdown, setBreakdown] = useState<EstimateTradeResult | null>(null);
   const [isLimit, setIsLimit] = useState(false); 
   const [isUnderlying, setIsUnderlying] = useState(true); 
@@ -275,6 +300,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const isPool = instruments[marketId]?.isPool; 
 
   const outcomes = getOutcomes(market_[marketId]?.bondPool.longZCBPrice, isPool);
+
+  const [selectedOutcome, setSelectedOutcome] = useState(outcomes[0]);
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
   const ammCash = getUSDC(cashes);
@@ -584,6 +611,9 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
     //     });
     //   });
   };
+
+  // console.log("selectedOutcomeHERE: ", selectedOutcome);
+  // console.log("outcomesHERE: ", outcomes);
   const getRate = (): React.Fragment | null => {
     const priceImpact = formatPercent(breakdown?.priceImpact);
     const shares = !isNaN(Number(breakdown?.ratePerCash))
@@ -624,12 +654,6 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
             setAmount("");
           }}
         />
-     {isLogged && isNotVerified  &&(
-          <SecondaryThemeButton 
-          text = {"Test Verify"}
-          action = {testVerify}
-          />
-          )}
         <div>
           <span>Selling Fee: {formatPercent(amm?.feeInPercent).full}</span>
           <span>Budget: 1000</span>
@@ -669,6 +693,11 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           marketFactoryType={amm?.market?.marketFactoryType}
           isGrouped={amm?.market?.isGrouped}
         />}
+        <div>
+          <AddMetaMaskToken tokenSymbol={"longZCB"} tokenAddress={longZCB_ad} />
+          {!isPool && <AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />}
+        </div>
+
         {/*<TinyThemeButton
           action={toggleUnderlying}
           text={!isUnderlying?"Specify in Underlying":"Specify in ZCB"}/>*/}
@@ -712,10 +741,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           disabled = {!canbuy}
           rate={getRate()}
           isBuy={orderType === BUY}
-        />)
-
-
-        }
+        />)}
         {!isLimit && !isIssue && false&& <Slippage />}
         <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>
         {/* {isBuy && <Slippage />} */}

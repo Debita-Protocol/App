@@ -779,7 +779,4 @@ export const PositionsView = ({
       {liquidities?.length === 0 && !marketId && tableView === LIQUIDITY && <span>No liquidity to show</span>*/}
     </div>
   );
-
 }
-
-

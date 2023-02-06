@@ -29,9 +29,10 @@ const {
   ButtonComps: { TinyThemeButton },
 } = Components;
 
-export const handleValue = (value, cashName = USDC) =>
+export const handleValue = (value, cashName = USDC, opts={}) =>
   formatCash(value, cashName, {
     bigUnitPostfix: true,
+    ...opts
   }).full;
 
 export const AppViewStats = ({ portfolioPage = false, small = false, liquidity = false, trading = false }) => {
