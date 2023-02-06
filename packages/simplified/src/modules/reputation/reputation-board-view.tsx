@@ -6,6 +6,7 @@ import { useQuery } from "@apollo/client";
 import Styles from "./reputation-board-view.styles.less"
 import { GRAPH_QUERIES } from "@augurproject/comps";
 import { BlackArrows, WhiteArrows } from "@augurproject/comps/build/components/common/icons";
+import moment from "moment";
 
 // subgraph managers -> 
 const ReputationView = () => {
@@ -50,6 +51,14 @@ const LeaderBoard = ({ managers }) => {
                 </thead>
                 <tbody>
                     {managers?.map((manager, i) => {
+                        console.log("manager: ", manager.lastUpdated);
+                        let lastUpdated = moment(Number(manager.lastUpdated) * 1000);
+                        let now = moment()
+
+
+                        let delta = now.unix() - lastUpdated.unix() > 86400 ? "-" : Number(manager.delta) < 0 ? 
+                            "-" + manager.delta : "+" + manager.delta;
+
                         return (
                             <tr key={manager.address}>
                                 <td>
@@ -64,7 +73,7 @@ const LeaderBoard = ({ managers }) => {
                                 </td>
                                 <td>
                                     <div>
-                                    2/1/2023
+                                    {lastUpdated.format("MMM D YY")}
                                     </div>
                                 </td>
                                 <td>
@@ -74,7 +83,7 @@ const LeaderBoard = ({ managers }) => {
                                 </td>
                                 <td>
                                     <span>
-                                        +10
+                                        {delta}
                                     </span>
                                 </td>
                             </tr>

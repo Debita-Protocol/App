@@ -100,6 +100,30 @@ export const MarketLink = ({ id, dontGoToMarket, children }: MarketLinkProps) =>
   );
 };
 
+export const InstrumentLink = ({ id, label, path, paramName }) => {
+  return (
+    <>
+      
+      <Link
+        data-testid={`link-${id}`}
+        to={
+          {
+            pathname: makePath(path),
+            search: makeQuery({
+              [paramName]: id,
+            }),
+          }
+        }
+      >
+        <span>
+          {label}
+        </span>
+      </Link>
+      
+    </>
+  );
+};
+
 export const BorrowerLoanLink = ({ id, dontGoToMarket, children }: MarketLinkProps ) => {
   return (
     <>

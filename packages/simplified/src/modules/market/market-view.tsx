@@ -40,10 +40,12 @@ import makePath from "@augurproject/comps/build/utils/links/make-path";
 import { MARKETS } from "modules/constants";
 import { Link } from "react-router-dom";
 import { Sidebar } from "../sidebar/sidebar";
-import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
+import { ExternalLink, InstrumentLink } from "@augurproject/comps/build/utils/links/links";
 import { BaseSlider } from "../common/slider";
 import { Leverage } from "../common/slippage";
 import { fetchAssetSymbol } from "@augurproject/comps/build/utils/contract-calls-new";
+import { TabContent, TabNavItem } from "modules/common/tabs";
+import { convertOnChainSharesToDisplayShareAmount } from "@augurproject/comps/build/utils/format-number";
 // const collateralLink =()=>{
 //     return( 
 //       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
@@ -640,7 +642,6 @@ const MarketView = ({ defaultMarket = null }) => {
   const description1 = "This is a Zero Coupon Bond (ZCB) market for  " + "fuse pool #3, with a linear bonding curve AMM." +
     " Managers who buy these ZCB will hold a junior tranche position and outperform passive vault investors. "
 
-
   return (
     <div className={Styles.MarketView}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
@@ -651,8 +652,13 @@ const MarketView = ({ defaultMarket = null }) => {
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
           <RammCategoryLabel big text={instrumentTypeWord} />
+          <div>
+            {!!instruments[Id]?.name && <h1>{instruments[Id]?.name}</h1>}
+            {isPool && <InstrumentLink id={instruments[Id]?.marketId} path={"pool"} label={"To Pool"} paramName={"id"}/>}
+          </div>
         </div>
-        {!!instruments[Id]?.name && <h1>{instruments[Id]?.name}</h1>}
+
+
         { /*<p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>*/}
 
         {/* <span>Instrument Type: {instrumentTypeWord}</span> */}
@@ -832,19 +838,6 @@ const MarketView = ({ defaultMarket = null }) => {
           </li>
 
           <li>
-            <span>Net/Required Collateral</span>
-            {generateTooltip(
-              "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
-              "net"
-            )}
-            <span>{handleValue(totalCollateral, asset)}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
-            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
-                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
-            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
-          </li>
-
-
-          <li>
             <span>longZCB Start Price </span>
             <span>{handleValue(roundDown(market_[Id]?.bondPool.b, 3), asset)}</span>
 
@@ -860,6 +853,18 @@ const MarketView = ({ defaultMarket = null }) => {
 
         </ul>
         {!isPool ? (<ul className={Styles.StatsRow}>
+          <li>
+            <span>Net/Required Collateral</span>
+            {generateTooltip(
+              "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
+              "net"
+            )}
+            <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
+            {/*<span>{formatDai(totalCollateral/4.2/1e18  || "0.00").full}</span>
+                        <span>{formatDai(principal/5/1e18 || "0.00").full}</span> */}
+            {/* <span>{marketHasNoLiquidity ? "-" : formatDai(storedCollateral/1000000 || "0.00").full}</span> */}
+          </li>
+
           <li>
             <span>Principal </span>
             {generateTooltip(
@@ -879,17 +884,17 @@ const MarketView = ({ defaultMarket = null }) => {
             <span>{handleValue(roundDown(expectedYield, 3), asset)}</span>
             {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
           </li>
-          <li>
+          {/* <li>
             <span>Duration(days) </span>
             <span>{roundDown(duration / 86400, 3)}</span>
-          </li>
+          </li> */}
 
-          <li>
+          {/* <li>
             <span>Start Time</span>
             <span>{timeConverter(market_[Id]?.creationTimestamp)}</span>
 
-            {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
-          </li>
+            <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+          </li> */}
 
         </ul>)
           :
@@ -910,13 +915,13 @@ const MarketView = ({ defaultMarket = null }) => {
               <span>Manager Sale Amount </span>
               <span>{poolData?.saleAmount}</span>
             </li>
-
+            {/* 
             <li>
               <span>Start Date</span>
               <span>{timeConverter(market_[Id]?.creationTimestamp)}</span>
 
-              {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
-            </li>
+              <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
+            </li> */}
 
           </ul>)
         }
@@ -973,7 +978,7 @@ const MarketView = ({ defaultMarket = null }) => {
         <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
         {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
         lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
-        {!loading && data.market && Object.entries(market_).length > 0 && (
+        {!loading && data.market && instrumentTypeWord !== "Creditline" && Object.entries(market_).length > 0 && (
           <div>
             <h4>
               Price History
@@ -983,7 +988,8 @@ const MarketView = ({ defaultMarket = null }) => {
         )
         }
 
-        <PositionsView marketId={marketId} isApproved={isApproved} />
+        {/* <PositionsView marketId={marketId} isApproved={isApproved} /> */}
+        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset}/>}
 
         <div
           className={classNames(Styles.Details, {
@@ -1011,6 +1017,20 @@ const MarketView = ({ defaultMarket = null }) => {
 
           <span>Activity</span>
           {/*<TransactionsTable transactions={marketTransactions} />*/}
+        {account == "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
+          text="Approve Instrument"
+          action={testapprovemarket
+            //() => setShowTradingForm(true)
+          }
+          customClass={ButtonStyles.BuySellButton}
+        />}
+        {account == "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
+          text="Verify Toggle"
+          action={testVerifyToggle_
+            //() => setShowTradingForm(true)
+          }
+          customClass={ButtonStyles.BuySellButton}
+        />}
         </div>
         <SecondaryThemeButton
           text="Buy / Sell"
@@ -1035,38 +1055,15 @@ const MarketView = ({ defaultMarket = null }) => {
           customClass={ButtonStyles.TinyTransparentButton} 
         /> */}
         {/*<ManagerWarning/>*/}
-        <WarningBanner
-          //className={Styles.MarginTop}
+        {/* <WarningBanner
           title="Reputation Gains  "
           subtitle={
             "Expected incremented reputation scores if instrument is profitable : 1"
           }
-        // title2="Expected Profit "
-        // subtitle2={"Expected Profit of longzcb to be made per second is profit of instrument - promisedReturn"}
-
-        //onClose={() => updateSeenPositionWarning(marketAmmId, true, ADD)}
-        />
+        /> */}
 
         <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId={marketId}
           isApproved={isApproved} />
-
-        <AddMetaMaskToken tokenSymbol={"longZCB"} tokenAddress={longZCB_ad} />
-        <AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />
-        {account == "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
-          text="Approve Instrument"
-          action={testapprovemarket
-            //() => setShowTradingForm(true)
-          }
-          customClass={ButtonStyles.BuySellButton}
-        />}
-        {account == "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
-          text="Verify Toggle"
-          action={testVerifyToggle_
-            //() => setShowTradingForm(true)
-          }
-          customClass={ButtonStyles.BuySellButton}
-        />}
-
       </section>
     </div>
   );
@@ -1084,13 +1081,13 @@ const CreditlineRequestInfo = ({
 
   const [collateralSymbol, setCollateralSymbol] = useState("");
   const collateralTypeMapping = {
-    0: "liquid",
-    1: "non liquid",
+    0: "ERC20",
+    1: "ERC721",
     2: "ownership",
     3: "none"
   }
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchSymbol = async () => {
       return await fetchAssetSymbol(account, loginAccount.library, collateral)
     }
@@ -1104,14 +1101,15 @@ const CreditlineRequestInfo = ({
         }
       )
     }
-    
+
   }, [account, loginAccount, instrument])
 
   console.log("collateralSymbol: ", collateralSymbol)
 
   // <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
   //               </ExternalLink>
-  const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
+  //const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
+  const tenor = moment().add(Number(duration), "seconds").fromNow(true);
   return (
     <section className={Styles.CreditlineTable}>
       <h3>
@@ -1119,12 +1117,12 @@ const CreditlineRequestInfo = ({
       </h3>
       <div>
         <span>Duration</span>
-        <span>{tenor} days</span>
+        <span>{tenor}</span>
       </div>
       <div>
-          <span>Collateral Type</span>
-          <span>{collateralTypeMapping[Number(collateralType)]}</span>
-        </div>
+        <span>Collateral Type</span>
+        <span>{collateralTypeMapping[Number(collateralType)]}</span>
+      </div>
       {(Number(collateralType) === 0 || Number(collateralType) === 1) &&
         <div>
           <span>Collateral</span>
@@ -1179,16 +1177,15 @@ const CreditlineLoanInfo = ({
 
   // <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + item.address} label={label}>
   //               </ExternalLink>
-  const tenor = new BN(Number(duration) / 86400).toFixed(2); // days
-  const expiry = moment().add(duration, "seconds").format("MMM Do YY");
+  const expiry = moment().add(duration, "seconds").fromNow(true);
   return (
-    <section className={Styles.CreditlineTable}>
+    <section className={Styles.CreditlineLoanTable}>
       <h3>
-        Loan Info
+        Loan Details
       </h3>
       <div>
         <span>Expiration</span>
-        <span>{expiry}</span>
+        <span>{expiry} from now</span>
       </div>
       <div>
         <span>Expected Repayment</span>
@@ -1257,12 +1254,17 @@ const CreditlineSimulation = ({
         <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
         <span>{Number(longZCBSupply) == 0 ? "-" : new BN((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor).toFixed(3) + "%"}</span>
         <BaseSlider
-          max={4}
+          max={10}
           min={1}
-          marks={[1, 2, 3, 4]}
+          marks={[]}
           step={0.1}
           value={leverageFactor}
-          onChange={(value) => setLeverageFactor(value)}
+          onChange={(value) => {
+            if ((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor <= -100) {
+              return;
+            }
+            setLeverageFactor(value)
+          }}
         />
       </div>
     </section>
@@ -1334,16 +1336,102 @@ const PoolSimulation = ({
       </div>
       <div>
         <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : new BN(Number(longZCBRates.apr) *  leverageFactor).toFixed(3) + "%"}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN(Number(longZCBRates.apr) * leverageFactor).toFixed(3) + "%"}</span>
         <BaseSlider
-          max={4}
+          max={10}
           min={1}
-          marks={[1, 2, 3, 4]}
           step={0.1}
           value={leverageFactor}
-          onChange={(value) => setLeverageFactor(value)}
+          onChange={(value) => {
+            if (Number(longZCBRates.apr) * leverageFactor < -100) return
+            setLeverageFactor(value)
+          }}
         />
       </div>
     </section>
+  )
+}
+
+export const RammPositionsSection = ({
+  market,
+  assetName
+}) => {
+  //   type( longzcb or shortzcb or levered longzcb), 
+  // qty, value, entry price, cur price, debt, postion margin, unrealized P&L, realized P&L, redeem. 
+  const [activeTab, setActiveTab] = useState("0");
+
+  return (
+    <section className={Styles.RammPositionSection}>
+      <div>
+        <TabNavItem title="LongZCB" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
+        <TabNavItem title="ShortZCB" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
+        <TabNavItem title="Levered LongZCB" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
+      </div>
+      <div>
+          <RammPositionTable market={market} buttonAction={() => {}} activeTab={activeTab} assetName={assetName}/>
+      </div>
+    </section>
+  )
+}
+
+const RammPositionTable = ({buttonAction, market, activeTab, assetName}) => {
+  const { ramm } = useUserStore();
+  const { bondPool: {longZCBPrice, b, longZCB: {balance: longZCBbalance }, shortZCB: {balance: shortZCBbalance}}} = market;
+  let data_row = []; // values.
+  console.log("ramm: ", ramm);
+  if (activeTab === "0") {
+    // longZCB
+    data_row= [
+      longZCBbalance,
+      handleValue(new BN(Number(longZCBbalance) * Number(longZCBPrice)).toFixed(3), assetName),
+      handleValue(new BN(Number(b)).toFixed(3), assetName),
+      handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
+      0
+    ]
+  }
+
+
+  return (
+    <table className={Styles.RammPositionTable}>
+      <thead>
+        <tr>
+          <th>
+            Qty.    
+          </th>
+          <th>
+            Value
+          </th>
+          <th>
+            Entry Price
+          </th>
+          <th>
+            Current Price
+          </th>
+          
+          {activeTab === "2" && <th>
+            Debt
+          </th>}
+          {activeTab === "2" && <th>
+            Position Margin
+          </th>}
+          <th>
+            Unrealized P&L
+          </th>
+          <th>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+        {data_row.map((val, i) => {
+          return (
+              <td>
+                {val}
+              </td>
+          )
+        })}
+        </tr>
+      </tbody>
+    </table>
   )
 }

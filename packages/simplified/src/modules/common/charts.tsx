@@ -637,13 +637,13 @@ export const ZCBPriceChartSection = ({ marketId, snapshots }) => {
       lastPrice: market.bondPool.longZCBPrice,
       isInvalid: false
     },
-    {
-      id: 2,
-      label: "shortZCB",
-      outcomeIdx: 1,
-      lastPrice: String(1 - Number(market.bondPool.longZCBPrice)),
-      isInvalid: false
-    }
+    // {
+    //   id: 2,
+    //   label: "shortZCB",
+    //   outcomeIdx: 1,
+    //   lastPrice: String(1 - Number(market.bondPool.longZCBPrice)),
+    //   isInvalid: false
+    // }
   ];
   const toggleOutcome = (id) => {
     const updates: boolean[] = [].concat(selectedOutcomes);
@@ -786,16 +786,16 @@ const processZCBPriceTimeData = (snapshots = [], market, rangeSelection) => {
     });
     newLastPrice = nextPrice;
   }
-  let shortZCBs = [];
-  longZCBs.forEach((item) => {
-    shortZCBs.push(
-      {
-        price: String(1 - Number(item.price)),
-        timestamp: item.timestamp
-      }
-    )
-  })
-  return [longZCBs, shortZCBs];
+  // let shortZCBs = [];
+  // longZCBs.forEach((item) => {
+  //   shortZCBs.push(
+  //     {
+  //       price: String(1 - Number(item.price)),
+  //       timestamp: item.timestamp
+  //     }
+  //   )
+  // })
+  return [longZCBs];
 }
 
 // vault charts 
