@@ -1330,11 +1330,11 @@ const PoolSimulation = ({
       </div>
       <div>
         <span>LongZCB P/L % {generateTooltip("longZCB supply must not be zero", "redemptionPrice")}</span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : longZCBRates.apr + "%"}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : 20 * longZCBRates.apr + "%"}</span>
       </div>
       <div>
         <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
-        <span>{Number(longZCBSupply) == 0 ? "-" : new BN(Number(longZCBRates.apr) *  leverageFactor).toFixed(3) + "%"}</span>
+        <span>{Number(longZCBSupply) == 0 ? "-" : new BN(20* Number(longZCBRates.apr) *  leverageFactor).toFixed(3) + "%"}</span>
         <BaseSlider
           max={4}
           min={1}
