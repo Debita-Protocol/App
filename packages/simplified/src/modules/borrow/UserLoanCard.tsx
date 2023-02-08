@@ -164,50 +164,50 @@ export const LoanCard: React.FC = (
         });
     };
 
-
-    // get Date Object from maturityDate which is in seconds since 1970 Janurary 1
-
-
+    const depositAction = () => {
+      // TODO: deposit action
+    }
 
     return (
         <div className={Styles.LoanCard}>
             <div>
                 <span>
-                    {vault.name}
+                  {name}
                 </span>
-                /
                 <span>
-                { name }
+                  {vault.name}
                 </span>
             </div>
-            <section>
-                <ValueLabel label="Notional Interest" value={expectedYield}/>
-                <ValueLabel label="Principal" value={principal}/>
+            {trusted ? (<section>
+                <ValueLabel label="Proposed Principal" value={principal}/>
+                <ValueLabel label="Proposed Interest" value={expectedYield}/>
                 <ValueLabel label="Duration" value={ new BN(duration).dividedBy(24*60*60).toFixed(4) + " days"}/>
-                {trusted && (
-                    <ValueLabel label="Maturity Date" value={new Date(new BN(maturityDate).multipliedBy(1000).toNumber()).toISOString().substring(0,10)}/>
-                )}
-                <div>
-                    <span>
-                        Trusted: 
-                    </span>
-                    <span>
-                        { trusted ? "Yes"  : "No (can use checkbox icon here)"}
-                    </span>
-                </div>
-                
-                
-            </section>
-                {trusted && (
-                    <div className= {Styles.LoanCardButtons}>
-                        <SecondaryThemeButton text="borrow" action={borrowAction}/>
-                        <SecondaryThemeButton text="repay" action={repayAction}/>
-                    </div>
-                )}
+            </section>) : (
+              <section>
+
+              </section>
+            )}
+            <div>
+              
             </div>
-        
-    
+            {trusted && (
+                <div className= {Styles.LoanCardButtons}>
+                    <SecondaryThemeButton text="borrow" action={borrowAction}/>
+                    <SecondaryThemeButton text="repay" action={repayAction}/>
+                </div>
+            )}
+            </div>
     )
+}
+
+const CollateralCard: React.FC = (
+
+) => {
+  return (
+    <div style={{width: 50, height: 50}}>
+      COLLATERAL CARD HERE
+    </div>
+  )
 }
 
 export const LoadingLoanCard = () => {

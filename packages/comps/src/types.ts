@@ -491,6 +491,7 @@ export interface Collateral extends Asset {
   owner?: string; // supplied if owner is not zero address.
   balance?: string;
   isERC20: boolean;
+  // need to fetch auction parameters
 }
 
 export interface Auction {

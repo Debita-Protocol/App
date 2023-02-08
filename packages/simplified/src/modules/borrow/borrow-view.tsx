@@ -6,7 +6,7 @@ import Styles from "./borrow-view.styles.less";
 
 import classNames from "classnames";
 import {TabContent, TabNavItem} from "./Tabs";
-import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument} from "@augurproject/comps/build/types"
+import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument, CoreMarketInfos} from "@augurproject/comps/build/types"
 import { PoolCard, LoadingPoolCard } from "./PoolCard";
 import { LoanCard } from "./UserLoanCard";
 // import {vaults, instruments} from "./fakedata";
@@ -29,7 +29,7 @@ const PAGE_LIMIT = 5;
 
 const Pools: React.FC = () => {
     // retrieve all the pools ever created.
-    const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+    const { vaults: vaults, instruments: instruments, markets: markets }: { vaults: VaultInfos, instruments: InstrumentInfos, markets: CoreMarketInfos} = useDataStore2();
     // console.log("vaults", vaults);
     // console.log("instruments", instruments);
     const [ pools, setPools ] = useState<PoolInstrument[]>([]);
@@ -80,14 +80,14 @@ const Pools: React.FC = () => {
                             </div>
                             
                         </th>
-                        <th>
+                        {/* <th>
                             <div>
                                 <span>
                                 Vault
                                 </span>
                                 {generateTooltip("Associated Vault", "Vault")}
                             </div>
-                        </th>
+                        </th> */}
                         <th>
                             <div>
                                 <span>
@@ -104,16 +104,16 @@ const Pools: React.FC = () => {
                                 {generateTooltip("Rate paid by borrowers", "APR")}
                             </div>
                         </th>
-                        <th>
+                        {/* <th>
                             <div>
                                 <span>
                                     Utilization Rate
                                 </span>
                                 {generateTooltip("The amount of supplied assets borrowed", "Utilization Rate")}
                             </div>
-                        </th>
-                        <th>Total Borrowed Assets</th>
-                        <th>Total Available Assets</th>
+                        </th> */}
+                        <th>Total Borrowed</th>
+                        <th>Total Available</th>
                     </tr>
                 </thead>
                 { loading ? (
@@ -134,6 +134,7 @@ const Pools: React.FC = () => {
                                         vaultId={pool.vaultId}
                                         instruments={instruments}
                                         vaults={vaults}
+                                        markets={markets}
                                         />
                                 )
                             }
@@ -183,7 +184,6 @@ const MyLoans: React.FC = () => {
         // const { loans, borrowedBalances } = getUserLoanData(instruments)
 
         // incorrect, but for now match instruments where the utilizer is the user.
-        console.log("instruments", instruments);
         let _loans = [];
         for (const [id, instr] of Object.entries(_instruments)) {
             if (instr.utilizer === account && instr.instrumentType === "0") {
@@ -192,7 +192,6 @@ const MyLoans: React.FC = () => {
         }
         return _loans;
     }
-    console.log("loans: ", loans);
     
     return (
         <div className={Styles.MyLoansView}>

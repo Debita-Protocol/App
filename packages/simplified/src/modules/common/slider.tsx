@@ -3,6 +3,7 @@ import React from "react";
 
 //@ts-ignore;
 import Styles from "./slider.styles.less";
+import { MarketStage, marketStage } from "utils/helpers";
 
 
 //https://zillow.github.io/react-slider/ -> more attributes to customize
@@ -73,5 +74,30 @@ export const BaseSlider = (
         <ReactSlider
         {...props}
         />
+    )
+}
+
+export const InstrumentStatusSlider: React.FC = (
+    {
+        market
+    }
+) => {
+    const stage: MarketStage = marketStage(market);
+
+    // let props: any ={
+    //     className:Styles.BaseHorizontalSlider,
+    //     thumbClassName:Styles.BaseThumb,
+    //     trackClassName:Styles.BaseTrack,
+    //     disabled: true,
+    //     onChange,
+    //     step,
+    //     max,
+    //     min,
+    //     defaultValue,
+    //     marks,
+    //     markClassName: markClassName === "" ? Styles.BaseMark : {markClassName},
+    // }
+    return (
+        <ReactSlider />
     )
 }

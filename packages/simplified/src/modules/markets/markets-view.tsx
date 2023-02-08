@@ -476,20 +476,7 @@ const MarketsView = () => {
             <InstrumentCard instrument={instrument} />
           ))}   
           <VaultCardView vaultId = {1}/>)
-            {vaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}     
-          {/* {sliceByPage(filteredMarkets, page, PAGE_LIMIT).map((market, index) => (
-            <MarketCard
-              key={`${market.marketId}-${index}`}
-              marketId={market.marketId}
-              markets={markets}
-              ammExchanges={ammExchanges}
-              noLiquidityDisabled={!isLogged}
-              timeFormat={timeFormat}
-              marketTransactions={transactions[market.marketId]}
-            />         
-          ))} */}
-    { /*<button onClick={() => confirmBulkTrade( { account, loginAccount, formData}
-)}>Buy</button> */}
+            {vaults.map(( vault)=> <VaultCardView vaultId = {vault.vaultId}/>)}
         </section> 
 
       ) : (

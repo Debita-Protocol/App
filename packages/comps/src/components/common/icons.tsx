@@ -6,9 +6,19 @@ import _WhiteArrows from "../../assets/icon/noun-two-arrows-1136526-FFFFFF.svg";
 import _BlackArrows from "../../assets/icon/noun-two-arrows-1136526.svg";
 
 import PendingIcon from "../../assets/icon/pending-svgrepo-com.svg"
+import _WhiteVerticalEllipsis from "../../assets/icon/noun-ellipsis-vertical-1919185-FFFFFF.svg";
+import _BlackVerticalEllipsis from "../../assets/icon/noun-ellipsis-vertical-1919185.svg";
+import _BlackChevronDown from "../../assets/icon/noun-chevron-1669074.svg";
+import _WhiteChevronDown from "../../assets/icon/noun-chevron-1669074-FFFFFF.svg";
+
+
 
 export const BlackArrows =  _BlackArrows;
 export const WhiteArrows = _WhiteArrows;
+export const BlackVerticalEllipsis = _BlackVerticalEllipsis;
+export const WhiteVerticalEllipsis = _WhiteVerticalEllipsis;
+export const BlackChevronDown = _BlackChevronDown;
+export const WhiteChevronDown = _WhiteChevronDown;
 
 export const PENDINGIcon  = PendingIcon;
 
@@ -661,6 +671,22 @@ export const ChevronFlipIcon = (
     />
   </svg>
 );
+
+export const SizedChevronFlipIcon = (
+  width,
+  height
+) => {
+  return (
+    <svg width={"40"} height={"40"} viewBox="0 0 20 20" fill="none">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.11612 6.61612C4.60427 6.12796 5.39573 6.12796 5.88388 6.61612L10 10.7322L14.1161 6.61612C14.6043 6.12796 15.3957 6.12796 15.8839 6.61612C16.372 7.10427 16.372 7.89573 15.8839 8.38388L10.8839 13.3839C10.3957 13.872 9.60427 13.872 9.11612 13.3839L4.11612 8.38388C3.62796 7.89573 3.62796 7.10427 4.11612 6.61612Z"
+      fill="#8B959E"
+    />
+  </svg>
+  )
+}
 
 export const WinnerMedal = (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

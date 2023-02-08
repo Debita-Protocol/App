@@ -7,6 +7,7 @@ import Styles from "./reputation-board-view.styles.less"
 import { GRAPH_QUERIES } from "@augurproject/comps";
 import { BlackArrows, WhiteArrows } from "@augurproject/comps/build/components/common/icons";
 import moment from "moment";
+import { useSimplifiedStore } from "modules/stores/simplified";
 
 // subgraph managers -> 
 const ReputationView = () => {
@@ -29,6 +30,10 @@ const ReputationView = () => {
 export default ReputationView;
 
 const LeaderBoard = ({ managers }) => {
+
+    const {
+        settings: { theme },
+      } = useSimplifiedStore();
     return (
             <table className={Styles.leaderBoard}>
                 <thead>
@@ -45,7 +50,7 @@ const LeaderBoard = ({ managers }) => {
                             Score
                         </th>
                         <th>
-                            <img src={WhiteArrows} style={{width: 40, height: 40}} />
+                            <img src={theme === "Dark" ? WhiteArrows : BlackArrows} style={{width: 40, height: 40}} />
                         </th>
                     </tr>
                 </thead>

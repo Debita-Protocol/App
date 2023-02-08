@@ -10,10 +10,10 @@
       display: flex;
       flex-flow:row nowrap;
       justify-content:flex-start;
-      padding-left:@size-36;
+      padding-left:@size-10;
       > div {
         font-weight:@weight-bold;
-        font-size: @size-24;
+        font-size: @size-30;
         padding: @size-8 @size-16 0;
         border-bottom: @size-2 solid var(--primary-text);
         &.Active {
@@ -52,6 +52,9 @@
     table-layout:fixed;
     > thead {
       > tr {
+        > th:first-of-type {
+          column-span: 2;
+        }
         > th {
           font-size: @size-14;
           font-weight: @weight-bold;
@@ -66,30 +69,56 @@
     }
     > tbody {
       > tr {
-        .HoverDropShadow;
+        // .HoverDropShadow;
         border-radius: @size-8;
         > td:first-of-type {
           > div {
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            > span:last-of-type {
+              display: block;
+              width: 200px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              font-size: 1.5rem;
+              font-weight: 600;
+              overflow-wrap: break-word;
+            }
           }
           border-left: @size-1 solid var(--theme-border);
           border-top-left-radius: @size-8;
           border-bottom-left-radius: @size-8;
         }
+
+        // >td:nth-of-type(2) {
+        //   >div {
+        //     > span {
+        //       justify-content: center;
+        //     }
+
+        //     >span:first-of-type {
+        //       display: block;
+        //       font-size:@size-14;
+        //       text-overflow: ellipsis;
+        //       overflow:hidden;
+        //       white-space: nowrap;
+        //       width: 200px;
+        //     }
+        //   }
+        // }
+      
         >td:last-of-type {
           border-right: @size-1 solid var(--theme-border);
           border-top-right-radius: @size-8;
           border-bottom-right-radius: @size-8;
         }
         > td {
-          background-color: var(--primary-bg);
           vertical-align: middle;
           text-align: center;
           position: relative;
           box-sizing:border-box;
-          padding:@size-14 0;
+          padding:@size-20 0;
           border-top: @size-1 solid var(--theme-border);
           border-bottom: @size-1 solid var(--theme-border);
           // border-right: @size-1 solid var(--theme-border);
@@ -100,25 +129,37 @@
           }
           > div {
             &.TokenList {
-              display: flex;
-              flex-wrap: wrap;
+              // display: flex;
+              // flex-wrap: wrap;
+              // justify-content: center;
+              // align-items:center;
+              // word-break:break-all;
+              // > div {
+              //   margin: @size-8;
+              // }
+              display: grid;
+              grid-template-columns: 70px 70px;
+              grid-gap: @size-5;
               justify-content: center;
-              align-items:center;
-              word-break:break-all;
-              > div {
-                margin: @size-8;
-              }
             }
 
           }
         }
+
+        background-color: var(--primary-bg);
+
+        &:hover {
+          background-color: var(--quaternary-bg);
+        }
+
       }
     }
   }
 }
 
 .CollateralItem {
-  display: flex;
+  display: block;
+  justify-content: center;
 }
 
 .LoadingMarketCard {
@@ -213,10 +254,10 @@
   background-color: var(--primary-bg);
   > div:first-of-type {
     display: flex;
-    flex-flow: row nowrap;
+    flex-flow: column nowrap;
     align-items: center;
-    justify-content: space-between;
-    width: 100%;
+    justify-content: start;
+    // width: 100%;
     > span {
       padding: @size-20;
       font-size: @size-20;
