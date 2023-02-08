@@ -161,7 +161,7 @@ const Pools: React.FC = () => {
 }
 
 const MyLoans: React.FC = () => {
-    const { vaults, instruments } = useDataStore2();
+    const { vaults, instruments, markets } = useDataStore2();
     const { account, loginAccount } = useUserStore();
     const [ loans, setLoans ] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -205,9 +205,10 @@ const MyLoans: React.FC = () => {
                 <section>
                   {sliceByPage(loans, page, PAGE_LIMIT).map((loan, index) => (
                     <LoanCard
-                      key={`${loan.marketId}-${index}`}
-                      instrument={loan}
-                      vault={vaults[loan.vaultId]}
+                        key={`${loan.marketId}-${index}`}
+                        instrument={loan}
+                        vault={vaults[loan.vaultId]}
+                        market={markets[loan.marketId]}
                     />
                   ))}
                 </section>

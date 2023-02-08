@@ -402,8 +402,11 @@ export interface CreditlineInstrument extends BaseInstrument {
   collateral: string;
   collateralBalance: string;
   oracle: string;
-  loanStatus: string;
-  collateralType: string;  
+  loanStatus: number;
+  collateralType: number;
+  principalRepayed: string;
+  interestRepayed: string;
+  totalOwed: string;
 }
 
 export interface PoolInstrument extends BaseInstrument {

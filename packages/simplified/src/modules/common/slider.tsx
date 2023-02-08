@@ -79,25 +79,84 @@ export const BaseSlider = (
 
 export const InstrumentStatusSlider: React.FC = (
     {
-        market
+        market,
+        instrument
     }
 ) => {
     const stage: MarketStage = marketStage(market);
+    const { totalCollateral, parameters: { alpha }} = market;
+    const { principal } = instrument;
 
-    // let props: any ={
-    //     className:Styles.BaseHorizontalSlider,
-    //     thumbClassName:Styles.BaseThumb,
-    //     trackClassName:Styles.BaseTrack,
-    //     disabled: true,
-    //     onChange,
-    //     step,
-    //     max,
-    //     min,
-    //     defaultValue,
-    //     marks,
-    //     markClassName: markClassName === "" ? Styles.BaseMark : {markClassName},
-    // }
+    let value;
+    switch (stage) {
+        case MarketStage.EARLY_ASSESSMENT:
+        case MarketStage.LATE_ASSESSMENT:
+            value = Number(totalCollateral)/(Number(alpha) * Number(principal));
+            break;
+        case MarketStage.APPROVED:
+            value = 1;
+            break;
+        case MarketStage.RESOLVED:
+            value = 2;
+            break;    
+    }
+
+    let props: any ={
+        className:Styles.BaseHorizontalSlider,
+        thumbClassName:Styles.BaseThumb,
+        trackClassName:Styles.BaseTrack,
+        disabled: false,
+        max: 2,
+        min: 0,
+        step: 0.01,
+        marks: [0,1,2],
+        markClassName: Styles.BaseMark,
+        value
+    }
     return (
-        <ReactSlider />
+        <div className={Styles.InstrumentStatusSlider}>
+            <Stages />
+            <ReactSlider {...props}/>
+        </div>
+    )
+}
+
+export const VerticalFill = (
+    {
+        max=100,
+        min=0
+    }
+) => {
+
+    let props = {
+        max,
+        min,
+        className:Styles.VerticalFill,
+        orientation: "vertical",
+        invert: true
+    }
+
+
+    return (
+        <ReactSlider {...props}/>
+    )
+}
+
+export const Stages = () => {
+    const stages = [
+        "Proposal",
+        "Approval",
+        "Resolution"
+    ]
+    return (
+        <div>
+            {stages.map((stage, index) => {
+                return (
+                    <div key={stage}>
+                        {stage}
+                    </div>
+                )
+            })}
+        </div>
     )
 }

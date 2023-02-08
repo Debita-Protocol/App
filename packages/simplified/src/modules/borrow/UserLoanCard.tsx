@@ -2,6 +2,7 @@ import React, {useMemo} from "react"
 
 // @ts-ignore
 import Styles from "./borrow-view.styles.less";
+import classNames from "classnames";
 
 import { Link } from "react-router-dom";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
@@ -20,13 +21,17 @@ import {
 } from "@augurproject/comps";
 import { BigNumber as BN } from "bignumber.js";
 
-import { InstrumentInfos, CoreInstrumentData, VaultInfos, VaultInfo } from "@augurproject/comps/build/types";
+import { InstrumentInfos, CoreInstrumentData, VaultInfos, VaultInfo, CoreMarketInfo, Instrument, CreditlineInstrument } from "@augurproject/comps/build/types";
 //import { MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 import { BaseInstrument } from "@augurproject/comps/build/types";
 import { MODAL_POOL_BORROWER_ACTION } from "modules/constants";
 import { TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
 import { SelectOutcomeButton } from "modules/common/charts";
+import { InstrumentStatusSlider, VerticalFill } from "modules/common/slider";
+import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
+import { handleValue } from "modules/common/labels";
+import moment from "moment";
 const { Checkbox } = Icons;
 const {
     BUY,
@@ -68,11 +73,12 @@ const {
 export const LoanCard: React.FC = (
     {
         instrument,
-        vault
-    }: { instrument: BaseInstrument, vault: VaultInfo}
+        vault,
+        market
+    }: { instrument: CreditlineInstrument, vault: VaultInfo, market: CoreMarketInfo}
 ) => {
     const { account, loginAccount, actions: { addTransaction } } = useUserStore();
-    const {
+    let {
         address,
         name,
         trusted,
@@ -82,8 +88,11 @@ export const LoanCard: React.FC = (
         duration,
         maturityDate,
         exposurePercentage,
-        description
+        description,
+        collateralType
     } = instrument;
+    let { approvedPrincipal, approvedYield } = market;
+
     const { actions: { setModal } } = useAppStatusStore();
     const { cashes } = useDataStore2();
 
@@ -164,12 +173,18 @@ export const LoanCard: React.FC = (
         });
     };
 
+    // trusted = true;
+    // approvedPrincipal = "100"
+    // approvedYield = "100"
+
     const depositAction = () => {
       // TODO: deposit action
     }
 
     return (
-        <div className={Styles.LoanCard}>
+        <div className={classNames(Styles.LoanCard, {
+          [Styles.Trusted]: trusted,
+        })}>
             <div>
                 <span>
                   {name}
@@ -178,24 +193,42 @@ export const LoanCard: React.FC = (
                   {vault.name}
                 </span>
             </div>
-            {trusted ? (<section>
-                <ValueLabel label="Proposed Principal" value={principal}/>
-                <ValueLabel label="Proposed Interest" value={expectedYield}/>
+            {!trusted ? (<section>
+              <div>
+              <ValueLabel label="Proposed Principal" value={handleValue(principal, vault.want.name)}/>
+                <ValueLabel label="Proposed Interest" value={handleValue(expectedYield, vault.want.name)}/>
                 <ValueLabel label="Duration" value={ new BN(duration).dividedBy(24*60*60).toFixed(4) + " days"}/>
+              </div>
+              {(collateralType == 0 || collateralType == 1) && <div>
+                <CollateralCard />
+              </div>}
             </section>) : (
               <section>
-
+                <div>
+                  <div>
+                    <ValueLabel label="Principal Repayed" value={approvedPrincipal + "/" + principal}/>
+                    <VerticalFill />
+                  </div>
+                  <div>
+                    <ValueLabel label="Interest Repayed" value={approvedPrincipal + "/" + principal}/>
+                    <VerticalFill />
+                  </div>
+                </div>
+                
+                <div>
+                  <div>
+                    <ValueLabel label="Expires In" value={moment().add(duration, "seconds").fromNow(true)}/>
+                  </div>
+                  <div>
+                  <TinyThemeButton text={"Borrow"} action={borrowAction} />
+                  <TinyThemeButton text={"Repay"} action={repayAction} />
+                  <TinyThemeButton text={"Deposit"} action={depositAction} />
+                  </div>
+                  
+                </div>
               </section>
             )}
-            <div>
-              
-            </div>
-            {trusted && (
-                <div className= {Styles.LoanCardButtons}>
-                    <SecondaryThemeButton text="borrow" action={borrowAction}/>
-                    <SecondaryThemeButton text="repay" action={repayAction}/>
-                </div>
-            )}
+            <InstrumentStatusSlider market={market} instrument={instrument}/>
             </div>
     )
 }
@@ -204,8 +237,11 @@ const CollateralCard: React.FC = (
 
 ) => {
   return (
-    <div style={{width: 50, height: 50}}>
-      COLLATERAL CARD HERE
+    <div>
+      <h3>
+        Collateral
+      </h3>
+      <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933"}/>
     </div>
   )
 }
