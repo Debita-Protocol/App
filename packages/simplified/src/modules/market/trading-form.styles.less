@@ -248,3 +248,34 @@
     }
   }
 }
+
+
+.LeverageSlider {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: @size-8;
+  margin-bottom: @size-8;
+  height: @size-32;
+  > div:last-of-type {
+    width: 200px;
+    align-self: flex-start;
+  }
+  > span {
+    font-size: @size-16;
+    font-weight: 600;
+  }
+  > div:first-of-type {
+    //.text-14-semi-bold;
+    font-size: @size-16;
+    font-weight: 600;
+    min-width: 130px;
+    color: var(--secondary-text);
+    display: flex;
+    flex-flow: row nowrap;
+    > div {
+      padding-right: @size-4;
+    }
+  }
+}

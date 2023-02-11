@@ -394,10 +394,11 @@ export const MarketLiquidityView = () => {
             ))}
             <span />
           </article>
+          <section>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
-
           ))}
+          </section>
         </section>
       </div>
       {/* <ChartsSection vault={vault} prices={prices} /> */}

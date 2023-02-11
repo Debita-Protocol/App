@@ -8,6 +8,7 @@ plugins = Object.assign(
   {
     'postcss-import': {},
     tailwindcss: {},
+    autoprefixer: {},
   }
 )
 module.exports = {

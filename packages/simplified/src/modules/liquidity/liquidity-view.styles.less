@@ -1,4 +1,7 @@
 @import (reference) "~assets/styles/shared";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .LiquidityTableRow {
   .ThemeBorder;
@@ -629,11 +632,10 @@
   flex-flow: column nowrap;
   .ThemeBorder;
   width: fit-content;
-  margin-left: @size-20;
-  margin-bottom: @size-20;
   background-color: var(--tertiary-bg);
   padding: @size-8;
   border-radius: @size-16;
+  margin-right: @size-16;
   > section:first-of-type {
     padding: @size-8;
     display: flex;
@@ -679,7 +681,21 @@
     align-items: flex-start;
     justify-content: space-evenly;
     > div {
-      margin-bottom: @size-8;
+      display: flex;
+      width:100%;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      > span:first-of-type {
+        .text-12;
+        color: var(--primary-text);
+      }
+
+      > span:nth-of-type(2) {
+        .text-14-bold;
+        color: var(--primary-text);
+        // .text-12;
+        // color: var(--secondary-text);
+      }
     }
   }
   
@@ -692,21 +708,142 @@
   border-top : @size-1 solid var(--theme-border);
   padding: @size-16 @size-8 @size-16;
 
+  &.Trusted {
+    display:flex;
+  }
 
+  > div:first-of-type {
+    >div {
+      margin-bottom: @size-16;
+      > div {
+        margin-right: @size-24;
+      }
+    }
+  }
   // border-top: @size-1 solid var(--theme-border);
   // width: 100%;
-
-  >h3:first-of-type {
-    align-self: baseline;
+  >div {
     padding-left: @size-36;
-    font-size: @size-20;
-    font-weight: 600;
-    margin-bottom: @size-12;
-    color: var(--secondary-text);
+    >h3:first-of-type {
+      align-self: baseline;
+
+      font-size: @size-20;
+      font-weight: 600;
+      margin-bottom: @size-12;
+      color: var(--secondary-text);
+    }
+    >div:first-of-type {
+      display: flex;
+      flex-flow: row nowrap;
+    }
   }
-  >div:first-of-type {
+}
+
+.OutcomesTable {
+  border-radius: @size-8;
+  display: flex;
+  flex-direction: column;
+
+  > div {
+    .ThemeBorder;
+
+    border-radius: unset;
+    border-top: 0;
+    min-height: @size-32;
+    height: @size-32;
+    max-height: @size-32;
+    padding: 0 @size-16;
     display: flex;
-    flex-flow: row nowrap;
+
+    &:first-of-type {
+      .ThemeBorder;
+
+      &:not(:last-of-type) {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+
+    &:last-of-type {
+      .ThemeBorder;
+
+      &:not(:first-of-type) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+    }
+
+    > span {
+      display: flex;
+      align-items: center;
+
+      &:first-of-type {
+        .text-12;
+
+        flex: 1;
+        color: var(--primary-text);
+        text-transform: capitalize;
+      }
+
+      &:last-of-type {
+        .text-14-bold;
+
+        color: var(--primary-text);
+      }
+    }
+    &:not(:first-of-type):not(:last-of-type) {
+      border-top: 0;
+    }
+
+    &:last-of-type:not(:first-of-type):not(.WinningOutcome) {
+      border-top: 0;
+    }
   }
 
+  &.hasWinner {
+    > div.WinningOutcome {
+      border: 0;
+      border-radius: 0;
+      align-items: center;
+      flex: 1 100%;
+      min-height: @size-40;
+      white-space: nowrap;
+      display: grid;
+      grid-gap: @size-4 @size-10;
+      grid-template-columns: 0fr 0fr;
+      grid-template-rows: auto auto;
+      margin-top: auto;
+      justify-items: flex-end;
+      align-self: flex-end;
+      padding: 0;
+
+      > span:first-of-type {
+        .text-12;
+
+        color: var(--secondary-text);
+        text-transform: capitalize;
+        line-height: 140%;
+        min-height: @size-14;
+        max-height: @size-14;
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      > span:last-of-type {
+        .text-16-semi-bold;
+
+        color: var(--primary-text);
+        line-height: 140%;
+        min-height: @size-22;
+        max-height: @size-22;
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      > svg {
+        grid-column: 2;
+        grid-row: 2;
+      }
+    }
+  }
 }

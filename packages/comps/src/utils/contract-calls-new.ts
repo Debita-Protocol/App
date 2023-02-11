@@ -19,7 +19,8 @@ import {
     validator_manager_address,
     ORACLE_MAPPING,
     leverage_manager_address,
-    storage_handler_address
+    storage_handler_address,
+    order_manager_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -1509,39 +1510,34 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
-    let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
-    let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
+    // let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
+    // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
+    // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 
 
-    vault.getInstrumentData();
+    // tx = await reputationManager.incrementScore(account,pp); // validator
+    // tx.wait();
 
-    tx = await reputationManager.incrementScore(account,pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
+    // tx.wait();
 
-    tx = await reputationManager.incrementScore("0x0902B27060FB9acfb8C97688DA60D79D2EdD656e",pp); // validator
-    tx.wait();
+    // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
+    // tx.wait();
 
-    tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
-    tx.wait();
+    // const data = utils.defaultAbiCoder.encode(
+    //     ["address","address","address","address","address","address","address","address"],
+    //     [market_manager_address, reputation_manager_address, validator_manager_address, leverage_manager_address, 
+    //         order_manager_address, vault_factory_address, pool_factory_address, storage_handler_address]
+    // )
 
-    tx = await controller.setMarketManager(marketManager.address);
-    await tx.wait();
-    tx = await controller.setVaultFactory(vaultFactory.address);
-    await tx.wait();
-    tx = await controller.setPoolFactory(pool_factory_address);
-    await tx.wait();
-    tx = await controller.setLeverageManager(leverage_manager_address);
-    await tx.wait();
-    tx = await controller.setReputationManager(reputation_manager_address);
-    await tx.wait();
-    tx = await controller.setValidatorManager(validator_manager_address);
-    await tx.wait();
-    tx = await controller.setDataStore(storage_handler_address);
-    await tx.wait();
+    // tx = await controller.initialize(
+    //     data
+    // );
 
-    tx = await controller.verifyAddress(account); 
-    await tx.wait();
+    // await tx.wait();
+
+    // tx = await controller.verifyAddress(account); 
+    // await tx.wait();
 
     let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
     "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
@@ -1552,10 +1548,10 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
     "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
         
-    for (let i=0; i < early_managers.length; i++) {
-        let tx = await controller.verifyAddress(early_managers[i]);
-        await tx.wait();
-    }
+    // for (let i=0; i < early_managers.length; i++) {
+    //     let tx = await controller.verifyAddress(early_managers[i]);
+    //     await tx.wait();
+    // }
 
     await scriptSetup(account, provider);
 }
@@ -1568,45 +1564,45 @@ const scriptSetup = async (account, provider) => {
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
 
-    for (let i = 0; i < scriptVaultNames.length; i++) {
-        const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
-        await createVault(
-            account, provider,
-            cash,
-            onlyVerified,
-            r,
-            asset_limit,
-            total_asset_limit,
-            vaultParams,
-            description
-        )
-    }
+    // for (let i = 0; i < scriptVaultNames.length; i++) {
+    //     const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
+    //     await createVault(
+    //         account, provider,
+    //         cash,
+    //         onlyVerified,
+    //         r,
+    //         asset_limit,
+    //         total_asset_limit,
+    //         vaultParams,
+    //         description
+    //     )
+    // }
 
     // create 2 pool instruments, one for each vault, and 2 creditline instruments.
 
     for (let i = 1; i < 3; i++) {
-        let vault_ad = await controller.getVault(i);
+        let vault_ad = await controller.vaults(i);
         let underlying = (new Contract(vault_ad, VaultData.abi, signer)).UNDERLYING();
         const {response, instrumentAddress} = await createPoolInstrument(
             account,
             provider,
             vault_ad,
             underlying,
-            "POOL" + String(i + 1),
-            "P" + String(i+1),
+            "POOL" + String(i),
+            "P" + String(i),
             [
                 {
                     tokenAddress: "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
                     tokenId: "0",
-                    borrowAmount: new BN(1).toFixed(0),
-                    maxAmount: new BN(1.2).toFixed(0),
+                    borrowAmount: "1",
+                    maxAmount: "1.2",
                     isERC20: true
                 },
                 {
                     tokenAddress: "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6",
                     tokenId: "1",
-                    borrowAmount: new BN(1).toFixed(0),
-                    maxAmount: new BN(1.2).toFixed(0),
+                    borrowAmount: "5",
+                    maxAmount: "5.5",
                     isERC20: false
                 }
             ]

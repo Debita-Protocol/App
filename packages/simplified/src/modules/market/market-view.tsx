@@ -989,7 +989,7 @@ const MarketView = ({ defaultMarket = null }) => {
         }
 
         {/* <PositionsView marketId={marketId} isApproved={isApproved} /> */}
-        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset}/>}
+        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account}/>}
 
         <div
           className={classNames(Styles.Details, {
@@ -1355,11 +1355,22 @@ const PoolSimulation = ({
 
 export const RammPositionsSection = ({
   market,
+  manager,
   assetName
 }) => {
   //   type( longzcb or shortzcb or levered longzcb), 
   // qty, value, entry price, cur price, debt, postion margin, unrealized P&L, realized P&L, redeem. 
   const [activeTab, setActiveTab] = useState("0");
+
+  const {marketId} = market;
+
+  const { loading, error, data } = useQuery(GRAPH_QUERIES.GET_MANAGER_MARKET_PAIR, {
+    variables: {
+      id: marketId + "-" +  manager.toLowerCase()
+    }
+  })
+
+  const mm_pair = data.managerMarketPair;
 
   return (
     <section className={Styles.RammPositionSection}>
@@ -1369,25 +1380,44 @@ export const RammPositionsSection = ({
         <TabNavItem title="Levered LongZCB" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
       </div>
       <div>
-          <RammPositionTable market={market} buttonAction={() => {}} activeTab={activeTab} assetName={assetName}/>
+          <RammPositionTable market={market} buttonAction={() => {}} activeTab={activeTab} assetName={assetName} mm_pair={mm_pair}/>
       </div>
     </section>
   )
 }
 
-const RammPositionTable = ({buttonAction, market, activeTab, assetName}) => {
+const RammPositionTable = ({buttonAction, market, activeTab, assetName, mm_pair}) => {
   const { ramm } = useUserStore();
   const { bondPool: {longZCBPrice, b, longZCB: {balance: longZCBbalance }, shortZCB: {balance: shortZCBbalance}}} = market;
   let data_row = []; // values.
-  console.log("ramm: ", ramm);
+
+  const { longZCBCollateral, shortZCBCollateral } = mm_pair;
+  const {leveragePositions} = ramm;
+  const { marketId } = market;
+
+  const { debt, amount } = leveragePositions[marketId];
+
+  let longEntryPrice = new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance))
+  let shortEntryPrice = new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance))
+
   if (activeTab === "0") {
     // longZCB
     data_row= [
       longZCBbalance,
       handleValue(new BN(Number(longZCBbalance) * Number(longZCBPrice)).toFixed(3), assetName),
-      handleValue(new BN(Number(b)).toFixed(3), assetName),
+      handleValue(longEntryPrice, assetName),
       handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
-      0
+      handleValue(new BN(debt).toFixed(3), assetName),
+      handleValue(new BN(amount).toFixed(3), assetName),
+      handleValue(new BN(Number(longZCBPrice)).minus(longEntryPrice).multipliedBy(longZCBbalance).toFixed(3), assetName),
+    ]
+  } else if (activeTab === "1") {
+    data_row =[
+      shortZCBbalance,
+      handleValue(new BN(Number(shortZCBCollateral)*(1 - Number(longZCBPrice))).toFixed(3), assetName),
+      handleValue(shortEntryPrice.toFixed(3), assetName),
+      handleValue(new BN(1 - Number(longZCBPrice)).toFixed(3), assetName),
+      handleValue(new BN(1 - Number(longZCBPrice)).minus(shortEntryPrice).multipliedBy(shortZCBCollateral).toFixed(3), assetName)
     ]
   }
 
@@ -1409,10 +1439,10 @@ const RammPositionTable = ({buttonAction, market, activeTab, assetName}) => {
             Current Price
           </th>
           
-          {activeTab === "2" && <th>
+          {activeTab === "0" && <th>
             Debt
           </th>}
-          {activeTab === "2" && <th>
+          {activeTab === "0" && <th>
             Position Margin
           </th>}
           <th>

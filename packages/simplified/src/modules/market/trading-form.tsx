@@ -25,6 +25,7 @@ import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange } from "@augurp
 import { Slippage,Leverage, LimitOrderSelector} from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 import { AddMetaMaskToken } from "modules/common/labels";
+import { BaseSlider } from "modules/common/slider";
 
 const { estimateBuyTrade, estimateSellTrade,getRewardsContractAddress, 
   canBuy,doZCBTrade,
@@ -394,8 +395,8 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
       const isShort = selectedOutcomeId ==0? false:true
 
       const breakdown = isBuy
-        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor+1, isUnderlying, isShort,true, isIssue)
-        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor+1, isUnderlying, isShort, false, isIssue)
+        ? await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor, isUnderlying, isShort,true, isIssue)
+        : await estimateTrade(account, loginAccount.library, Number(marketId), amount, leverageFactor, isUnderlying, isShort, false, isIssue)
         isMounted&& setBreakdown(breakdown); 
     }
     // const getEstimate = async () => {
@@ -743,21 +744,20 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           isBuy={orderType === BUY}
         />)}
         {!isLimit && !isIssue && false&& <Slippage />}
-        <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/>
-        {/* {isBuy && <Slippage />} */}
-        {/*isBuy && (<Budget 
-          {...{
-            budget:traderBudget, 
-            idx:0
-          }}
-          />)}
-        {isBuy && (<Budget 
-          {...{
-            budget:hedgeQuantity, 
-            idx:1
-          }}
-          />)*/}
-       { /*<InfoNumbers infoNumbers={formatBreakdown(isBuy, breakdown, ammCash)} /> */}
+        {/* <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/> */}
+        <div className={Styles.LeverageSlider}>
+          <div> 
+            <div>
+            Leverage Factor
+            </div>
+            {generateTooltip("leverage factor description", "leverage factor")}
+          </div>
+          <span>
+            {leverageFactor}x
+          </span>
+          <BaseSlider value={leverageFactor} onChange={(val) => setLeverageFactor(val)} max={10} min={1} step={0.01}/>
+        </div>
+
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, ammCash)} />
 
         {/*isLogged && 

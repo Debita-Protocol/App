@@ -226,6 +226,9 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
   const instrumentDescription = InstumentDescriptionFormat({ instrumenType: Number(type), fields: instrumentField });
   const instrumentBreakDown = InstrumentBreakDownFormat({ instrumentType: type, field: instrumentField });
 
+  const vault = useMemo(() => vaults[instrument?.vaultId], [instrument, vaults]);
+  const market = useMemo(() => markets[marketId], [marketId, markets]);
+
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
 
   let InstrumentDetails;
@@ -238,27 +241,11 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
       break;
     case 2:
       // lending pool
-      const { collaterals } = instrument;
       InstrumentDetails = (
-        <div className={Styles.poolDetails}>
-          <h3>
-            Proposed Collateral:
-          </h3>
-          <div>
-            {collaterals.map((collateral: any) => {
-              return (
-                <PoolCollateralCard collateral={collateral} />
-              )
-            })
-            }
-          </div>
-        </div>
+        <PoolDetails instrument={instrument} vault={vault} market={market} />
       )
       break;
   }
-
-  console.log("expanded: ", expanded);
-
   return (
     <article
       className={classNames(Styles.LiquidityMarketCard, {
@@ -269,58 +256,92 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
       })}
     >
       <section>
-      <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
-        <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{ height: 40, width: 40 }} />
+        <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+          <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{ height: 40, width: 40 }} />
+          <span>
+            <span>{instrument.name}</span>
+            <span>{instrument.description}</span>
+          </span>
+        </MarketLink>
+        <RammCategoryLabel text={instrument?.isPool ? "  Perpetual" : "Fixed Term"} />
+        <span>{roundDown(instrument?.balance.toString(), 2)}</span>
+        <span>{roundDown((((1 + Number(instrument?.seniorAPR) / 1e18) ** 31536000) - 1) * 100, 2)}{"%"}</span>
         <span>
-          <span>{instrument.name}</span>
-          <span>{instrument.description}</span>
+          {instrument?.exposurePercentage.toString()}{"%"}
         </span>
-      </MarketLink>
-      <RammCategoryLabel text={instrument?.isPool ? "  Perpetual" : "Fixed Term"} />
-      <span>{roundDown(instrument?.balance.toString(), 2)}</span>
-      <span>{roundDown((((1 + Number(instrument?.seniorAPR) / 1e18) ** 31536000) - 1) * 100, 2)}{"%"}</span>
-      <span>
-        {instrument?.exposurePercentage.toString()}{"%"}
-      </span>
-      <span>
-        {(approved ? "  Yes" : "No")}
-      </span>
-      <div>
-        <div className={Styles.MobileLabel}>
-          <span>Approved</span>
-          <span>{(approved ? "  Yes" : "No")}</span>
+        <span>
+          {(approved ? "  Yes" : "No")}
+        </span>
+        <div>
+          <div className={Styles.MobileLabel}>
+            <span>Approved</span>
+            <span>{(approved ? "  Yes" : "No")}</span>
+          </div>
+          {isMobile ?
+            (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+              <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+
+              {<SecondaryThemeButton
+                text={instrument?.name}
+                small
+                disabled={false}
+                action={() =>
+                  history.push({
+                    pathname: makePath(MARKET),
+                    search: makeQuery({
+                      [MARKET_ID_PARAM_NAME]: marketId,
+                    }),
+                  })
+                }
+              />}
+
+            </MarketLink>)
+
+            : (
+              <label onClick={() => setExpanded(!expanded)}>
+                <SizedChevronFlip pointDown={expanded} width={40} height={40} />
+              </label>
+            )}
         </div>
-        {isMobile ?
-          (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
-            <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
-
-            {<SecondaryThemeButton
-              text={instrument?.name}
-              small
-              disabled={false}
-              action={() =>
-                history.push({
-                  pathname: makePath(MARKET),
-                  search: makeQuery({
-                    [MARKET_ID_PARAM_NAME]: marketId,
-                  }),
-                })
-              }
-            />}
-
-          </MarketLink>)
-
-          : (
-            <label onClick={() => setExpanded(!expanded)}>
-              <SizedChevronFlip pointDown={expanded} width={40} height={40} />
-            </label>
-          )}
-      </div>  
       </section>
       {expanded && InstrumentDetails}
 
     </article>
   );
+}
+
+export const PoolDetails: React.FC = ({ instrument, vault, market }) => {
+  const { collaterals, trusted } = instrument;
+  const { want: { symbol } } = vault;
+
+  // request details -> deposit amount in underlying.
+  // request details -> proposed promised return
+  return (
+    <div className={classNames(Styles.poolDetails, {
+      [Styles.Trusted]: trusted,
+    })}>
+      <div>
+        <div>
+        <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
+        <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
+        </div>
+      </div>
+      <div>
+        <h3>
+          Pool Collateral:
+        </h3>
+        <div>
+          {collaterals.map((collateral: any) => {
+            return (
+              <PoolCollateralCard collateral={collateral} wantSymbol={symbol} />
+            )
+          })
+          }
+        </div>
+      </div>
+
+    </div>
+  )
 }
 
 const VaultCard = ({ vault }: any): React.FC => {
@@ -817,24 +838,36 @@ export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol }: { colla
     <div className={Styles.poolCollateralCard}>
       <section>
         <div>
-        <RammCategoryLabel text={symbol} />
-        {!isERC20 &&
-          <span>
-            TokenId: {tokenId}
-          </span>
-        }
+          <RammCategoryLabel text={symbol} />
+          {!isERC20 &&
+            <span>
+              TokenId: {tokenId}
+            </span>
+          }
         </div>
-        
-        
         <span>
           <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + address} label={address} icon={true} />
         </span>
-
-
       </section>
-      <section>
-        <ValueLabel  label={"Borrowable amount per unit collateral"} value={handleValue(borrowAmount, wantSymbol)} />
-        <ValueLabel  label={"Liquidation cap per unit collateral"} value={handleValue(maxAmount, wantSymbol)} />
+      <section className={Styles.OutcomesTable}>
+        <div>
+          <span>
+            Borrowable amount per unit collateral
+          </span>
+          <span>
+            {handleValue(borrowAmount, wantSymbol)}
+          </span>
+        </div>
+        <div>
+          <span>
+            Liquidation cap per unit collateral
+          </span>
+          <span>
+            {handleValue(maxAmount, wantSymbol)}
+          </span>
+        </div>
+        {/* <ValueLabel  label={"Borrowable amount per unit collateral"} value={handleValue(borrowAmount, wantSymbol)} />
+        <ValueLabel  label={"Liquidation cap per unit collateral"} value={handleValue(maxAmount, wantSymbol)} /> */}
       </section>
     </div>
   )

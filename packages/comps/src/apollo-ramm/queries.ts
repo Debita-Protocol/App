@@ -226,3 +226,12 @@ export const GET_MANAGER_SCORES = gql`
     }
 `
 
+export const GET_MANAGER_MARKET_PAIR = gql`
+    query managerMarketPair($id: ID!) {
+        managerMarketPair(id: $id) {
+            id
+            longZCBCollateral
+            shortZCBCollateral
+        }
+    }
+`
