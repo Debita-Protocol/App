@@ -585,7 +585,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
         );
         // console.log("vaultBundle: ", vaultBundle);
         // console.log("marketBundle: ", marketBundle);
-        // console.log("instrumentBundle: ", instrumentBundle);
+        console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
             console.error(
@@ -712,7 +712,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
                 managerStake: toDisplay(instr.managers_stake?.toString()),
                 approvalPrice: toDisplay(instr.approvalPrice?.toString()),
-                isPool: instr.isPool, 
+                isPool: instr.isPool,
                 instrumentType: instr.instrument_type.toString(),
             }
 
@@ -914,10 +914,10 @@ export const getRammData = async (
     instruments: InstrumentInfos
 ): Promise<{
     reputationScore: string;
-  vaultBalances: VaultBalances;
-  zcbBalances: ZCBBalances;
-  poolInfos: UserPoolInfos;
-  leveragePositions: LeverageBonds; 
+    vaultBalances: VaultBalances;
+    zcbBalances: ZCBBalances;
+    poolInfos: UserPoolInfos;
+    leveragePositions: LeverageBonds; 
 }> => {
     // get reputation score
     const controller = new Contract(controller_address, ControllerData.abi, provider);

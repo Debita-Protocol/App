@@ -642,6 +642,19 @@
     flex-flow: column nowrap;
     align-items: flex-start;
     justify-content: flex-start;
+
+    >div:first-of-type {
+      width: 100%;
+      justify-content: space-between;
+      >div:last-of-type  {
+        padding: 0;
+        margin: 0;
+      }
+
+      >div:last-of-type {
+        justify-self: flex-end;
+      }
+    }
     > div {
       display: flex;
       flex-flow: row nowrap;
@@ -706,24 +719,26 @@
   display: flex;
   flex-flow: column nowrap;
   border-top : @size-1 solid var(--theme-border);
-  padding: @size-16 @size-8 @size-16;
-
+  padding: @size-16 @size-44 @size-16;
   &.Trusted {
     display:flex;
   }
 
   > div:first-of-type {
-    >div {
+    display: flex;
+    flex-flow: column nowrap;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
       margin-bottom: @size-16;
       > div {
-        margin-right: @size-24;
+        margin-right: @size-16;
       }
     }
   }
   // border-top: @size-1 solid var(--theme-border);
   // width: 100%;
   >div {
-    padding-left: @size-36;
     >h3:first-of-type {
       align-self: baseline;
 
@@ -735,6 +750,32 @@
     >div:first-of-type {
       display: flex;
       flex-flow: row nowrap;
+    }
+  }
+
+  >div {
+    margin-bottom:@size-20;
+  }
+
+  >div:last-of-type {
+
+    padding-bottom: @size-24;
+    width: 100%;
+    >div:first-of-type {
+      font-size: @size-20;
+      >div:first-of-type {
+        left:0%;
+      }
+      > div:nth-of-type(2) {
+        left:37%;
+      }
+
+      > div:nth-of-type(3) {
+        left:72%;
+      }
+    }
+    >div:nth-of-type(2){
+      max-width: none;
     }
   }
 }
@@ -845,5 +886,82 @@
         grid-row: 2;
       }
     }
+  }
+}
+
+.CreditlineDetails {
+  display: grid;
+  border-top: @size-1 solid var(--theme-border);
+
+  padding: @size-16 @size-44 @size-16;
+
+  &.Trusted {
+    display: grid;
+  }
+
+  >div:first-of-type{
+    margin-bottom: @size-20;
+
+  }
+
+  > div:nth-of-type(2) {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom:@size-20;
+
+    > div:first-of-type {
+      display: flex;
+      flex-flow: row nowrap;
+      > div {
+        margin-right: @size-20;
+      }
+    }
+  }
+
+  >div {
+    margin-bottom:@size-20;
+  }
+
+  >div:last-of-type {
+
+    padding-bottom: @size-24;
+    width: 100%;
+    >div:first-of-type {
+      font-size: @size-20;
+      >div:first-of-type {
+        left:0%;
+      }
+      > div:nth-of-type(2) {
+        left:37%;
+      }
+
+      > div:nth-of-type(3) {
+        left:72%;
+      }
+    }
+    >div:nth-of-type(2){
+      max-width: none;
+    }
+  }
+}
+
+.CreditlineCollateralCard {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  margin-top: @size-10;
+  > div:first-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+    margin-right: @size-24;
+    > h3:first-of-type {
+      margin-bottom: @size-16;
+    }
+  }
+  > div:nth-of-type(2) {
+    margin-top: @size-26;
+    width:80%;
   }
 }

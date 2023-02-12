@@ -1370,14 +1370,13 @@ export const RammPositionsSection = ({
     }
   })
 
-  const mm_pair = data.managerMarketPair;
+  const mm_pair = data?.managerMarketPair;
 
   return (
     <section className={Styles.RammPositionSection}>
       <div>
         <TabNavItem title="LongZCB" id="0" activeTab={activeTab} setActiveTab={setActiveTab}/>
         <TabNavItem title="ShortZCB" id="1" activeTab={activeTab} setActiveTab={setActiveTab}/>
-        <TabNavItem title="Levered LongZCB" id="2" activeTab={activeTab} setActiveTab={setActiveTab}/>
       </div>
       <div>
           <RammPositionTable market={market} buttonAction={() => {}} activeTab={activeTab} assetName={assetName} mm_pair={mm_pair}/>
@@ -1391,7 +1390,13 @@ const RammPositionTable = ({buttonAction, market, activeTab, assetName, mm_pair}
   const { bondPool: {longZCBPrice, b, longZCB: {balance: longZCBbalance }, shortZCB: {balance: shortZCBbalance}}} = market;
   let data_row = []; // values.
 
-  const { longZCBCollateral, shortZCBCollateral } = mm_pair;
+  // const { longZCBCollateral, shortZCBCollateral } = mm_pair;
+  let longZCBCollateral;
+  let shortZCBCollateral;
+  if (mm_pair) {
+    longZCBCollateral = mm_pair.longZCBCollateral;
+    shortZCBCollateral = mm_pair.shortZCBCollateral;
+  }
   const {leveragePositions} = ramm;
   const { marketId } = market;
 

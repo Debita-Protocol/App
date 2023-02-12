@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useHistory } from "react-router";
 import classNames from "classnames";
 import { Collateral } from "@augurproject/comps/build/types";
+import moment from "moment";
 // @ts-ignore
 import Styles from "./liquidity-view.styles.less";
 import {
@@ -41,8 +42,9 @@ import { SubCategoriesFilter } from "../markets/markets-view";
 import { Icon_Mapping, SizedChevronFlipIcon } from "@augurproject/comps/build/components/common/icons";
 import { RammCategoryLabel, RammValueLabel, ValueLabel } from "@augurproject/comps/build/components/common/labels";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
-import { round } from "utils/helpers";
+import { marketStage, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
+import { InstrumentStatusSlider } from "modules/common/slider";
 
 const { ADD, CREATE, REMOVE, ALL_MARKETS, OTHER, POPULAR_CATEGORIES_ICONS, SPORTS, MARKET_ID_PARAM_NAME } = Constants;
 const {
@@ -235,6 +237,9 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
   switch (type) {
     case 0:
       // creditline
+      InstrumentDetails = (
+        <CreditlineDetails instrument={instrument} vault={vault} market={market} />
+      )
       break;
     case 1:
       // covered call
@@ -321,9 +326,10 @@ export const PoolDetails: React.FC = ({ instrument, vault, market }) => {
       [Styles.Trusted]: trusted,
     })}>
       <div>
+        <RammCategoryLabel text={vault.name} />
         <div>
-        <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
-        <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
+          <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
+          <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
         </div>
       </div>
       <div>
@@ -333,13 +339,13 @@ export const PoolDetails: React.FC = ({ instrument, vault, market }) => {
         <div>
           {collaterals.map((collateral: any) => {
             return (
-              <PoolCollateralCard collateral={collateral} wantSymbol={symbol} />
+              <PoolCollateralCard collateral={collateral} wantSymbol={symbol}/>
             )
           })
           }
         </div>
       </div>
-
+      <InstrumentStatusSlider market={market} instrument={instrument} />
     </div>
   )
 }
@@ -831,7 +837,7 @@ export const SortableHeaderButton = ({ setSortBy, sortBy, sortType, text }: Sort
 );
 
 
-export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol }: { collateral: Collateral, wantSymbol: string }) => {
+export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol, market, instrument }: { collateral: Collateral, wantSymbol: string, market:any, instrument:any }) => {
   const { address, tokenId, borrowAmount, maxAmount, isERC20, symbol } = collateral; // should get tokenURI
 
   return (
@@ -844,6 +850,9 @@ export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol }: { colla
               TokenId: {tokenId}
             </span>
           }
+          <div>
+          <img src={Icon_Mapping[wantSymbol.toUpperCase()]} style={{height: 80, width: 80}}/>
+          </div>
         </div>
         <span>
           <ExternalLink URL={"https://mumbai.polygonscan.com/address/" + address} label={address} icon={true} />
@@ -871,4 +880,135 @@ export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol }: { colla
       </section>
     </div>
   )
+}
+
+// details: duration, expiration, proposal time, if approved vs. not approved.
+// approved -> approved principal + interset, amount repaid etc.
+// if not approved: duration, proposal time, principal, expected yield, collateral card
+
+export const CreditlineDetails = ({ vault, market, instrument }) => {
+  const { name, want: { symbol: assetSymbol } } = vault;
+
+  const { trusted, principal: proposedPrincipal, expectedYield: proposedYield, duration, maturityDate } = instrument;
+  const { approvedPrincipal, approvedYield } = instrument;
+
+  const stage = marketStage(market);
+
+
+  return (
+    <div className={classNames(Styles.creditlineDetails, {
+      [Styles.Trusted]: trusted
+    })}>
+      <RammCategoryLabel text={name} />
+      {trusted ? (
+        <div>
+          <div className={Styles.OutcomesTable}>
+            <div>
+              <span>
+                Approved Principal
+              </span>
+              <span>{handleValue(approvedPrincipal, assetSymbol)}</span>
+            </div>
+            <div>
+              <span>Approved Yield</span>
+              <span>
+                {handleValue(approvedYield, assetSymbol)}
+              </span>
+            </div>
+            <div>
+              <span>
+                Expiry Date
+              </span>
+              <span>
+                {moment(duration).format("DD MM YYYY")}
+              </span>
+            </div>
+          </div>
+          <div>
+            <CreditlineCollateralCard instrument={instrument} />
+          </div>
+        </div>
+      ) :
+        <div>
+          <div>
+            <ValueLabel large={true} label={"Requested Amount: "} value={handleValue(proposedPrincipal)} />
+            <ValueLabel large={true} label={"Proposed Yield: "} value={handleValue(proposedYield)} />
+            <ValueLabel large={true} label={"Duration: "} value={moment().add(duration, "seconds").fromNow(true)} />
+          </div>
+        </div> 
+      }
+      <div>
+        <CreditlineCollateralCard instrument={instrument} />
+      </div>
+
+      <InstrumentStatusSlider market={market} instrument={instrument} />
+    </div>
+  )
+}
+
+// liquid || nonliquid, erc20 || erc721
+
+export const CreditlineCollateralCard = ({ instrument }) => {
+  let { collateral, oracle, loanStatus, collateralType, collateralBalance } = instrument;
+
+  let collateralTypeWord
+  switch (collateralType) {
+    case (0):
+      collateralTypeWord = "Liquid"
+      break;
+    case (1):
+      collateralTypeWord = "Nonliquid"
+      break;
+    case (2):
+      collateralTypeWord = "Smart Contract"
+      break;
+    case (3):
+      collateralTypeWord = "Uncollateralized"
+      break;
+  }
+
+  return (
+    <div className={Styles.creditlineCollateralCard}>
+
+      <div>
+      <h3>
+        Collateral
+      </h3>
+      <img src={Icon_Mapping["AUTO"]} style={{ height: 80, width: 80 }} />
+      </div>
+
+      <div className={Styles.OutcomesTable}>
+        <div>
+          <span>
+            Collateral Type
+          </span>
+          <span>
+            {collateralTypeWord}
+          </span>
+        </div>
+        <div>
+          <span>
+            Collateral
+          </span>
+          <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + { collateral }} />
+        </div>
+        {(collateralType === 0 || collateralType === 1) && <div>
+          <span>
+            Collateral Balance
+          </span>
+          <span>
+            {collateralBalance}
+          </span>
+        </div>}
+      </div>
+    </div>
+  )
+  // collateral: string;
+  // collateralBalance: string;
+  // oracle: string;
+  // loanStatus: number;
+  // collateralType: number;
+  // principalRepayed: string;
+  // interestRepayed: string;
+  // totalOwed: string;
 }
