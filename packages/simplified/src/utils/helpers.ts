@@ -33,3 +33,19 @@ export const marketStage = (market: CoreMarketInfo): MarketStage => {
         return MarketStage.DENIED;
     }
 }
+
+export const marketStageLabel = (market: CoreMarketInfo): string => {
+    const stage = marketStage(market);
+    switch (stage) {
+        case MarketStage.EARLY_ASSESSMENT:
+            return "Early Assessment";
+        case MarketStage.LATE_ASSESSMENT:
+            return "Late Assessment";
+        case MarketStage.APPROVED:
+            return "Approved";
+        case MarketStage.RESOLVED:
+            return "Resolved";
+        case MarketStage.DENIED:
+            return "Denied";
+    }
+}

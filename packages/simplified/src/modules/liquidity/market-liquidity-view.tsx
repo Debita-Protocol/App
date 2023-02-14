@@ -287,12 +287,6 @@ export const MarketLiquidityView = () => {
         <p>{"Vault/Underlying Tokens: "}</p>
         <AddMetaMaskToken tokenSymbol={"Vault" + vaultId} tokenAddress={vault_address} />
         <AddMetaMaskToken tokenSymbol={underlyingSymbol} tokenAddress={underlying_address} />
-        {/* {(
-          <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
-            {showMoreDetails ? "Read Less" : "Read More"}
-          </button>
-        )}
-        <p>{"details"}</p> */}
 
         <ul className={Styles.StatsRow}>
           <li>

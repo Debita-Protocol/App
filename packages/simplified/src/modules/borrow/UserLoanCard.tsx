@@ -89,7 +89,9 @@ export const LoanCard: React.FC = (
         maturityDate,
         exposurePercentage,
         description,
-        collateralType
+        collateralType,
+        interestRepaid,
+        principalRepaid
     } = instrument;
     let { approvedPrincipal, approvedYield } = market;
 
@@ -224,7 +226,6 @@ export const LoanCard: React.FC = (
                   <TinyThemeButton text={"Repay"} action={repayAction} />
                   <TinyThemeButton text={"Deposit"} action={depositAction} />
                   </div>
-                  
                 </div>
               </section>
             )}

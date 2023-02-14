@@ -806,8 +806,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         oracle: instr.creditlineData.oracle,
                         loanStatus: instr.creditlineData.loanStatus,
                         collateralType: instr.creditlineData.collateralType,
-                        principalRepayed: toDisplay(instr.creditlineData.principalRepayed.toString()),
-                        interestRepayed: toDisplay(instr.creditlineData.interestRepayed.toString()),
+                        principalRepaid: toDisplay(instr.creditlineData.principalRepayed.toString()),
+                        interestRepaid: toDisplay(instr.creditlineData.interestRepayed.toString()),
                         totalOwed: toDisplay(instr.creditlineData.totalOwed.toString()),
                     }
                 )

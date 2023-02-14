@@ -334,7 +334,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
   const [hedgeQuantity, setHedgeQuantity] = useState("1"); 
   const [traderBudget, setTraderBudget] = useState("1");
   const [userBalance, setUserBalance] = useState("1"); 
-  const [leverageFactor, setLeverageFactor] = useState(0); 
+  const [leverageFactor, setLeverageFactor] = useState(1); 
   const [MMAllowance, setMMAllowance] = useState(false); 
   const userMaxAmount = vaultBalances[vaultId]?.base
   // const userBalance = String(
@@ -755,7 +755,7 @@ export const TradingForm = ({ initialSelectedOutcome, amm, marketId, isApproved}
           <span>
             {leverageFactor}x
           </span>
-          <BaseSlider value={leverageFactor} onChange={(val) => setLeverageFactor(val)} max={10} min={1} step={0.01}/>
+          <BaseSlider value={leverageFactor} onChange={(val) => setLeverageFactor(val)} max={10} min={1} defaultValue={1} step={0.01}/>
         </div>
 
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, ammCash)} />

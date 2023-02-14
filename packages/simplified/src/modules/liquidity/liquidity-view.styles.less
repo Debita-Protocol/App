@@ -627,6 +627,20 @@
   }
 }
 
+.DropDownCard {
+  display: flex;
+  flex-flow: column nowrap;
+  width: 100%;
+  .ThemeBorder;
+  // width: fit-content;
+  background-color: var(--primary-bg);
+  border-top : @size-1 solid var(--theme-border);
+  padding: @size-16 @size-44 @size-16;
+  > div:first-of-type {
+    margin-bottom: @size-20;
+  }
+}
+
 .PoolCollateralCard {
   display: flex;
   flex-flow: column nowrap;
@@ -718,8 +732,7 @@
 .PoolDetails {
   display: flex;
   flex-flow: column nowrap;
-  border-top : @size-1 solid var(--theme-border);
-  padding: @size-16 @size-44 @size-16;
+  width: 100%;
   &.Trusted {
     display:flex;
   }
@@ -732,24 +745,21 @@
       flex-flow: row nowrap;
       margin-bottom: @size-16;
       > div {
-        margin-right: @size-16;
+        margin-right: @size-30;
       }
     }
   }
   // border-top: @size-1 solid var(--theme-border);
   // width: 100%;
-  >div {
-    >h3:first-of-type {
-      align-self: baseline;
 
-      font-size: @size-20;
-      font-weight: 600;
-      margin-bottom: @size-12;
-      color: var(--secondary-text);
+  > div:nth-of-type(2) { // collateral cards+ collateral
+    > h3 {
+      margin-bottom: @size-16;
     }
-    >div:first-of-type {
-      display: flex;
-      flex-flow: row nowrap;
+    > div {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 760px;
     }
   }
 
@@ -757,27 +767,36 @@
     margin-bottom:@size-20;
   }
 
-  >div:last-of-type {
-
-    padding-bottom: @size-24;
-    width: 100%;
-    >div:first-of-type {
-      font-size: @size-20;
-      >div:first-of-type {
-        left:0%;
-      }
-      > div:nth-of-type(2) {
-        left:37%;
-      }
-
-      > div:nth-of-type(3) {
-        left:72%;
-      }
-    }
-    >div:nth-of-type(2){
-      max-width: none;
+  > div:last-of-type {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    margin-top: @size-30;
+    > span:first-of-type {
+      margin-bottom: @size-16;
     }
   }
+
+  // >div:last-of-type {
+
+  //   padding-bottom: @size-24;
+  //   width: 100%;
+  //   >div:first-of-type {
+  //     font-size: @size-20;
+  //     >div:first-of-type {
+  //       left:0%;
+  //     }
+  //     > div:nth-of-type(2) {
+  //       left:37%;
+  //     }
+
+  //     > div:nth-of-type(3) {
+  //       left:72%;
+  //     }
+  //   }
+  //   >div:nth-of-type(2){
+  //     max-width: none;
+  //   }
+  // }
 }
 
 .OutcomesTable {
@@ -831,6 +850,11 @@
 
         color: var(--primary-text);
       }
+    }
+
+    > a {
+      display: flex;
+      align-items: center
     }
     &:not(:first-of-type):not(:last-of-type) {
       border-top: 0;
@@ -891,32 +915,40 @@
 
 .CreditlineDetails {
   display: grid;
-  border-top: @size-1 solid var(--theme-border);
-
-  padding: @size-16 @size-44 @size-16;
-
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
   &.Trusted {
-    display: grid;
+    > div:first-of-type {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: @size-20;
+    }
   }
 
   >div:first-of-type{
     margin-bottom: @size-20;
+    grid-column: 1 / span 2;
+    grid-row: 1;
+    display: flex;
+    width:100%;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    > div {
+      margin-right: @size-24;
+    }
 
   }
 
   > div:nth-of-type(2) {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom:@size-20;
+    grid-column: 1 / span 2;
+    grid-row: 2;
+  }
 
-    > div:first-of-type {
-      display: flex;
-      flex-flow: row nowrap;
-      > div {
-        margin-right: @size-20;
-      }
+  > div:last-of-type {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    > span:first-of-type {
+      margin-bottom: @size-30;
     }
   }
 
@@ -924,34 +956,35 @@
     margin-bottom:@size-20;
   }
 
-  >div:last-of-type {
+  // >div:last-of-type {
 
-    padding-bottom: @size-24;
-    width: 100%;
-    >div:first-of-type {
-      font-size: @size-20;
-      >div:first-of-type {
-        left:0%;
-      }
-      > div:nth-of-type(2) {
-        left:37%;
-      }
+  //   padding-bottom: @size-24;
+  //   width: 100%;
+  //   >div:first-of-type {
+  //     font-size: @size-20;
+  //     >div:first-of-type {
+  //       left:0%;
+  //     }
+  //     > div:nth-of-type(2) {
+  //       left:37%;
+  //     }
 
-      > div:nth-of-type(3) {
-        left:72%;
-      }
-    }
-    >div:nth-of-type(2){
-      max-width: none;
-    }
-  }
+  //     > div:nth-of-type(3) {
+  //       left:72%;
+  //     }
+  //   }
+  //   >div:nth-of-type(2){
+  //     max-width: none;
+  //   }
+  // }
 }
 
 .CreditlineCollateralCard {
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
-  margin-top: @size-10;
+  align-items: end;
+  // margin-top: @size-10;
   > div:first-of-type {
     display: flex;
     flex-flow: column nowrap;
@@ -961,7 +994,7 @@
     }
   }
   > div:nth-of-type(2) {
-    margin-top: @size-26;
+    // margin-top: @size-26;
     width:80%;
   }
 }

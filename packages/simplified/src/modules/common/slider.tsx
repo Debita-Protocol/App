@@ -3,24 +3,26 @@ import React from "react";
 
 //@ts-ignore;
 import Styles from "./slider.styles.less";
-import { MarketStage, marketStage } from "utils/helpers";
+import { MarketStage, marketStage, round } from "utils/helpers";
+import classNames from "classnames";
+import { CoreMarketInfo, CreditlineInstrument, Instrument, PoolInstrument } from "@augurproject/comps/build/types";
 
 
 //https://zillow.github.io/react-slider/ -> more attributes to customize
 export const BaseSlider = (
     {
-        max=100,
-        min=0,
-        onAfterChange=()=>{},
-        onBeforeChange=()=>{},
-        onChange=()=>{},
-        defaultValue=0,
-        disabled=false,
-        step=1,
+        max = 100,
+        min = 0,
+        onAfterChange = () => { },
+        onBeforeChange = () => { },
+        onChange = () => { },
+        defaultValue = 0,
+        disabled = false,
+        step = 1,
         value,
         renderMark,
-        marks=[],
-        markClassName="",
+        marks = [],
+        markClassName = "",
         renderTrack
     }: {
         max?: number,
@@ -38,10 +40,10 @@ export const BaseSlider = (
         renderTrack?: Function
     }
 ) => {
-    let props: any ={
-        className:Styles.BaseHorizontalSlider,
-        thumbClassName:Styles.BaseThumb,
-        trackClassName:Styles.BaseTrack,
+    let props: any = {
+        className: Styles.BaseHorizontalSlider,
+        thumbClassName: Styles.BaseThumb,
+        trackClassName: Styles.BaseTrack,
         disabled,
         onChange,
         step,
@@ -49,7 +51,7 @@ export const BaseSlider = (
         min,
         defaultValue,
         marks,
-        markClassName: markClassName === "" ? Styles.BaseMark : {markClassName},
+        markClassName: markClassName === "" ? Styles.BaseMark : { markClassName },
     }
     if (!isNaN(value)) {
         props = {
@@ -64,15 +66,15 @@ export const BaseSlider = (
         }
     }
     if (!renderTrack) {
-        props ={
+        props = {
             ...props,
             renderTrack
         }
     }
-    
+
     return (
         <ReactSlider
-        {...props}
+            {...props}
         />
     )
 }
@@ -81,41 +83,102 @@ export const InstrumentStatusSlider: React.FC = (
     {
         market,
         instrument
+    }: {
+        market: CoreMarketInfo,
+        instrument: Instrument
     }
 ) => {
     const stage: MarketStage = marketStage(market);
-    const { totalCollateral, parameters: { alpha }} = market;
-    const { principal } = instrument;
+    const { totalCollateral, parameters: { alpha } } = market;
+    const { principal, instrumentType } = instrument;
 
-    let value;
-    switch (stage) {
-        case MarketStage.EARLY_ASSESSMENT:
-        case MarketStage.LATE_ASSESSMENT:
-            value = 1/2; // Number(totalCollateral)/(Number(alpha) * Number(principal));
-            break;
-        case MarketStage.APPROVED:
-            value = 1;
-            break;
-        case MarketStage.RESOLVED:
-            value = 2;
-            break;    
+
+    console.log("alpha: ", alpha)
+    console.log("totalCollateral: ", totalCollateral)
+    console.log("principal: ", principal)
+
+    console.log("instrumentType: ", instrumentType)
+    let props;
+    let stages: string[] = [];
+    if (Number(instrumentType) === 0) { // fixed instrument
+        instrument as CreditlineInstrument;
+        let value;
+        stages = [
+            "Proposal",
+            "Approval",
+            "Resolution"
+        ]
+        switch (stage) {
+            case MarketStage.EARLY_ASSESSMENT:
+            case MarketStage.LATE_ASSESSMENT:
+                value = Number(totalCollateral)/(Number(alpha) * Number(principal));
+                break;
+            case MarketStage.APPROVED:
+                value = 1;
+                break;
+            case MarketStage.RESOLVED:
+                value = 2;
+                break;
+        }
+        value = Number(round(String(value), 2));
+
+
+
+        console.log("value: ", value)
+
+        props = {
+            className: Styles.BaseHorizontalSlider,
+            thumbClassName: Styles.BaseThumb,
+            trackClassName: Styles.BaseTrack,
+            disabled: false,
+            max: 2,
+            min: 0,
+            step: 0.01,
+            // marks: [0, 1, 2],
+            markClassName: Styles.BaseMark,
+            value
+        }
+    } else if (Number(instrumentType) == 2){ // perpetual instrument
+        let value;
+        const {saleAmount} = instrument as PoolInstrument;
+        stages = [
+            "Proposal",
+            "Approval"
+        ]
+        switch (stage) {
+            case MarketStage.EARLY_ASSESSMENT:
+            case MarketStage.LATE_ASSESSMENT:
+                value = Number(totalCollateral)/( Number(saleAmount));
+                break;
+            case MarketStage.APPROVED:
+                value = 1;
+                break;
+            case MarketStage.RESOLVED:
+                value = 2;
+                break;
+        }
+
+        props = {
+            className: Styles.BaseHorizontalSlider,
+            thumbClassName: Styles.BaseThumb,
+            trackClassName: Styles.BaseTrack,
+            disabled: false,
+            max: 1,
+            min: 0,
+            step: 0.01,
+            // marks: [0, 1],
+            markClassName: Styles.BaseMark,
+            value
+        }
     }
 
-    let props: any ={
-        className:Styles.BaseHorizontalSlider,
-        thumbClassName:Styles.BaseThumb,
-        trackClassName:Styles.BaseTrack,
-        disabled: false,
-        max: 2,
-        min: 0,
-        step: 0.01,
-        marks: [0,1,2],
-        markClassName: Styles.BaseMark,
-        value
-    }
+    console.log("stages: ", stages)
+
     return (
-        <div className={Styles.InstrumentStatusSlider}>
-            <Stages />
+        <div className={classNames(Styles.InstrumentStatusSlider, {
+            [Styles.Fixed]: Number(instrumentType) === 0,
+        })}>
+            <Stages stages={stages}/>
             <ReactSlider {...props}/>
         </div>
     )
@@ -123,31 +186,26 @@ export const InstrumentStatusSlider: React.FC = (
 
 export const VerticalFill = (
     {
-        max=100,
-        min=0
+        max = 100,
+        min = 0
     }
 ) => {
 
     let props = {
         max,
         min,
-        className:Styles.VerticalFill,
+        className: Styles.VerticalFill,
         orientation: "vertical",
         invert: true
     }
 
 
     return (
-        <ReactSlider {...props}/>
+        <ReactSlider {...props} />
     )
 }
 
-export const Stages = () => {
-    const stages = [
-        "Proposal",
-        "Approval",
-        "Resolution"
-    ]
+export const Stages = ({stages }) => {
     return (
         <div>
             {stages.map((stage, index) => {

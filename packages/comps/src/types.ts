@@ -404,8 +404,8 @@ export interface CreditlineInstrument extends BaseInstrument {
   oracle: string;
   loanStatus: number;
   collateralType: number;
-  principalRepayed: string;
-  interestRepayed: string;
+  principalRepaid: string;
+  interestRepaid: string;
   totalOwed: string;
 }
 

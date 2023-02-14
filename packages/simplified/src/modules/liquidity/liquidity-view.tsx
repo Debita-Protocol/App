@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useHistory } from "react-router";
 import classNames from "classnames";
-import { Collateral } from "@augurproject/comps/build/types";
+import { Collateral, CoreMarketInfo, CreditlineInstrument, Instrument, PoolInstrument, VaultInfo } from "@augurproject/comps/build/types";
 import moment from "moment";
 // @ts-ignore
 import Styles from "./liquidity-view.styles.less";
@@ -36,13 +36,13 @@ import {
 import { BonusReward } from "../common/tables";
 import { useSimplifiedStore } from "../stores/simplified";
 import { MarketInfo, InstrumentInfos, VaultInfos, CoreInstrumentData } from "@augurproject/comps/build/types";
-import { InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField } from "../market/market-view";
+import { InstrumentOverviewFormat, InstrumentBreakDownFormat, InstumentDescriptionFormat, InstrumentField, InstrumentStatusLabel } from "../market/market-view";
 import BigNumber from "bignumber.js";
 import { SubCategoriesFilter } from "../markets/markets-view";
 import { Icon_Mapping, SizedChevronFlipIcon } from "@augurproject/comps/build/components/common/icons";
 import { RammCategoryLabel, RammValueLabel, ValueLabel } from "@augurproject/comps/build/components/common/labels";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
-import { marketStage, round } from "utils/helpers";
+import { marketStage, marketStageLabel, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
 import { InstrumentStatusSlider } from "modules/common/slider";
 
@@ -238,7 +238,7 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
     case 0:
       // creditline
       InstrumentDetails = (
-        <CreditlineDetails instrument={instrument} vault={vault} market={market} />
+        <CreditlineDropDownCard instrument={instrument} vault={vault} market={market} />
       )
       break;
     case 1:
@@ -247,7 +247,7 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
     case 2:
       // lending pool
       InstrumentDetails = (
-        <PoolDetails instrument={instrument} vault={vault} market={market} />
+        <PoolDropDownCard instrument={instrument} vault={vault} market={market} />
       )
       break;
   }
@@ -315,37 +315,90 @@ export const InstrumentCard = ({ instrument }: any): React.FC => {
   );
 }
 
-export const PoolDetails: React.FC = ({ instrument, vault, market }) => {
-  const { collaterals, trusted } = instrument;
+export const PoolDropDownCard: React.FC = ({ instrument, vault, market }: { instrument: PoolInstrument, vault: VaultInfo, market: CoreMarketInfo }) => {
+  return (
+    <div className={Styles.DropDownCard}>
+      <RammCategoryLabel text={vault.name} />
+      <PoolDetails instrument={instrument} vault={vault} market={market} />
+    </div>
+
+  )
+}
+
+export const PoolDetails: React.FC = ({ instrument, vault, market }: { instrument: PoolInstrument, vault: VaultInfo, market: CoreMarketInfo }) => {
+  let { collaterals, trusted, borrowAPR, poolLeverageFactor, utilizationRate, totalSuppliedAssets, totalBorrowedAssets, seniorAPR } = instrument;
   const { want: { symbol } } = vault;
 
   // request details -> deposit amount in underlying.
   // request details -> proposed promised return
+
+  const stageLabel = marketStageLabel(market);
   return (
     <div className={classNames(Styles.poolDetails, {
       [Styles.Trusted]: trusted,
     })}>
-      <div>
-        <RammCategoryLabel text={vault.name} />
-        <div>
-          <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
-          <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
-        </div>
-      </div>
-      <div>
-        <h3>
-          Pool Collateral:
-        </h3>
-        <div>
-          {collaterals.map((collateral: any) => {
-            return (
-              <PoolCollateralCard collateral={collateral} wantSymbol={symbol}/>
-            )
-          })
-          }
-        </div>
-      </div>
-      <InstrumentStatusSlider market={market} instrument={instrument} />
+
+      {trusted ? (
+        <>
+          <div>
+            <div>
+              <ValueLabel large={true} label="Leverage Multipler" value={poolLeverageFactor} />
+              <ValueLabel large={true} label="Senior Returns" value={seniorAPR + "%"} />
+            </div>
+            <div>
+              <ValueLabel large={true} label="BorrowAPR" value={borrowAPR + "%"} />
+              <ValueLabel large={true} label="Utilization Rate" value={utilizationRate + "%"} />
+              <ValueLabel large={true} label="Total Supplied Assets" value={handleValue(totalSuppliedAssets, symbol)} />
+              <ValueLabel large={true} label="Total Borrowed Assets" value={handleValue(totalBorrowedAssets, symbol)} />
+            </div>
+          </div>
+          <div>
+            <h3>
+              Pool Collateral:
+            </h3>
+            <div>
+              {collaterals.map((collateral: any) => {
+                return (
+                  <PoolCollateralCard collateral={collateral} wantSymbol={symbol} />
+                )
+              })
+              }
+            </div>
+          </div>
+          <div>
+            <InstrumentStatusLabel label={stageLabel} />
+          </div>
+        </>
+      ) :
+        (<>
+          <div>
+            <div>
+              <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
+              <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
+            </div>
+          </div>
+          <div>
+            <h3>
+              Pool Collateral:
+            </h3>
+            <div>
+              {collaterals.map((collateral: any) => {
+                return (
+                  <PoolCollateralCard collateral={collateral} wantSymbol={symbol} />
+                )
+              })
+              }
+            </div>
+          </div>
+          <div>
+            <InstrumentStatusLabel label={stageLabel} />
+            <InstrumentStatusSlider market={market} instrument={instrument} />
+          </div>
+
+        </>
+        )
+      }
+
     </div>
   )
 }
@@ -837,7 +890,7 @@ export const SortableHeaderButton = ({ setSortBy, sortBy, sortType, text }: Sort
 );
 
 
-export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol, market, instrument }: { collateral: Collateral, wantSymbol: string, market:any, instrument:any }) => {
+export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol, market, instrument }: { collateral: Collateral, wantSymbol: string, market: any, instrument: any }) => {
   const { address, tokenId, borrowAmount, maxAmount, isERC20, symbol } = collateral; // should get tokenURI
 
   return (
@@ -851,7 +904,7 @@ export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol, market, i
             </span>
           }
           <div>
-          <img src={Icon_Mapping[wantSymbol.toUpperCase()]} style={{height: 80, width: 80}}/>
+            <img src={Icon_Mapping[wantSymbol.toUpperCase()]} style={{ height: 50, width: 50 }} />
           </div>
         </div>
         <span>
@@ -886,62 +939,52 @@ export const PoolCollateralCard: React.FC = ({ collateral, wantSymbol, market, i
 // approved -> approved principal + interset, amount repaid etc.
 // if not approved: duration, proposal time, principal, expected yield, collateral card
 
-export const CreditlineDetails = ({ vault, market, instrument }) => {
+const CreditlineDropDownCard = ({ vault, market, instrument }) => {
+  const { name, want: { symbol: assetSymbol } } = vault;
+  return (
+    <div className={Styles.DropDownCard}>
+      <RammCategoryLabel text={name} />
+      <CreditlineDetails vault={vault} market={market} instrument={instrument} />
+    </div>
+  )
+}
+
+
+export const CreditlineDetails = ({ vault, market, instrument }: {vault: VaultInfo, market: CoreMarketInfo, instrument: CreditlineInstrument}) => {
   const { name, want: { symbol: assetSymbol } } = vault;
 
-  const { trusted, principal: proposedPrincipal, expectedYield: proposedYield, duration, maturityDate } = instrument;
-  const { approvedPrincipal, approvedYield } = instrument;
+  let { trusted, principal: proposedPrincipal, expectedYield: proposedYield, duration, maturityDate, principalRepaid, interestRepaid } = instrument;
+  const { approvedPrincipal, approvedYield } = market;
+
 
   const stage = marketStage(market);
 
 
+  const stageLabel = marketStageLabel(market);
+// repayed/ owed + expiry date.
   return (
     <div className={classNames(Styles.creditlineDetails, {
       [Styles.Trusted]: trusted
     })}>
-      <RammCategoryLabel text={name} />
       {trusted ? (
         <div>
-          <div className={Styles.OutcomesTable}>
-            <div>
-              <span>
-                Approved Principal
-              </span>
-              <span>{handleValue(approvedPrincipal, assetSymbol)}</span>
-            </div>
-            <div>
-              <span>Approved Yield</span>
-              <span>
-                {handleValue(approvedYield, assetSymbol)}
-              </span>
-            </div>
-            <div>
-              <span>
-                Expiry Date
-              </span>
-              <span>
-                {moment(duration).format("DD MM YYYY")}
-              </span>
-            </div>
-          </div>
-          <div>
-            <CreditlineCollateralCard instrument={instrument} />
-          </div>
+          <ValueLabel large={true} label={"Principal Repaid "} value={handleValue(principalRepaid, assetSymbol) +  "/" + handleValue(approvedPrincipal, assetSymbol)} />
+          <ValueLabel large={true} label={"Interest Repaid "} value={handleValue(interestRepaid, assetSymbol) + "/" +  handleValue(approvedYield, assetSymbol)} />
+          <ValueLabel large={true} label={"Expiry "} value={moment.utc(maturityDate).fromNow(true) + " from now"} />
         </div>
       ) :
         <div>
-          <div>
-            <ValueLabel large={true} label={"Requested Amount: "} value={handleValue(proposedPrincipal)} />
-            <ValueLabel large={true} label={"Proposed Yield: "} value={handleValue(proposedYield)} />
-            <ValueLabel large={true} label={"Duration: "} value={moment().add(duration, "seconds").fromNow(true)} />
-          </div>
-        </div> 
+          <ValueLabel large={true} label={"Requested Amount "} value={handleValue(proposedPrincipal, assetSymbol)} />
+          <ValueLabel large={true} label={"Proposed Yield "} value={handleValue(proposedYield, assetSymbol)} />
+          <ValueLabel large={true} label={"Duration "} value={moment().add(duration, "seconds").fromNow(true)} />
+        </div>
       }
-      <div>
-        <CreditlineCollateralCard instrument={instrument} />
-      </div>
+      <CreditlineCollateralCard instrument={instrument} />
 
-      <InstrumentStatusSlider market={market} instrument={instrument} />
+      <div>
+        <InstrumentStatusLabel label={stageLabel} />
+        {(stageLabel === "Early Assessment" || stageLabel === "Late Assessment") && <InstrumentStatusSlider market={market} instrument={instrument} />}
+      </div>
     </div>
   )
 }
@@ -971,13 +1014,21 @@ export const CreditlineCollateralCard = ({ instrument }) => {
     <div className={Styles.creditlineCollateralCard}>
 
       <div>
-      <h3>
-        Collateral
-      </h3>
-      <img src={Icon_Mapping["AUTO"]} style={{ height: 80, width: 80 }} />
+        <h3>
+          Collateral
+        </h3>
+        <img src={Icon_Mapping["AUTO"]} style={{ height: 80, width: 80 }} />
       </div>
 
       <div className={Styles.OutcomesTable}>
+        <div>
+          <span>
+            Oracle
+          </span>
+          <span>
+            <ExternalLink icon={true} URL={"https://mumbai.polygonscan.com/address/" + oracle} label={"Chainlink"} />
+          </span>
+        </div>
         <div>
           <span>
             Collateral Type
@@ -990,7 +1041,9 @@ export const CreditlineCollateralCard = ({ instrument }) => {
           <span>
             Collateral
           </span>
-          <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + { collateral }} />
+          <span>
+            <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + { collateral }} />
+          </span>
         </div>
         {(collateralType === 0 || collateralType === 1) && <div>
           <span>

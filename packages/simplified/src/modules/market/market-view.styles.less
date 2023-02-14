@@ -5,6 +5,14 @@
   .TwoTonePage;
   .TwoTonePageGrid;
 
+  &.PoolInstrument {
+    min-width: 3px;
+  }
+
+  &.CreditlineInstrument {
+    min-width: 3px;
+  }
+
   > section {
     &:first-of-type {
       display: flex;
@@ -68,11 +76,12 @@
       > div:first-of-type {
         margin-bottom: @size-32;
         position: sticky;
-    top: 90px;
+        top: 90px;
       }
     }
   }
 }
+
 
 .EmptyMarketView {
   > section {
@@ -235,7 +244,7 @@
   }
 
   > div[class*='CategoryLabel'] {
-    margin-left: @size-8;
+    // margin-left: @size-8;
     margin-right: auto;
   }
 
@@ -438,6 +447,56 @@
 
 @media @breakpoint-mobile-tiny {
   .MarketView {
+    grid-template-columns: 1fr;
+    padding-bottom: @size-72;
+
+    > section {
+      &:first-of-type > div[class*='Outcomes'] {
+        display: grid;
+      }
+
+      &:last-of-type:not(:first-of-type) {
+        > button {
+          display: none;
+        }
+
+        > div:first-of-type{
+          position: fixed;
+          top: 0px;
+        }
+
+        > div {
+          height: 0;
+          top: 100%;
+          overflow: hidden;
+          transition: top 200ms ease-in-out, height 200ms ease-in-out;
+        }
+        display: flex;
+        flex-direction: column;
+  
+        > div:first-of-type {
+          margin-bottom: @size-32;
+        }
+      }
+    }
+
+    > section:first-of-type {
+      > section:first-of-type {
+        flex-flow: row nowrap;
+
+      }
+      > button {
+        display: flex;
+        position: fixed;
+        bottom: @size-16;
+        left: @size-16;
+        right: @size-16;
+        width: calc(100% - @size-32);
+      }
+    }
+  }
+
+  .PoolUnderwriteView {
     grid-template-columns: 1fr;
     padding-bottom: @size-72;
 
@@ -1165,7 +1224,7 @@
   width: 100%;
 
   >h3 {
-    margin-bottom: @size-20;
+    margin-bottom: @size-10;
   }
 
   > div:last-of-type {
@@ -1383,5 +1442,10 @@
       }
     }
   }
+  
+}
+
+.StatsTable {
+  display: grid;
   
 }

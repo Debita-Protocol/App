@@ -2,7 +2,7 @@
 
 .BaseHorizontalSlider {
     width: 100%;
-    max-width: 500px;
+    //max-width: 500px;
     > div:first-of-type { // left track
         position: relative;
         background: var(--buy);
@@ -96,29 +96,51 @@
     flex-flow: column nowrap;
     align-items: center;
     justify-content: center;
-    width: 310px;
     padding: @size-10;
-    padding-right: @size-20;
+    padding-bottom: @size-36;
+    width: 100%;
+    background-color: var(--tertiary-bg);
+    .ThemeBorder;
+
+    &.Fixed {
+        > div:first-of-type {
+            display: flex;
+            width:100%;
+
+            // > div:first-of-type {
+            //     position: relative;
+            //     left: 0;
+            // }
+            // > div:nth-of-type(2) {
+            //     position: relative;
+            //     left:30%;
+            // }
+            // >div:nth-of-type(3) {
+            //     position: relative;
+            //     left: 50%;
+            // }
+        }
+    }
+
     > div:first-of-type {
         display: flex;
         width:100%;
         flex-flow: row nowrap;
-        font-size: @size-12;
+        font-size: @size-18;
         font-weight: @weight-bold;
         color: var(--secondary-text);
-        > div:first-of-type {
-            position: relative;
-            left: 0;
-        }
-        > div:nth-of-type(2) {
-            position: relative;
-            left:30%;
-        }
-        >div:nth-of-type(3) {
-            position: relative;
-            left: 50%;
-        }
+        justify-content: space-between;
+        // > div:first-of-type {
+        //     position: relative;
+        //     left: 0;
+        // }
+        // > div:nth-of-type(2) {
+        //     position: relative;
+        //     left:50%;
+        // }
     }
+
+
     > div:last-of-type {
         >div:nth-of-type(3) {
             display: none;
