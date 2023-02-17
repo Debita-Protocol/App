@@ -24,7 +24,7 @@ export enum InstrumentType {
 }
 
 export const getInstrumentType = (instrument: Instrument): InstrumentType => {
-    if (Number(instrument.duration) == 0 ) {
+    if (Number(instrument.duration) === 0 ) {
         return InstrumentType.PERPETUAL;
     } 
     return InstrumentType.FIXED;

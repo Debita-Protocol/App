@@ -12,7 +12,7 @@ import { PositionsLiquidityViewSwitcher, TransactionsTable } from "../common/tab
 import { AddMetaMaskToken, handleValue } from "../common/labels";
 import { PositionsView } from "../common/positions";
 import { ManagerWarning } from "../liquidity/market-liquidity-view"
-import { TradingForm, IssueForm } from "./trading-form";
+import { TradingForm } from "./trading-form";
 import { useQuery } from "@apollo/client";
 import { BigNumber as BN } from "bignumber.js";
 import moment from "moment";
@@ -47,7 +47,7 @@ import { fetchAssetSymbol } from "@augurproject/comps/build/utils/contract-calls
 import { TabContent, TabNavItem } from "modules/common/tabs";
 import { convertOnChainSharesToDisplayShareAmount } from "@augurproject/comps/build/utils/format-number";
 import { CreditlineDetails, PoolCollateralCard, PoolDetails } from "modules/liquidity/liquidity-view";
-import { getInstrumentType, InstrumentType as IType } from "utils/helpers";
+import { getInstrumentType, getMarketStage, InstrumentType as IType, MarketStage } from "utils/helpers";
 
 import { redeem, redeemPoolLongZCB, redeemShortZCB, redeemPerpShortZCB, redeemLeveredBond, redeemLeveredPerpLongZCB } from "@augurproject/comps/build/utils/contract-calls-new";
 // const collateralLink =()=>{
@@ -402,7 +402,7 @@ export const useMarketQueryId = () => {
   return marketId;
 };
 
-const EmptyMarketView = () => {
+export const EmptyMarketView = () => {
   return (
     <div className={classNames(Styles.MarketView, Styles.EmptyMarketView)}>
       <section>
@@ -441,7 +441,7 @@ const EmptyMarketView = () => {
   );
 };
 
-const NonexistingMarketView = ({ text, showLink = false }) => {
+export const NonexistingMarketView = ({ text, showLink = false }) => {
   return (
     <div className={classNames(Styles.MarketView, Styles.NonexistingMarketView)}>
       <section>
@@ -458,6 +458,7 @@ const NonexistingMarketView = ({ text, showLink = false }) => {
     </div>
   );
 };
+
 function timeConverter(UNIX_timestamp) {
   var a = new Date(UNIX_timestamp * 1000);
   var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -481,30 +482,23 @@ const getAddress = async ({
 const MarketView = ({ defaultMarket = null }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [marketNotFound, setMarketNotFound] = useState(false);
-  const [storedCollateral, setstoredCollateral] = useState(false);
-  const [Yield, setYield] = useState("");
-
-  // simulation vars
-  const [simAmountRepaid, setSimAmountRepaid] = useState(0);
-  const [netPerformance, setNetPerformance] = useState()
-
-  console.log('date', Math.floor((new Date()).getTime() / 1000)
-  );
 
   const marketId = useMarketQueryId();
 
   const { actions: { setModal }, isMobile } = useAppStatusStore();
+  
   const {
     settings: { timeFormat },
     showTradingForm,
     actions: { setShowTradingForm },
   } = useSimplifiedStore();
+
   const { cashes, markets, ammExchanges, blocknumber, transactions } = useDataStore();
   useScrollToTopOnMount();
   //let market: MarketInfo//!!defaultMarket ? defaultMarket : markets[marketId];
   const market = {} as MarketInfo;
   const amm: AmmExchange = ammExchanges[marketId];
-  const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
+  // const hasInvalid = Boolean(amm?.ammOutcomes.find((o) => o.isInvalid));
   // const selectedOutcome = market ? (hasInvalid ? market.outcomes[1] : market.outcomes[0]) : DefaultMarketOutcomes[1];
   const selectedOutcome = DefaultMarketOutcomes[1];
 
@@ -546,11 +540,6 @@ const MarketView = ({ defaultMarket = null }) => {
 
   const { vaults: vaults, instruments: instruments, markets: market_, prices } = useDataStore2()
 
-  // if (!instruments) {
-  //   return <div >Vault Not Found.</div>;
-  // }
-
-  // const { isPool, poolData, duration, expectedYield, principal} = instruments? instruments[Id]: null
   const isPool = instruments[Id]?.isPool ? true : false;
   const poolData = instruments[Id]
   const duration = instruments[Id]?.duration
@@ -575,11 +564,6 @@ const MarketView = ({ defaultMarket = null }) => {
   const strikePrice = instruments[Id]?.strikePrice;
   const type = Number(instruments[Id]?.instrumentType);
 
-  // const instrumenType = 
-  //   console.log('isApproved', isApproved, canbeApproved)
-
-  // console.log('poolData',  instruments[Id],vaults, poolData,market_ , instruments?.Id); 
-
   const longZCB_ad = market_[marketId]?.longZCB
   const shortZCB_ad = market_[marketId]?.shortZCB;
 
@@ -594,10 +578,9 @@ const MarketView = ({ defaultMarket = null }) => {
   const remainingTime = (type == 1) ? roundDown(instrumentField[4] / 60, 0) : 1000
 
   // if (marketNotFound) return <NonexistingMarketView text="Market does not exist." />;
-  // if (!market) return <EmptyMarketView />;
 
-  // const details = detailFromResolutionRules? getResolutionRules(market) : "No details";
-  const details = "No details"; //getResolutionRules(market)
+
+  //const details = "No details"; //getResolutionRules(market)
 
   // const { reportingState, title, description, startTimestamp, categories, winner } = market;
   const reportingState = null;
@@ -633,21 +616,21 @@ const MarketView = ({ defaultMarket = null }) => {
     });
 
   }
-  const redeem = () => {
-    redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response) => {
-      console.log('tradingresponse', response)
-    }).catch((error) => {
-      console.log('Trading Error', error)
-    });
-  }
+  // const redeem = () => {
+  //   redeemZCB(account, loginAccount.library, String(market.amm.turboId)).then((response) => {
+  //     console.log('tradingresponse', response)
+  //   }).catch((error) => {
+  //     console.log('Trading Error', error)
+  //   });
+  // }
 
-  const approve_utilizer = () => {
-    approveUtilizer(account, loginAccount.library, String(market.amm.turboId)).then((response) => {
-      console.log('tradingresponse', response)
-    }).catch((error) => {
-      console.log('Trading Error', error)
-    });
-  }
+  // const approve_utilizer = () => {
+  //   approveUtilizer(account, loginAccount.library, String(market.amm.turboId)).then((response) => {
+  //     console.log('tradingresponse', response)
+  //   }).catch((error) => {
+  //     console.log('Trading Error', error)
+  //   });
+  // }
   const testapprovemarket = () => {
     testApproveMarket(account, loginAccount.library, marketId).then((response) => {
       console.log("testApproved")
@@ -662,9 +645,8 @@ const MarketView = ({ defaultMarket = null }) => {
   const instrument = useMemo(() => instruments[marketId], [marketId, instruments]);
   const vault = useMemo(() => vaults[instrument?.vaultId], [instrument, vaults]);
   const rammMarket = useMemo(() => market_[marketId], [marketId, market_]);
-  if (!instrument || !vault || !rammMarket) return null;
-  const collaterals = instrument?.collaterals ? instrument.collaterals : [];
-  const { want: { symbol: assetSymbol } } = vault;
+
+  if (!rammMarket || Object.entries(market_[marketId]).length == 0 ) return <EmptyMarketView />;
 
   return (
     <div className={classNames(Styles.MarketView, {
@@ -867,7 +849,7 @@ const MarketView = ({ defaultMarket = null }) => {
             </ul>)}
 
 
-        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
+        {account && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
 
         {/* 
         <div
@@ -888,14 +870,14 @@ const MarketView = ({ defaultMarket = null }) => {
 
         {/* <PositionsView marketId={marketId} isApproved={isApproved} /> */}
 
-        <div
+        {/* <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
           {details.length === 0 && <p>{description1}</p>}
 
-        </div>
+        </div> */}
 
 
         <div className={Styles.TransactionsTable}>
@@ -933,7 +915,13 @@ const MarketView = ({ defaultMarket = null }) => {
           customClass={ButtonStyles.BuySellButton}
         />}
 
-        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId={marketId} isApproved={isApproved} market={rammMarket} instrument={instrument} vault={vault} />
+        <TradingForm 
+          marketId={marketId}
+          isApproved={isApproved} 
+          market={rammMarket} 
+          instrument={instrument} 
+          vault={vault}
+          />
       </section>
     </div>
   );
@@ -1287,6 +1275,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
   const amount = leveragePositions && leveragePositions[marketId] ? leveragePositions[marketId].amount : 0;
 
   const instrType = getInstrumentType(instrument);
+  const marketStage = getMarketStage(market);
 
   let longEntryPrice = new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance))
   let shortEntryPrice = new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance))
@@ -1390,7 +1379,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
       amount,
       handleValue(new BN(Number(amount) * Number(longZCBPrice)).toFixed(3), assetName),
       handleValue(debt, assetName),//handleValue(longEntryPrice, assetName),
-      "entry price",
+      handleValue(Number(amount) > 0 ? String(Number(debt) / Number(amount)) : "0", assetName),
       handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
     ]
 
@@ -1398,14 +1387,14 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
       modalAction = async () => {
         await redeemLeveredBond(manager, loginAccount.library, marketId);
       }
-      initialAmount = shortZCBbalance;
+      initialAmount = amount;
       inputDisabled = true;
       label = "Fixed Instrument"
     } else {
       modalAction = async (amount) => {
         await redeemLeveredPerpLongZCB(manager, loginAccount.library, marketId, amount);
       }
-      maxValue = shortZCBbalance;
+      maxValue = amount;
       label = "Perpetual Instrument"
     }
 
@@ -1427,6 +1416,14 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
           inputDisabled
         });
     }
+  }
+
+  
+  switch (marketStage) {
+    case MarketStage.LATE_ASSESSMENT:
+    case MarketStage.EARLY_ASSESSMENT:
+      
+      break;
   }
 
 
@@ -1484,7 +1481,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
             )
           })}
           <td>
-            <button onClick={redeemButtonClick}>Redeem</button>
+            <button disabled={true} onClick={redeemButtonClick}>Redeem</button>
           </td>
         </tr>
       </tbody>

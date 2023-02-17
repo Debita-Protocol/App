@@ -1231,7 +1231,7 @@ const LiquidityForm = ({
             ammCash={cash}
             dontFilterInvalid
             hasLiquidity={!mustSetPrices || hasInitialOdds}
-            marketFactoryType={market?.marketFactoryType}
+            // marketFactoryType={market?.marketFactoryType}
             isGrouped={market?.isGrouped}
           />
         </div>

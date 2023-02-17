@@ -455,7 +455,7 @@ export interface OutcomesGridProps {
   error?: boolean;
   noClick?: boolean;
   hasLiquidity?: boolean;
-  marketFactoryType?: string;
+  // marketFactoryType?: string;
   isGrouped?: boolean;
   currencySymbol?: string;
 }
@@ -473,7 +473,7 @@ export const OutcomesGrid = ({
   error,
   noClick,
   hasLiquidity,
-  marketFactoryType,
+  // marketFactoryType,
   isGrouped = false,
   currencySymbol
 }: OutcomesGridProps) => {

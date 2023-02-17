@@ -10,8 +10,10 @@ import {
     useAppStatusStore,
     ContractCalls2
 } from "@augurproject/comps"
+import classNames from "classnames";
 
 import { useLocation, useHistory } from "react-router";
+import {Link} from "react-router-dom";
 
 //@ts-ignore
 import Styles from "./pool-view.styles.less";
@@ -28,6 +30,7 @@ import { BackIcon } from "@augurproject/comps/build/components/common/icons";
 import { handleValue } from "../common/labels";
 import ReactSlider from 'react-slider'
 import { BaseSlider } from "../common/slider";
+import { EmptyMarketView } from "modules/market/market-view";
 
 
 
@@ -88,17 +91,27 @@ const PoolView: React.FC = () => {
         console.log("marketId", marketId);
         await testFullApprove(account, loginAccount.library, marketId);
     }
+    
 
-    if (instrumentNotFound) return (<h2>
-        Instrument does not exist
-    </h2>);
-
-    if (!instrument || !poolInfo || !vault || !market) return (
+    if (instrumentNotFound) return (
         <div className={Styles.PoolView}>
             <h2>
-                Fetching Data...
+                Instrument Not Found
             </h2>
-        </div>);
+        </div>
+    );
+
+    if (!account) return (
+        <div className={Styles.PoolView}>
+            <h2>
+                Please connect wallet
+            </h2>
+        </div>
+    );
+    
+    if (!instrument || !poolInfo || !vault || !market) return (
+        <EmptyMarketView />
+        );
 
     // grab id from query, then get pool data from instruments
     const {
@@ -128,9 +141,10 @@ const PoolView: React.FC = () => {
         poolAddInterest(account, loginAccount.library, poolAddress);
     };
 
-    const { walletBalances, borrowBalance: { amount: borrowedAmount }, accountLiquidity } = poolInfo;
-    const borrowCapacity = new BN(poolInfo.maxBorrowable).isZero() ? "0.0" :
-        new BN(borrowedAmount).dividedBy(new BN(poolInfo.maxBorrowable)).multipliedBy(100).toString();
+    // const { walletBalances, borrowBalance: { amount: borrowedAmount }, accountLiquidity } = poolInfo;
+    const borrowedAmount = poolInfo?.borrowBalance?.amount;
+
+    const borrowCapacity = poolInfo?.maxBorrowable ? new BN(borrowedAmount).dividedBy(new BN(poolInfo.maxBorrowable)).multipliedBy(100).toString() : "0.0";
 
 
     // grab underlying asset from vaults object
@@ -195,8 +209,8 @@ const PoolView: React.FC = () => {
                         {collaterals.length > 0 ? (
                             collaterals.map((asset, i) => { // className CollateralSupplyCard, error handling.
                                 // console.log(asset);
-                                const supplyBalance = poolInfo.supplyBalances[asset.address + "-" + asset.tokenId];
-                                const walletBalance = poolInfo.walletBalances[asset.address + "-" + asset.tokenId];
+                                const supplyBalance = poolInfo?.supplyBalances[asset.address + "-" + asset.tokenId];
+                                const walletBalance = poolInfo?.walletBalances[asset.address + "-" + asset.tokenId];
                                 console.log("walletBalance: ", walletBalance);
                                 const { borrowAmount, maxAmount } = asset;
                                 const addAction = () => {

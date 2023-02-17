@@ -215,8 +215,8 @@ const formatBreakdown = (isUnderlying: boolean, isBuy: boolean, breakdown: Estim
 
 
 interface TradingFormProps {
-  amm: any;
-  initialSelectedOutcome: AmmOutcome | any;
+  // amm: any;
+  // initialSelectedOutcome: AmmOutcome | any;
   marketId: string;
   isApproved: boolean;
   instrument: Instrument;
@@ -277,8 +277,6 @@ const getOutcomes = (price, isPool) => {
 type OrderType = "buy" | "redeem";
 
 export const TradingForm = ({
-  initialSelectedOutcome,
-  amm,
   marketId,
   isApproved,
   market,
@@ -288,20 +286,6 @@ export const TradingForm = ({
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const { vaults: vaults, instruments: instruments, markets } = useDataStore2()
-
-  const vaultId = markets[marketId]?.vaultId;
-  const longZCB_ad = markets[marketId]?.bondPool?.longZCB?.address;
-  const shortZCB_ad = markets[marketId]?.bondPool?.shortZCB?.address;
-  const underlying_address = vaults[vaultId]?.want.address;
-  const underlying_name = vaults[vaultId]?.want.name;
-
-  // ZEKE
-  const { bondPool: { longZCBPrice }, duringAssessment } = market;
-
-  const [ orderPrice, setOrderPrice ] = useState(""); 
-
-  const marketStage: MarketStage = getMarketStage(market);
-  const { want: { symbol: underlyingSymbol } } = vault;
 
   const {
     showTradingForm,
@@ -314,15 +298,29 @@ export const TradingForm = ({
     balances,
     actions: { addTransaction },
     ramm: { reputationScore, vaultBalances, zcbBalances }
-
   } = useUserStore();
-  const [orderType, setOrderType] = useState<OrderType>(BUY);
 
-  const [breakdown, setBreakdown] = useState<EstimateTradeResult>({});
+  const vaultId = market?.vaultId;
+  const longZCB_ad = market?.bondPool?.longZCB?.address;
+  const shortZCB_ad = market?.bondPool?.shortZCB?.address;
+  const underlying_address = vault?.want.address;
+  const underlying_name = vault?.want.name;
+
+  const longZCBPrice = market?.bondPool?.longZCBPrice;
+  const duringAssessment = market?.duringAssessment;
+  const underlyingSymbol = vault?.want?.symbol;
+  const underlying = vault?.want;
 
   const shortZCBbalance = zcbBalances[marketId]?.shortZCB;
   const longZCBbalance = zcbBalances[marketId]?.longZCB;
 
+  const [ orderPrice, setOrderPrice ] = useState(""); 
+
+  const marketStage: MarketStage = getMarketStage(market);
+
+  const [orderType, setOrderType] = useState<OrderType>(BUY);
+
+  const [breakdown, setBreakdown] = useState<EstimateTradeResult>({});
   
   const [isApprovedTrade, setIsApprovedTrade] = useState(true);
   const [isNotVerified, setIsNotVerified] = useState(false);
@@ -356,18 +354,18 @@ export const TradingForm = ({
 
   const [amount, setAmount] = useState<string>("");
   const [waitingToSign, setWaitingToSign] = useState(false);
-  const underlying = vault.want; //getUSDC(cashes);
+
 
   const isBuy = orderType === BUY;
-  const approvalAction = isBuy ? ApprovalAction.ENTER_POSITION : ApprovalAction.EXIT_POSITION;
-  const outcomeShareToken = selectedOutcome?.shareToken;
-  const approvalStatus = true;
+  // const approvalAction = isBuy ? ApprovalAction.ENTER_POSITION : ApprovalAction.EXIT_POSITION;
+  // const outcomeShareToken = selectedOutcome?.shareToken;
+  // const approvalStatus = true;
 
   const hasLiquidity = true;
   const selectedOutcomeId = selectedOutcome?.id;
-  const marketShares = balances?.marketShares && balances?.marketShares[amm?.marketId];
-  const hasWinner = amm?.market.hasWinner;
-  const outcomeSharesRaw = JSON.stringify(marketShares?.outcomeSharesRaw);
+  // const marketShares = balances?.marketShares && balances?.marketShares[amm?.marketId];
+  // const hasWinner = amm?.market.hasWinner;
+  // const outcomeSharesRaw = JSON.stringify(marketShares?.outcomeSharesRaw);
   const amountError = amount !== "" && (isNaN(Number(amount)) || Number(amount) === 0 || Number(amount) < 0);
   const priceError = orderPrice !== "" && (isNaN(Number(orderPrice)) || Number(orderPrice) === 0 || Number(orderPrice) < 0 || Number(orderPrice) > 1);
   const buttonError = amountError ? ERROR_AMOUNT : (priceError ? ERROR_PRICE : "");
@@ -383,7 +381,6 @@ export const TradingForm = ({
   const [userBalance, setUserBalance] = useState("1");
   const [leverageFactor, setLeverageFactor] = useState(1);
   const [MMAllowance, setMMAllowance] = useState(false);
-  const userMaxAmount = vaultBalances[vaultId]?.base
 
   useEffect(async () => {
     if (account && loginAccount) {
@@ -422,17 +419,15 @@ export const TradingForm = ({
 
   const getEstimate = useCallback(async () => {
     const isShort = selectedOutcomeId == 0 ? false : true
-
     const breakdown = await estimateTrade(account, loginAccount.library, Number(marketId), amount, isLevered, leverageFactor, isUnderlying, isShort, isIssue, isLimit)
     console.log("breakdown fxn", breakdown)
-    setBreakdown(breakdown);
-
+    setBreakdown(breakdown);  
   }, [breakdown, amount ,account, loginAccount, marketId, isLevered, leverageFactor, isUnderlying, isLong, selectedOutcome, isIssue, isLimit])
   
   useEffect(() => {
     let isMounted = true;
 
-    if (amount && Number(amount) > 0 && orderType === "buy"
+    if (account && amount && Number(amount) > 0 && orderType === "buy"
       // && new BN(amount).lte(new BN(userBalance))
     ) {
       getEstimate();
@@ -444,7 +439,7 @@ export const TradingForm = ({
     return () => {
       isMounted = false;
     };
-  }, [orderType, selectedOutcomeId, amount, outcomeSharesRaw, account, isLevered, leverageFactor, isUnderlying, isIssue, selectedOutcome]);
+  }, [orderType, selectedOutcomeId, amount, account, isLevered, leverageFactor, isUnderlying, isIssue, selectedOutcome]);
 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || (isLimit ? "Submit" : orderType);
@@ -480,7 +475,7 @@ export const TradingForm = ({
       }
 
 
-    } else if (hasWinner) {
+    } else if (marketStage === MarketStage.RESOLVED) {
       actionText = RESOLVED_MARKET;
       disabled = true;
     } else if (!canbuy) {
@@ -493,10 +488,6 @@ export const TradingForm = ({
     } else if (Number(amount) === 0 || isNaN(Number(amount)) || amount === "") {
       actionText = ENTER_AMOUNT;
       disabled = true;
-      // } else if (new BN(amount).gt(new BN(userBalance))) {
-      //   // actionText = `Insufficient ${isBuy ? ammCash.name : "Share"} Balance`;
-      //   actionText = `Insufficient Underlying Balance`; 
-      //   disabled = false;
     } else if (breakdown?.maxSellAmount && breakdown?.maxSellAmount !== "0") {
       actionText = INSUFFICIENT_LIQUIDITY;
       subText = `Max Shares to Sell ${breakdown?.maxSellAmount}`;
@@ -520,7 +511,7 @@ export const TradingForm = ({
       actionText,
       subText,
     };
-  }, [MMAllowance, isIssue, orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, hasWinner, isLimit]);
+  }, [MMAllowance, isIssue, orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, isLimit]);
 
   const testVerify = () => {
     setUpManager(account, loginAccount.library).then((response) => {
@@ -529,19 +520,6 @@ export const TradingForm = ({
     setIsNotVerified(false)
   }
 
-  const redeem = () => {
-    redeemZCB(account, loginAccount.library, amm.turboId).then((response) => {
-      console.log('tradingresponse', response)
-    }).catch((error) => {
-      console.log('Trading Error', error)
-    });
-  }
-  // const toggleUnderlying = () => {
-  //   setIsUnderlying(!isUnderlying);
-  // }
-  // const toggleIssueField = () => {
-  //   setIsIssue(!isIssue);
-  // }
   const makeTrade = useCallback(() => {
     // const minOutput = breakdown?.outputValue;
     // const outcomeShareTokensIn = breakdown?.outcomeShareTokensIn;
@@ -565,7 +543,7 @@ export const TradingForm = ({
             from: loginAccount.account,
             addedTime: new Date().getTime(),
             message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} ZCB`,
-            marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+            marketDescription: "market description"//`${amm?.market?.title} ${amm?.market?.description}`,
           });
         }
       })
@@ -580,7 +558,7 @@ export const TradingForm = ({
           from: loginAccount.account,
           addedTime: new Date().getTime(),
           message: `${direction === TradingDirection.ENTRY ? "Buy" : "Sell"} Shares`,
-          marketDescription: `${amm?.market?.title} ${amm?.market?.description}`,
+          marketDescription: "market description"// `${amm?.market?.title} ${amm?.market?.description}`,
         });
       });
   
@@ -609,39 +587,20 @@ export const TradingForm = ({
     ) : null;
   };
 
-  console.log("breakdown:", breakdown);
-  console.log("canMakeTrade:", canMakeTrade);
-  console.log("isLevered: ", isLevered);
-  console.log("isIssue: ", isIssue);
-  console.log("leverageFactor: ", leverageFactor);
+  // console.log("breakdown:", breakdown);
+  // console.log("canMakeTrade:", canMakeTrade);
+  // console.log("isLevered: ", isLevered);
+  // console.log("isIssue: ", isIssue);
+  // console.log("leverageFactor: ", leverageFactor);
 
 
   return (
     <div className={Styles.TradingForm}>
       <div>
-        
-        {/* <ToggleSwitch
-          toggle={isBuy}
-          setToggle={() => {
-            if (isBuy) {
-              setOrderType("redeem");
-            } else {
-              setOrderType("buy");
-            }
-            setBreakdown({});
-            setIsLimit(false); // taker === limit!.
-            setAmount("");
-            setIsLevered(false);
-            setOrderPrice("");
-          }}
-          button1Text={"Buy"}
-          button2Text={"Redeem"}
-          buySell={true}
-        /> */}
         <RammBuyLabel label={"ZCB Purchase"}/>
         <div>
           {/* && marketStage == MarketStage.APPROVED */}
-          {orderType === "buy"  && <LimitOrderSelector isLimit={isLimit} setIsLimit={setIsLimit} />}
+          {orderType === "buy" && marketStage == MarketStage.APPROVED  && <LimitOrderSelector isLimit={isLimit} setIsLimit={setIsLimit} />}
         </div>
         <div
           onClick={() => {
@@ -670,7 +629,6 @@ export const TradingForm = ({
           ammCash={underlying}
           dontFilterInvalid
           hasLiquidity={hasLiquidity}
-          marketFactoryType={amm?.market?.marketFactoryType}
           isGrouped={false}
           currencySymbol={underlyingSymbol}
         />}
@@ -732,7 +690,7 @@ export const TradingForm = ({
 
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, underlying, isLevered, isLimit)} />
 
-        {!MMAllowance &&
+        {account && !MMAllowance &&
           (<ApprovalButton
             {...{
               spender_: marketManager,
@@ -740,7 +698,7 @@ export const TradingForm = ({
             }}
           />)}
 
-        {!canRedeem && MMAllowance && (<SecondaryThemeButton
+        {account && !canRedeem && MMAllowance && (<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
           action={makeTrade}
           text={isIssue ? "Issue New longZCB" : canMakeTrade.actionText}
@@ -748,8 +706,16 @@ export const TradingForm = ({
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
         />)}
-
-        {canRedeem && (
+        {!account &&
+        (<SecondaryThemeButton
+          disabled={true}
+          action={null}
+          text={"Connect Wallet"}
+          subText={""}
+          error={""}
+          customClass={ButtonStyles.BuySellButton}
+        />)}
+        {/* {canRedeem && (
           <SecondaryThemeButton
             disabled={false}
             action={redeem}
@@ -759,34 +725,34 @@ export const TradingForm = ({
             customClass={ButtonStyles.BuySellButton}
           />
 
-        )}
+        )} */}
       </div>
     </div>
   );
 };
 // export default TradingForm;
 
-export const IssueForm = ({ initialSelectedOutcome, amm, marketId }: TradingFormProps) => {
-  return (
-    <div className={Styles.TradingForm}>
-      <div>
-        <BuySellToggleSwitch
-          toggle={true}
-          setToggle={() => {
-            // if (true) {
-            //   setOrderType(SELL);
-            // } else {
-            //   setOrderType(BUY);
-            // }
-            // setBreakdown(null);
-            // setAmount("");
-          }}
-        />
+// export const IssueForm = ({ initialSelectedOutcome, amm, marketId }: TradingFormProps) => {
+//   return (
+//     <div className={Styles.TradingForm}>
+//       <div>
+//         <BuySellToggleSwitch
+//           toggle={true}
+//           setToggle={() => {
+//             // if (true) {
+//             //   setOrderType(SELL);
+//             // } else {
+//             //   setOrderType(BUY);
+//             // }
+//             // setBreakdown(null);
+//             // setAmount("");
+//           }}
+//         />
 
-      </div>
-    </div>
-  );
-}
+//       </div>
+//     </div>
+//   );
+// }
 
 
 export const ApprovalButton = ({
