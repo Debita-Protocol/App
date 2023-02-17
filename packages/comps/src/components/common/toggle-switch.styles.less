@@ -6,7 +6,7 @@
   background-color: var(--primary-bg);
   display: flex;
   position: relative;
-  width: @size-68;
+  width: fit-content;
   height: @size-25;
   align-items: center;
   padding: 0;
@@ -51,6 +51,7 @@
   }
 
   &.On {
+    .ThemeBorder;
     > span {
       &:first-of-type {
         color: var(--primary-text);
@@ -72,7 +73,7 @@
   }
 
   &.buySell {
-    width: 170px;
+    width: 200px;
     height: @size-50;
 
     > span {
@@ -94,7 +95,7 @@
     }
 
     > div {
-      width: 84px;
+      width: 100px;
       height: @size-46;
       margin-top: -@size-1;
       border-color: transparent;
@@ -119,6 +120,7 @@
 
       > div {
         margin-left: @size-1;
+        width: 84px;
       }
     }
   }
@@ -157,3 +159,66 @@
     }
   }
 }
+
+.RammBuySellLabel {
+  background-color: var(--primary-bg);
+  display: flex;
+  position: relative;
+  width: auto;
+
+  height: @size-40;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  .ThemeBorder;
+  background-color: var(--primary-text);
+
+
+  > span {
+    .text-20-bold;
+    color: var(--primary-bg);
+    padding: @size-12 @size-24;
+  }
+}
+
+.RammToggleSwitch {
+  .ThemeBorder;
+
+  background-color: var(--primary-bg);
+  display: flex;
+  position: relative;
+  flex-flow: row nowrap;
+  justify-content:flex-start;
+  align-items: flex-start;
+  padding: 0;
+  cursor: pointer;
+  
+
+
+  > button {
+    height: 50px;
+    border: 0;
+    .text-20-bold;
+
+
+    position: relative;
+    z-index: 2;
+    padding: 0 @size-16;
+    color: var(--secondary-text);
+    background-color: transparent;
+  }
+
+  &.Button1 {
+    > button {
+      &:first-of-type {
+        color: var(--primary-bg);
+        background-color: var(--inverted-primary-bg);
+        border: @size-1 solid var(--secondary-text);
+        border-radius: var(--theme-primary-radius);
+      }
+
+      
+    }
+  }
+}
+

@@ -1,4 +1,4 @@
-import { CoreMarketInfo } from "@augurproject/comps/build/types";
+import { CoreMarketInfo, Instrument } from "@augurproject/comps/build/types";
 import { BigNumber as BN } from "bignumber.js";
 
 // rounding
@@ -18,7 +18,19 @@ export enum MarketStage {
     DENIED
   }
 
-export const marketStage = (market: CoreMarketInfo): MarketStage => {
+export enum InstrumentType {
+    FIXED,
+    PERPETUAL
+}
+
+export const getInstrumentType = (instrument: Instrument): InstrumentType => {
+    if (Number(instrument.duration) == 0 ) {
+        return InstrumentType.PERPETUAL;
+    } 
+    return InstrumentType.FIXED;
+}
+
+export const getMarketStage = (market: CoreMarketInfo): MarketStage => {
     const { alive, duringAssessment, resolved, onlyReputable } = market;
     if (alive) {
         if (duringAssessment && onlyReputable) {
@@ -35,7 +47,7 @@ export const marketStage = (market: CoreMarketInfo): MarketStage => {
 }
 
 export const marketStageLabel = (market: CoreMarketInfo): string => {
-    const stage = marketStage(market);
+    const stage = getMarketStage(market);
     switch (stage) {
         case MarketStage.EARLY_ASSESSMENT:
             return "Early Assessment";

@@ -417,7 +417,7 @@ export interface PoolInstrument extends BaseInstrument {
   inceptionPrice: string;
   poolLeverageFactor: string;
   totalBorrowedAssets: string;
-  totalSuppliedAssets: string; 
+  totalSuppliedAssets: string;
   utilizationRate: string;
   totalAvailableAssets: string;
   lastRateUpdate: string;
@@ -839,8 +839,6 @@ export interface EstimateTradeResult {
   priceImpact: string;
   outcomeShareTokensIn?: string[];
   maxSellAmount?: string;
-
-
   debt?: string; 
   totalUnderlyingPosition?: string; 
   totalBondPosition?: string; 

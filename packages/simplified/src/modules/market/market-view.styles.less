@@ -1399,7 +1399,7 @@
     font-weight: 700;
     color: var(--secondary-text);
     > div {
-      margin-right: @size-8;
+      margin-right: @size-24;
       border:0;
       opacity: 0.5;
     }
@@ -1416,7 +1416,16 @@
   width: 100%;
   overflow: auto;
   .ThemeBorder;
-  background: var(--primary-bg);
+  background: var(--quaternary-bg);
+  padding: @size-8;
+
+  &.Long {
+    > thead {
+      > th:nth-of-type(5) {
+
+      }
+    }
+  }
 
   >thead {
     width:100%;
@@ -1437,15 +1446,40 @@
     > tr {
       > td {
         padding: @size-8 @size-8 @size-8;
-        .text-14-bold;
-        color: var(--primary-text);
+        > div {
+          .text-14-bold;
+          color: var(--primary-text);
+          width: 80px;
+        }
       }
+      > td:last-of-type {
+        > button {
+          border: @size-1 solid var(--success);
+          background: var(--success);
+          color: var(--inverted-primary-text);
+          border-radius: @size-8;
+          padding: @size-4 @size-8;
+          .text-14-bold;
+          &:not(:disabled) {
+            // &:hover {
+            //   background: rgba(var(--success-rgb), 0.85);
+            //   color: var(--inverted-primary-text);
+            // }
+        
+            // &:focus-within:hover:active {
+            //   background: var(--success);
+            //   color: var(--inverted-primary-text);
+            // }
+          }
+        }
+      }
+
     }
-  }
+  } 
   
 }
 
 .StatsTable {
   display: grid;
-  
+
 }

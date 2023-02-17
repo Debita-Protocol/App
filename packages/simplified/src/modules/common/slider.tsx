@@ -3,7 +3,7 @@ import React from "react";
 
 //@ts-ignore;
 import Styles from "./slider.styles.less";
-import { MarketStage, marketStage, round } from "utils/helpers";
+import { MarketStage, getMarketStage, round } from "utils/helpers";
 import classNames from "classnames";
 import { CoreMarketInfo, CreditlineInstrument, Instrument, PoolInstrument } from "@augurproject/comps/build/types";
 
@@ -88,7 +88,7 @@ export const InstrumentStatusSlider: React.FC = (
         instrument: Instrument
     }
 ) => {
-    const stage: MarketStage = marketStage(market);
+    const stage: MarketStage = getMarketStage(market);
     const { totalCollateral, parameters: { alpha } } = market;
     const { principal, instrumentType } = instrument;
 

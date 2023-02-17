@@ -466,6 +466,33 @@
   .SharedSelectionItem;
 }
 
+.RawCheckbox {
+  display: flex;
+  align-items: center;
+
+  > input {
+    width: @size-20;
+    height: @size-20;
+    margin: 0;
+    display: flex;
+    pointer-events: none;
+  }
+
+  > span {
+    .text-16-semi-bold;
+
+    color: var(--secondary-text);
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+
+  &.Selected {
+    > span {
+      color: var(--primary-text);
+    }
+  }
+}
+
 .RadioBar {
   .SharedSelectionItem;
 

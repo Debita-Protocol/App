@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation } from "react-router";
 
 // @ts-ignore
@@ -47,6 +47,9 @@ import { fetchAssetSymbol } from "@augurproject/comps/build/utils/contract-calls
 import { TabContent, TabNavItem } from "modules/common/tabs";
 import { convertOnChainSharesToDisplayShareAmount } from "@augurproject/comps/build/utils/format-number";
 import { CreditlineDetails, PoolCollateralCard, PoolDetails } from "modules/liquidity/liquidity-view";
+import { getInstrumentType, InstrumentType as IType } from "utils/helpers";
+
+import { redeem, redeemPoolLongZCB, redeemShortZCB, redeemPerpShortZCB, redeemLeveredBond, redeemLeveredPerpLongZCB } from "@augurproject/comps/build/utils/contract-calls-new";
 // const collateralLink =()=>{
 //     return( 
 //       <a href={getChainExplorerLink(chainId, link, "transaction")} target="_blank" rel="noopener noreferrer">
@@ -301,7 +304,7 @@ export const getWinningOutcome = (ammOutcomes: AmmOutcome[], marketOutcomes: Mar
 //   {winningOutcome == 2 && ConfirmedCheck}
 // </span>
 
-export const InstrumentStatusLabel: React.FC = ({ label }) => (
+export const InstrumentStatusLabel: React.FC = ({ label, net, required }) => (
   <span className={Styles.WinningOutcomeLabel}>
     <span>
       Instrument Status
@@ -344,7 +347,7 @@ const estimatedReturnsPerp = (
   const term2 = (inceptionPrice * (1 + returns));
   // console.log('srpplusone', srpPlusOne,  (inceptionPrice* (1+ returns)),(1 + promised_return), (1 + leverageFactor) * (inceptionPrice* (1+ returns)), 
   //  (srpPlusOne* leverageFactor)); 
-  console.log('leverageFactor', term1, term2, term1 * term2, promised_return, returns, srpPlusOne, leverageFactor);
+  // console.log('leverageFactor', term1, term2, term1 * term2, promised_return, returns, srpPlusOne, leverageFactor);
   return 100 * (term1 * term2 - (srpPlusOne * leverageFactor) - inceptionPrice) / inceptionPrice;
   //return ((1 + leverageFactor) * (inceptionPrice* (1+ returns)) - (srpPlusOne* leverageFactor) - inceptionPrice)/inceptionPrice; 
   // 1+lev * inception - 15* lev 
@@ -511,15 +514,12 @@ const MarketView = ({ defaultMarket = null }) => {
     }
   })
 
-  // console.log('amm', amm, amm?.ammOutcomes)
-
   const {
     account,
     loginAccount,
     balances,
     actions: { addTransaction },
     ramm: { reputationScore, vaultBalances, zcbBalances }
-
   } = useUserStore();
   const isManager = reputationScore > 0;
   const Id = Number(marketId)
@@ -834,15 +834,12 @@ const MarketView = ({ defaultMarket = null }) => {
                 <span>Manager Sale Amount </span>
                 <span>{poolData?.saleAmount}</span>
               </li>
-
             </ul>)
           }
         </div>
-
         {isPool && isApproved && (<h4>Pool Info</h4>)}
         {isPool && isApproved &&
           (
-
             <ul className={Styles.StatsRow}>
               <li>
                 <span>--</span>
@@ -869,29 +866,16 @@ const MarketView = ({ defaultMarket = null }) => {
 
             </ul>)}
 
+
+        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
+
+        {/* 
         <div
           className={classNames(Styles.Details, {
             [Styles.isClosed]: !showMoreDetails,
           })}
         >
-          {/*<h4>CDS Price History</h4> */}
-        </div>
-
-        {/* <OutcomesGrid
-          outcomes={amm?.ammOutcomes}
-          selectedOutcome={amm?.ammOutcomes[2]}
-          showAllHighlighted
-          setSelectedOutcome={() => null}
-          orderType={BUY}
-          ammCash={amm?.cash}
-          dontFilterInvalid
-          noClick
-          hasLiquidity={amm?.hasLiquidity}
-          marketFactoryType={amm?.market?.marketFactoryType}
-        />
-        <SimpleChartSection {...{ market, cash: amm?.cash, transactions: marketTransactions, timeFormat }} />
-        {/*<PositionsLiquidityViewSwitcher ammExchange={amm} 
-        lb={longBalance} sb={shortBalance} la={longZCBTokenAddress} sa={shortZCBTokenAddress}/> */}
+        </div> */}
         {!loading && data.market && instrumentTypeWord !== "Creditline" && Object.entries(market_).length > 0 && (
           <div>
             <h4>
@@ -903,7 +887,6 @@ const MarketView = ({ defaultMarket = null }) => {
         }
 
         {/* <PositionsView marketId={marketId} isApproved={isApproved} /> */}
-        {Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} />}
 
         <div
           className={classNames(Styles.Details, {
@@ -950,8 +933,7 @@ const MarketView = ({ defaultMarket = null }) => {
           customClass={ButtonStyles.BuySellButton}
         />}
 
-        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId={marketId}
-          isApproved={isApproved} />
+        <TradingForm initialSelectedOutcome={selectedOutcome} amm={amm} marketId={marketId} isApproved={isApproved} market={rammMarket} instrument={instrument} vault={vault} />
       </section>
     </div>
   );
@@ -1123,7 +1105,12 @@ const CreditlineSimulation = ({
           min={Number(0)}
           value={simAmountRepaid}
           step={0.0001}
-          onChange={(value) => setSimAmountRepaid(value)}
+          onChange={(value) => {
+            if ((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor < -100) {
+              return setLeverageFactor(1);
+            }
+            setSimAmountRepaid(value)
+          }}
         />
       </div>
       <div>
@@ -1149,7 +1136,7 @@ const CreditlineSimulation = ({
           value={leverageFactor}
           onChange={(value) => {
             if ((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor <= -100) {
-              return;
+              return setLeverageFactor(1);
             }
             setLeverageFactor(value)
           }}
@@ -1244,7 +1231,9 @@ const PoolSimulation = ({
 export const RammPositionsSection = ({
   market,
   manager,
-  assetName
+  instrument,
+  assetName,
+  vault
 }) => {
   //   type( longzcb or shortzcb or levered longzcb), 
   // qty, value, entry price, cur price, debt, postion margin, unrealized P&L, realized P&L, redeem. 
@@ -1265,18 +1254,24 @@ export const RammPositionsSection = ({
       <div>
         <TabNavItem title="LongZCB" id="0" activeTab={activeTab} setActiveTab={setActiveTab} />
         <TabNavItem title="ShortZCB" id="1" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <TabNavItem title="Leveraged LongZCB" id="2" activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
       <div>
-        <RammPositionTable market={market} buttonAction={() => { }} activeTab={activeTab} assetName={assetName} mm_pair={mm_pair} />
+        <RammPositionTable market={market} activeTab={activeTab} assetName={assetName} mm_pair={mm_pair} instrument={instrument} manager={manager} vault={vault} />
       </div>
     </section>
   )
 }
 
-const RammPositionTable = ({ buttonAction, market, activeTab, assetName, mm_pair }) => {
+const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, vault, manager }) => {
   const { ramm } = useUserStore();
-  const { bondPool: { longZCBPrice, b, longZCB: { balance: longZCBbalance }, shortZCB: { balance: shortZCBbalance } } } = market;
+  const { duringAssessment, alive, bondPool: { longZCBPrice, b, longZCB: { balance: longZCBbalance }, shortZCB: { balance: shortZCBbalance } } } = market;
+
+  const { loginAccount } = useUserStore();
+
   let data_row = []; // values.
+
+  const { actions: { setModal } } = useAppStatusStore();
 
   // const { longZCBCollateral, shortZCBCollateral } = mm_pair;
   let longZCBCollateral;
@@ -1291,9 +1286,18 @@ const RammPositionTable = ({ buttonAction, market, activeTab, assetName, mm_pair
   const debt = leveragePositions && leveragePositions[marketId] ? leveragePositions[marketId].debt : 0;
   const amount = leveragePositions && leveragePositions[marketId] ? leveragePositions[marketId].amount : 0;
 
+  const instrType = getInstrumentType(instrument);
+
   let longEntryPrice = new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance))
   let shortEntryPrice = new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance))
-
+  // unrealized = handleValue(new BN(Number(longZCBPrice)).minus(longEntryPrice).multipliedBy(longZCBbalance).toFixed(3), assetName),
+  let redeemButtonClick: () => void;
+  let modalAction: (string) => void;
+  let maxValue;
+  let initialAmount = "";
+  let inputDisabled = false;
+  let label;
+  let subLabel = "Successful resolution"
   if (activeTab === "0") {
     // longZCB
     data_row = [
@@ -1301,19 +1305,143 @@ const RammPositionTable = ({ buttonAction, market, activeTab, assetName, mm_pair
       handleValue(new BN(Number(longZCBbalance) * Number(longZCBPrice)).toFixed(3), assetName),
       handleValue(longEntryPrice, assetName),
       handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
-      handleValue(new BN(debt).toFixed(3), assetName),
-      handleValue(new BN(amount).toFixed(3), assetName),
-      handleValue(new BN(Number(longZCBPrice)).minus(longEntryPrice).multipliedBy(longZCBbalance).toFixed(3), assetName),
     ]
+
+    if (instrType === IType.FIXED) {
+      modalAction = async () => {
+        await redeem(manager, loginAccount.library, marketId);
+      }
+      initialAmount = longZCBbalance;
+      inputDisabled = true;
+      label = "Fixed Instrument"
+
+    } else {
+      modalAction = async (amount) => {
+        await redeemPoolLongZCB(manager, loginAccount.library, marketId, amount);
+      }
+      maxValue = longZCBbalance;
+      label = "Perpetual Instrument"
+    }
+
+    redeemButtonClick = () => {
+      setModal(
+        {
+          type: "MODAL_REDEEM",
+          title: "Redeem LongZCB",
+          transactionAction: modalAction,
+          transactionButtonText: "Redeem",
+          maxValue,
+          currencySymbol: "longZCB",
+          initialAmount,
+          breakdowns: [],
+          inputDisabled,
+          targetDescription: {
+            label,
+            subLabel
+          },
+        });
+    }
+
   } else if (activeTab === "1") {
     data_row = [
       shortZCBbalance,
       handleValue(new BN(Number(shortZCBCollateral) * (1 - Number(longZCBPrice))).toFixed(3), assetName),
       handleValue(shortEntryPrice.toFixed(3), assetName),
       handleValue(new BN(1 - Number(longZCBPrice)).toFixed(3), assetName),
-      handleValue(new BN(1 - Number(longZCBPrice)).minus(shortEntryPrice).multipliedBy(shortZCBCollateral).toFixed(3), assetName)
+      // handleValue(new BN(1 - Number(longZCBPrice)).minus(shortEntryPrice).multipliedBy(shortZCBCollateral).toFixed(3), assetName)
     ]
+    if (instrType === IType.FIXED) {
+      modalAction = async () => {
+        await redeemShortZCB(manager, loginAccount.library, marketId);
+      }
+      initialAmount = shortZCBbalance;
+      inputDisabled = true;
+      label = "Fixed Instrument"
+    } else {
+      modalAction = async (amount) => {
+        await redeemPerpShortZCB(manager, loginAccount.library, marketId, amount);
+      }
+      maxValue = shortZCBbalance;
+      label = "Perpetual Instrument"
+    }
+
+    redeemButtonClick = () => {
+      setModal(
+        {
+          type: "MODAL_REDEEM",
+          title: "Redeem shortZCB",
+          transactionAction: modalAction,
+          transactionButtonText: "Redeem",
+          maxValue,
+          currencySymbol: "shortZCB",
+          initialAmount,
+          breakdowns: [],
+          inputDisabled,
+          targetDescription: {
+            label,
+            subLabel
+          },
+        });
+    }
+
+  } else if (activeTab === "2") {
+    // leveraged long tab
+    data_row = [
+      amount,
+      handleValue(new BN(Number(amount) * Number(longZCBPrice)).toFixed(3), assetName),
+      handleValue(debt, assetName),//handleValue(longEntryPrice, assetName),
+      "entry price",
+      handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
+    ]
+
+    if (instrType === IType.FIXED) {
+      modalAction = async () => {
+        await redeemLeveredBond(manager, loginAccount.library, marketId);
+      }
+      initialAmount = shortZCBbalance;
+      inputDisabled = true;
+      label = "Fixed Instrument"
+    } else {
+      modalAction = async (amount) => {
+        await redeemLeveredPerpLongZCB(manager, loginAccount.library, marketId, amount);
+      }
+      maxValue = shortZCBbalance;
+      label = "Perpetual Instrument"
+    }
+
+    redeemButtonClick = () => {
+      setModal(
+        {
+          type: "MODAL_REDEEM",
+          title: "Redeem levered longZCB",
+          transactionAction: modalAction,
+          transactionButtonText: "Redeem",
+          targetDescription: {
+            label,
+            subLabel
+          },
+          maxValue,
+          currencySymbol: "longZCB",
+          initialAmount,
+          breakdowns: [],
+          inputDisabled
+        });
+    }
   }
+
+
+  /**
+   *  if fixed -> for long and short -> qty, value, entry price, cur price , redeem
+   *           -> for levered long -> qty, value, entry price, cur price, debt, postion margin, redeem.
+   *  if perp -> for long -> qty, value, entry price, cur price, unrealized P&L, redeem.
+   *          -> for short -> qty, value, entry price, cur price, redeem.
+   * 
+   * 
+   * redeeming -> if fixed then no modal needed, just a confirmation modal.
+   *           -> if perp then a modal with the option to redeem all or partial.
+   * 
+   *
+   */
 
 
   return (
@@ -1321,26 +1449,23 @@ const RammPositionTable = ({ buttonAction, market, activeTab, assetName, mm_pair
       <thead>
         <tr>
           <th>
-            Qty.
+            Qty
           </th>
           <th>
             Value
           </th>
+          {activeTab === "2" && (
+            <>
+              <th>
+                Debt
+              </th>
+            </>
+          )}
           <th>
             Entry Price
           </th>
           <th>
             Current Price
-          </th>
-
-          {activeTab === "0" && <th>
-            Debt
-          </th>}
-          {activeTab === "0" && <th>
-            Position Margin
-          </th>}
-          <th>
-            Unrealized P&L
           </th>
           <th>
           </th>
@@ -1351,10 +1476,16 @@ const RammPositionTable = ({ buttonAction, market, activeTab, assetName, mm_pair
           {data_row.map((val, i) => {
             return (
               <td>
-                {val}
+                <div>
+                  {val}
+                </div>
+
               </td>
             )
           })}
+          <td>
+            <button onClick={redeemButtonClick}>Redeem</button>
+          </td>
         </tr>
       </tbody>
     </table>

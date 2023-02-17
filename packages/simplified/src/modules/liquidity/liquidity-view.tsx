@@ -42,7 +42,7 @@ import { SubCategoriesFilter } from "../markets/markets-view";
 import { Icon_Mapping, SizedChevronFlipIcon } from "@augurproject/comps/build/components/common/icons";
 import { RammCategoryLabel, RammValueLabel, ValueLabel } from "@augurproject/comps/build/components/common/labels";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
-import { marketStage, marketStageLabel, round } from "utils/helpers";
+import { getMarketStage, marketStageLabel, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
 import { InstrumentStatusSlider } from "modules/common/slider";
 
@@ -326,13 +326,17 @@ export const PoolDropDownCard: React.FC = ({ instrument, vault, market }: { inst
 }
 
 export const PoolDetails: React.FC = ({ instrument, vault, market }: { instrument: PoolInstrument, vault: VaultInfo, market: CoreMarketInfo }) => {
-  let { collaterals, trusted, borrowAPR, poolLeverageFactor, utilizationRate, totalSuppliedAssets, totalBorrowedAssets, seniorAPR } = instrument;
+  let { collaterals, trusted, borrowAPR, poolLeverageFactor, utilizationRate, totalSuppliedAssets, totalBorrowedAssets, promisedReturn, saleAmount } = instrument;
+  const { totalCollateral } = market;
+
   const { want: { symbol } } = vault;
 
   // request details -> deposit amount in underlying.
   // request details -> proposed promised return
 
   const stageLabel = marketStageLabel(market);
+
+  const annualizedPromisedReturn = roundDown((((1 + Number(promisedReturn) / 1e18) ** 31536000) - 1) * 100, 2);
   return (
     <div className={classNames(Styles.poolDetails, {
       [Styles.Trusted]: trusted,
@@ -343,7 +347,7 @@ export const PoolDetails: React.FC = ({ instrument, vault, market }: { instrumen
           <div>
             <div>
               <ValueLabel large={true} label="Leverage Multipler" value={poolLeverageFactor} />
-              <ValueLabel large={true} label="Senior Returns" value={seniorAPR + "%"} />
+              <ValueLabel large={true} label="Promised Senior Returns" value={annualizedPromisedReturn + "%"} />
             </div>
             <div>
               <ValueLabel large={true} label="BorrowAPR" value={borrowAPR + "%"} />
@@ -373,8 +377,12 @@ export const PoolDetails: React.FC = ({ instrument, vault, market }: { instrumen
         (<>
           <div>
             <div>
-              <ValueLabel large={true} label="Requested Underlying" value={handleValue(instrument?.saleAmount, symbol)} />
-              <ValueLabel large={true} label="Promised Senior Returns" value={instrument?.seniorAPR + "%"} />
+              <ValueLabel large={true} label="Requested Underlying" value={handleValue(saleAmount, symbol)} />
+              <ValueLabel large={true} label="Promised Senior Returns" value={annualizedPromisedReturn + "%"} />
+            </div>
+            <div>
+              <ValueLabel large={true} label="Leverage Multipler" value={poolLeverageFactor} />
+              <ValueLabel large={true} label="Net/Required Collateral" value={handleValue(totalCollateral, symbol, { decimals: 4 }) + "/" + handleValue(saleAmount, symbol, { decimals: 4 })} />
             </div>
           </div>
           <div>
@@ -950,41 +958,47 @@ const CreditlineDropDownCard = ({ vault, market, instrument }) => {
 }
 
 
-export const CreditlineDetails = ({ vault, market, instrument }: {vault: VaultInfo, market: CoreMarketInfo, instrument: CreditlineInstrument}) => {
+export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultInfo, market: CoreMarketInfo, instrument: CreditlineInstrument }) => {
   const { name, want: { symbol: assetSymbol } } = vault;
 
   let { trusted, principal: proposedPrincipal, expectedYield: proposedYield, duration, maturityDate, principalRepaid, interestRepaid } = instrument;
-  const { approvedPrincipal, approvedYield } = market;
+  const { approvedPrincipal, approvedYield, totalCollateral, parameters: { alpha } } = market;
 
+  const stage = getMarketStage(market);
 
-  const stage = marketStage(market);
-
-
+  // <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
   const stageLabel = marketStageLabel(market);
-// repayed/ owed + expiry date.
+  // repayed/ owed + expiry date.
   return (
     <div className={classNames(Styles.creditlineDetails, {
       [Styles.Trusted]: trusted
     })}>
       {trusted ? (
         <div>
-          <ValueLabel large={true} label={"Principal Repaid "} value={handleValue(principalRepaid, assetSymbol) +  "/" + handleValue(approvedPrincipal, assetSymbol)} />
-          <ValueLabel large={true} label={"Interest Repaid "} value={handleValue(interestRepaid, assetSymbol) + "/" +  handleValue(approvedYield, assetSymbol)} />
+          <ValueLabel large={true} label={"Principal Repaid "} value={handleValue(principalRepaid, assetSymbol) + "/" + handleValue(approvedPrincipal, assetSymbol)} />
+          <ValueLabel large={true} label={"Interest Repaid "} value={handleValue(interestRepaid, assetSymbol) + "/" + handleValue(approvedYield, assetSymbol)} />
           <ValueLabel large={true} label={"Expiry "} value={moment.utc(maturityDate).fromNow(true) + " from now"} />
         </div>
       ) :
         <div>
-          <ValueLabel large={true} label={"Requested Amount "} value={handleValue(proposedPrincipal, assetSymbol)} />
-          <ValueLabel large={true} label={"Proposed Yield "} value={handleValue(proposedYield, assetSymbol)} />
-          <ValueLabel large={true} label={"Duration "} value={moment().add(duration, "seconds").fromNow(true)} />
+          <div>
+            <ValueLabel large={true} label={"Requested Amount "} value={handleValue(proposedPrincipal, assetSymbol)} />
+            <ValueLabel large={true} label={"Proposed Yield "} value={handleValue(proposedYield, assetSymbol)} />
+          </div>
+          <div>
+            <ValueLabel large={true} label={"Duration "} value={moment().add(duration, "seconds").fromNow(true)} />
+            <ValueLabel large={true} label={"Net/Required Collateral"} value={handleValue(totalCollateral, assetSymbol, { decimals: 4 }) + "/" + handleValue(roundDown(Number(proposedPrincipal) * Number(alpha), 2), assetSymbol)} />
+          </div>
         </div>
+
       }
-      <CreditlineCollateralCard instrument={instrument} />
+      <CreditlineCollateralCard instrument={instrument}/>
 
       <div>
         <InstrumentStatusLabel label={stageLabel} />
         {(stageLabel === "Early Assessment" || stageLabel === "Late Assessment") && <InstrumentStatusSlider market={market} instrument={instrument} />}
       </div>
+
     </div>
   )
 }

@@ -29,7 +29,7 @@ import VaultFactoryData from "../data/VaultFactory.json";
 import FetcherData from "../data/Fetcher.json";
 import ERC20Data from "../data/ERC20.json";
 import ERC721Data from "../data/ERC721.json";
-import CreditlineData from "../data/CreditLineNew.json";
+import CreditlineData from "../data/CreditLine.json";
 import PoolInstrumentData from "../data/poolInstrument.json";
 import VariableInterestRateData from "../data/VariableInterestRate.json";
 import PRBTestData from "../data/PRBTest.json";
@@ -62,6 +62,90 @@ import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Mu
 
 
 type NumStrBigNumber = number | BN | string;
+
+
+// UNDERWRITE PAGE CONTRACT CALLS
+
+// REDEEM FXNS
+export const redeemDeniedMarket = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    isLong: boolean
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeemDeniedMarket(marketId, isLong);
+}
+
+// only for fixed instruments, just needs marketId as a parameter, then you call marketManager.redeem(marketId);
+export const redeem = async (
+    account: string, library: Web3Provider,
+    marketId: string
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeem(marketId);
+}
+
+export const redeemShortZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeemShortZCB(marketId);
+}
+
+// parameters, function is marketManager.redeemPerpLongZCB
+// uint256 marketId,
+// uint256 redeemAmount,
+// address caller,
+// address trader
+export const redeemPoolLongZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+) : Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    return marketManager.redeemPoolLongZCB(marketId, redeemAmount);
+}
+
+export const redeemPerpShortZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    return marketManager.redeemPerpShortZCB(marketId, redeemAmount);
+}
+
+export const redeemLeveredBond = async (
+    account: string, library: Web3Provider,
+    marketId: string
+) => {
+    const signer = library.getSigner(account);
+    const leverageManager = new Contract(leverage_manager_address, LeverageManagerData.abi, signer);
+    return leverageManager.redeemLeveredBond(marketId);
+}
+
+
+// uint256 marketId, 
+// uint256 redeemAmount
+export const redeemLeveredPerpLongZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const leverageManager = new Contract(leverage_manager_address, LeverageManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    return leverageManager.redeemLeveredPerpLongZCB(marketId, redeemAmount);
+}
+
 
 // from wad to display string
 function toDisplay(n: NumStrBigNumber, p: number = 18, d: number = 4) {
@@ -1539,14 +1623,14 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
-    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
-    "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
-    "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
-    "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
-    "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
-    "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
-    "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
-    "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+    // let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+    // "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+    // "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+    // "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+    // "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+    // "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+    // "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+    // "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
         
     // for (let i=0; i < early_managers.length; i++) {
     //     let tx = await controller.verifyAddress(early_managers[i]);

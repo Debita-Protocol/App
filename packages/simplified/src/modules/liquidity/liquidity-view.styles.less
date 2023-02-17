@@ -936,21 +936,24 @@
     > div {
       margin-right: @size-24;
     }
-
   }
 
-  > div:nth-of-type(2) {
-    grid-column: 1 / span 2;
+  >div:nth-of-type(2) {
+    grid-column: 1 / span2;
     grid-row: 2;
+    width:100%;
   }
 
   > div:last-of-type {
     grid-column: 1 / span 2;
     grid-row: 3;
+    display: flex;
+    flex-flow: column nowrap;
     > span:first-of-type {
-      margin-bottom: @size-30;
+      margin-bottom: @size-20;
     }
   }
+
 
   >div {
     margin-bottom:@size-20;
