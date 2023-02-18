@@ -52,6 +52,12 @@
         display: none;
       }
 
+      >div {
+        > h3 {
+          margin-bottom: @size-8;
+        }
+      }
+
       > div,
       > ul,
       > span,
@@ -207,7 +213,7 @@
     width: 100%;
     justify-content: space-between;
     align-items: center;
-    margin-top: @size-16;
+    margin-top: @size-20;
     > a {
       > span {
         .text-16-bold;
@@ -218,16 +224,17 @@
       }
     }
     > h1 {
-      .text-30-bold;
+      font-size: @size-55;
+      font-weight: 700;
 
-        color: var(--primary-text);
-        margin: 0;
-        padding: 0;
-        overflow-wrap: break-word;
-        word-wrap: break-word;
-        word-break: break-word;
-        hyphens: none;
-        text-transform: capitalize;
+      color: var(--primary-text);
+      margin: 0;
+      padding: 0;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: break-word;
+      hyphens: none;
+      text-transform: capitalize;
     }
   }
 

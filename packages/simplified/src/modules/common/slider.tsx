@@ -109,8 +109,7 @@ export const InstrumentStatusSlider: React.FC = (
             "Resolution"
         ]
         switch (stage) {
-            case MarketStage.EARLY_ASSESSMENT:
-            case MarketStage.LATE_ASSESSMENT:
+            case MarketStage.ASSESSMENT:
                 value = Number(totalCollateral)/(Number(alpha) * Number(principal));
                 break;
             case MarketStage.APPROVED:
@@ -146,8 +145,7 @@ export const InstrumentStatusSlider: React.FC = (
             "Approval"
         ]
         switch (stage) {
-            case MarketStage.EARLY_ASSESSMENT:
-            case MarketStage.LATE_ASSESSMENT:
+            case MarketStage.ASSESSMENT:
                 value = Number(totalCollateral)/( Number(saleAmount));
                 break;
             case MarketStage.APPROVED:

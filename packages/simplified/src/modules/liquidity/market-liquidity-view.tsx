@@ -529,6 +529,7 @@ const getResetedPricesBreakdown = (outcomes) => {
     svg: null,
   }));
 };
+
 const confirmMintVault = async ({
   account, loginAccount, vaultId, amount, leverageFactor, addTransaction
 
@@ -562,6 +563,7 @@ const confirmMintVault = async ({
     ;
 
 }
+
 const confirmRedemVault = async ({
   account, loginAccount, vaultId, amount, addTransaction
 }) => {
@@ -594,6 +596,7 @@ const confirmRedemVault = async ({
     ;
 
 }
+
 const faucet = async ({
   account, loginAccount, underlying_address, addTransaction
 }) => {
@@ -624,6 +627,7 @@ const faucet = async ({
       });
     })
 }
+
 interface MintFormProps {
   vaultId: string;
   // market: MarketInfo;
@@ -635,6 +639,7 @@ interface MintFormProps {
   underlying_address: string;
   exchangeRate: number;
 }
+
 const MintForm = ({
   vaultId,
   selectedAction,
@@ -771,7 +776,7 @@ const MintForm = ({
         >
           Redeem
         </button>)}
-        {(
+        {/* {(
           <button
             className={classNames({ [Styles.selected]: isRemove })}
             onClick={() => {
@@ -781,11 +786,11 @@ const MintForm = ({
           >
             Leverage
           </button>
-        )}
+        )} */}
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
       </header>
       <main>
-
+      {/* 
         {isRemove && (<AmountInput
           heading={"Rewind Amount"}
           ammCash={cash}
@@ -797,7 +802,7 @@ const MintForm = ({
           updateAmountError={() => null}
           disabled={false}
         //error={hasAmountErrors}
-        />)}
+        />)} */}
 
         {isRemove && <div className={Styles.PricesAndOutcomes}>
 

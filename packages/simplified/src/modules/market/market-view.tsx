@@ -594,7 +594,7 @@ const MarketView = ({ defaultMarket = null }) => {
   const isFinalized = false//isMarketFinal(market);
   const marketHasNoLiquidity = true//!amm?.id && !market.hasWinner;
   const [estimatedYield, setEstimatedYield] = useState(0);
-  console.log('promisedReturnee', instruments[marketId]?.promisedReturn);
+
   // const managerExpectedYield =  isPool? estimatedReturnsPerp(instruments[marketId]?.promisedReturn, 
   //   poolData?.poolLeverageFactor,instruments[marketId]?.inceptionPrice, estimatedYield/100) 
   // : estimatedReturnsFixed(longZCBSupply, principal, expectedYield, estimatedYield, Number(alpha), Number(longZCBPrice)); 
@@ -646,12 +646,17 @@ const MarketView = ({ defaultMarket = null }) => {
   const vault = useMemo(() => vaults[instrument?.vaultId], [instrument, vaults]);
   const rammMarket = useMemo(() => market_[marketId], [marketId, market_]);
 
+
   if (!rammMarket || Object.entries(market_[marketId]).length == 0 ) return <EmptyMarketView />;
+  const marketStage = getMarketStage(rammMarket);
+  const instrType = getInstrumentType(instrument);
+
+  const canBuy = (instrType === IType.FIXED && marketStage === MarketStage.ASSESSMENT) || (instrType === IType.PERPETUAL);
 
   return (
     <div className={classNames(Styles.MarketView, {
-      [Styles.PoolInstrument]: type == 2,
-      [Styles.CreditlineInstrument]: type == 0
+      [Styles.PoolInstrument]: false,//instrType == IType.PERPETUAL,
+      [Styles.CreditlineInstrument]: instrType == IType.FIXED
     })}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
       <section>
@@ -671,17 +676,17 @@ const MarketView = ({ defaultMarket = null }) => {
         { /*<p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>*/}
 
         {/* <span>Instrument Type: {instrumentTypeWord}</span> */}
-        <h3>Profit Mechanism</h3>
+        {/* <h3>Profit Mechanism</h3>
         <p>{isPool ?
           "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
           : "Buy longZCB if you believe the borrower will repay by maturity or collateral can be liquidated in the event of default. longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p>
 
         {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
-        {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
+        isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />
         <div>
           <h4>Overview</h4>
 
-          <p> {/*instruments[Id]?.description*/}
+          <p> {/*instruments[Id]?.description
             {instrumentOverview}</p>
           <SecondaryThemeButton
             text="More Info"
@@ -728,7 +733,7 @@ const MarketView = ({ defaultMarket = null }) => {
             }
             customClass={ButtonStyles.TinyTransparentButton}
           />
-        </div>
+        </div> */}
         {type === 0 ? (
           <section>
             <CreditlineDetails vault={vault} market={rammMarket} instrument={instrument} />
@@ -747,78 +752,82 @@ const MarketView = ({ defaultMarket = null }) => {
         {type === 2 && (
           <PoolSimulation market={market_[Id]} instrument={instruments[Id]} vault={vaults[vaultId]} />
         )}
-        <h3>
-          Zero Coupon Bond Info
-        </h3>
-        <div className={Styles.StatsTable}>
-          <ul className={Styles.StatsRow}>
+        <div>
+          <h3>
+            Zero Coupon Bond Info
+          </h3>
+          <div className={Styles.StatsTable}>
+            <ul className={Styles.StatsRow}>
 
-            <li>
-              <span>Total Longs/Shorts</span>
-              {generateTooltip(
-                "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
-                "net"
-              )}
-              <span>{roundDown(market_[Id]?.bondPool.longZCB.balance, 3)}/{roundDown(market_[Id]?.bondPool.shortZCB.balance, 2)}</span>
-            </li>
-
-            <li>
-              <span>longZCB Start Price </span>
-              <span>{handleValue(roundDown(market_[Id]?.bondPool.b, 3), asset)}</span>
-            </li>
-
-
-            <li>
-              <span>longZCB Price Now</span>
-              <span>{handleValue(roundDown(longZCBPrice, 3), asset)}</span>
-            </li>
-
-          </ul>
-          {!isPool ? (<ul className={Styles.StatsRow}>
-            <li>
-              <span>Net/Required Collateral</span>
-              {generateTooltip(
-                "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
-                "net"
-              )}
-              <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
-            </li>
-
-            <li>
-              <span>Principal </span>
-              {generateTooltip(
-                "Total amount of underlying used by the instrument  ",
-                "principal"
-              )}
-              <span>{handleValue(roundDown(principal, 3), asset)}</span>
-            </li>
-            <li>
-              <span>Expected Tot.Yield</span>
-              {generateTooltip(
-                "Amount of underlying the utilizer proposed the instrument would incur, when Principal was invested ",
-                "yield"
-              )}
-              <span>{handleValue(roundDown(expectedYield, 3), asset)}</span>
-            </li>
-
-          </ul>)
-            :
-            (<ul className={Styles.StatsRow}>
               <li>
-                <span>Leverage Factor </span>
-                <span>{poolData?.poolLeverageFactor}</span>
+                <span>Total Longs/Shorts</span>
+                {generateTooltip(
+                  "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying  ",
+                  "net"
+                )}
+                <span>{roundDown(market_[Id]?.bondPool.longZCB.balance, 3)}/{roundDown(market_[Id]?.bondPool.shortZCB.balance, 2)}</span>
+              </li>
+
+              <li>
+                <span>longZCB Start Price </span>
+                <span>{handleValue(roundDown(market_[Id]?.bondPool.b, 3), asset)}</span>
+              </li>
+
+
+              <li>
+                <span>longZCB Price Now</span>
+                <span>{handleValue(roundDown(longZCBPrice, 3), asset)}</span>
+              </li>
+
+            </ul>
+            {!isPool ? (<ul className={Styles.StatsRow}>
+              <li>
+                <span>Net/Required Collateral</span>
+                {generateTooltip(
+                  "Total amount of collateral used to buy (longZCB - shortZCB), denominated in underlying + Amount of net ZCB needed to buy to approve(supply to) this instrument, denominated in underlying  ",
+                  "net"
+                )}
+                <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
+              </li>
+
+              <li>
+                <span>Principal </span>
+                {generateTooltip(
+                  "Total amount of underlying used by the instrument  ",
+                  "principal"
+                )}
+                <span>{handleValue(roundDown(principal, 3), asset)}</span>
               </li>
               <li>
-                <span>Senior Promised Return</span>
-                <span>{roundDown((((1 + poolData?.promisedReturn / 1e18) ** 31536000) - 1) * 100, 2)}{"%"}</span>
+                <span>Expected Tot.Yield</span>
+                {generateTooltip(
+                  "Amount of underlying the utilizer proposed the instrument would incur, when Principal was invested ",
+                  "yield"
+                )}
+                <span>{handleValue(roundDown(expectedYield, 3), asset)}</span>
               </li>
-              <li>
-                <span>Manager Sale Amount </span>
-                <span>{poolData?.saleAmount}</span>
-              </li>
+
             </ul>)
-          }
+              :
+              (<ul className={Styles.StatsRow}>
+                <li>
+                  <span>Leverage Factor </span>
+                  <span>{poolData?.poolLeverageFactor}</span>
+                </li>
+                <li>
+                  <span>Senior Promised Return</span>
+                  <span>{roundDown((((1 + poolData?.promisedReturn / 1e18) ** 31536000) - 1) * 100, 2)}{"%"}</span>
+                </li>
+                <li>
+                  <span>Manager Sale Amount </span>
+                  <span>{poolData?.saleAmount}</span>
+                </li>
+              </ul>)
+            }
+          </div>
         </div>
+
+
         {isPool && isApproved && (<h4>Pool Info</h4>)}
         {isPool && isApproved &&
           (
@@ -904,7 +913,7 @@ const MarketView = ({ defaultMarket = null }) => {
           customClass={ButtonStyles.BuySellButton}
         />
       </section>
-      <section
+      {(canBuy) && <section
         className={classNames({
           [Styles.ShowTradingForm]: showTradingForm,
         })}
@@ -922,7 +931,7 @@ const MarketView = ({ defaultMarket = null }) => {
           instrument={instrument} 
           vault={vault}
           />
-      </section>
+      </section>}
     </div>
   );
 };
@@ -949,8 +958,6 @@ const CreditlineRequestInfo = ({
     const fetchSymbol = async () => {
       return await fetchAssetSymbol(account, loginAccount.library, collateral)
     }
-    console.log("collateralType: ", collateralType)
-    console.log("collateral: ", collateral)
     if (collateral && Number(collateralType) === 0) {
       console.log("fetching...")
       fetchSymbol().then(
@@ -1073,7 +1080,6 @@ const CreditlineSimulation = ({
     let loss = Number(faceValue) - Number(simAmountRepaid);
     return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
   }, [simAmountRepaid, longZCBSupply, faceValue])
-  console.log("newRedemptionPrice", newRedemptionPrice, simAmountRepaid, longZCBSupply, faceValue, longZCBPrice);
 
 
   return (
@@ -1227,7 +1233,7 @@ export const RammPositionsSection = ({
   // qty, value, entry price, cur price, debt, postion margin, unrealized P&L, realized P&L, redeem. 
   const [activeTab, setActiveTab] = useState("0");
 
-  const { marketId } = market;
+  const marketId = market?.marketId;
 
   const { loading, error, data } = useQuery(GRAPH_QUERIES.GET_MANAGER_MARKET_PAIR, {
     variables: {
@@ -1271,14 +1277,16 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
   const leveragePositions = ramm?.leveragePositions;
   const { marketId } = market;
 
+  const initPrice = instrument?.initPrice;
+
   const debt = leveragePositions && leveragePositions[marketId] ? leveragePositions[marketId].debt : 0;
   const amount = leveragePositions && leveragePositions[marketId] ? leveragePositions[marketId].amount : 0;
 
   const instrType = getInstrumentType(instrument);
   const marketStage = getMarketStage(market);
 
-  let longEntryPrice = new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance))
-  let shortEntryPrice = new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance))
+  let longEntryPrice = Number(longZCBbalance) > 0 ? new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance)) : 0;
+  let shortEntryPrice = Number(shortZCBbalance) > 0 ? new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance)) : 0;
   // unrealized = handleValue(new BN(Number(longZCBPrice)).minus(longEntryPrice).multipliedBy(longZCBbalance).toFixed(3), assetName),
   let redeemButtonClick: () => void;
   let modalAction: (string) => void;
@@ -1289,12 +1297,18 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
   let subLabel = "Successful resolution"
   if (activeTab === "0") {
     // longZCB
+
     data_row = [
       longZCBbalance,
       handleValue(new BN(Number(longZCBbalance) * Number(longZCBPrice)).toFixed(3), assetName),
       handleValue(longEntryPrice, assetName),
       handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
     ]
+    
+    instrType === IType.PERPETUAL && data_row.push(
+      handleValue(new BN((Number(longZCBPrice) - Number(longEntryPrice)) * Number(longZCBbalance)).toFixed(4),assetName) // unrealized gains.
+    )
+
 
     if (instrType === IType.FIXED) {
       modalAction = async () => {
@@ -1339,6 +1353,11 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
       handleValue(new BN(1 - Number(longZCBPrice)).toFixed(3), assetName),
       // handleValue(new BN(1 - Number(longZCBPrice)).minus(shortEntryPrice).multipliedBy(shortZCBCollateral).toFixed(3), assetName)
     ]
+
+    instrType === IType.PERPETUAL && data_row.push(
+      handleValue(new BN((Number(1 - Number(longZCBPrice)) - Number(shortEntryPrice)) * Number(shortZCBbalance)).toFixed(4), assetName) // unrealized gains.
+    )
+
     if (instrType === IType.FIXED) {
       modalAction = async () => {
         await redeemShortZCB(manager, loginAccount.library, marketId);
@@ -1383,6 +1402,11 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
       handleValue(new BN(Number(longZCBPrice)).toFixed(3), assetName),
     ]
 
+    let longLeveredEntryPrice = Number(amount) > 0 ? (Number(debt) / Number(amount)) : 0
+    instrType === IType.PERPETUAL && data_row.push(
+      handleValue(new BN((Number(longZCBPrice) - Number(longLeveredEntryPrice)) * Number(amount)).toFixed(4), assetName) // unrealized gains.
+    )
+
     if (instrType === IType.FIXED) {
       modalAction = async () => {
         await redeemLeveredBond(manager, loginAccount.library, marketId);
@@ -1418,14 +1442,6 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
     }
   }
 
-  
-  switch (marketStage) {
-    case MarketStage.LATE_ASSESSMENT:
-    case MarketStage.EARLY_ASSESSMENT:
-      
-      break;
-  }
-
 
   /**
    *  if fixed -> for long and short -> qty, value, entry price, cur price , redeem
@@ -1439,7 +1455,8 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
    * 
    *
    */
-
+  let canRedeem = (instrType === IType.PERPETUAL && marketStage === MarketStage.APPROVED ) ||
+  (instrType === IType.FIXED && marketStage === MarketStage.RESOLVED)
 
   return (
     <table className={Styles.RammPositionTable}>
@@ -1464,6 +1481,9 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
           <th>
             Current Price
           </th>
+          {instrType === IType.PERPETUAL && <th>
+            Unrealized P&L
+          </th>}
           <th>
           </th>
         </tr>
@@ -1476,12 +1496,11 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
                 <div>
                   {val}
                 </div>
-
               </td>
             )
           })}
           <td>
-            <button disabled={true} onClick={redeemButtonClick}>Redeem</button>
+            {canRedeem && <button onClick={redeemButtonClick}>Redeem</button>}
           </td>
         </tr>
       </tbody>

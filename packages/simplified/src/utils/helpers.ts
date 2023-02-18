@@ -11,8 +11,7 @@ export const round = (value: string, decimals: number): string => {
 //export type MarketStage = "EARLY_ASSESSMENT" | "LATE_ASSESSMENT" |  "APPROVED" | "RESOLVED" | "DENIED";
 
 export enum MarketStage {
-    EARLY_ASSESSMENT,
-    LATE_ASSESSMENT,
+    ASSESSMENT,
     APPROVED,
     RESOLVED,
     DENIED
@@ -33,10 +32,8 @@ export const getInstrumentType = (instrument: Instrument): InstrumentType => {
 export const getMarketStage = (market: CoreMarketInfo): MarketStage => {
     const { alive, duringAssessment, resolved, onlyReputable } = market;
     if (alive) {
-        if (duringAssessment && onlyReputable) {
-            return MarketStage.EARLY_ASSESSMENT;
-        } else if (duringAssessment && !onlyReputable) {
-            return MarketStage.LATE_ASSESSMENT;
+        if (duringAssessment) {
+            return MarketStage.ASSESSMENT;
         }
         return MarketStage.APPROVED;
     } else if (!alive && resolved) {
@@ -49,10 +46,8 @@ export const getMarketStage = (market: CoreMarketInfo): MarketStage => {
 export const marketStageLabel = (market: CoreMarketInfo): string => {
     const stage = getMarketStage(market);
     switch (stage) {
-        case MarketStage.EARLY_ASSESSMENT:
-            return "Early Assessment";
-        case MarketStage.LATE_ASSESSMENT:
-            return "Late Assessment";
+        case MarketStage.ASSESSMENT:
+            return "Assessment";
         case MarketStage.APPROVED:
             return "Approved";
         case MarketStage.RESOLVED:

@@ -275,11 +275,12 @@
     grid-gap: @size-32;
     // grid-template-columns: max-content max-content 1fr;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
 
     > button {
-      .text-16-bold;
-
+      // .text-20-bold;
+      font-size: @size-24;
+      font-weight: 700;
       border: none;
       background: transparent;
       color: var(--secondary-text);
