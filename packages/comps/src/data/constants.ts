@@ -41,6 +41,9 @@ export const validator_manager_address = "0xD575CC80A1315858DeBAB1A5cE82aaD42Be6
 export const storage_handler_address = "0x040501D15eA891185Aa989E9663b18b0a0FBFE32";
 export const order_manager_address = "0x6CA839f9528FA49bd7B257bD91259F90E84A7d77";
 
+export const cash_1 = "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249";
+export const nft_1 = "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6";
+
 export const ORACLE_MAPPING = { // X/USD
     "MATIC" : "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada",
     "ETH": "0x0715A7794a1dc8e42615F059dD6e406A6594651A",

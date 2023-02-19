@@ -196,6 +196,14 @@
         display: grid;
         grid-gap: @size-4;
 
+        >span:last-of-type {
+          max-width: 250px;
+          text-overflow: ellipsis;
+          display: block;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
         >span:first-of-type {
           font-size: @size-22;
           font-weight: 700;

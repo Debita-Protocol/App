@@ -265,6 +265,16 @@
 }
 
 .WinningOutcomeLabel {
+
+  &.Small {
+    padding: @size-12;
+    > span:first-of-type {
+      .text-14-bold;
+    }
+    > span:last-of-type {
+      .text-20-bold;
+    }
+  }
   .ThemeBorder;
 
   border: @size-1 solid var(--tertiary-bg);

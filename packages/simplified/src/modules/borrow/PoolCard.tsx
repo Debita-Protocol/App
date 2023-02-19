@@ -73,11 +73,11 @@ const PoolCardView: React.FC = ({
     const { name: vaultName, want } = vault;
     const history = useHistory();
 
-    collaterals= ["USDC","BAYC","RAMM","DAI", "BORED", "CTHULHU"].map((item) => {
-        return {
-            symbol: item,
-        }
-    }) as any;
+    // collaterals= ["USDC","BAYC","RAMM","DAI", "BORED", "CTHULHU"].map((item) => {
+    //     return {
+    //         symbol: item,
+    //     }
+    // }) as any;
 
     return (<tr key={key} onClick={() => {
         history.push({

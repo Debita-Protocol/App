@@ -39,7 +39,7 @@ const YES_NO_TICK_SIZE = createBigNumber("0.001");
 export const getCashFormat = (cashName: string) => {
   let out = {
     prepend: true,
-    symbol: "",
+    symbol: cashName,
     displayDecimals: USUAL_NUMBER_DECIMAL_PLACES,
     icon: null,
   };

@@ -250,10 +250,8 @@ const FormAmountInput = ({ amount, updateAmount, prepend }) => {
         onWheel={(e: any) => e?.target?.blur()}
       />
     </div>
-
   )
 }
-
 
 const {
   SEO,
@@ -276,7 +274,7 @@ const { getCombinedMarketTransactionsFormatted } = ProcessData;
 const { fetchTradeData, getHedgePrice, getInstrumentData_,
   // getTotalCollateral, 
   redeemZCB, getZCBBalances, approveUtilizer,
-  canApproveUtilizer, getERCBalance, testVerifyToggle } = ContractCalls;
+  canApproveUtilizer, getERCBalance, testVerifyToggle,  } = ContractCalls;
 const { testApproveMarket } = ContractCalls2;
 
 let timeoutId = null;
@@ -304,8 +302,10 @@ export const getWinningOutcome = (ammOutcomes: AmmOutcome[], marketOutcomes: Mar
 //   {winningOutcome == 2 && ConfirmedCheck}
 // </span>
 
-export const InstrumentStatusLabel: React.FC = ({ label, net, required }) => (
-  <span className={Styles.WinningOutcomeLabel}>
+export const InstrumentStatusLabel: React.FC = ({ label, small=false }: {label: string, small: boolean}) => (
+  <span className={classNames(Styles.WinningOutcomeLabel,{
+    [Styles.Small]: small
+  })}>
     <span>
       Instrument Status
     </span>
@@ -894,7 +894,7 @@ const MarketView = ({ defaultMarket = null }) => {
           {/*<TransactionsTable transactions={marketTransactions} />*/}
           {account == "0x2C7Cb3cB22Ba9B322af60747017acb06deB10933" && <SecondaryThemeButton
             text="Approve Instrument"
-            action={testapprovemarket
+            action={() => testapprovemarket()
               //() => setShowTradingForm(true)
             }
             customClass={ButtonStyles.BuySellButton}
@@ -1081,6 +1081,7 @@ const CreditlineSimulation = ({
     return new BN(Math.max(1 - loss / Number(longZCBSupply), 0)).toFixed(4);
   }, [simAmountRepaid, longZCBSupply, faceValue])
 
+  // const [ sliderMoved, setSliderMoved ] = useState(false);
 
   return (
     <section className={Styles.CreditlineSimulation}>
@@ -1091,7 +1092,7 @@ const CreditlineSimulation = ({
         <span>
           Amount Repaid
         </span>
-        <span>{<input type="number" placeholder={Number(simAmountRepaid)} onChange={(e) => {
+        <span>{<input type="number" value={Number(simAmountRepaid)} onChange={(e) => {
           setSimAmountRepaid(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
         }} />}  /{handleValue(faceValue, vault.want.symbol)}</span>
         <BaseSlider
@@ -1103,6 +1104,7 @@ const CreditlineSimulation = ({
             if ((Number(newRedemptionPrice) - Number(longZCBPrice)) / Number(longZCBPrice) * 100 * leverageFactor < -100) {
               return setLeverageFactor(1);
             }
+            // setSliderMoved(true);
             setSimAmountRepaid(value)
           }}
         />
@@ -1174,6 +1176,7 @@ const PoolSimulation = ({
       }
     }
     , [utilizationRate, borrowAPR, psu, longZCBSupply, totalSuppliedAssets, poolLeverageFactor, exchangeRate, inceptionPrice])
+  // const [ sliderMoved, setSliderMoved ] = useState(false);
 
   return (
     <section className={Styles.PoolSimulation}>
@@ -1184,7 +1187,7 @@ const PoolSimulation = ({
         <span>
           Utilization Rate
         </span>
-        <span>{<input type="number" placeholder={Number(utilizationRate)} onChange={(e) => {
+        <span>{<input type="number" value={Number(utilizationRate)} onChange={(e) => {
           setUtilizationRate(Number(e.target.value) > 0 ? Number(e.target.value) : 0);
         }} />}  /100%</span>
         <BaseSlider
@@ -1205,7 +1208,6 @@ const PoolSimulation = ({
       </div>
       <div>
         <span>LongZCB P/L % with {leverageFactor}x Multiplier </span>
-
         <span>{Number(longZCBSupply) == 0 ? "-" : new BN(Number(longZCBRates.apr) * leverageFactor).toFixed(3) + "%"}</span>
         <BaseSlider
           max={10}

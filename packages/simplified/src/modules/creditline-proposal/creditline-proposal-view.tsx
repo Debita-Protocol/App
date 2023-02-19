@@ -27,6 +27,7 @@ import { VaultInfos } from "@augurproject/comps/build/types";
 import { SingleCheckbox } from "@augurproject/comps/build/components/common/selection";
 import {FormAmountInput} from "../pool-proposal/pool-proposal-view";
 import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
+import { getCashFormat } from "@augurproject/comps/build/utils/format-number";
 
 const { formatBytes32String, isAddress } = utils;
 
@@ -45,13 +46,14 @@ const { createCreditLineInstrument,   createCreditlineMarket } = ContractCalls2;
 const DurationInput = ({onChange, label, value}) => {
   return (
     <div>
-      <label>{ label }</label>
+
       <input
         type="text"
         placeholder="0"
         value={ value }
         onChange={ onChange }
       />
+      <label>{ label }</label>
     </div>
   );
 }
@@ -235,14 +237,14 @@ const CreditLineRequestForm = () => {
       label: "Liquid",
       value: "0"
     },
-    {
-      label: "NonLiquid",
-      value: "1"
-    },
-    {
-      label: "Ownership",
-      value: "2"
-    },
+    // {
+    //   label: "NonLiquid",
+    //   value: "1"
+    // },
+    // {
+    //   label: "Ownership",
+    //   value: "2"
+    // },
     {
       label: "None",
       value: "3"
@@ -264,29 +266,33 @@ const CreditLineRequestForm = () => {
         </h3>
       </div>
       <div>
+        <label>Name: </label>
+        <TextInput placeholder="CreditlineV0" value={name} onChange={(val) => setName(val)}/>
+      </div>
+      <div>
         <div>
-        <label>Selected Vault: </label>
         { generateTooltip("Vault that the instrument will be attached to, vault underlying will be deposited to the instrument on instrument approval", "vault")}
+        <label>Selected Vault: </label>
+
         </div>
-        
         <SquareDropdown options={vaultOptions} onChange={(val) => setVaultId(val)} defaultValue={defaultVault}/>
       </div>
       
       <div>
         <div>
+        { generateTooltip("Collateral type for the instrument", "collateral")}
           <label>Collateral Type: </label>
-          { generateTooltip("Collateral type for the instrument", "collateral")}
         </div>
         <SquareDropdown options={collateralOptions} onChange={(val) => setCollateralType(val)} defaultValue={collateralType}/>
       </div>
       {collateralType === "0" && (
-        <div>
+        <>
           <div>
             <label>Collateral Address: </label>
-            <TextInput placeholder="" value={collateral} onChange={(val) => setCollateral(val)}/>
+            <TextInput placeholder="0x..." value={collateral} onChange={(val) => setCollateral(val)}/>
           </div>
           <div>
-            <label>Collateral Balance: </label>
+            <label>Collateral Required: </label>
             <FormAmountInput 
               updateAmount={
                 (val) => {
@@ -299,15 +305,10 @@ const CreditLineRequestForm = () => {
               prepend="$"
             />
           </div>
-        </div>
+        </>
       )}
       <div>
-        <label>Name: </label>
-        <TextInput placeholder="" value={name} onChange={(val) => setName(val)}/>
-      </div>
-      <div>
         <label>Principal: </label>
-
         <FormAmountInput 
           updateAmount={
             (val) => {
@@ -317,7 +318,8 @@ const CreditLineRequestForm = () => {
             }
           }
           amount={principal}
-          prepend={"$"}
+          prepend={chosenCash ? getCashFormat(chosenCash).symbol : ""}
+          label={chosenCash}
         />
       </div>
       <div>
@@ -332,7 +334,7 @@ const CreditLineRequestForm = () => {
           prepend={"%"}
         />
       </div>
-      <section className={Styles.Duration}>
+      <div className={Styles.Duration}>
         <label>Duration: </label>
         <DurationInput label="days" value={duration.days} onChange={(e)=> {
           if (/^\d*$/.test(e.target.value)) {
@@ -340,13 +342,13 @@ const CreditLineRequestForm = () => {
           }
         }}/>
         
-      </section>
+      </div>
       <div className={Styles.Description}>
         <label>Description: </label>
         <textarea 
         rows="4" 
         cols="15" 
-        placeholder=""
+        placeholder="description..."
         onChange={(e) => {
             setDescription(e.target.value)
           }
@@ -390,12 +392,12 @@ const CreditLineProposalView = () => {
 
 
 
-  if (false) {
+  if (!account) {
     return (
       <>
       <div>
         <h2>
-          Please connect your account to see this page...
+          Please connect your wallet to use this feature
         </h2>
       </div>
       </>

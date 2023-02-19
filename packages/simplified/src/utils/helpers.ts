@@ -1,4 +1,5 @@
 import { CoreMarketInfo, Instrument } from "@augurproject/comps/build/types";
+import { CASH_LABEL_FORMATS } from "@augurproject/comps/build/utils/constants";
 import { BigNumber as BN } from "bignumber.js";
 
 // rounding
@@ -43,7 +44,7 @@ export const getMarketStage = (market: CoreMarketInfo): MarketStage => {
     }
 }
 
-export const marketStageLabel = (market: CoreMarketInfo): string => {
+export const getMarketStageLabel = (market: CoreMarketInfo): string => {
     const stage = getMarketStage(market);
     switch (stage) {
         case MarketStage.ASSESSMENT:

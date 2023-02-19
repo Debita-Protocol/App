@@ -707,23 +707,13 @@ const MintForm = ({
 
   const amountLabel = !isMint ? "Shares" : vaults[vaultId]?.want.symbol;
   const approvalActionType = ApprovalAction.MINT_SETS
-  // isRemove
-  // ? ApprovalAction.REMOVE_LIQUIDITY
-  // : isMint
-  // ? ApprovalAction.MINT_SETS
-  // : isResetPrices
-  // ? ApprovalAction.RESET_PRICES
-  // : ApprovalAction.ADD_LIQUIDITY;
+
   const isApproved = false;
   const infoNumbers = []
   const { inputFormError } = MintRedeemError({ account })
   const vault = vaults[Number(vaultId)]
 
-  // isMint
-  //   ? getMintBreakdown(outcomes, amount)
-  //   : isResetPrices
-  //   ? getResetBreakdown(breakdown, market)
-  //   : getCreateBreakdown(breakdown, market, balances, isRemove);
+
   let cash: Cash;
   const userMaxAmount = isAdd ? vaultBalances[vaultId]?.base :
     isMint ? vaultBalances[vaultId]?.shares : vaultBalances[vaultId]?.shares

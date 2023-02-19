@@ -32,6 +32,8 @@ import { InstrumentStatusSlider, VerticalFill } from "modules/common/slider";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
 import { handleValue } from "modules/common/labels";
 import moment from "moment";
+import { InstrumentStatusLabel } from "modules/market/market-view";
+import { getMarketStageLabel } from "utils/helpers";
 const { Checkbox } = Icons;
 const {
     BUY,
@@ -229,7 +231,11 @@ export const LoanCard: React.FC = (
                 </div>
               </section>
             )}
-            <InstrumentStatusSlider market={market} instrument={instrument}/>
+            <div>
+            <ValueLabel label="Instrument Status" value={getMarketStageLabel(market)}/>
+            </div>
+            
+            {/* <InstrumentStatusSlider market={market} instrument={instrument}/> */}
             </div>
     )
 }

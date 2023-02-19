@@ -42,7 +42,7 @@ import { SubCategoriesFilter } from "../markets/markets-view";
 import { Icon_Mapping, SizedChevronFlipIcon } from "@augurproject/comps/build/components/common/icons";
 import { RammCategoryLabel, RammValueLabel, ValueLabel } from "@augurproject/comps/build/components/common/labels";
 import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
-import { getMarketStage, marketStageLabel, round } from "utils/helpers";
+import { getMarketStage, getMarketStageLabel, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
 import { InstrumentStatusSlider } from "modules/common/slider";
 
@@ -334,7 +334,7 @@ export const PoolDetails: React.FC = ({ instrument, vault, market }: { instrumen
   // request details -> deposit amount in underlying.
   // request details -> proposed promised return
 
-  const stageLabel = marketStageLabel(market);
+  const stageLabel = getMarketStageLabel(market);
 
   const annualizedPromisedReturn = roundDown((((1 + Number(promisedReturn) / 1e18) ** 31536000) - 1) * 100, 2);
   return (
@@ -967,7 +967,7 @@ export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultI
   const stage = getMarketStage(market);
 
   // <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
-  const stageLabel = marketStageLabel(market);
+  const stageLabel = getMarketStageLabel(market);
   // repayed/ owed + expiry date.
   return (
     <div className={classNames(Styles.creditlineDetails, {

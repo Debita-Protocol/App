@@ -1,5 +1,5 @@
 import ReactSlider from "react-slider";
-import React from "react";
+import React, { useState } from "react";
 
 //@ts-ignore;
 import Styles from "./slider.styles.less";
@@ -23,7 +23,8 @@ export const BaseSlider = (
         renderMark,
         marks = [],
         markClassName = "",
-        renderTrack
+        renderTrack,
+        ariaValuetext
     }: {
         max?: number,
         min?: number,
@@ -37,7 +38,8 @@ export const BaseSlider = (
         renderMark?: Function,
         marks?: any[],
         markClassName?: string,
-        renderTrack?: Function
+        renderTrack?: Function,
+        ariaValuetext?: string | Function
     }
 ) => {
     let props: any = {
@@ -51,7 +53,7 @@ export const BaseSlider = (
         min,
         defaultValue,
         marks,
-        markClassName: markClassName === "" ? Styles.BaseMark : { markClassName },
+        markClassName: markClassName === "" ? Styles.BaseMark : { markClassName }
     }
     if (!isNaN(value)) {
         props = {
@@ -72,10 +74,83 @@ export const BaseSlider = (
         }
     }
 
+    if (ariaValuetext) {
+        props = {
+            ...props,
+            ariaValuetext
+        }
+    }
+
     return (
         <ReactSlider
             {...props}
         />
+    )
+}
+
+export const InputSlider: React.FC = ({
+    value,
+    onSetValue,
+    max,
+    min,
+    step,
+    label,
+    marks
+}: {
+    value: number,
+    onSetValue: Function,
+    max: number,
+    min: number,
+    step: number,
+    label: string,
+    marks: number[]
+}
+) => {
+
+    let placeholder = Number(value);
+    const [inputValue, setInputValue] = useState(placeholder);
+    const [sliderMoved, setSliderMoved] = useState(false);
+    return (
+        <div className={Styles.InputSlider}>
+            <span>
+                <input type="number" value={Number(value)}  onChange={(e) => {
+                    if (Number(e.target.value) > max) {
+                        onSetValue(max)
+                    }
+                    else if (Number(e.target.value) > 0) {
+                        onSetValue(Number(e.target.value))
+                    } else {
+                        onSetValue(0)
+                    }
+                }} />
+                <div>
+                {label}
+                </div>
+                
+            </span>
+            <div>
+            <BaseSlider
+                max={Number(max)}
+                min={Number(min)}
+                value={value}
+                step={step}
+                onChange={(val) => {
+                    onSetValue(val)
+                    setSliderMoved(true);
+                }}
+            />
+            <div>
+                {marks && marks.map((mark, index) => {
+                    return (
+                        <div key={index} className={Styles.Mark}>
+                            {mark}
+                            </div>)
+                }
+                )}
+            </div>
+            </div>
+            
+        </div>
     )
 }
 
@@ -93,11 +168,11 @@ export const InstrumentStatusSlider: React.FC = (
     const { principal, instrumentType } = instrument;
 
 
-    console.log("alpha: ", alpha)
-    console.log("totalCollateral: ", totalCollateral)
-    console.log("principal: ", principal)
+    // console.log("alpha: ", alpha)
+    // console.log("totalCollateral: ", totalCollateral)
+    // console.log("principal: ", principal)
 
-    console.log("instrumentType: ", instrumentType)
+    // console.log("instrumentType: ", instrumentType)
     let props;
     let stages: string[] = [];
     if (Number(instrumentType) === 0) { // fixed instrument
@@ -110,7 +185,7 @@ export const InstrumentStatusSlider: React.FC = (
         ]
         switch (stage) {
             case MarketStage.ASSESSMENT:
-                value = Number(totalCollateral)/(Number(alpha) * Number(principal));
+                value = Number(totalCollateral) / (Number(alpha) * Number(principal));
                 break;
             case MarketStage.APPROVED:
                 value = 1;
@@ -137,16 +212,16 @@ export const InstrumentStatusSlider: React.FC = (
             markClassName: Styles.BaseMark,
             value
         }
-    } else if (Number(instrumentType) == 2){ // perpetual instrument
+    } else if (Number(instrumentType) == 2) { // perpetual instrument
         let value;
-        const {saleAmount} = instrument as PoolInstrument;
+        const { saleAmount } = instrument as PoolInstrument;
         stages = [
             "Proposal",
             "Approval"
         ]
         switch (stage) {
             case MarketStage.ASSESSMENT:
-                value = Number(totalCollateral)/( Number(saleAmount));
+                value = Number(totalCollateral) / (Number(saleAmount));
                 break;
             case MarketStage.APPROVED:
                 value = 1;
@@ -176,8 +251,8 @@ export const InstrumentStatusSlider: React.FC = (
         <div className={classNames(Styles.InstrumentStatusSlider, {
             [Styles.Fixed]: Number(instrumentType) === 0,
         })}>
-            <Stages stages={stages}/>
-            <ReactSlider {...props}/>
+            <Stages stages={stages} />
+            <ReactSlider {...props} />
         </div>
     )
 }
@@ -203,7 +278,7 @@ export const VerticalFill = (
     )
 }
 
-export const Stages = ({stages }) => {
+export const Stages = ({ stages }) => {
     return (
         <div>
             {stages.map((stage, index) => {
