@@ -805,7 +805,7 @@ const MarketView = ({ defaultMarket = null }) => {
             </ul>)} */}
 
 
-        {account && Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
+        {account && Object.entries(market_).length > 0 && <RammPositionsSection market={rammMarket} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
 
         {/* 
         <div
@@ -1199,7 +1199,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
   const { ramm } = useUserStore();
   const { duringAssessment, alive, bondPool: { longZCBPrice, b, longZCB: { balance: longZCBbalance }, shortZCB: { balance: shortZCBbalance } } } = market;
 
-  const { loginAccount } = useUserStore();
+  const { account, loginAccount } = useUserStore();
 
   let data_row = []; // values.
 
@@ -1250,7 +1250,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
 
     if (instrType === IType.FIXED) {
       modalAction = async () => {
-        await redeem(manager, loginAccount.library, marketId);
+        await redeem(account, loginAccount.library, marketId);
       }
       initialAmount = longZCBbalance;
       inputDisabled = true;
@@ -1258,7 +1258,8 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
 
     } else {
       modalAction = async (amount) => {
-        await redeemPoolLongZCB(manager, loginAccount.library, marketId, amount);
+        console.log("redeem1:",amount);
+        await redeemPoolLongZCB(account, loginAccount.library, marketId, amount);
       }
       maxValue = longZCBbalance;
       label = "Perpetual Instrument"
@@ -1298,14 +1299,14 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
 
     if (instrType === IType.FIXED) {
       modalAction = async () => {
-        await redeemShortZCB(manager, loginAccount.library, marketId);
+        await redeemShortZCB(account, loginAccount.library, marketId);
       }
       initialAmount = shortZCBbalance;
       inputDisabled = true;
       label = "Fixed Instrument"
     } else {
       modalAction = async (amount) => {
-        await redeemPerpShortZCB(manager, loginAccount.library, marketId, amount);
+        await redeemPerpShortZCB(account, loginAccount.library, marketId, amount);
       }
       maxValue = shortZCBbalance;
       label = "Perpetual Instrument"
@@ -1347,14 +1348,14 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
 
     if (instrType === IType.FIXED) {
       modalAction = async () => {
-        await redeemLeveredBond(manager, loginAccount.library, marketId);
+        await redeemLeveredBond(account, loginAccount.library, marketId);
       }
       initialAmount = amount;
       inputDisabled = true;
       label = "Fixed Instrument"
     } else {
       modalAction = async (amount) => {
-        await redeemLeveredPerpLongZCB(manager, loginAccount.library, marketId, amount);
+        await redeemLeveredPerpLongZCB(account, loginAccount.library, marketId, amount);
       }
       maxValue = amount;
       label = "Perpetual Instrument"

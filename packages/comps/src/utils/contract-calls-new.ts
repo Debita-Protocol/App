@@ -106,9 +106,11 @@ export const redeemPoolLongZCB = async (
     marketId: string,
     redeemAmount: string,
 ) : Promise<TransactionResponse> => {
+
     const signer = library.getSigner(account);
     const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
     redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    console.log("redeempoollongZCB: ", marketId, redeemAmount);
     return marketManager.redeemPoolLongZCB(marketId, redeemAmount);
 }
 
@@ -1594,10 +1596,17 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
+    
 
-    let creditline = new Contract("0x0Ea9e22BC54b08Cc25aFdef0e01ce1e8BC50c044", CreditlineData.abi, provider.getSigner(account));
+
+    // tx = await marketManager.callStatic.issuePoolBond("5", new BN(1).shiftedBy(18).toFixed(0));
+
+    // console.log("rep manger: ", await controller.reputationManager());
+    
+
+    //let creditline = new Contract("0x0Ea9e22BC54b08Cc25aFdef0e01ce1e8BC50c044", CreditlineData.abi, provider.getSigner(account));
     //tx =  await creditline.repay(new BN(1).shiftedBy(18).toFixed(0));
-    console.log("totalOwed: ", await creditline.loanStatus())
+    // console.log("totalOwed: ", await creditline.loanStatus())
     // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
     // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 
@@ -1620,10 +1629,9 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await controller.initialize(
     //     data
     // );
-
+    //     tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
-    // tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
     // let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
@@ -1640,7 +1648,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //     await tx.wait();
     // }
 
-    // await scriptSetup(account, provider);
+    await scriptSetup(account, provider);
 }
 
 
@@ -1651,91 +1659,91 @@ const scriptSetup = async (account, provider) => {
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
 
-    // for (let i = 0; i < scriptVaultNames.length; i++) {
-    //     const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
-    //     await createVault(
-    //         account, provider,
-    //         cash,
-    //         onlyVerified,
-    //         r,
-    //         asset_limit,
-    //         total_asset_limit,
-    //         vaultParams,
-    //         description
-    //     )
-    // }
+    for (let i = 0; i < scriptVaultNames.length; i++) {
+        const { vaultId, description, onlyVerified, cash, r, asset_limit, total_asset_limit, vaultParams } = fakeVaults[i];
+        await createVault(
+            account, provider,
+            cash,
+            onlyVerified,
+            r,
+            asset_limit,
+            total_asset_limit,
+            vaultParams,
+            description
+        )
+    }
 
     // create 2 pool instruments, one for each vault, and 2 creditline instruments.
 
-    for (let i = 1; i < 3; i++) {
-        let vault_ad = await controller.vaults(i);
-        let underlying = (new Contract(vault_ad, VaultData.abi, signer)).UNDERLYING();
-        const {response, instrumentAddress} = await createPoolInstrument(
-            account,
-            provider,
-            vault_ad,
-            underlying,
-            "POOL" + String(i),
-            "P" + String(i),
-            [
-                {
-                    tokenAddress: "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
-                    tokenId: "0",
-                    borrowAmount: "1",
-                    maxAmount: "1.2",
-                    isERC20: true
-                },
-                {
-                    tokenAddress: "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6",
-                    tokenId: "1",
-                    borrowAmount: "5",
-                    maxAmount: "5.5",
-                    isERC20: false
-                }
-            ]
-        )
+    // for (let i = 1; i < 3; i++) {
+    //     let vault_ad = await controller.vaults(i);
+    //     let underlying = (new Contract(vault_ad, VaultData.abi, signer)).UNDERLYING();
+    //     const {response, instrumentAddress} = await createPoolInstrument(
+    //         account,
+    //         provider,
+    //         vault_ad,
+    //         underlying,
+    //         "POOL" + String(i),
+    //         "P" + String(i),
+    //         [
+    //             {
+    //                 tokenAddress: "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
+    //                 tokenId: "0",
+    //                 borrowAmount: "1",
+    //                 maxAmount: "1.2",
+    //                 isERC20: true
+    //             },
+    //             {
+    //                 tokenAddress: "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6",
+    //                 tokenId: "1",
+    //                 borrowAmount: "5",
+    //                 maxAmount: "5.5",
+    //                 isERC20: false
+    //             }
+    //         ]
+    //     )
 
-        await response.wait();
+    //     await response.wait();
 
-        await createPoolMarket(
-            account,
-            provider,
-            String(i),
-            "POOL" + String(i),
-            "test pool",
-            new BN(100).shiftedBy(18).toFixed(0),
-            new BN(0.2).shiftedBy(18).toFixed(0),
-            "3022270000", // 10% annual return
-            new BN(0.5).shiftedBy(18).toFixed(0),
-            "1",
-            instrumentAddress
-        )
+    //     await createPoolMarket(
+    //         account,
+    //         provider,
+    //         String(i),
+    //         "POOL" + String(i),
+    //         "test pool",
+    //         new BN(100).shiftedBy(18).toFixed(0),
+    //         new BN(0.2).shiftedBy(18).toFixed(0),
+    //         "3022270000", // 10% annual return
+    //         new BN(0.5).shiftedBy(18).toFixed(0),
+    //         "1",
+    //         instrumentAddress
+    //     )
 
-        const { response: creditlineResponse, instrumentAddress: creditline_ad} = await createCreditLineInstrument(
-            account,
-            provider,
-            vault_ad,
-            new BN(10).shiftedBy(18).toFixed(0),
-            new BN(0.1).shiftedBy(18).toFixed(0),
-            String(24*60*60*10),
-            "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", //cash1 
-            new BN(5).shiftedBy(18).toFixed(0),
-            "0"
-        )
+    //     const { response: creditlineResponse, instrumentAddress: creditline_ad} = await createCreditLineInstrument(
+    //         account,
+    //         provider,
+    //         vault_ad,
+    //         new BN(10).shiftedBy(18).toFixed(0),
+    //         new BN(0.1).shiftedBy(18).toFixed(0),
+    //         String(24*60*60*10),
+    //         "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", //cash1 
+    //         new BN(5).shiftedBy(18).toFixed(0),
+    //         "0"
+    //     )
 
-        let tx = await createCreditlineMarket(
-            account,
-            provider,
-            "Creditline" + String(i),
-            creditline_ad,
-            String(i),
-            new BN(10).shiftedBy(18).toFixed(0),
-            new BN(0.1).shiftedBy(18).toFixed(0),
-            "test creditline",
-            String(24*60*60*10)
-            );
-        await tx.wait()
-    }
+    //     let tx = await createCreditlineMarket(
+    //         account,
+    //         provider,
+    //         "Creditline" + String(i),
+    //         creditline_ad,
+    //         String(i),
+    //         new BN(10).shiftedBy(18).toFixed(0),
+    //         new BN(0.1).shiftedBy(18).toFixed(0),
+    //         "test creditline",
+    //         String(24*60*60*10)
+    //         );
+    //     await tx.wait()
+    // }
 }
 
 export const fetchERC20Symbol = async (account: string, loginAccount: Web3Provider, tokenAddress: string): Promise<string> => {

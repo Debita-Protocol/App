@@ -339,9 +339,10 @@ export async function estimateTrade(
     const leverageManager = new ethers.Contract(leverage_manager_address, leverageManagerAbi["abi"], getProviderOrSigner(library, account));
     if (issue) {
       result = await leverageManager.callStatic.issuePerpBondLevered(marketId, leveragedAmount, scaledLeverage).catch((e) => {
-        console.log(e);
+        console.log("error: ", e);
         error = e
       });
+      console.log('result', result);
       let issueQty = new BN(result.toString()).shiftedBy(-18).toFixed(4);
       const avgPrice = trimDecimalValue(String(Number(amount) * Number(leverageFactor) / Number(issueQty)));
 
