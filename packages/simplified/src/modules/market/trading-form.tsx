@@ -663,7 +663,7 @@ export const TradingForm = ({
         />)}
         {!isLimit && !isIssue && false && <Slippage />}
         {/* <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/> */}
-        {(!isLimit && isLong) && <div className={classNames(Styles.LeverageSlider, {
+        {(!isIssue && !isLimit && isLong) && <div className={classNames(Styles.LeverageSlider, {
           [Styles.showSelection]: isLevered && isBuy
         })}>
           <div>
