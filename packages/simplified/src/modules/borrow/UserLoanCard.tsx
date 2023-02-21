@@ -99,8 +99,6 @@ export const LoanCard: React.FC = (
         collateral,
         collateralBalance
     } = instrument;
-
-    console.log("collateralType: ", collateralType, market.marketId)
     let { approvedPrincipal, approvedYield, duringAssessment } = market;
 
     let underlyingSymbol = vault?.want?.symbol;
@@ -146,7 +144,7 @@ export const LoanCard: React.FC = (
 
     console.log("totalOwed: ", totalOwed, principalRepaid, interestRepaid);
 
-    const repayAction = () => {
+    const repayAction = useCallback(() => {
         setModal({
             type: "MODAL_CREDITLINE_REPAY",
             instrument: instrument,
@@ -190,7 +188,7 @@ export const LoanCard: React.FC = (
                 infoNumbers: [
                   {
                     label: "Total Owed",
-                    value: handleValue(String(Number(approvedPrincipal) + Number(approvedYield)), underlyingSymbol)
+                    value: handleValue(String(Number(totalOwed)), underlyingSymbol)
                   }
                 ]
               }
@@ -199,7 +197,7 @@ export const LoanCard: React.FC = (
             maxValue: String(Number(approvedPrincipal) + Number(approvedYield) - Number(principalRepaid) - Number(interestRepaid)), // should be borrow amount remaining.
             symbol: vault.want.symbol
         });
-    };
+    }, [approvedPrincipal, approvedYield, principalRepaid, interestRepaid, vault.want.symbol, underlyingSymbol, instrument, instrumentAddress, account, loginAccount]);
 
     // trusted = true;
     // approvedPrincipal = "100"
@@ -275,8 +273,8 @@ export const LoanCard: React.FC = (
 
     const marketStage = getMarketStage(market);
 
-    const canBorrow = marketStage === MarketStage.APPROVED && Number(totalOwed) > 0;
-    const canRepay = marketStage === MarketStage.APPROVED && Number()
+    const canBorrow = marketStage === MarketStage.APPROVED && Number(totalOwed) === 0;
+    const canRepay = marketStage === MarketStage.APPROVED && Number(totalOwed) > 0;
 
     return (
         <div className={classNames(Styles.LoanCard, {
@@ -314,7 +312,11 @@ export const LoanCard: React.FC = (
                   {canBorrow ? <button onClick={borrowAction}>Borrow</button> :(
                     <CheckLabel label={"Borrowed"}/>
                   )}
-                  <button onClick={repayAction}>Repay</button>
+                  { !canBorrow && (
+                    canRepay ? <button onClick={repayAction}>Repay</button> : (
+                      <CheckLabel label={"Repaid"}/>
+                    )
+                  ) }
                 </div>
               </section>
             )}

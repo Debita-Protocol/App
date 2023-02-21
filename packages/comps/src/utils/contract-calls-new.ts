@@ -521,6 +521,7 @@ export const repayCreditlineInstrument = async (
         await approveERC20(account, provider, underlying_address, amount, instrument_address);
     }
 
+    console.log("repaying: ", amount, instrument_address, underlying_address);
     const creditline = new Contract(instrument_address, CreditlineData.abi, signer);
     const tx = await creditline.repay(
         new BN(amount).shiftedBy(18).toFixed(0)
@@ -1594,8 +1595,9 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    let creditline = new Contract("0x9238bB9E76e93400D5ebBB7e5Df2474da03c4Fa7", CreditlineData.abi, provider.getSigner(account));
-    console.log("collateralType: ", await creditline.collateral_type());
+    let creditline = new Contract("0x0Ea9e22BC54b08Cc25aFdef0e01ce1e8BC50c044", CreditlineData.abi, provider.getSigner(account));
+    //tx =  await creditline.repay(new BN(1).shiftedBy(18).toFixed(0));
+    console.log("totalOwed: ", await creditline.loanStatus())
     // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
     // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 

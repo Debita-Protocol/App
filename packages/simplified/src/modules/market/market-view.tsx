@@ -775,7 +775,7 @@ const MarketView = ({ defaultMarket = null }) => {
         </div>
 
 
-        {isPool && isApproved && (<h4>Pool Info</h4>)}
+        {/* {isPool && isApproved && (<h4>Pool Info</h4>)}
         {isPool && isApproved &&
           (
             <ul className={Styles.StatsRow}>
@@ -783,12 +783,12 @@ const MarketView = ({ defaultMarket = null }) => {
                 <span>--</span>
                 <span>-</span>
 
-                {/* <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span> */}
+                <span>{marketHasNoLiquidity ? "-" : formatDai(principal/1000000 || "0.00").full}</span>
               </li>
               <li>
                 <span>Senior Capital Supplied </span>
                 <span>{instrumentBalance}</span>
-                {/* <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span> */}
+                <span>{marketHasNoLiquidity ? "-" : formatLiquidity(amm?.liquidityUSD/10 || "0.00").full}</span>
               </li>
               <li>
                 <span>First Loss Capital</span>
@@ -799,10 +799,10 @@ const MarketView = ({ defaultMarket = null }) => {
                 <span>--</span>
                 <span>-</span>
 
-                {/* <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span> */}
+                <span>{marketHasNoLiquidity ?"8/20/2022": formatLiquidity(amm?.liquidityUSD || "0.00").full}</span>
               </li>
 
-            </ul>)}
+            </ul>)} */}
 
 
         {account && Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
