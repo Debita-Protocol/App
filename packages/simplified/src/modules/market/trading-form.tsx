@@ -695,8 +695,8 @@ export const TradingForm = ({
 
         {account && !canRedeem && MMAllowance && (<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
-          action={makeTrade}
-          text={isIssue ? "Issue New longZCB" : canMakeTrade.actionText}
+          action={!isLimit ? makeTrade : null}
+          text={!isLimit ? (isIssue ? "Issue New longZCB" : canMakeTrade.actionText) : "limit orders still in development"}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
