@@ -7,7 +7,7 @@ export enum BUTTON_TYPES {
   SECONDARY = "Secondary",
   TINY = "Tiny",
 }
-
+  
 export interface BaseThemeButtonProps {
   id?: string;
   text?: string;

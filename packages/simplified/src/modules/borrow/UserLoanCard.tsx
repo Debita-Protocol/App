@@ -1,7 +1,8 @@
-import React, {useMemo} from "react"
+import React, {useMemo, useState, useEffect, useCallback} from "react"
 
 // @ts-ignore
 import Styles from "./borrow-view.styles.less";
+import classNames from "classnames";
 
 import { Link } from "react-router-dom";
 import makePath from "@augurproject/comps/build/utils/links/make-path";
@@ -20,13 +21,23 @@ import {
 } from "@augurproject/comps";
 import { BigNumber as BN } from "bignumber.js";
 
-import { InstrumentInfos, CoreInstrumentData, VaultInfos, VaultInfo } from "@augurproject/comps/build/types";
+import { InstrumentInfos, CoreInstrumentData, VaultInfos, VaultInfo, CoreMarketInfo, Instrument, CreditlineInstrument } from "@augurproject/comps/build/types";
 //import { MODAL_NFT_POOL_ACTION } from "@augurproject/comps/build/utils/constants";
 import { USDCIcon } from "@augurproject/comps/build/components/common/icons";
 import { BaseInstrument } from "@augurproject/comps/build/types";
 import { MODAL_POOL_BORROWER_ACTION } from "modules/constants";
 import { TinyThemeButton } from "@augurproject/comps/build/components/common/buttons";
 import { SelectOutcomeButton } from "modules/common/charts";
+import { InstrumentStatusSlider, VerticalFill } from "modules/common/slider";
+import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
+import { handleValue } from "modules/common/labels";
+import moment from "moment";
+import { CheckLabel, InstrumentStatusLabel } from "modules/market/market-view";
+import { getMarketStage, getMarketStageLabel, MarketStage } from "utils/helpers";
+import { creditlineDeposit, fetchERC20Symbol, getERC20Balance } from "@augurproject/comps/build/utils/contract-calls-new";
+import { CreditlineCollateralCard } from "modules/liquidity/liquidity-view";
+import { ERC20 } from "@augurproject/smart";
+import { approveERC20 } from "@augurproject/comps/build/utils/contract-calls-new";
 const { Checkbox } = Icons;
 const {
     BUY,
@@ -68,22 +79,33 @@ const {
 export const LoanCard: React.FC = (
     {
         instrument,
-        vault
-    }: { instrument: BaseInstrument, vault: VaultInfo}
+        vault,
+        market
+    }: { instrument: CreditlineInstrument, vault: VaultInfo, market: CoreMarketInfo}
 ) => {
     const { account, loginAccount, actions: { addTransaction } } = useUserStore();
-    const {
-        address,
+    let {
+        address: instrumentAddress,
         name,
         trusted,
         balance,
         expectedYield,
         principal,
         duration,
-        maturityDate,
-        exposurePercentage,
-        description
+        loanStatus,
+        collateralType,
+        interestRepaid,
+        principalRepaid,
+        collateral,
+        collateralBalance
     } = instrument;
+    let { approvedPrincipal, approvedYield, duringAssessment } = market;
+
+    let underlyingSymbol = vault?.want?.symbol;
+    let totalOwed = instrument?.totalOwed;
+
+    
+
     const { actions: { setModal } } = useAppStatusStore();
     const { cashes } = useDataStore2();
 
@@ -92,7 +114,7 @@ export const LoanCard: React.FC = (
         let tx = borrowCreditlineInstrument(
             account, 
             loginAccount.library, 
-            address
+            instrumentAddress
         ).then((response) => {
             const { hash } = response;
             addTransaction({
@@ -120,7 +142,9 @@ export const LoanCard: React.FC = (
           });
     };
 
-    const repayAction = () => {
+    console.log("totalOwed: ", totalOwed, principalRepaid, interestRepaid);
+
+    const repayAction = useCallback(() => {
         setModal({
             type: "MODAL_CREDITLINE_REPAY",
             instrument: instrument,
@@ -129,7 +153,7 @@ export const LoanCard: React.FC = (
                 let tx = await repayCreditlineInstrument(
                     account, 
                     loginAccount.library, 
-                    address,
+                    instrumentAddress,
                     vault.want.address,
                     amount
                 ).then((response) => {
@@ -158,56 +182,198 @@ export const LoanCard: React.FC = (
                     });
                   });
             },
+            breakdowns: [
+              {
+                heading: "",
+                infoNumbers: [
+                  {
+                    label: "Total Owed",
+                    value: handleValue(String(Number(totalOwed)), underlyingSymbol)
+                  }
+                ]
+              }
+            ],
             isBorrow: false,
-            maxValue: new BN(principal).plus(new BN(expectedYield)).minus(new BN(balance)).toString(), // should be borrow amount remaining.
+            maxValue: String(Number(approvedPrincipal) + Number(approvedYield) - Number(principalRepaid) - Number(interestRepaid)), // should be borrow amount remaining.
             symbol: vault.want.symbol
         });
-    };
+    }, [approvedPrincipal, approvedYield, principalRepaid, interestRepaid, vault.want.symbol, underlyingSymbol, instrument, instrumentAddress, account, loginAccount]);
 
+    // trusted = true;
+    // approvedPrincipal = "100"
+    // approvedYield = "100"
+    /**
+     * 
+     * should be able to deposit, borrow, repay.
+     * 
+     * deposit -> if isntrument approval condition not met
+     * borrow -> can if loan status not there yet
+     * repay -> can if loan status.
+     */
 
-    // get Date Object from maturityDate which is in seconds since 1970 Janurary 1
+    const [canDeposit, setCanDeposit] = useState(false);
 
+    useEffect(() => {
+      async function load () {
+        let _balance = await getERC20Balance(account, loginAccount.library, collateral, instrumentAddress)
+        if (duringAssessment && Number(_balance) < Number(collateralBalance) && Number(collateralType) == 0) {
+          setCanDeposit(true);
+        }
+      }
+      if (account && loginAccount && collateral && instrumentAddress && collateralType === 0 ) {
+        load()
+      }
+    }, [account, loginAccount, collateral, collateralBalance, collateralType, instrumentAddress])
 
+    const depositAction = useCallback(async () => {
+      if (account && loginAccount && collateral && collateralBalance) {
+        let tx = await approveERC20(account, loginAccount.library, collateral, collateralBalance, instrumentAddress);
+        addTransaction({
+          hash: tx.hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Approve Collateral`,
+          marketDescription: `${instrument?.name} ${instrument?.description}`,
+        })
+
+        await tx.wait();
+
+        tx = await creditlineDeposit(account, loginAccount.library, instrumentAddress, collateralBalance);
+        addTransaction({
+          hash: tx.hash,
+          chainId: loginAccount.chainId,
+          seen: false,
+          status: TX_STATUS.PENDING,
+          from: account,
+          addedTime: new Date().getTime(),
+          message: `Deposit Collateral`,
+          marketDescription: `${instrument?.name} ${instrument?.description}`
+        })
+      }
+    }, [account, loginAccount, collateral, collateralBalance, instrumentAddress])
+
+    let collateralTypeWord
+    switch (collateralType) {
+      case (0):
+        collateralTypeWord = "Liquid"
+        break;
+      case (1):
+        collateralTypeWord = "Nonliquid"
+        break;
+      case (2):
+        collateralTypeWord = "Smart Contract"
+        break;
+      case (3):
+        collateralTypeWord = "Uncollateralized"
+        break;
+    }
+
+    const marketStage = getMarketStage(market);
+
+    const canBorrow = marketStage === MarketStage.APPROVED && Number(totalOwed) === 0;
+    const canRepay = marketStage === MarketStage.APPROVED && Number(totalOwed) > 0;
 
     return (
-        <div className={Styles.LoanCard}>
+        <div className={classNames(Styles.LoanCard, {
+          [Styles.Trusted]: trusted,
+        })}>
             <div>
                 <span>
-                    {vault.name}
+                  {name}
                 </span>
-                /
                 <span>
-                { name }
+                  {vault.name}
                 </span>
             </div>
-            <section>
-                <ValueLabel label="Notional Interest" value={expectedYield}/>
-                <ValueLabel label="Principal" value={principal}/>
+            {!trusted ? (<section>
+              <div>
+                <ValueLabel label="Proposed Principal" value={handleValue(principal, vault.want.name)}/>
+                <ValueLabel label="Proposed Interest" value={handleValue(expectedYield, vault.want.name)}/>
                 <ValueLabel label="Duration" value={ new BN(duration).dividedBy(24*60*60).toFixed(4) + " days"}/>
-                {trusted && (
-                    <ValueLabel label="Maturity Date" value={new Date(new BN(maturityDate).multipliedBy(1000).toNumber()).toISOString().substring(0,10)}/>
-                )}
+                <ValueLabel label="Collateral Type" value={collateralTypeWord}/>
+                <ValueLabel label="Instrument Status" value={getMarketStageLabel(market)}/>
+                {Number(collateralType) === 0 && (canDeposit ? <button onClick={depositAction}>Deposit</button>
+                : (
+                  <CheckLabel label={"Deposited"}/>
+                ))
+                }
+              </div>
+              {/* <button onClick={depositAction}>Deposit</button> */}
+            </section>) : (
+              <section>
                 <div>
-                    <span>
-                        Trusted: 
-                    </span>
-                    <span>
-                        { trusted ? "Yes"  : "No (can use checkbox icon here)"}
-                    </span>
+                  <ValueLabel label="Principal Repayed" value={principalRepaid + "/" + handleValue(approvedPrincipal,underlyingSymbol)}/>
+                  <ValueLabel label="Interest Repayed" value={interestRepaid + "/" + handleValue(approvedYield,underlyingSymbol)}/>
+                  <ValueLabel label="Instrument Status" value={getMarketStageLabel(market)}/>
+                  <ValueLabel label="Expires In" value={moment().add(duration, "seconds").fromNow(true)}/>
+                  {canBorrow ? <button onClick={borrowAction}>Borrow</button> :(
+                    <CheckLabel label={"Borrowed"}/>
+                  )}
+                  { !canBorrow && (
+                    canRepay ? <button onClick={repayAction}>Repay</button> : (
+                      <CheckLabel label={"Repaid"}/>
+                    )
+                  ) }
                 </div>
-                
-                
-            </section>
-                {trusted && (
-                    <div className= {Styles.LoanCardButtons}>
-                        <SecondaryThemeButton text="borrow" action={borrowAction}/>
-                        <SecondaryThemeButton text="repay" action={repayAction}/>
-                    </div>
-                )}
+              </section>
+            )}
+            <div>
+          
             </div>
+            {(collateralType == 0 || collateralType == 1) && <div>
+                <CreditlineCollateralCard instrument={instrument} height={60} width={60} />
+              </div>}
+            </div>
+    )
+}
+
+// collateral: string;
+//   collateralBalance: string;
+//   oracle: string;
+//   loanStatus: number;
+//   collateralType: number;
+//   principalRepaid: string;
+//   interestRepaid: string;
+//   totalOwed: string;
+const CollateralCard: React.FC = (
+  {
+    instrument
+  }: {
+    instrument: CreditlineInstrument
+  }
+) => {
+  const { account, loginAccount } = useUserStore();
+  const collateral = instrument?.collateral;
+  const [symbol, setSymbol] = useState("")
+
+  useEffect(() => {
+
+    async function load() {
+      const _symbol = await fetchERC20Symbol(account, loginAccount.library, collateral);
+        setSymbol(_symbol);
         
     
-    )
+    }
+
+    if (account && loginAccount && collateral) {
+      load();
+    }
+  }, [account, loginAccount, collateral])
+
+  const collateralBalance = instrument?.collateralBalance;
+
+  return (
+    <div>
+      <h3>
+        Collateral
+      </h3>
+
+      <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + collateral}/>
+    </div>
+  )
 }
 
 export const LoadingLoanCard = () => {

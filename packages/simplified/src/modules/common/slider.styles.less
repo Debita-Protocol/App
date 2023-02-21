@@ -2,7 +2,7 @@
 
 .BaseHorizontalSlider {
     width: 100%;
-    max-width: 500px;
+    //max-width: 500px;
     > div:first-of-type { // left track
         position: relative;
         background: var(--buy);
@@ -22,6 +22,34 @@
         border-radius: 100%;
         display: block;
         box-shadow: 0 0 2px 0 rgb(0 0 0 / 44%);
+    }
+}
+
+.VerticalFill {
+    height: 100%;
+    max-height: 500px;
+    background:var(--tertiary-text);
+    > div:first-of-type { // left track
+        position: relative;
+        background: var(--buy);
+        width: 16px;
+        // border-radius: 1px 1px 1px 1px;
+    }
+    >div:nth-of-type(2) { // right track 
+        position:relative;
+        background:var(--tertiary-text);
+        width:16px;
+        border-radius: 1px 1px 0 0;
+    }
+    >div:nth-of-type(3) {
+        cursor: pointer;
+        position: absolute;
+        z-index: 100;
+        background: #ffffff;
+        background:var(--tertiary-text);
+        border-radius: 100%;
+        display: block;
+        box-shadow: 0 0 1px 0 rgb(0 0 0 / 44%);
     }
 }
 
@@ -48,3 +76,153 @@
     height: 10px;
     line-height: 38px;
 }
+
+.example-track {
+    position: relative;
+    background: var(--buy);
+  }
+
+  .example-thumb {
+    font-size: 0.9em;
+    text-align: center;
+    background-color: black;
+    color: white;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+
+  .InstrumentStatusSlider {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    padding: @size-10;
+    padding-bottom: @size-36;
+    width: 100%;
+    background-color: var(--tertiary-bg);
+    .ThemeBorder;
+
+    &.Fixed {
+        > div:first-of-type {
+            display: flex;
+            width:100%;
+
+            // > div:first-of-type {
+            //     position: relative;
+            //     left: 0;
+            // }
+            // > div:nth-of-type(2) {
+            //     position: relative;
+            //     left:30%;
+            // }
+            // >div:nth-of-type(3) {
+            //     position: relative;
+            //     left: 50%;
+            // }
+        }
+    }
+
+    > div:first-of-type {
+        display: flex;
+        width:100%;
+        flex-flow: row nowrap;
+        font-size: @size-18;
+        font-weight: @weight-bold;
+        color: var(--secondary-text);
+        justify-content: space-between;
+        // > div:first-of-type {
+        //     position: relative;
+        //     left: 0;
+        // }
+        // > div:nth-of-type(2) {
+        //     position: relative;
+        //     left:50%;
+        // }
+    }
+
+
+    > div:last-of-type {
+        >div:nth-of-type(3) {
+            display: none;
+        }
+    }
+  }
+
+  .InputSlider {
+    > span {
+      margin-right:@size-20;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      align-items: center;
+
+      > div {
+        .text-14-bold;
+        margin-left: @size-8;
+      }
+
+      > input {
+        font-size: @size-20;
+        font-weight: @weight-bold;
+        color: var(--primary-text);
+        background-color: var(--primary-bg);
+        color: var(--primary-text);
+        height: @size-26;
+        width: 120px;
+        text-align: right;
+        border-radius: @size-8;
+
+        &::placeholder {
+            font-size: @size-20;
+            font-weight: @weight-bold;
+          color: var(--primary-text);
+        }
+
+        &:focus::placeholder {
+            font-size: @size-20;
+            font-weight: @weight-bold;
+          opacity: 0.75;
+        }
+
+        &:focus {
+          border-color:var(--primary-text);
+        }
+        
+        &:focus-within {
+          border-color:var(--primary-text);
+          outline: 0;
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          background-color: var(--primary-bg);
+        }
+      }
+    }
+
+    > div:first-of-type {
+        display: flex;
+        width:100%;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: center;
+        > div:first-of-type {
+            width: 250px;
+        }
+        > div:last-of-type {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-between;
+            margin-top:@size-24;
+            width:250px;
+            .text-14-semi-bold;
+        }
+    }
+
+    > div {
+        &.Mark {
+            display: flex;
+            flex-flow: row nowrap;
+        }
+    }
+  }

@@ -300,13 +300,11 @@ export const PortfolioView = () => {
         {/* <ProfileView/> */}
         <div className={Styles.zcb}>
           <h2>Manager Positions</h2>
-          <br />
           <ZCBPositionTable positions={_zcbBalances}/>
         </div>
         
         <div className={Styles.VaultBalances}>
           <h2>Vault Positions</h2>
-          <br />
           <VaultPositionTable positions={_vaultBalances}/>
         </div>
 

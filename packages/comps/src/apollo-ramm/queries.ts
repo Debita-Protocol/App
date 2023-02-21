@@ -220,7 +220,18 @@ export const GET_MANAGER_SCORES = gql`
         managers(first: $amount, orderBy: reputationScore, orderDirection: desc) {
             address: id
             reputationScore
+            lastUpdated
+            delta
         }
     }
 `
 
+export const GET_MANAGER_MARKET_PAIR = gql`
+    query managerMarketPair($id: ID!) {
+        managerMarketPair(id: $id) {
+            id
+            longZCBCollateral
+            shortZCBCollateral
+        }
+    }
+`

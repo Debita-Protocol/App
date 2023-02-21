@@ -8,7 +8,7 @@
   background-color: var(--quaternary-bg);
   border: @size-1 solid var(--theme-border);
   border-radius: @size-10;
-  width: 70%;
+  width: 80%;
   height: fit-content;
   .HoverDropShadow;
   > div:first-of-type { // header
@@ -17,25 +17,36 @@
     display: flex;
     flex-flow: row nowrap;
     justify-content: center;
+    padding:@size-15;
     > h3 {
-      font-size: @size-20;
+      border: @size-1 solid var(--success);
+      background: var(--success);
+      color: var(--inverted-primary-text);
+      border-radius: @size-8;
+      padding: @size-4 @size-8;
+      font-size: @size-26;
       font-weight: @weight-bold;
     }
   }
 
-  > div {
+  > div:not(:first-of-type) {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    padding: @size-15;
+    padding:@size-15;
+    margin-top: @size-20;
     > div {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
       padding-left:@size-10;
       > label {
         font-size: @size-18;
         font-weight: @weight-bold;
         color: var(--primary-text);
         margin-bottom: 0;
+        padding-left: @size-5;
       }
     }
     > label {
@@ -54,6 +65,21 @@
       border-radius: @size-10;
       
       background-color: var(--primary-bg);
+
+      &:hover {
+
+        border:1px solid var(--secondary-text);
+      }
+    }
+  }
+
+  > div:last-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+
+    > button {
+      .SimplifiedActionButton;
+      margin-bottom: @size-20;
     }
   }
 }
@@ -115,4 +141,51 @@
   display: flex;
   flex-flow: column nowrap;
   align-items: center;
+}
+
+.SimplifiedActionButton {
+  border: @size-1 solid var(--theme-border);
+  background: var(--primary-text);
+  color: var(--inverted-primary-text);
+  min-height: @size-68;
+  height: @size-68;
+  max-height: @size-68;
+  border-radius: 1rem;
+  > span:first-of-type {
+    .text-20-bold;
+  }
+  width: 100%;
+
+  &:not(:disabled) {
+    &:hover {
+      background: rgba(var(--primary-text-rgb), 0.85);
+      color: var(--inverted-primary-text);
+    }
+
+    &:focus-within:hover:active {
+      background: var(--inverted-primary-bg);
+      color: var(--inverted-primary-text);
+    }
+  }
+
+  &:not(:disabled):not(.Disabled):focus,
+  &:not(:disabled):not(.Disabled):focus-within {
+    background-color: var(--primary-text);
+    color: var(--inverted-primary-text);
+    outline: 0;
+    border: @size-1 solid var(--theme-border);
+    box-shadow: none;
+  }
+
+  &:not(:disabled):not(.Disabled):active {
+    background-color: var(--tertiary-bg);
+    color: var(--primary-text);
+  }
+}
+
+.DeployedLabel {
+  .ThemeBorder;
+  margin-top: @size-10;
+  padding:@size-10;
+  background-color: var(--primary-bg);
 }

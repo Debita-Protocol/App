@@ -287,12 +287,6 @@ export const MarketLiquidityView = () => {
         <p>{"Vault/Underlying Tokens: "}</p>
         <AddMetaMaskToken tokenSymbol={"Vault" + vaultId} tokenAddress={vault_address} />
         <AddMetaMaskToken tokenSymbol={underlyingSymbol} tokenAddress={underlying_address} />
-        {/* {(
-          <button onClick={() => setShowMoreDetails(!showMoreDetails)}>
-            {showMoreDetails ? "Read Less" : "Read More"}
-          </button>
-        )}
-        <p>{"details"}</p> */}
 
         <ul className={Styles.StatsRow}>
           <li>
@@ -394,10 +388,11 @@ export const MarketLiquidityView = () => {
             ))}
             <span />
           </article>
+          <section>
           {Object.values(filteredInstruments).map((instrument: any) => (
             <InstrumentCard instrument={instrument} />
-
           ))}
+          </section>
         </section>
       </div>
       {/* <ChartsSection vault={vault} prices={prices} /> */}
@@ -534,6 +529,7 @@ const getResetedPricesBreakdown = (outcomes) => {
     svg: null,
   }));
 };
+
 const confirmMintVault = async ({
   account, loginAccount, vaultId, amount, leverageFactor, addTransaction
 
@@ -567,6 +563,7 @@ const confirmMintVault = async ({
     ;
 
 }
+
 const confirmRedemVault = async ({
   account, loginAccount, vaultId, amount, addTransaction
 }) => {
@@ -599,6 +596,7 @@ const confirmRedemVault = async ({
     ;
 
 }
+
 const faucet = async ({
   account, loginAccount, underlying_address, addTransaction
 }) => {
@@ -629,6 +627,7 @@ const faucet = async ({
       });
     })
 }
+
 interface MintFormProps {
   vaultId: string;
   // market: MarketInfo;
@@ -640,6 +639,7 @@ interface MintFormProps {
   underlying_address: string;
   exchangeRate: number;
 }
+
 const MintForm = ({
   vaultId,
   selectedAction,
@@ -707,23 +707,13 @@ const MintForm = ({
 
   const amountLabel = !isMint ? "Shares" : vaults[vaultId]?.want.symbol;
   const approvalActionType = ApprovalAction.MINT_SETS
-  // isRemove
-  // ? ApprovalAction.REMOVE_LIQUIDITY
-  // : isMint
-  // ? ApprovalAction.MINT_SETS
-  // : isResetPrices
-  // ? ApprovalAction.RESET_PRICES
-  // : ApprovalAction.ADD_LIQUIDITY;
+
   const isApproved = false;
   const infoNumbers = []
   const { inputFormError } = MintRedeemError({ account })
   const vault = vaults[Number(vaultId)]
 
-  // isMint
-  //   ? getMintBreakdown(outcomes, amount)
-  //   : isResetPrices
-  //   ? getResetBreakdown(breakdown, market)
-  //   : getCreateBreakdown(breakdown, market, balances, isRemove);
+
   let cash: Cash;
   const userMaxAmount = isAdd ? vaultBalances[vaultId]?.base :
     isMint ? vaultBalances[vaultId]?.shares : vaultBalances[vaultId]?.shares
@@ -776,7 +766,7 @@ const MintForm = ({
         >
           Redeem
         </button>)}
-        {(
+        {/* {(
           <button
             className={classNames({ [Styles.selected]: isRemove })}
             onClick={() => {
@@ -786,11 +776,11 @@ const MintForm = ({
           >
             Leverage
           </button>
-        )}
+        )} */}
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
       </header>
       <main>
-
+      {/* 
         {isRemove && (<AmountInput
           heading={"Rewind Amount"}
           ammCash={cash}
@@ -802,7 +792,7 @@ const MintForm = ({
           updateAmountError={() => null}
           disabled={false}
         //error={hasAmountErrors}
-        />)}
+        />)} */}
 
         {isRemove && <div className={Styles.PricesAndOutcomes}>
 
@@ -855,6 +845,7 @@ const MintForm = ({
             updateCash={updateCash}
             updateAmountError={() => null}
             disabled={false}
+            balance={userMaxAmount}
           //error={hasAmountErrors}
           />)}
           {isAdd && <Leverage leverageFactor={leverageFactor} setLeverageFactor={setLeverageFactor} />}
@@ -1218,6 +1209,7 @@ const LiquidityForm = ({
           updateCash={updateCash}
           updateAmountError={() => null}
           error={hasAmountErrors}
+          balance={userMaxAmount}
         />
 
         <div className={Styles.PricesAndOutcomes}>
@@ -1236,7 +1228,7 @@ const LiquidityForm = ({
             ammCash={cash}
             dontFilterInvalid
             hasLiquidity={!mustSetPrices || hasInitialOdds}
-            marketFactoryType={market?.marketFactoryType}
+            // marketFactoryType={market?.marketFactoryType}
             isGrouped={market?.isGrouped}
           />
         </div>

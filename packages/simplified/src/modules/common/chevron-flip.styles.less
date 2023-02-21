@@ -15,3 +15,18 @@
   }
 }
 
+.LargeChevronFlip {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  width: 40px;
+  display: flex;
+
+  &.pointDown {
+    transform: rotate(-180deg);
+  }
+
+  > svg {
+    display: flex;
+  }
+}
+

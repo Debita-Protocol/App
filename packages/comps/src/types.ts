@@ -402,8 +402,11 @@ export interface CreditlineInstrument extends BaseInstrument {
   collateral: string;
   collateralBalance: string;
   oracle: string;
-  loanStatus: string;
-  collateralType: string;  
+  loanStatus: number;
+  collateralType: number;
+  principalRepaid: string;
+  interestRepaid: string;
+  totalOwed: string;
 }
 
 export interface PoolInstrument extends BaseInstrument {
@@ -414,7 +417,7 @@ export interface PoolInstrument extends BaseInstrument {
   inceptionPrice: string;
   poolLeverageFactor: string;
   totalBorrowedAssets: string;
-  totalSuppliedAssets: string; 
+  totalSuppliedAssets: string;
   utilizationRate: string;
   totalAvailableAssets: string;
   lastRateUpdate: string;
@@ -491,6 +494,7 @@ export interface Collateral extends Asset {
   owner?: string; // supplied if owner is not zero address.
   balance?: string;
   isERC20: boolean;
+  // need to fetch auction parameters
 }
 
 export interface Auction {
@@ -835,8 +839,6 @@ export interface EstimateTradeResult {
   priceImpact: string;
   outcomeShareTokensIn?: string[];
   maxSellAmount?: string;
-
-
   debt?: string; 
   totalUnderlyingPosition?: string; 
   totalBondPosition?: string; 

@@ -1,4 +1,7 @@
 @import (reference) "~assets/styles/shared";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .LiquidityTableRow {
   .ThemeBorder;
@@ -18,7 +21,7 @@
   grid-gap: @size-8 @size-16;
   padding: @size-40 @size-88 @size-48;
 
-  > h1 {
+  >h1 {
     .text-30-bold;
 
     color: var(-primary-text);
@@ -28,7 +31,7 @@
     grid-row: 3;
   }
 
-  > p {
+  >p {
     .text-20-semi-bold;
 
     color: var(--primary-text);
@@ -38,7 +41,7 @@
     grid-column: span 2;
     grid-row: 4;
 
-    > a {
+    >a {
       .text-20-semi-bold;
 
       color: var(--secondary-text);
@@ -48,7 +51,7 @@
     }
   }
 
-  > ul {
+  >ul {
     display: grid;
     grid-auto-flow: column;
     grid-template-columns: 0fr 0fr 0fr 1fr;
@@ -57,13 +60,13 @@
     max-height: @size-48;
     width: 100%;
 
-    > * {
+    >* {
       max-height: @size-48;
       height: @size-48;
       min-height: @size-48;
     }
 
-    > label {
+    >label {
       .text-12-semi-bold;
 
       align-items: center;
@@ -75,7 +78,7 @@
       margin: 0;
     }
 
-    > div:last-of-type {
+    >div:last-of-type {
       margin-left: auto;
 
       &:focus-within {
@@ -84,22 +87,23 @@
     }
   }
 
-  > section {
+  >section {
     grid-column: span 2;
     display: grid;
     grid-template-columns: 1fr;
     grid-gap: @size-8;
     margin-top: @size-32;
-    margin-bottom: auto;
+    // margin-bottom: auto;
 
-    > article {
+    >article {
       .LiquidityTableRow;
 
       min-height: @size-56;
       max-height: @size-56;
       padding: @size-12;
+      margin-bottom: @size-16;
 
-      > button {
+      >button {
         .text-12-semi-bold;
 
         border: none;
@@ -111,30 +115,30 @@
         cursor: pointer;
         color: var(--primary-text);
 
-        > svg:not([name="MaticIcon"]) {
+        >svg:not([name="MaticIcon"]) {
           transform: rotate(90deg);
           margin-right: @size-4;
 
-          > path {
+          >path {
             stroke: var(--primary-text);
             fill: var(--primary-text);
           }
         }
 
-        > svg[name="MaticIcon"] {
+        >svg[name="MaticIcon"] {
           margin-left: @size-4;
           width: @size-16;
           height: @size-16;
         }
 
         &.Ascending {
-          > svg:not([name="MaticIcon"]) {
+          >svg:not([name="MaticIcon"]) {
             transform: rotate(-90deg);
           }
         }
       }
 
-      > span {
+      >span {
         .text-12-semi-bold;
 
         color: var(--primary-text);
@@ -142,139 +146,171 @@
       }
     }
 
-    > section {
+    >section {
       display: grid;
       grid-auto-columns: 1fr;
       grid-gap: @size-8;
     }
   }
 
-  > ul + div {
+  >ul+div {
     margin-bottom: 0;
   }
 
-  > div + section {
+  >div+section {
     margin-top: @size-8;
   }
 
-  > div[class*="Pagination"] {
+  >div[class*="Pagination"] {
     grid-column: span 2;
   }
 
-  > div[class*="AddMetaMaskToken"] {
+  >div[class*="AddMetaMaskToken"] {
     grid-column: 2;
   }
 }
 
 .LiquidityMarketCard {
-  .LiquidityTableRow;
-  .HoverDropShadow;
-
-  > a:first-of-type,
-  > button:first-of-type {
-    display: grid;
-    grid-template-columns: 0fr 1fr;
-    grid-gap: @size-16;
+  &.Light {
+    .HoverDropShadow;
+  }
+  background-color: var(--primary-bg);
+  .ThemeBorder;
+  >section:first-of-type {
     align-items: center;
-    outline: none;
-
-    > span {
-      display: grid;
-      grid-gap: @size-4;
-
-      > span:first-of-type {
-        .text-14-semi-bold;
-        color: var(--primary-text);
-        line-height: 140%;
-
-        &:hover {
-          text-decoration: underline;
-        }
-
-        > span:first-of-type {
-          .limit-lines(1);
-        }
-
-        > span:last-of-type {
-          .limit-lines(2);
-        }
-
-        > span:first-of-type:last-of-type {
-          .limit-lines(3);
-        }
-      }
-
-      // > span:last-of-type {
-      //   .text-12;
-
-      //   color: var(--secondary-text);
-      //   white-space: nowrap;
-      //   word-break: none;
-      //   display: inline-block;
-      //   text-transform: capitalize;
-      // }
-    }
-  }
-
-  > button:first-of-type {
-    display: none;
-    border: none;
-    background: transparent;
-  }
-
-  > span {
-    .text-12;
-
-    color: var(--primary-text);
-    text-align: right;
-  }
-
-  > div:last-of-type {
+    background: var(--primary-bg);
     display: grid;
+    grid-template-columns: 1fr 0.25fr 0.25fr 0.25fr 0.25fr 0.25fr 0.25fr;
     grid-gap: @size-8;
-    grid-auto-flow: column;
-    align-items: center;
-    justify-content: center;
+    padding: @size-12;
 
-    > button:first-of-type:last-of-type {
-      padding: @size-10 @size-12;
-      width: min-content;
-      justify-self: flex-end;
+    >a:first-of-type,
+    >button:first-of-type {
+      display: grid;
+      grid-template-columns: 0fr 1fr;
+      grid-gap: @size-16;
+      align-items: center;
+      outline: none;
 
-      > span {
-        .text-10-semi-bold;
+      >span {
+        display: grid;
+        grid-gap: @size-4;
+
+        >span:last-of-type {
+          max-width: 250px;
+          text-overflow: ellipsis;
+          display: block;
+          overflow: hidden;
+          white-space: nowrap;
+        }
+
+        >span:first-of-type {
+          font-size: @size-22;
+          font-weight: 700;
+          color: var(--primary-text);
+          line-height: 140%;
+
+          &:hover {
+            text-decoration: underline;
+          }
+
+          >span:first-of-type {
+            .limit-lines(1);
+          }
+
+          >span:last-of-type {
+            .limit-lines(2);
+          }
+
+          >span:first-of-type:last-of-type {
+            .limit-lines(3);
+          }
+        }
+
+        // > span:last-of-type {
+        //   .text-12;
+
+        //   color: var(--secondary-text);
+        //   white-space: nowrap;
+        //   word-break: none;
+        //   display: inline-block;
+        //   text-transform: capitalize;
+        // }
       }
     }
-  }
 
-  > article:last-of-type {
-    display: none;
-  }
+    >button:first-of-type {
+      display: none;
+      border: none;
+      background: transparent;
+    }
 
-  &.HasUserLiquidity {
-    > span:nth-of-type(4),
-    > span:nth-of-type(5) {
-      display: flex;
-      flex-flow: column nowrap;
-      align-items: flex-end;
+    >span {
+      .text-18;
 
-      > span {
-        .text-10-semi-bold;
+      color: var(--primary-text);
+      text-align: right;
+    }
+
+    >div:last-of-type {
+      display: grid;
+      grid-gap: @size-8;
+      grid-auto-flow: column;
+      align-items: center;
+      justify-content: center;
+
+      >button:first-of-type:last-of-type {
+        padding: @size-10 @size-12;
+        width: min-content;
+        justify-self: flex-end;
+
+        >span {
+          .text-10-semi-bold;
+        }
+      }
+    }
+
+    >article:last-of-type {
+      display: none;
+    }
+
+    &.HasUserLiquidity {
+
+      >span:nth-of-type(4),
+      >span:nth-of-type(5) {
         display: flex;
-        flex-flow: row nowrap;
-        color: var(--secondary-text);
+        flex-flow: column nowrap;
+        align-items: flex-end;
+
+        >span {
+          .text-10-semi-bold;
+          display: flex;
+          flex-flow: row nowrap;
+          color: var(--secondary-text);
+        }
+      }
+
+      >article:last-of-type {
+        display: flex;
+        grid-column: span 7;
+        border-top: @size-1 solid var(--theme-border);
+        padding: @size-16 @size-24;
+        height: unset;
+        max-height: unset;
+        margin: 0 -@size-12 -@size-12;
       }
     }
+  }
 
-    > article:last-of-type {
-      display: flex;
-      grid-column: span 7;
-      border-top: @size-1 solid var(--theme-border);
-      padding: @size-16 @size-24;
-      height: unset;
-      max-height: unset;
-      margin: 0 -@size-12 -@size-12;
-    }
+  margin-bottom: @size-16;
+  transition: max-height 200ms ease-in-out;
+  max-height: 100px;
+
+
+  &.Expanded {
+    max-height: 1000px;
+    //height: 400px;
+    
   }
 }
 
@@ -288,12 +324,12 @@
     margin-top: var(--theme-top-bar-height);
     grid-auto-rows: 0fr;
 
-    > ul {
+    >ul {
       grid-auto-flow: unset;
       grid-template-columns: 0fr 0fr 1fr;
       max-height: unset;
 
-      > div:last-of-type {
+      >div:last-of-type {
         grid-column: span 3;
         grid-row: 1;
         margin-left: 0;
@@ -301,13 +337,13 @@
         min-height: @size-40;
         height: @size-40;
 
-        > input {
+        >input {
           .text-12-semi-bold;
 
           padding: @size-8 @size-16;
         }
 
-        > div {
+        >div {
           background: none;
           min-height: @size-20;
           max-height: @size-20;
@@ -325,42 +361,42 @@
     margin-top: var(--theme-top-bar-height-mobile);
     padding: @size-16;
 
-    > div:first-of-type,
-    > div:nth-of-type(2) {
+    >div:first-of-type,
+    >div:nth-of-type(2) {
       grid-column: span 2;
     }
 
-    > h1,
-    > p {
+    >h1,
+    >p {
       display: none;
     }
 
-    > ul {
+    >ul {
       grid-template-columns: 1fr 1fr;
 
-      > * {
+      >* {
         min-height: @size-34;
         height: @size-34;
         max-height: @size-34;
       }
 
-      > label {
+      >label {
         grid-column: span 2;
       }
 
-      > div:not(:last-of-type) {
+      >div:not(:last-of-type) {
         max-width: 100%;
 
-        > button {
+        >button {
           padding: @size-10 @size-12;
 
-          > svg {
+          >svg {
             margin-left: @size-8;
             height: @size-12;
             width: @size-12;
           }
 
-          > span {
+          >span {
             .text-10-semi-bold;
 
             text-transform: uppercase;
@@ -368,15 +404,15 @@
         }
       }
 
-      > div:last-of-type {
+      >div:last-of-type {
         grid-column: span 2;
       }
     }
 
-    > section {
+    >section {
       margin-top: 0;
 
-      > article {
+      >article {
         min-height: @size-40;
         max-height: @size-40;
         height: @size-40;
@@ -384,11 +420,11 @@
         grid-template-columns: 1fr 0.2fr 0.2fr;
         grid-gap: 0 @size-8;
 
-        > a {
+        >a {
           margin-left: @size-12;
         }
 
-        > button {
+        >button {
           display: none;
 
           &:nth-of-type(2) {
@@ -403,159 +439,160 @@
           }
         }
 
-        > span:not(:first-of-type) {
+        >span:not(:first-of-type) {
           display: none;
         }
       }
     }
 
-    > div + section {
+    >div+section {
       margin-top: 0;
     }
   }
 
   .LiquidityMarketCard {
-    display: grid;
-    grid-template-columns: 1fr 0.2fr 0.2fr;
     padding: @size-12;
+    height: 100px;
+    transition: max-height 100ms ease-in-out,
+    opacity 100ms ease-in-out;
+    >section:first-of-type {
+      display: grid;
+      grid-template-columns: 1fr 0.2fr 0.2fr;
 
-    > a:first-of-type,
-    > button:first-of-type {
-      > span {
-        > span:first-of-type {
-          > span {
-            .text-12-semi-bold;
+      >a:first-of-type,
+      >button:first-of-type {
+        >span {
+          >span:first-of-type {
+            >span {
+              .text-12-semi-bold;
+              text-align: left;
+            }
+          }
+
+          >span:last-of-type {
+            .text-10;
+
+            white-space: normal;
             text-align: left;
           }
         }
-        > span:last-of-type {
-          .text-10;
+      }
 
-          white-space: normal;
-          text-align: left;
+      >a:first-of-type {
+        display: none;
+      }
+
+      >button:first-of-type {
+        display: grid;
+
+        >span>span:first-of-type:hover {
+          text-decoration: none;
         }
       }
-    }
 
-    > a:first-of-type {
-      display: none;
-    }
-
-    > button:first-of-type {
-      display: grid;
-
-      > span > span:first-of-type:hover {
-        text-decoration: none;
-      }
-    }
-
-    > span {
-      display: none;
-
-      &:nth-of-type(2) {
-        display: flex;
-        margin-right: auto;
-      }
-
-      &:nth-of-type(3) {
-        display: flex;
-        margin-left: auto;
-      }
-
-      &:nth-of-type(4),
-      &:nth-of-type(5) {
+      >span {
         display: none;
-      }
-    }
 
-    > div:last-of-type {
-      grid-column: span 3;
-      grid-row: 2;
-      margin: 0 -@size-12 -@size-12 -@size-12;
-      border-top: @size-1 solid var(--theme-border);
-      padding: @size-10;
-      grid-gap: 0;
-      display: none;
-      flex-flow: row nowrap;
+        &:nth-of-type(2) {
+          display: flex;
+          margin-right: auto;
+        }
 
-      > button:first-of-type:last-of-type {
-        width: 100%;
-      }
+        &:nth-of-type(3) {
+          display: flex;
+          margin-left: auto;
+        }
 
-      > div {
-        display: none;
-      }
-    }
-
-    &.Expanded {
-      > div:last-of-type {
-        display: flex;
-      }
-    }
-
-    &.HasUserLiquidity {
-      padding: 0;
-      grid-gap: 0 @size-8;
-
-      > a,
-      > span,
-      > button:first-of-type,
-      > div {
-        margin: @size-10 0;
+        &:nth-of-type(4),
+        &:nth-of-type(5) {
+          display: none;
+        }
       }
 
-      > span:nth-of-type(3) {
-        margin-right: @size-12;
-        justify-content: flex-end;
-      }
-
-      > span:nth-of-type(4),
-      > span:nth-of-type(5) {
-        display: none;
-      }
-
-      > a,
-      > button:first-of-type {
-        margin-left: @size-12;
-      }
-      > div {
-        margin-right: @size-12;
-      }
-
-      > article:last-of-type {
+      >div:last-of-type {
         grid-column: span 3;
-        margin: 0;
-        padding: @size-12;
-      }
-
-      > div:last-of-type {
-        display: flex;
-        flex-flow: row nowrap;
-        grid-column: span 3;
-        grid-row: 3;
-        margin: 0;
-        width: 100%;
+        grid-row: 2;
+        margin: 0 -@size-12 -@size-12 -@size-12;
         border-top: @size-1 solid var(--theme-border);
         padding: @size-10;
         grid-gap: 0;
+        display: none;
+        flex-flow: row nowrap;
 
-        > div {
-          display: grid;
-          align-self: flex-start;
+        >button:first-of-type:last-of-type {
+          width: 100%;
         }
 
-        > button:last-of-type {
-          margin-left: @size-8;
+        >div {
+          display: none;
         }
       }
 
-      &.Final {
-        > div:last-of-type {
-          flex-flow: row nowrap;
+      &.HasUserLiquidity {
+        padding: 0;
+        grid-gap: 0 @size-8;
 
-          > button {
-            width: min-content;
+        >a,
+        >span,
+        >button:first-of-type,
+        >div {
+          margin: @size-10 0;
+        }
+
+        >span:nth-of-type(3) {
+          margin-right: @size-12;
+          justify-content: flex-end;
+        }
+
+        >span:nth-of-type(4),
+        >span:nth-of-type(5) {
+          display: none;
+        }
+
+        >a,
+        >button:first-of-type {
+          margin-left: @size-12;
+        }
+
+        >div {
+          margin-right: @size-12;
+        }
+
+        >article:last-of-type {
+          grid-column: span 3;
+          margin: 0;
+          padding: @size-12;
+        }
+
+        >div:last-of-type {
+          display: flex;
+          flex-flow: row nowrap;
+          grid-column: span 3;
+          grid-row: 3;
+          margin: 0;
+          width: 100%;
+          border-top: @size-1 solid var(--theme-border);
+          padding: @size-10;
+          grid-gap: 0;
+
+          >div {
+            display: grid;
+            align-self: flex-start;
+          }
+
+          >button:last-of-type {
             margin-left: @size-8;
+          }
+        }
+
+        &.Final {
+          >div:last-of-type {
+            flex-flow: row nowrap;
+
+            >button {
+              width: min-content;
+              margin-left: @size-8;
+            }
           }
         }
       }
@@ -568,7 +605,7 @@
     grid-gap: @size-2;
     margin: 0 auto;
 
-    > span {
+    >span {
       .text-12;
 
       color: var(--primary-text);
@@ -579,7 +616,7 @@
       justify-content: flex-end;
       grid-gap: @size-4;
 
-      > svg {
+      >svg {
         height: @size-16;
         width: @size-16;
       }
@@ -594,6 +631,409 @@
         color: var(--secondary-text);
         text-transform: capitalize;
       }
+    }
+  }
+}
+
+.DropDownCard {
+  display: flex;
+  flex-flow: column nowrap;
+  width: 100%;
+  .ThemeBorder;
+  // width: fit-content;
+  background-color: var(--primary-bg);
+  border-top : @size-1 solid var(--theme-border);
+  padding: @size-16 @size-44 @size-16;
+  > div:first-of-type {
+    margin-bottom: @size-20;
+  }
+}
+
+.PoolCollateralCard {
+  display: flex;
+  flex-flow: column nowrap;
+  .ThemeBorder;
+  width: fit-content;
+  background-color: var(--tertiary-bg);
+  padding: @size-8;
+  border-radius: @size-16;
+  margin-right: @size-16;
+  > section:first-of-type {
+    padding: @size-8;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+    >div:first-of-type {
+      width: 100%;
+      justify-content: space-between;
+      >div:last-of-type  {
+        padding: 0;
+        margin: 0;
+      }
+
+      >div:last-of-type {
+        justify-self: flex-end;
+      }
+    }
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+      margin-bottom:@size-8;
+      > div {
+        font-size: @size-24;
+        padding: @size-16;
+        
+      }
+      > span {
+        margin-left: @size-20;
+
+      }
+    }
+    
+    > span:first-of-type {
+      > a {
+        .text-12-semi-bold;
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        // width: 100px;
+      }
+    }
+    > span:nth-of-type(2) {
+      margin-left: @size-17;
+      .text-14;
+      
+    }
+  }
+  > section:nth-of-type(2) {
+    padding: @size-8;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-start;
+    justify-content: space-evenly;
+    > div {
+      display: flex;
+      width:100%;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      > span:first-of-type {
+        .text-12;
+        color: var(--primary-text);
+      }
+
+      > span:nth-of-type(2) {
+        .text-14-bold;
+        color: var(--primary-text);
+        // .text-12;
+        // color: var(--secondary-text);
+      }
+    }
+  }
+  
+  
+}
+
+.PoolDetails {
+  display: flex;
+  flex-flow: column nowrap;
+  width: 100%;
+  &.Trusted {
+    display:flex;
+  }
+
+  > div:first-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+    > div {
+      display: flex;
+      flex-flow: row nowrap;
+      margin-bottom: @size-16;
+      > div {
+        margin-right: @size-30;
+      }
+    }
+  }
+  // border-top: @size-1 solid var(--theme-border);
+  // width: 100%;
+
+  > div:nth-of-type(2) { // collateral cards+ collateral
+    > h3 {
+      margin-bottom: @size-16;
+    }
+    > div {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 760px;
+    }
+  }
+
+  >div {
+    margin-bottom:@size-20;
+  }
+
+  > div:last-of-type {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    margin-top: @size-30;
+    > span:first-of-type {
+      margin-bottom: @size-16;
+    }
+  }
+
+  // >div:last-of-type {
+
+  //   padding-bottom: @size-24;
+  //   width: 100%;
+  //   >div:first-of-type {
+  //     font-size: @size-20;
+  //     >div:first-of-type {
+  //       left:0%;
+  //     }
+  //     > div:nth-of-type(2) {
+  //       left:37%;
+  //     }
+
+  //     > div:nth-of-type(3) {
+  //       left:72%;
+  //     }
+  //   }
+  //   >div:nth-of-type(2){
+  //     max-width: none;
+  //   }
+  // }
+}
+
+.OutcomesTable {
+  border-radius: @size-8;
+  display: flex;
+  flex-direction: column;
+
+  > div {
+    .ThemeBorder;
+
+    border-radius: unset;
+    border-top: 0;
+    min-height: @size-32;
+    height: @size-32;
+    max-height: @size-32;
+    padding: 0 @size-16;
+    display: flex;
+
+    &:first-of-type {
+      .ThemeBorder;
+
+      &:not(:last-of-type) {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+
+    &:last-of-type {
+      .ThemeBorder;
+
+      &:not(:first-of-type) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+    }
+
+    > span {
+      display: flex;
+      align-items: center;
+
+      &:first-of-type {
+        .text-12;
+
+        flex: 1;
+        color: var(--primary-text);
+        text-transform: capitalize;
+      }
+
+      &:last-of-type {
+        .text-14-bold;
+
+        color: var(--primary-text);
+      }
+    }
+
+    > a {
+      display: flex;
+      align-items: center
+    }
+    &:not(:first-of-type):not(:last-of-type) {
+      border-top: 0;
+    }
+
+    &:last-of-type:not(:first-of-type):not(.WinningOutcome) {
+      border-top: 0;
+    }
+  }
+
+  &.hasWinner {
+    > div.WinningOutcome {
+      border: 0;
+      border-radius: 0;
+      align-items: center;
+      flex: 1 100%;
+      min-height: @size-40;
+      white-space: nowrap;
+      display: grid;
+      grid-gap: @size-4 @size-10;
+      grid-template-columns: 0fr 0fr;
+      grid-template-rows: auto auto;
+      margin-top: auto;
+      justify-items: flex-end;
+      align-self: flex-end;
+      padding: 0;
+
+      > span:first-of-type {
+        .text-12;
+
+        color: var(--secondary-text);
+        text-transform: capitalize;
+        line-height: 140%;
+        min-height: @size-14;
+        max-height: @size-14;
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      > span:last-of-type {
+        .text-16-semi-bold;
+
+        color: var(--primary-text);
+        line-height: 140%;
+        min-height: @size-22;
+        max-height: @size-22;
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      > svg {
+        grid-column: 2;
+        grid-row: 2;
+      }
+    }
+  }
+}
+
+.CreditlineDetails {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  &.Trusted {
+    > div:first-of-type {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: @size-20;
+    }
+  }
+
+  >div:first-of-type{
+    margin-bottom: @size-20;
+    grid-column: 1 / span 2;
+    grid-row: 1;
+    display: flex;
+    width:100%;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    > div {
+      margin-right: @size-24;
+    }
+  }
+
+  >div:nth-of-type(2) {
+    grid-column: 1 / span2;
+    grid-row: 2;
+    width:100%;
+  }
+
+  > div:last-of-type {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    display: flex;
+    flex-flow: column nowrap;
+    > span:first-of-type {
+      margin-bottom: @size-20;
+    }
+  }
+
+
+  >div {
+    margin-bottom:@size-20;
+  }
+
+  // >div:last-of-type {
+
+  //   padding-bottom: @size-24;
+  //   width: 100%;
+  //   >div:first-of-type {
+  //     font-size: @size-20;
+  //     >div:first-of-type {
+  //       left:0%;
+  //     }
+  //     > div:nth-of-type(2) {
+  //       left:37%;
+  //     }
+
+  //     > div:nth-of-type(3) {
+  //       left:72%;
+  //     }
+  //   }
+  //   >div:nth-of-type(2){
+  //     max-width: none;
+  //   }
+  // }
+}
+
+.CreditlineCollateralCard {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: space-evenly;
+  align-items: flex-start;
+  width: 100%;
+  // margin-top: @size-10;
+  &.Uncollateralized {
+    > div:first-of-type{
+      > div:first-of-type {
+        display: none;
+      }
+    }
+  }
+
+  >h3 {
+    margin-top: @size-20;
+    margin-bottom: @size-8;
+  }
+
+  > div {
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    > div:first-of-type{
+      display: flex;
+      flex-flow: column nowrap;
+      justify-content: center;
+      align-items: center;
+      margin-right: @size-24;
+      margin-bottom: @size-16;
+      > h3 {
+        grid-column: 1 / span 2;
+      }
+      > span {
+        .text-12;
+        color: var(--secondary-text);
+        margin-bottom: @size-4;
+      }
+    }
+    > div:nth-of-type(2) {
+      // margin-top: @size-26;
+      width:80%;
     }
   }
 }

@@ -153,6 +153,7 @@ export const INSUFFICIENT_BALANCE: string = "Insufficent Balance";
 export const OVER_SLIPPAGE: string = "Over Slippage Tolerance";
 export const ENTER_AMOUNT: string = "Enter Amount";
 export const ERROR_AMOUNT: string = "Amount is not valid";
+export const ERROR_PRICE: string = "Price is not valid";  
 export const CONNECT_ACCOUNT: string = "Connect Account";
 export const SET_PRICES: string = "Set Prices";
 export const INVALID_PRICE: string = "Invalid Price";

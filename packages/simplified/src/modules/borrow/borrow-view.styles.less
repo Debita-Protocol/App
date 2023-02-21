@@ -4,16 +4,17 @@
   display: flex;
   flex-flow: column nowrap;
   padding: @size-40 @size-88 @size-48;
+  align-items: center;
   > section {
     margin-bottom: @size-10;
     &.Nav {
       display: flex;
       flex-flow:row nowrap;
       justify-content:flex-start;
-      padding-left:@size-36;
+      // padding-left:@size-10;
       > div {
         font-weight:@weight-bold;
-        font-size: @size-24;
+        font-size: @size-30;
         padding: @size-8 @size-16 0;
         border-bottom: @size-2 solid var(--primary-text);
         &.Active {
@@ -52,6 +53,9 @@
     table-layout:fixed;
     > thead {
       > tr {
+        > th:first-of-type {
+          column-span: 2;
+        }
         > th {
           font-size: @size-14;
           font-weight: @weight-bold;
@@ -66,30 +70,56 @@
     }
     > tbody {
       > tr {
-        .HoverDropShadow;
+        // .HoverDropShadow;
         border-radius: @size-8;
         > td:first-of-type {
           > div {
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            > span:last-of-type {
+              display: block;
+              width: 200px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              font-size: 1.5rem;
+              font-weight: 600;
+              overflow-wrap: break-word;
+            }
           }
           border-left: @size-1 solid var(--theme-border);
           border-top-left-radius: @size-8;
           border-bottom-left-radius: @size-8;
         }
+
+        // >td:nth-of-type(2) {
+        //   >div {
+        //     > span {
+        //       justify-content: center;
+        //     }
+
+        //     >span:first-of-type {
+        //       display: block;
+        //       font-size:@size-14;
+        //       text-overflow: ellipsis;
+        //       overflow:hidden;
+        //       white-space: nowrap;
+        //       width: 200px;
+        //     }
+        //   }
+        // }
+      
         >td:last-of-type {
           border-right: @size-1 solid var(--theme-border);
           border-top-right-radius: @size-8;
           border-bottom-right-radius: @size-8;
         }
         > td {
-          background-color: var(--primary-bg);
           vertical-align: middle;
           text-align: center;
           position: relative;
           box-sizing:border-box;
-          padding:@size-14 0;
+          padding:@size-20 0;
           border-top: @size-1 solid var(--theme-border);
           border-bottom: @size-1 solid var(--theme-border);
           // border-right: @size-1 solid var(--theme-border);
@@ -100,25 +130,37 @@
           }
           > div {
             &.TokenList {
-              display: flex;
-              flex-wrap: wrap;
+              // display: flex;
+              // flex-wrap: wrap;
+              // justify-content: center;
+              // align-items:center;
+              // word-break:break-all;
+              // > div {
+              //   margin: @size-8;
+              // }
+              display: grid;
+              grid-template-columns: 70px 70px;
+              grid-gap: @size-5;
               justify-content: center;
-              align-items:center;
-              word-break:break-all;
-              > div {
-                margin: @size-8;
-              }
             }
 
           }
         }
+
+        background-color: var(--primary-bg);
+
+        &:hover {
+          background-color: var(--quaternary-bg);
+        }
+
       }
     }
   }
 }
 
 .CollateralItem {
-  display: flex;
+  display: block;
+  justify-content: center;
 }
 
 .LoadingMarketCard {
@@ -208,41 +250,68 @@
   .ThemeBorder;
   display: flex;
   flex-flow: column nowrap;
-  align-items: center;
-  padding: @size-10;
+  padding: @size-24 @size-24;
   background-color: var(--primary-bg);
+  width: 400px;
+  height: 400px;
+  position: relative;
+
+  &.Trusted {
+    > section:first-of-type {
+      >div:first-of-type {
+        display:grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+  }
+  
+  button {
+    border: @size-1 solid var(--success);
+    background: var(--success);
+    color: var(--inverted-primary-text);
+    border-radius: @size-8;
+    padding: @size-4 @size-4;
+    .text-14-bold;
+    width: 75px;
+    height: 40px;
+  }
+
   > div:first-of-type {
     display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    > span {
-      padding: @size-20;
-      font-size: @size-20;
+    flex-flow: column nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-bottom: @size-10;
+    // width: 100%;
+    > span:first-of-type {
+      font-size: @size-24;
       font-weight: @weight-bold;
-      color: var(--secondary-text);
+      color: var(--primary-text);
     }
+  }
+
+  >div {
+    width: 100%;
   }
   > section {
     display: flex;
     width:100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr ;
-    > div{
-      padding-left:@size-20;
-      // padding-right:@size-20;
-      padding-bottom: @size-10;
-      >span:first-of-type {
-        font-size: @size-12;
-        font-weight: @weight-semi-bold;
-        color: var(--secondary-text);
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: flex-start;
+
+
+    > div:first-of-type {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      width: 100%;
+      grid-gap: @size-8;
+      > div {
+        margin-bottom: @size-16;
       }
     }
     
     >div:last-of-type {
-      padding-left:@size-20;
-      padding-right:@size-20;
       >span:first-of-type {
         font-size: @size-12;
         font-weight: @weight-semi-bold;
@@ -252,7 +321,6 @@
         font-size: @size-12;
         font-weight: @weight-semi-bold;
         color: var(--secondary-text);
-        padding-left: @size-16;
           > svg {
             height: @size-16;
             width: @size-16;
@@ -262,6 +330,11 @@
     }
   }
 
+  // > div:last-of-type {
+  //   position: absolute;
+  //   bottom: 40px;
+  // }
+
   .LoanCardButtons {
     display: flex;
     flex-flow: row nowrap;
@@ -269,7 +342,6 @@
     justify-content: space-evenly;
     width: 80%;
   }
-  
 }
 
 .MyLoansView {
@@ -278,4 +350,9 @@
   align-items: center;
   padding: @size-24;
   border-radius: @size-10;
+  > section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: @size-36;
+  }
 }

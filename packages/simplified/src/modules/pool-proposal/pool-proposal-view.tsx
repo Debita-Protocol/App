@@ -13,6 +13,9 @@ import { Constants } from "@augurproject/comps";
 import { generateTooltip, ValueLabel } from '@augurproject/comps/build/components/common/labels';
 import { ExternalLink } from '@augurproject/comps/build/utils/links/links';
 import { LinkIcon } from '@augurproject/comps/build/components/common/icons';
+import { getCashFormat } from '@augurproject/comps/build/utils/format-number';
+import { BaseSlider, InputSlider } from 'modules/common/slider';
+
 
 
 const {
@@ -96,22 +99,29 @@ const PoolProposalView: React.FC = () => {
     name: "",
     symbol: "",
     saleAmount: "",
-    initPrice: "",
+    initPrice: "0",
     promisedReturn: "",
-    inceptionPrice: "",
+    inceptionPrice: "0",
     leverageFactor: "1"
   });
-  const [collateralInfos, setCollateralInfos] = useState<PoolCollateralItem[]>([]);
+  const [collateralInfo, setCollateralInfo] = useState<PoolCollateralItem>({
+    tokenAddress: "",
+    tokenId: "",
+    borrowAmount: "",
+    maxAmount: "",
+    isERC20: true
+  });
   const [instrumentAddress, setInstrumentAddress] = useState("");
   const [inputError, setInputError] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
+  const [minInceptionPrice, setMinInceptionPrice] = useState("0");
 
   //usePoolFormInputValdiation(account, loginAccount.library, poolData, collateralInfos, instrumentAddress);
 
-  
-  
 
-  useEffect( () => {
+
+
+  useEffect(() => {
     const inputValidation = async (account,
       library,
       {
@@ -160,57 +170,45 @@ const PoolProposalView: React.FC = () => {
       } else if (instrumentAddress !== "" && !isAddress(instrumentAddress)) {
         inputError = true;
         inputMessage = "Instrument Address is not valid";
-      } else if (collateralInfos.length > 0) {
-        for (let i = 0; i < collateralInfos.length; i ++) {
-          let collateralInfo = collateralInfos[i];
-          if (collateralInfo.tokenAddress.length === 0 || !isAddress(collateralInfo.tokenAddress)) {
-            inputError = true;
-            inputMessage = "Collateral Address is required";
-          } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
-            inputError = true;
-            inputMessage = "Token ID is required";
-          } else if (!validPositiveNumber(collateralInfo.borrowAmount)) {
-            inputError = true;
-            inputMessage = "Asset Borrow Liquidity is required";
-          } else if (!validPositiveNumber(collateralInfo.maxAmount)) {
-            inputError = true;
-            inputMessage = "Asset Max Liquidity is required";
-          } else if (new BN(collateralInfo.maxAmount).lte(new BN(collateralInfo.borrowAmount))) {
-            inputError = true;
-            inputMessage = "Asset Max Liquidity must be greater than Asset Borrow Liquidity";
-          }  
-          const validERC20 = await isValidERC20(account, library, collateralInfo.tokenAddress);
-          const validERC721 = await isValidERC721(account, library, collateralInfo.tokenAddress);
-          if (collateralInfo.isERC20 && ! validERC20) {
-            inputError = true;
-            inputMessage = "Collateral Address is not a valid ERC20";
-          } else if (!collateralInfo.isERC20 && ! validERC721) {
-            inputError = true;
-            inputMessage = "Collateral Address is not a valid ERC721";
-          }
-
-          collateralInfos.forEach((item, j) => {
-            if (i !== j && item.tokenAddress === collateralInfo.tokenAddress && item.tokenId === collateralInfo.tokenId) {
-              inputError = true;
-              inputMessage = "Collateral is duplicated";
-            }
-          })
-        }
+      } if (collateralInfo.tokenAddress.length === 0 || !isAddress(collateralInfo.tokenAddress)) {
+        inputError = true;
+        inputMessage = "Collateral Address is required";
+      } else if (!collateralInfo.isERC20 && _.isInteger(collateralInfo.tokenId)) {
+        inputError = true;
+        inputMessage = "Token ID is required";
+      } else if (!validPositiveNumber(collateralInfo.borrowAmount)) {
+        inputError = true;
+        inputMessage = "Asset Borrow Liquidity is required";
+      } else if (!validPositiveNumber(collateralInfo.maxAmount)) {
+        inputError = true;
+        inputMessage = "Asset Max Liquidity is required";
+      } else if (new BN(collateralInfo.maxAmount).lte(new BN(collateralInfo.borrowAmount))) {
+        inputError = true;
+        inputMessage = "Asset Max Liquidity must be greater than Asset Borrow Liquidity";
+      }
+      const validERC20 = await isValidERC20(account, library, collateralInfo.tokenAddress);
+      const validERC721 = await isValidERC721(account, library, collateralInfo.tokenAddress);
+      if (collateralInfo.isERC20 && !validERC20) {
+        inputError = true;
+        inputMessage = "Collateral Address is not a valid ERC20";
+      } else if (!collateralInfo.isERC20 && !validERC721) {
+        inputError = true;
+        inputMessage = "Collateral Address is not a valid ERC721";
       }
       console.log("w/n inputError: ", inputError)
       console.log("w/n inputMessage: ", inputMessage)
       return { inputError, inputMessage };
     }
     if (account && loginAccount.library) {
-      inputValidation(account, loginAccount.library, poolData, collateralInfos, instrumentAddress).then (
-        ({ inputError: _err, inputMessage: _msg}) => {
+      inputValidation(account, loginAccount.library, poolData, collateralInfo, instrumentAddress).then(
+        ({ inputError: _err, inputMessage: _msg }) => {
           setInputError(_err);
           setInputMessage(_msg);
         }
       )
-      
+
     }
-  }, [inputError, inputMessage, collateralInfos, instrumentAddress, poolData, account, loginAccount])
+  }, [inputError, inputMessage, collateralInfo, instrumentAddress, poolData, account, loginAccount])
 
   const [vaultId, setVaultId] = useState("");
   const [defaultVault, setDefaultVault] = useState("");
@@ -234,16 +232,13 @@ const PoolProposalView: React.FC = () => {
   let deployedAddressLabel = (
     <div className={Styles.DeployedLabel}>
       <span>
-        { LinkIcon}
+        {LinkIcon}
       </span>
       <ValueLabel label={"Pool Contract Deployment"} value={instrumentAddress} />
     </div>
-    
   )
-  console.log("collateralInfos: ", collateralInfos)
 
   const submitProposal = useCallback(async () => {
-
     const saleAmount = new BN(poolData.saleAmount).shiftedBy(18).toFixed(0);
     const initPrice = new BN(poolData.initPrice).shiftedBy(18).toFixed(0);
     const inceptionPrice = new BN(poolData.inceptionPrice).shiftedBy(18).toFixed(0);
@@ -260,7 +255,7 @@ const PoolProposalView: React.FC = () => {
           vaults[vaultId].want.address,
           poolData.name,
           poolData.symbol,
-          collateralInfos
+          [collateralInfo]
         )
         deployedAddress = _deployedAddress;
         const { hash } = response
@@ -317,36 +312,42 @@ const PoolProposalView: React.FC = () => {
         message: `Failed to create market from pool. ${err}`
       });
     }
-  }, [poolData, collateralInfos, vaultId, vaults]);
+  }, [poolData, collateralInfo, vaultId, vaults]);
 
 
   // remove collateralItem from collateralInfos given the index
-  const removeCollateral = useCallback((index: number) => {
-    setCollateralInfos((prev) => {
-      let result = prev.filter((_, i) => i !== index);
-      return result;
-    });
-  }, [collateralInfos]);
+  // const removeCollateral = useCallback((index: number) => {
+  //   console.log("removeCollateral: ", index);
+  //   setCollateralInfos((prev) => {
+  //     let result = prev.filter((_, i) => i !== index);
+  //     return result;
+  //   });
+  // }, [collateralInfos]);
 
   // add empty collateralItem to collateralInfos
-  const addCollateral = useCallback((e) => {
-    e.preventDefault();
-    setCollateralInfos((prev) => [...prev, {
-      tokenAddress: "",
-      tokenId: "0",
-      borrowAmount: "",
-      maxAmount: "",
-      isERC20: true
-    }]);
-  }, [collateralInfos]);
+  // const addCollateral = useCallback((e) => {
+  //   e.preventDefault();
+  //   setCollateralInfos((prev) => [...prev, {
+  //     tokenAddress: "",
+  //     tokenId: "0",
+  //     borrowAmount: "",
+  //     maxAmount: "",
+  //     isERC20: true
+  //   }]);
+  // }, [collateralInfos]);
 
-  const underlyingSymbol = vaultId ? vaults[vaultId].want.symbol : "";
+  const cashFormat = getCashFormat(vaultId ? vaults[vaultId].want.symbol : "");
+
+  const underlyingSymbol = vaultId ? vaults[vaultId].want.symbol : null;
+
 
   if (!loginAccount || !loginAccount.library) {
     return <h2>
       Please connect your wallet to use this feature
     </h2>;
   }
+
+  console.log("initPrice: ", collateralInfo);
 
   return (
     <div className={Styles.PoolProposalForm}>
@@ -395,12 +396,11 @@ const PoolProposalView: React.FC = () => {
         </div>
         <FormAmountInput
           updateAmount={(val) => {
-            console.log("val: ", val);
             setPoolData(prevData => {
               return { ...prevData, saleAmount: val }
             })
           }}
-          prepend={"$"}
+          prepend={cashFormat.symbol}
           amount={poolData.saleAmount}
           label={underlyingSymbol}
         />
@@ -410,7 +410,30 @@ const PoolProposalView: React.FC = () => {
           {generateTooltip("Must be between 0 and 1", "initPrice")}
           <label>LongZCB Initial Price: </label>
         </div>
-        <FormAmountInput
+        <InputSlider
+          max={1}
+          min={0}
+          step={0.0001}
+          value={Number(poolData.initPrice)}
+          marks={[0, 1]}
+          onSetValue={(val) => {
+            if (Number(val) > 1) return;
+
+            setMinInceptionPrice(val);
+
+            if (val > poolData.inceptionPrice) {
+              setPoolData(prevData => {
+                return { ...prevData, inceptionPrice: val }
+              })
+            }
+
+            setPoolData(prevData => {
+              return { ...prevData, initPrice: val }
+            })
+          }}
+          label={underlyingSymbol ? "longZCB/" + underlyingSymbol : "-"}
+        />
+        {/* <FormAmountInput
           updateAmount={
             (val) => {
               setPoolData(prevData => {
@@ -419,16 +442,31 @@ const PoolProposalView: React.FC = () => {
             }
           }
           amount={poolData.initPrice}
-          prepend={"$"}
-          label={"longZCB/" + underlyingSymbol}
-        />
+          prepend={cashFormat.prepend}
+          label={"longZCB/" + underlyingSymbol} 
+        />*/}
       </div>
       <div>
         <div>
           {generateTooltip("Initial price of longZCB post approval, must be between 0 and 1 + greater than initialPrice", "inceptionPrice")}
           <label>Long ZCB Inception Price: </label>
         </div>
-        <FormAmountInput
+        <InputSlider
+          max={1}
+          min={minInceptionPrice}
+          step={0.0001}
+          marks={[minInceptionPrice, 1]}
+          value={Number(poolData.inceptionPrice)}
+          onSetValue={(val) => {
+            if (val > 1) return;
+
+            setPoolData(prevData => {
+              return { ...prevData, inceptionPrice: val }
+            })
+          }}
+          label={underlyingSymbol ? "longZCB/" + underlyingSymbol : "-"}
+        />
+        {/* <FormAmountInput
           updateAmount={
             (val) => {
               setPoolData(prevData => {
@@ -437,9 +475,9 @@ const PoolProposalView: React.FC = () => {
             }
           }
           amount={poolData.inceptionPrice}
-          prepend={"$"}
+          prepend={cashFormat.prepend}
           label={"longZCB/" + underlyingSymbol}
-        />
+        /> */}
       </div>
       <div>
         <div>
@@ -459,152 +497,119 @@ const PoolProposalView: React.FC = () => {
           label={"%"}
         />
       </div>
+
       <div>
         <div>
           {generateTooltip("Determines the leverage for longZCB minters, higher levFactor means higher risk/reward. lower levFactor means more protection for senior vault token holders", "levFactor")}
           <label>Leverage Factor: </label>
         </div>
-        <PoolLeverageFactor
-          leverageFactor={poolData.leverageFactor}
-          setLeverageFactor={
-            (val) => {
-              setPoolData(prevData => {
-                return { ...prevData, leverageFactor: val }
-              })
-            }}
+        <InputSlider
+          max={5}
+          min={1}
+          step={0.01}
+          marks={[1, 5]}
+          value={Number(poolData.leverageFactor)}
+          onSetValue={(val) => {
+            if (val > 5) return;
+
+            setPoolData(prevData => {
+              return { ...prevData, leverageFactor: val }
+            })
+          }}
+          label={"x"}
         />
       </div>
-      <div className={Styles.PoolCollaterals}>
+
+      <div className={classNames(Styles.poolCollateralItem, {
+        [Styles.ERC721]: !collateralInfo.isERC20
+      })} >
+        <div>
+          <h3>
+            Collateral
+          </h3>
+          <SingleCheckbox label={"NFT"} initialSelected={!collateralInfo.isERC20} updateSelected={(val) => {
+            setCollateralInfo(prevData => {
+              return { ...prevData, isERC20: !val, tokenId: !val ? "0" : prevData.tokenId }
+            })
+          }} />
+        </div>
+        <div>
         <div>
           <div>
-            {generateTooltip("Add accepted collateral for the lending pool", "collateral")}
-            <label>Accepted Collateral</label>
+            <label>Collateral Address: </label>
+            <TextInput
+              placeholder="0x..."
+              value={collateralInfo.tokenAddress}
+              onChange={(val) => {
+                setCollateralInfo(prevData => {
+                  return { ...prevData, tokenAddress: val }
+                })
+              }}
+            />
           </div>
-          <TinyThemeButton text="Add Collateral" action={addCollateral} small={true} noHighlight={true} />
+          <div>
+            <label>Token ID: </label>
+            <FormAmountInput
+              prepend=""
+              amount={collateralInfo.tokenId}
+              updateAmount={
+                (val) => {
+                  setCollateralInfo(prevData => {
+                    return { ...prevData, tokenId: val }
+                  })
+                }
+              }
+            />
+          </div>
         </div>
-        <section>
-          {collateralInfos.map((collateralInfo, index) => { // address, isERC20, borrowAmount, maxAmount what are the decimals? decimals used in address of the collateral.
-            const { tokenAddress, tokenId } = collateralInfo;
-            return (
-              <div className={Styles.poolCollateralItem} key={vaultId + "-" + index} c>
-                <div>
-                  <SingleCheckbox label={"ERC20"} initialSelected={true} updateSelected={(val) => {
-                    setCollateralInfos(prevData => {
-                      return prevData.map((item, i) => {
-                        if (i === index) {
-                          return { ...item, isERC20: val, tokenId: val ? "0" : item.tokenId }
-                        } else {
-                          return item;
-                        }
-                      })
-                    })
-                  }} />
-                  <div>
-                    <label>Collateral Address: </label>
-                    <TextInput
-                      placeholder="0x..."
-                      value={collateralInfo.tokenAddress}
-                      onChange={(val) => {
-                        setCollateralInfos(prevData => {
-                          return prevData.map((item, i) => {
-                            if (i === index) {
-                              return { ...item, tokenAddress: val }
-                            } else {
+        <div>
+          <div>
+            <div>
+              {generateTooltip("Determines the maximum debt amount for a user before liquidation", "maxAmount")}
+              <label>Asset Max Liquidity</label>
+            </div>
 
-                              return item;
-                            }
-                          })
-                        })
-                      }}
-                    />
-                  </div>
-                  {!collateralInfo.isERC20 && (
-                    <div>
-                      <label>Token ID: </label>
-                      <FormAmountInput 
-                        prepend=""
-                        amount={collateralInfo.tokenId}
-                        updateAmount={
-                          (val) => {
-                            setCollateralInfos(prevData => {
-                              return prevData.map((item, i) => {
-                                if (i === index) {
-                                  return { ...item, tokenId: val }
-                                } else {
-                                  return item;
-                                }
-                              })
-                            })
-                          }
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div>
-                    <div>
-                      {generateTooltip("Determines the maximum debt amount for a user before liquidation", "maxAmount")}
-                      <label>Asset Max Liquidity</label>
-                    </div>
-                    
-                    <FormAmountInput
-                      amount={collateralInfo.maxAmount}
-                      prepend="$"
-                      label={underlyingSymbol}
-                      updateAmount={
-                        (val) => {
-                          setCollateralInfos(prevData => {
-                            return prevData.map((collateralInfo, i) => {
-                              if (i === index) {
-                                return { ...collateralInfo, maxAmount: val }
-                              } else {
-                                return collateralInfo;
-                              }
-                            })
-                          })
-                        }
-                      }
-                    />
-                  </div>
-                  <div>
-                    <div>
-                      {generateTooltip("Determines the maximum loan amount a user can borrow per unit of collateral", "maxBorrow")}
-                      <label>Asset Borrow Liquidity</label>
-                    </div>
-                    
-                    <FormAmountInput
-                      amount={collateralInfo.borrowAmount}
-                      prepend="$"
-                      label={underlyingSymbol}
-                      updateAmount={
-                        (val) => {
-                          setCollateralInfos(prevData => {
-                            return prevData.map((collateralInfo, i) => {
-                              if (i === index) {
-                                return { ...collateralInfo, borrowAmount: val }
-                              } else {
-                                return collateralInfo;
-                              }
-                            })
-                          })
-                        }
-                      }
-                    />
-                  </div>
-                </div>
-                <TinyThemeButton text="remove" action={() => removeCollateral(index)} small={true} />
-              </div>)
-          })}
-        </section>
+            <FormAmountInput
+              amount={collateralInfo.maxAmount}
+              prepend="$"
+              label={underlyingSymbol}
+              updateAmount={
+                (val) => {
+                  setCollateralInfo(prevData => {
+                    return { ...prevData, maxAmount: val }
+                  })
+                }
+              }
+            />
+          </div>
+          <div>
+            <div>
+              {generateTooltip("Determines the maximum loan amount a user can borrow per unit of collateral", "maxBorrow")}
+              <label>Asset Borrow Liquidity</label>
+            </div>
 
+            <FormAmountInput
+              amount={collateralInfo.borrowAmount}
+              prepend="$"
+              label={underlyingSymbol}
+              updateAmount={
+                (val) => {
+                  setCollateralInfo(prevData => {
+                    return { ...prevData, borrowAmount: val };
+                  })
+                }
+              }
+            />
+          </div>
+        </div>
+        </div>
       </div>
       <div className={Styles.Description}>
         <label>Description: </label>
         <textarea
           rows="4"
           cols="15"
-          placeholder="description..."  
+          placeholder="description..."
           onChange={(e) => {
             setPoolData(prevData => {
               return { ...prevData, description: e.target.value }
@@ -614,15 +619,6 @@ const PoolProposalView: React.FC = () => {
           value={poolData.description}
         ></textarea>
       </div>
-      {/* <div>
-        <div>
-          {generateTooltip("leave empty if you want the pool instrument to be created for you", "name")}
-          <label>Instrument Address (optional): </label>
-        </div>
-        <TextInput placeholder="0x..." value={instrumentAddress} onChange={(val) => {
-          setInstrumentAddress(val)
-        }} />
-      </div> */}
       <div>
         <SecondaryThemeButton
           text={inputError ? inputMessage : "Submit Proposal"}

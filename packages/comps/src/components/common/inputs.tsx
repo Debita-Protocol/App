@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import classNames from "classnames";
 import { EthIcon, UsdIcon, XIcon, MagnifyingGlass, PlusIcon, MinusIcon } from "./icons";
 import Styles from "./inputs.styles.less";
-import { getCashFormat, formatCash, formatSimpleShares, formatCashPrice } from "../../utils/format-number";
+import { getCashFormat, formatCash, formatSimpleShares, formatCashPrice, handleValueRamm } from "../../utils/format-number";
 import { USDC, ERROR_AMOUNT, SHARES, ETH, DUST_POSITION_AMOUNT, ONE } from "../../utils/constants";
 import { useAppStatusStore } from "../../stores/app-status";
 import { TinyThemeButton } from "./buttons";
@@ -77,6 +77,8 @@ export interface AmountInputProps {
   isBuy?: boolean;
   disabled?: boolean;
   toggleUnderlying?: Function; 
+  balanceLabel?: string;
+  balance: string;
 }
 
 export interface ModalAmountInputProps {
@@ -96,6 +98,7 @@ export interface ModalAmountInputProps {
   toggleUnderlying?: Function; 
   dropdown?: React.FC,
   tooltip?: React.FC,
+  balance?: string,
   maxValueLabel?: string
 }
 
@@ -113,7 +116,9 @@ export const AmountInput = ({
   ammCash,
   isBuy = true,
   disabled = false,
+  balanceLabel="balance:",
   toggleUnderlying, 
+  balance
 }: AmountInputProps) => {
   const { isLogged } = useAppStatusStore();
   const currencyName = chosenCash;
@@ -145,8 +150,8 @@ export const AmountInput = ({
         <span onClick={setMax}>
         {isLogged && maxValue&&(
           <>
-            <span>balance:</span>{" "}
-            {maxValue}
+            <span>{balanceLabel}</span>{" "}
+            {handleValueRamm(balance, currencyName)}
             {/*isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted*/}
           </>
         )}
@@ -321,6 +326,7 @@ const Outcome = ({
   hasLiquidity,
   isGrouped = false,
   hasInvalidOutcome = false,
+  currencySymbol
 }: typeof React.Component) => {
   const [customVal, setCustomVal] = useState("");
   const [selectedSubOutcome, setSelectedSubOutcome] = useState(1);
@@ -364,7 +370,7 @@ const Outcome = ({
       )}
     >
       <span>{outcome.name}</span>
-      {editable ? (
+      {/* {editable ? (
         <div onClick={() => input.current && input.current.focus()}>
           <TinyThemeButton
             icon={MinusIcon}
@@ -416,9 +422,9 @@ const Outcome = ({
             noHighlight
           />
         </div>
-      ) : (
-        <span>{price}</span>
-      )}
+      ) : ( */}
+        <span>{handleValueRamm(price,currencySymbol)}</span>
+      {/* )} */}
       {isGrouped && selected && (
         <div>
           {outcome.subOutcomes
@@ -448,14 +454,15 @@ export interface OutcomesGridProps {
   nonSelectable?: boolean;
   editable?: boolean;
   setEditableValue?: Function;
-  ammCash: Cash;
+  ammCash: any;
   showAsButtons?: boolean;
   dontFilterInvalid?: boolean;
   error?: boolean;
   noClick?: boolean;
   hasLiquidity?: boolean;
-  marketFactoryType?: string;
+  // marketFactoryType?: string;
   isGrouped?: boolean;
+  currencySymbol?: string;
 }
 export const OutcomesGrid = ({
   outcomes,
@@ -471,10 +478,11 @@ export const OutcomesGrid = ({
   error,
   noClick,
   hasLiquidity,
-  marketFactoryType,
+  // marketFactoryType,
   isGrouped = false,
+  currencySymbol
 }: OutcomesGridProps) => {
-  const sortedOutcomes = orderOutcomesForDisplay(outcomes, marketFactoryType);
+  const sortedOutcomes = outcomes;// orderOutcomesForDisplay(outcomes, marketFactoryType);
   const hasInvalidOutcome = sortedOutcomes.find((s) => s.isInvalid);
 
   return (
@@ -506,6 +514,7 @@ export const OutcomesGrid = ({
             hasLiquidity={hasLiquidity}
             isGrouped={isGrouped}
             hasInvalidOutcome={hasInvalidOutcome}
+            currencySymbol={currencySymbol}
           />
         ))}
     </div>

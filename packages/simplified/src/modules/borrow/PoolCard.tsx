@@ -11,9 +11,10 @@ import {
     Constants,
     Components
 } from "@augurproject/comps";
-import { InstrumentInfos, VaultInfo, VaultInfos, PoolInstrument, Collateral } from "@augurproject/comps/build/types";
+import { InstrumentInfos, VaultInfo, VaultInfos, PoolInstrument, Collateral, CoreMarketInfos, CoreMarketInfo } from "@augurproject/comps/build/types";
 import {BigNumber as BN} from "bignumber.js";
 import { handleValue } from "modules/common/labels";
+import { round } from "utils/helpers";
 
 const {
     LabelComps: { ValueLabel }
@@ -27,6 +28,7 @@ export const PoolCard: React.FC = ({
     vaultId,
     instruments,
     vaults,
+    markets,
     ...props
 }): {
     marketId: string,
@@ -36,6 +38,7 @@ export const PoolCard: React.FC = ({
 } => {
     const instrument: PoolInstrument = useMemo(() => instruments[marketId], [marketId, instruments]);
     const vault: VaultInfo = useMemo(() => vaults[vaultId], [vaultId, vaults]);
+    const market: CoreMarketInfos = useMemo(() => markets[marketId], [marketId, markets])
     if (!instrument) {
         return <LoadingPoolCard />;
     }
@@ -44,6 +47,7 @@ export const PoolCard: React.FC = ({
 
     return (
         <PoolCardView
+            market={market}
             vault={vault}
             instrument={instrument}
             {...props}
@@ -52,20 +56,28 @@ export const PoolCard: React.FC = ({
 }
 
 const PoolCardView: React.FC = ({
+    market,
     vault,
     instrument,
     dontGoToMarket = false,
     key
 }: {
+    market: CoreMarketInfo,
     vault: VaultInfo,
     instrument: PoolInstrument,
     dontGoToMarket?: boolean,
     key: string
 }) => {
-    const { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, ratePerSec, name } = instrument;
-    let APR = "10"
+    let { marketId, poolLeverageFactor, collaterals, totalBorrowedAssets, totalSuppliedAssets, ratePerSec, name, borrowAPR } = instrument;
+    // let APR = "10"
     const { name: vaultName, want } = vault;
     const history = useHistory();
+
+    // collaterals= ["USDC","BAYC","RAMM","DAI", "BORED", "CTHULHU"].map((item) => {
+    //     return {
+    //         symbol: item,
+    //     }
+    // }) as any;
 
     return (<tr key={key} onClick={() => {
         history.push({
@@ -78,19 +90,17 @@ const PoolCardView: React.FC = ({
         <td>
             <ValueLabel value={name} label={""} />
         </td>
-        <td>
+        {/* <td>
             <ValueLabel value={want.symbol} label={vaultName} />
-        </td>
+        </td> */}
         <td>
             <div className={Styles.TokenList} key={key}>
                 {(collaterals && collaterals.length > 0) ? (
-                    collaterals.map((collateral: Collateral) => {
+                    collaterals.map((collateral) => {
                         return (
-                            <div className={Styles.CollateralItem}>
-                                <span>
+                            <span className={Styles.CollateralItem}>
                                     {collateral.symbol}
-                                </span>
-                            </div>
+                            </span>
                         )
                     })
                 ) : (
@@ -100,22 +110,22 @@ const PoolCardView: React.FC = ({
         </td>
         <td>
             <span>
-                {APR}%
+                {round(borrowAPR, 7)}%
             </span>
         </td>
-        <td>
+        {/* <td>
             <span>
                 { new BN(totalSuppliedAssets).isZero() ? "0.00" : new BN(totalBorrowedAssets).dividedBy(new BN(totalSuppliedAssets)).multipliedBy(100).toFixed(2) }%
             </span>
-        </td>
+        </td> */}
         <td>
             <span>
-                {handleValue(totalBorrowedAssets)}
+                {handleValue(totalBorrowedAssets, want?.symbol)}
             </span>
         </td>
         <td>
             <span>
-                {handleValue(totalSuppliedAssets)}
+                {handleValue(totalSuppliedAssets, want?.symbol)}
             </span>
         </td>
     </tr>

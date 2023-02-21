@@ -10,6 +10,7 @@ import { Constants, Modals, useUserStore, useAppStatusStore } from "@augurprojec
 import ModalPoolBorrowerAction from "./modal-pool-borrower";
 import ModalPoolCollateralAction from "./modal-ramm";
 import ModalRepayView from "./modal-repay"
+import ModalRedeem from "./modal-redeem";
 
 const { ModalConnectWallet } = Modals;
 
@@ -57,6 +58,9 @@ function selectModal(type, modal, logout, closeModal, removeTransaction, isLogge
           />
         </section>
       );
+    case "MODAL_REDEEM":
+      return (
+        <ModalRedeem {...modal}/>);
     case "MODAL_CREDITLINE_REPAY":
       return (
         <ModalRepayView {...modal} />

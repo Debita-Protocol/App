@@ -82,6 +82,7 @@ const ModalPoolCollateraView = ({
                 }}
                 initialAmount={""}
                 maxValue={isAdd ? walletBalance : supplyBalance}
+                balance={isAdd ? walletBalance : supplyBalance}
             />
         <SecondaryThemeButton
           action={() => transactionAction(amount)}

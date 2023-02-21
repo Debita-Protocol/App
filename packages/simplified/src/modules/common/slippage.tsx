@@ -190,7 +190,7 @@ export const LimitOrderSelector = ({isLimit, setIsLimit})=> {
   const [error, setError] = useState("");
   return (
     <section
-      className={classNames(Styles.Slippage, {
+      className={classNames(Styles.OrderSelector, {
         [Styles.showSelection]: true,
         [Styles.HasError]: error,
       })}
@@ -242,6 +242,8 @@ export const LimitOrderSelector = ({isLimit, setIsLimit})=> {
     </section>
   );
 }
+
+
 
 export const Leverage = ({leverageFactor, setLeverageFactor}) => {
   const {

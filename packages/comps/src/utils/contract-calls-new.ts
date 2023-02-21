@@ -19,7 +19,8 @@ import {
     validator_manager_address,
     ORACLE_MAPPING,
     leverage_manager_address,
-    storage_handler_address
+    storage_handler_address,
+    order_manager_address
 } from "../data/constants";
 import ReputationManagerData from "../data/ReputationManager.json";
 import ControllerData from "../data/controller.json";
@@ -28,7 +29,7 @@ import VaultFactoryData from "../data/VaultFactory.json";
 import FetcherData from "../data/Fetcher.json";
 import ERC20Data from "../data/ERC20.json";
 import ERC721Data from "../data/ERC721.json";
-import CreditlineData from "../data/CreditLineNew.json";
+import CreditlineData from "../data/CreditLine.json";
 import PoolInstrumentData from "../data/poolInstrument.json";
 import VariableInterestRateData from "../data/VariableInterestRate.json";
 import PRBTestData from "../data/PRBTest.json";
@@ -40,6 +41,7 @@ import CoveredCallInstrumentData from "../data/CoveredCallOTC.json";
 import AggregatorV3InterfaceData from "../data/AggregatorV3Interface.json";
 import IRateCalculatorData from "../data/IRateCalculator.json";
 import LeverageManagerData from "../data/LeverageManager.json"; 
+import StorageHandlerData from "../data/StorageHandler.json";
 
 import { BigNumber, Transaction, constants, utils } from "ethers";
 import { getProviderOrSigner, getSigner } from "../components/ConnectAccount/utils";
@@ -61,6 +63,92 @@ import { ContractCallContext, ContractCallResults, ContractCallReturnContext, Mu
 
 
 type NumStrBigNumber = number | BN | string;
+
+
+// UNDERWRITE PAGE CONTRACT CALLS
+
+// REDEEM FXNS
+export const redeemDeniedMarket = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    isLong: boolean
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeemDeniedMarket(marketId, isLong);
+}
+
+// only for fixed instruments, just needs marketId as a parameter, then you call marketManager.redeem(marketId);
+export const redeem = async (
+    account: string, library: Web3Provider,
+    marketId: string
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeem(marketId);
+}
+
+export const redeemShortZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    return marketManager.redeemShortZCB(marketId);
+}
+
+// parameters, function is marketManager.redeemPerpLongZCB
+// uint256 marketId,
+// uint256 redeemAmount,
+// address caller,
+// address trader
+export const redeemPoolLongZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+) : Promise<TransactionResponse> => {
+
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    console.log("redeempoollongZCB: ", marketId, redeemAmount);
+    return marketManager.redeemPoolLongZCB(marketId, redeemAmount);
+}
+
+export const redeemPerpShortZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const marketManager = new Contract(market_manager_address, MarketManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    return marketManager.redeemPerpShortZCB(marketId, redeemAmount);
+}
+
+export const redeemLeveredBond = async (
+    account: string, library: Web3Provider,
+    marketId: string
+) => {
+    const signer = library.getSigner(account);
+    const leverageManager = new Contract(leverage_manager_address, LeverageManagerData.abi, signer);
+    return leverageManager.redeemLeveredBond(marketId);
+}
+
+
+// uint256 marketId, 
+// uint256 redeemAmount
+export const redeemLeveredPerpLongZCB = async (
+    account: string, library: Web3Provider,
+    marketId: string,
+    redeemAmount: string,
+): Promise<TransactionResponse> => {
+    const signer = library.getSigner(account);
+    const leverageManager = new Contract(leverage_manager_address, LeverageManagerData.abi, signer);
+    redeemAmount = new BN(redeemAmount).shiftedBy(18).toFixed(0);
+    return leverageManager.redeemLeveredPerpLongZCB(marketId, redeemAmount);
+}
+
 
 // from wad to display string
 function toDisplay(n: NumStrBigNumber, p: number = 18, d: number = 4) {
@@ -436,6 +524,7 @@ export const repayCreditlineInstrument = async (
         await approveERC20(account, provider, underlying_address, amount, instrument_address);
     }
 
+    console.log("repaying: ", amount, instrument_address, underlying_address);
     const creditline = new Contract(instrument_address, CreditlineData.abi, signer);
     const tx = await creditline.repay(
         new BN(amount).shiftedBy(18).toFixed(0)
@@ -483,9 +572,8 @@ export const approveMarket = async (account: string, provider: Web3Provider, mar
 export const testApproveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
     const signer = getSigner(provider, account);
     const controller = new Contract(controller_address, ControllerData.abi, signer);
-    let tx = await controller.testApproveMarket(marketId);
+    let tx = await controller.approveMarket(marketId);
     await tx.wait();
-    console.log("market approved");
 }
 
 export const testResolveMarket = async (account: string, provider: Web3Provider, marketId: string) => {
@@ -582,8 +670,8 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 gasLimit: gasEstimate.mul(2).toString(),
             }
         );
-        console.log("vaultBundle: ", vaultBundle);
-        console.log("marketBundle: ", marketBundle);
+        // console.log("vaultBundle: ", vaultBundle);
+        // console.log("marketBundle: ", marketBundle);
         console.log("instrumentBundle: ", instrumentBundle);
 
         if (isDataTooOld(timestamp.toNumber())) {
@@ -711,7 +799,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                 exposurePercentage: toDisplay(instr.exposurePercentage.toString()),
                 managerStake: toDisplay(instr.managers_stake?.toString()),
                 approvalPrice: toDisplay(instr.approvalPrice?.toString()),
-                isPool: instr.isPool, 
+                isPool: instr.isPool,
                 instrumentType: instr.instrument_type.toString(),
             }
 
@@ -805,9 +893,9 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         oracle: instr.creditlineData.oracle,
                         loanStatus: instr.creditlineData.loanStatus,
                         collateralType: instr.creditlineData.collateralType,
-                        principalRepayed: toDisplay(instr.creditlineData.principalRepayed.toString()),
-                        interestRepayed: toDisplay(instr.creditlineData.interestRepayed.toString()),
-                        totalOwed: toDisplay(instr.creditlineData.totalOwed.toString()),
+                        principalRepaid: toDisplay(instr.creditlineData.principalRepayed.toString()),
+                        interestRepaid: toDisplay(instr.creditlineData.interestRepayed.toString()),
+                        totalOwed: toDisplay(instr.creditlineData.totalOwed.toString())
                     }
                 )
             }
@@ -913,10 +1001,10 @@ export const getRammData = async (
     instruments: InstrumentInfos
 ): Promise<{
     reputationScore: string;
-  vaultBalances: VaultBalances;
-  zcbBalances: ZCBBalances;
-  poolInfos: UserPoolInfos;
-  leveragePositions: LeverageBonds; 
+    vaultBalances: VaultBalances;
+    zcbBalances: ZCBBalances;
+    poolInfos: UserPoolInfos;
+    leveragePositions: LeverageBonds; 
 }> => {
     // get reputation score
     const controller = new Contract(controller_address, ControllerData.abi, provider);
@@ -1029,20 +1117,20 @@ export const getRammData = async (
                     }]
             }
 
-            const removableCollateralContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
-                return {
-                    reference: "removable-" + c.address + "-" + c.tokenId,
-                    contractAddress: instrument.address,
-                    abi: PoolInstrumentData.abi,
-                    calls: [
-                        {
-                            reference: "removableCollateral",
-                            methodName: "removeableCollateral",
-                            methodParameters: [account, c.tokenId, c.address],
-                        }
-                    ]
-                }
-            });
+            // const removableCollateralContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
+            //     return {
+            //         reference: "removable-" + c.address + "-" + c.tokenId,
+            //         contractAddress: instrument.address,
+            //         abi: PoolInstrumentData.abi,
+            //         calls: [
+            //             {
+            //                 reference: "removableCollateral",
+            //                 methodName: "removeableCollateral",
+            //                 methodParameters: [account, c.tokenId, c.address],
+            //             }
+            //         ]
+            //     }
+            // });
 
 
             const userSnapshotContractCall: ContractCallContext[] = [
@@ -1065,18 +1153,18 @@ export const getRammData = async (
                 ...walletBalancesContractCalls,
                 ...supplyBalancesContractCalls,
                 ...userSnapshotContractCall,
-                ...removableCollateralContractCalls,
+                // ...removableCollateralContractCalls,
                     maxBorrowableContractCall
                 ]
             );
             let walletBalances = {};
             let supplyBalances = {};
-            let removableCollaterals = {};
+            //let removableCollaterals = {};
 
             _.forEach(instrument.collaterals, (c) => {
                 let walletBalance;
                 let supplyBalance;
-                let removableCollateral = toDisplay(results["removable-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
+                // let removableCollateral = toDisplay(results["removable-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
                 if (c.isERC20) {
                     walletBalance = toDisplay(results["wallet-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
                     supplyBalance = toDisplay(results["supply-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
@@ -1086,7 +1174,7 @@ export const getRammData = async (
                 }
                 walletBalances[c.address + "-" + c.tokenId] = walletBalance;
                 supplyBalances[c.address + "-" + c.tokenId] = supplyBalance;
-                removableCollaterals[c.address + "-" + c.tokenId] = removableCollateral;
+                //removableCollaterals[c.address + "-" + c.tokenId] = removableCollateral;
             });
 
             const userSnapshot = results["userSnapshot"].callsReturnContext[0].returnValues as any;
@@ -1101,7 +1189,8 @@ export const getRammData = async (
                 },
                 accountLiquidity: toDisplay(userSnapshot._userAccountLiquidity.toString()),
                 maxBorrowable,
-                removableCollateral: removableCollaterals
+                removableCollateral: {}
+                // removableCollateral: removableCollaterals
             };
         }
     }))
@@ -1126,14 +1215,15 @@ export const createCreditLineInstrument = async (
     collateral: string,
     collateral_balance: string,
     collateral_type: string
-): Promise<string> => {
+): Promise<{ response: TransactionResponse, instrumentAddress: string }> => {
     const creditlineFactory = new ContractFactory(CreditlineData.abi, CreditlineData.bytecode, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(notionalInterest)).toString();
-    console.log("vault: ", vault);
-    console.log("account: ", account);
-    console.log("principal: ", principal);
-    console.log("faceValue: ", faceValue);
-    console.log("duration: ", duration);
+    // console.log("vault: ", vault);
+    // console.log("account: ", account);
+    // console.log("principal: ", principal);
+    // console.log("faceValue: ", faceValue);
+    // console.log("duration: ", duration);
+    console.log("collateralType: ", collateral_type);
     const creditline = await creditlineFactory.deploy(
         vault,
         account,
@@ -1146,9 +1236,12 @@ export const createCreditLineInstrument = async (
         collateral_balance,
         collateral_type
     );
-    await creditline.deployed();
-    const { address: instrument_address } = creditline;
-    return instrument_address;
+    //const { address: instrument_address } = creditline;
+    
+    return {
+        response: creditline.deployTransaction,
+        instrumentAddress: creditline.address
+    }
 }
 
 // must verify that account is owner of instrument_address?
@@ -1166,7 +1259,7 @@ export const createCreditlineMarket = async (
 ): Promise<TransactionResponse> => {
     const controller = new Contract(controller_address, ControllerData.abi, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(expectedYield)).toFixed(0);
-    const tx: TransactionResponse = await controller.initiateMarket(
+    return controller.initiateMarket(
         account,
         {
             name: formatBytes32String(name),
@@ -1194,10 +1287,7 @@ export const createCreditlineMarket = async (
             }
         },
         vaultId
-    );
-    await tx.wait(1);
-
-    return tx;
+    )
 }
 
 // export const getUserPoolData = async (
@@ -1509,85 +1599,19 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    // let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
+    const dataHandler = new Contract(storage_handler_address, StorageHandlerData.abi, signer);
+    
+
+
+    //tx = await marketManager.callStatic.issuePoolBond("1", new BN(1).shiftedBy(18).toFixed(0));
+    //console.log("Contract setup: ", await dataHandler.viewCurrentPricing("1"));
+    console.log("instrumentDatas: ", await dataHandler.InstrumentDatas("1"));
+    //let creditline = new Contract("0x0Ea9e22BC54b08Cc25aFdef0e01ce1e8BC50c044", CreditlineData.abi, provider.getSigner(account));
+    //tx =  await creditline.repay(new BN(1).shiftedBy(18).toFixed(0));
+    // console.log("totalOwed: ", await creditline.loanStatus())
     // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
     // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 
-    // let option = new Contract("0x559c0Abf267b944E9D1D4A0D8f9Cc28320195776", CoveredCallInstrumentData.abi, signer);
-    // console.log("STATIC:",await option.instrumentStaticSnapshot());
-    //console.log("marketIds: ", await marketManager.getMarket(3, {gasLimit: 1000000}));
-    // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
-    // await controller.testApproveMarket(6)
-
-    // let data = await marketManager.getMarket(4);
-    // console.log("data timestamp: ", data.creationTimestamp.toString());
-    // for (let i = 1; i < 6; i ++) {
-    //     let vid = await controller.id_parent(i);
-    //     let vault_ad = await controller.vaults(vid);
-    //     console.log("vault address: ", vault_ad)
-    //     let vault = new Contract(vault_ad, VaultData.abi, signer);
-    //     // await controller.getInstrumentSnapShot(i);
-      
-    //     let instrument = await vault.fetchInstrument(i);
-    //     let instrumentData = await vault.fetchInstrumentData(i);
-    //     console.log("instrument: ", instrument);
-    //     console.log("instrumentData: ", instrumentData);
-    //     if (instrumentData.isPool) {
-    //         let pool = new Contract(instrument, PoolInstrumentData.abi, signer);
-    //         console.log("ACCEPTED" ,await pool.getAcceptedCollaterals());
-    //     } else {
-    //         let option = new Contract(instrument, CoveredCallInstrumentData.abi, signer);
-    //         console.log("STATIC:",await option.instrumentStaticSnapshot());
-            
-    //     }
-    // }
-
-    // await fetcher.fetchInitial(controller_address, market_manager_address, 1);
-    // await getRammData(account, provider);
-    // let data = await getContractData(account, provider);
-
-    // const coveredCallContract = new Contract("0x559c0abf267b944e9d1d4a0d8f9cc28320195776", CoveredCallInstrumentData.abi, provider.getSigner(account));
-    // console.log("covered call data: ", await coveredCallContract.instrumentStaticSnapshot());
-    // tx = await cash.approve("0x86c6Be0BfEea130C3332017749550FF626556402", 1000);
-    // await tx.wait();
-    // console.log("cash allowance", await cash.allowance(account, "0x86c6Be0BfEea130C3332017749550FF626556402"));
-    // console.log("numVaults", await vaultFactory.numVaults());
-
-    // let vault_address = await controller.getVaultfromId(1);
-    // let marketIds = await controller.getMarketIds(1);
-
-    // console.log("marketIds", marketIds);
-    // console.log("vault_address", vault_address);
-
-    // let vault = new Contract(vault_address, VaultData.abi, signer);
-    // let instrumentData = await vault.fetchInstrumentData(6);
-    // console.log("instrumentData", instrumentData);
-
-    // let pool = new Contract("0x14Fee7AB6A172658dAFdc6208788c1c81E7AcD0D", PoolInstrumentData.abi, signer);
-    // let collaterals = await pool.getAcceptedCollaterals();
-    // let collateralData = await pool.collateralData("0x2C7Cb3cB22Ba9B322af60747017acb06deB10933", 0);
-    // console.log("collaterals", collateralData);
-
-    // let token = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
-    // let symbol = await token.symbol();
-    // console.log("symbol", symbol);
-    // console.log("collaterals", collaterals);
-    // console.log("collateralData", collateralData);
-
-    // vault.getInstrumentData();
-    let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
-"0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
-"0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
-"0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
-"0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
-"0xF5c7e89021183cb51409829f07EedB855c6b83DE",
-"0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
-"0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
-    
-    for (let i=0; i < early_managers.length; i++) {
-        let tx = await controller.verifyAddress(early_managers[i]);
-        await tx.wait();
-    }
 
     // tx = await reputationManager.incrementScore(account,pp); // validator
     // tx.wait();
@@ -1598,28 +1622,38 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     // tx = await reputationManager.incrementScore("0xfcDD4744d386F705cc1Fa45643535d0d649D5da2",pp); // validator
     // tx.wait();
 
-    // tx = await controller.setMarketManager(marketManager.address);
-    // await tx.wait();
-    // tx = await controller.setVaultFactory(vaultFactory.address);
-    // await tx.wait();
-    // tx = await controller.setPoolFactory(pool_factory_address);
-    // await tx.wait();
-    // tx = await controller.setLeverageManager(leverage_manager_address);
-    // await tx.wait();
-    // tx = await controller.setReputationManager(reputation_manager_address);
-    // await tx.wait();
-    // tx = await controller.setValidatorManager(validator_manager_address);
-    // await tx.wait();
-    // tx = await controller.setDataStore(storage_handler_address);
+    // const data = utils.defaultAbiCoder.encode(
+    //     ["address","address","address","address","address","address","address","address"],
+    //     [market_manager_address, reputation_manager_address, validator_manager_address, leverage_manager_address, 
+    //         order_manager_address, vault_factory_address, pool_factory_address, storage_handler_address]
+    // )
+
+    // tx = await controller.initialize(
+    //     data
+    // );
+    //     tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
-    // tx = await controller.verifyAddress(account); 
     // await tx.wait();
 
-    // console.log("F");
+    // let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+    // "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+    // "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+    // "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+    // "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+    // "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+    // "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+    // "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+        
+    // for (let i=0; i < early_managers.length; i++) {
+    //     let tx = await controller.verifyAddress(early_managers[i]);
+    //     await tx.wait();
+    // }
 
     // await scriptSetup(account, provider);
 }
+
+
 
 
 // creates fake vaults + associated instruments
@@ -1641,42 +1675,84 @@ const scriptSetup = async (account, provider) => {
         )
     }
 
-    // for (let i=0; i < fakeOptionsInstruments.length; i++) {
-    //     const { underlyingSymbol, vaultId, strikePrice, numContracts, pricePerContract, cash, duration, tradeDuration, description } = fakeOptionsInstruments[i];
-    //     const vault_address = await controller.vaults(vaultId)
-    //     const { instrumentAddress, response } = await createOptionsInstrument(
-    //         account, provider,
-    //         vault_address,
-    //         strikePrice,
-    //         pricePerContract,
-    //         duration,
-    //         numContracts,
-    //         tradeDuration,
-    //         cash,
+    // create 2 pool instruments, one for each vault, and 2 creditline instruments.
+
+    // for (let i = 1; i < 3; i++) {
+    //     let vault_ad = await controller.vaults(i);
+    //     let underlying = (new Contract(vault_ad, VaultData.abi, signer)).UNDERLYING();
+    //     const {response, instrumentAddress} = await createPoolInstrument(
+    //         account,
+    //         provider,
+    //         vault_ad,
+    //         underlying,
+    //         "POOL" + String(i),
+    //         "P" + String(i),
+    //         [
+    //             {
+    //                 tokenAddress: "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249",
+    //                 tokenId: "0",
+    //                 borrowAmount: "1",
+    //                 maxAmount: "1.2",
+    //                 isERC20: true
+    //             },
+    //             {
+    //                 tokenAddress: "0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6",
+    //                 tokenId: "1",
+    //                 borrowAmount: "5",
+    //                 maxAmount: "5.5",
+    //                 isERC20: false
+    //             }
+    //         ]
     //     )
 
-    //     let maturityDate = new Date((Date.now() / 1000 + parseInt(duration)) * 1000);
-    //     let formattedDate = maturityDate.toISOString().split('T')[0]
-    //     let name = `${underlyingSymbol}-${formattedDate}-${strikePrice}-C`;
+    //     await response.wait();
 
-    //     await createOptionsMarket(
-    //         account, provider,
-    //         name,
-    //         description,
-    //         instrumentAddress,
-    //         numContracts,
-    //         pricePerContract,
-    //         duration,
-    //         maturityDate,
-    //         vaultId,
+    //     await createPoolMarket(
+    //         account,
+    //         provider,
+    //         String(i),
+    //         "POOL" + String(i),
+    //         "test pool",
+    //         new BN(100).shiftedBy(18).toFixed(0),
+    //         new BN(0.2).shiftedBy(18).toFixed(0),
+    //         "3022270000", // 10% annual return
+    //         new BN(0.5).shiftedBy(18).toFixed(0),
+    //         "1",
+    //         instrumentAddress
     //     )
+
+    //     const { response: creditlineResponse, instrumentAddress: creditline_ad} = await createCreditLineInstrument(
+    //         account,
+    //         provider,
+    //         vault_ad,
+    //         new BN(10).shiftedBy(18).toFixed(0),
+    //         new BN(0.1).shiftedBy(18).toFixed(0),
+    //         String(24*60*60*10),
+    //         "0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", //cash1 
+    //         new BN(5).shiftedBy(18).toFixed(0),
+    //         "0"
+    //     )
+
+    //     let tx = await createCreditlineMarket(
+    //         account,
+    //         provider,
+    //         "Creditline" + String(i),
+    //         creditline_ad,
+    //         String(i),
+    //         new BN(10).shiftedBy(18).toFixed(0),
+    //         new BN(0.1).shiftedBy(18).toFixed(0),
+    //         "test creditline",
+    //         String(24*60*60*10)
+    //         );
+    //     await tx.wait()
     // }
+}
 
-    // await scriptAddPoolInstruments(
-    //     account, provider,
-
-    // );
-    // await scriptAddOptionsInstruments();
+export const fetchERC20Symbol = async (account: string, loginAccount: Web3Provider, tokenAddress: string): Promise<string> => {
+    console.log("fetching symbol for " + tokenAddress)
+    const erc20 = new Contract(tokenAddress, ERC20Data.abi, loginAccount.getSigner(account));
+    const symbol = await erc20.symbol();
+    return symbol;
 }
 
 const createVault = async (
@@ -1737,4 +1813,16 @@ export const isValidERC721 = async (account: string, library: Web3Provider, addr
     } catch (e) {
         return false;
     }
+}
+
+export const getERC20Balance = async (account: string, library: Web3Provider, erc20: string, address: string): Promise<string> => {
+    const contract = new Contract(erc20, ERC20Data.abi, library.getSigner(account));
+    const balance = await contract.balanceOf(address);
+    return new BN(balance.toString()).shiftedBy(-18).toString();
+}
+
+export const creditlineDeposit = async (account: string, library: Web3Provider, creditline: string, collateralBalance: string): Promise<TransactionResponse> => {
+    const contract = new Contract(creditline, CreditlineData.abi, library.getSigner(account));
+    const tx = await contract.depositCollateral(new BN(collateralBalance).shiftedBy(18).toFixed(0));
+    return tx;
 }

@@ -3,10 +3,10 @@
 .MarketLiquidityView {
   display: flex;
   flex-flow: column nowrap;
-  padding: @size-40 @size-88 @size-48;
+  padding: @size-40 @size-48 @size-48;
 
   > * {
-    max-width: 942px;
+    max-width: 1050px;
     width: 100%;
     margin: 0 auto @size-40;
   }
@@ -275,11 +275,12 @@
     grid-gap: @size-32;
     // grid-template-columns: max-content max-content 1fr;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
 
     > button {
-      .text-16-bold;
-
+      // .text-20-bold;
+      font-size: @size-24;
+      font-weight: 700;
       border: none;
       background: transparent;
       color: var(--secondary-text);

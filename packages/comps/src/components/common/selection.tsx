@@ -234,6 +234,24 @@ export const SingleCheckbox = ({ label, initialSelected, updateSelected }) => {
   );
 };
 
+export const SingleRammCheckbox = ({ label, initialSelected, updateSelected }) => {
+  const [selected, setSelected] = useState(initialSelected);
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        setSelected(!selected);
+        updateSelected(!selected);
+      }}
+      className={classNames(Styles.RawCheckbox, { [Styles.Selected]: selected })}
+    >
+      {selected ? FilledCheckbox : EmptyCheckbox}
+
+      <span>{label}</span>
+    </div>
+  );
+};
+
 export const CheckboxGroup = ({ title, items }) => {
   const [selectedItems, setSelectedItems] = useState(items);
 

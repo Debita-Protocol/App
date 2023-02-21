@@ -6,8 +6,10 @@ import { getDefaultProvider } from "../components/ConnectAccount/utils";
 export const useRammData = ({markets, blocknumber, vaults, instruments, isWalletRpc}) => {
     const {
         loginAccount,
+        ramm,
         actions: { updateRammData },
       } = useUserStore();
+
 
       useEffect(() => {
         const fetchRammData = async (library, account, vaults, markets, instruments) => {
@@ -18,11 +20,13 @@ export const useRammData = ({markets, blocknumber, vaults, instruments, isWallet
         
 
         if (loginAccount?.library && loginAccount?.account) {
-            fetchRammData(loginAccount.library, loginAccount.account, vaults, markets, instruments)
-              .then((ramm) => updateRammData(ramm))
-              .catch((e) => console.error(e, "error fetching user balances, will try again"));
-          }
-          console.log('blocknumber', blocknumber); 
+                fetchRammData(loginAccount.library, loginAccount.account, vaults, markets, instruments).then(
+                    (ramm) => {
+                        updateRammData(ramm);
+                    }
+                ).catch((e) => console.error("error fetching user balances, will try again"));
+        }
+
       }, [loginAccount?.account, loginAccount?.library, blocknumber]);
 }
 
