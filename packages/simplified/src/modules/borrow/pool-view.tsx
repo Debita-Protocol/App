@@ -144,7 +144,7 @@ const PoolView: React.FC = () => {
     // const { walletBalances, borrowBalance: { amount: borrowedAmount }, accountLiquidity } = poolInfo;
     const borrowedAmount = poolInfo?.borrowBalance?.amount;
 
-    const borrowCapacity = poolInfo?.maxBorrowable ? new BN(borrowedAmount).dividedBy(new BN(poolInfo.maxBorrowable)).multipliedBy(100).toString() : "0.0";
+    const borrowCapacity = "0";// poolInfo?.maxBorrowable ? new BN(borrowedAmount).dividedBy(new BN(poolInfo.maxBorrowable)).multipliedBy(100).toString() : "0.0";
 
 
     // grab underlying asset from vaults object

@@ -1117,20 +1117,20 @@ export const getRammData = async (
                     }]
             }
 
-            const removableCollateralContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
-                return {
-                    reference: "removable-" + c.address + "-" + c.tokenId,
-                    contractAddress: instrument.address,
-                    abi: PoolInstrumentData.abi,
-                    calls: [
-                        {
-                            reference: "removableCollateral",
-                            methodName: "removeableCollateral",
-                            methodParameters: [account, c.tokenId, c.address],
-                        }
-                    ]
-                }
-            });
+            // const removableCollateralContractCalls: ContractCallContext[] = _.map(instrument.collaterals, (c) => {
+            //     return {
+            //         reference: "removable-" + c.address + "-" + c.tokenId,
+            //         contractAddress: instrument.address,
+            //         abi: PoolInstrumentData.abi,
+            //         calls: [
+            //             {
+            //                 reference: "removableCollateral",
+            //                 methodName: "removeableCollateral",
+            //                 methodParameters: [account, c.tokenId, c.address],
+            //             }
+            //         ]
+            //     }
+            // });
 
 
             const userSnapshotContractCall: ContractCallContext[] = [
@@ -1153,18 +1153,18 @@ export const getRammData = async (
                 ...walletBalancesContractCalls,
                 ...supplyBalancesContractCalls,
                 ...userSnapshotContractCall,
-                ...removableCollateralContractCalls,
+                // ...removableCollateralContractCalls,
                     maxBorrowableContractCall
                 ]
             );
             let walletBalances = {};
             let supplyBalances = {};
-            let removableCollaterals = {};
+            //let removableCollaterals = {};
 
             _.forEach(instrument.collaterals, (c) => {
                 let walletBalance;
                 let supplyBalance;
-                let removableCollateral = toDisplay(results["removable-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
+                // let removableCollateral = toDisplay(results["removable-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
                 if (c.isERC20) {
                     walletBalance = toDisplay(results["wallet-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
                     supplyBalance = toDisplay(results["supply-" + c.address + "-" + c.tokenId].callsReturnContext[0].returnValues[0].toString());
@@ -1174,7 +1174,7 @@ export const getRammData = async (
                 }
                 walletBalances[c.address + "-" + c.tokenId] = walletBalance;
                 supplyBalances[c.address + "-" + c.tokenId] = supplyBalance;
-                removableCollaterals[c.address + "-" + c.tokenId] = removableCollateral;
+                //removableCollaterals[c.address + "-" + c.tokenId] = removableCollateral;
             });
 
             const userSnapshot = results["userSnapshot"].callsReturnContext[0].returnValues as any;
@@ -1189,7 +1189,8 @@ export const getRammData = async (
                 },
                 accountLiquidity: toDisplay(userSnapshot._userAccountLiquidity.toString()),
                 maxBorrowable,
-                removableCollateral: removableCollaterals
+                removableCollateral: {}
+                // removableCollateral: removableCollaterals
             };
         }
     }))
