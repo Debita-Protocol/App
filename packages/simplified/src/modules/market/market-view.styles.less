@@ -5,6 +5,11 @@
   .TwoTonePage;
   .TwoTonePageGrid;
 
+  &.NoTradingForm {
+    display: flex;
+
+  }
+
   &.PoolInstrument {
     min-width: 3px;
   }
@@ -304,6 +309,39 @@
 
     &:last-of-type {
       .text-36-bold;
+
+      color: var(--primary-text);
+
+      > svg {
+        height: @size-32;
+        width: @size-32;
+        margin-left: @size-8;
+      }
+    }
+  }
+}
+
+.CheckLabel {
+
+  .ThemeBorder;
+
+  border: @size-1 solid var(--tertiary-bg);
+  background: var(--tertiary-bg);
+  display: flex;
+  flex-flow: column nowrap;
+  width: 100%;
+  min-width: 100%;
+  height: fit-content;
+  justify-content: center;
+
+  > span {
+    align-items: center;
+    display: flex;
+    flex-flow: row nowrap;
+    white-space: nowrap;
+
+    &:first-of-type {
+      .text-14-bold;
 
       color: var(--primary-text);
 

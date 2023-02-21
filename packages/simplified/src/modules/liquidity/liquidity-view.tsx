@@ -45,6 +45,7 @@ import { ExternalLink } from "@augurproject/comps/build/utils/links/links";
 import { getMarketStage, getMarketStageLabel, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
 import { InstrumentStatusSlider } from "modules/common/slider";
+import { fetchERC20Symbol } from "@augurproject/comps/build/utils/contract-calls-new";
 
 const { ADD, CREATE, REMOVE, ALL_MARKETS, OTHER, POPULAR_CATEGORIES_ICONS, SPORTS, MARKET_ID_PARAM_NAME } = Constants;
 const {
@@ -969,6 +970,8 @@ export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultI
   // <span>{handleValue(totalCollateral, asset, { decimals: 4 })}/{isPool ? handleValue(roundDown(poolData?.saleAmount, 3), asset) : handleValue(roundDown(Number(principal) * Number(alpha), 2), asset)}</span>
   const stageLabel = getMarketStageLabel(market);
   // repayed/ owed + expiry date.
+  console.log('maturityDate: ', maturityDate);
+  console.log("expiry: ", moment(maturityDate).fromNow(true))
   return (
     <div className={classNames(Styles.creditlineDetails, {
       [Styles.Trusted]: trusted
@@ -977,7 +980,7 @@ export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultI
         <div>
           <ValueLabel large={true} label={"Principal Repaid "} value={handleValue(principalRepaid, assetSymbol) + "/" + handleValue(approvedPrincipal, assetSymbol)} />
           <ValueLabel large={true} label={"Interest Repaid "} value={handleValue(interestRepaid, assetSymbol) + "/" + handleValue(approvedYield, assetSymbol)} />
-          <ValueLabel large={true} label={"Expiry "} value={moment.utc(maturityDate).fromNow(true) + " from now"} />
+          <ValueLabel large={true} label={"Expiry "} value={moment(Number(maturityDate)*1000).format("MM-DD-YYYY")} />
         </div>
       ) :
         <div>
@@ -992,11 +995,11 @@ export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultI
         </div>
 
       }
-      <CreditlineCollateralCard instrument={instrument}/>
+      <CreditlineCollateralCard instrument={instrument} />
 
       <div>
         <InstrumentStatusLabel label={stageLabel} />
-        {(stageLabel === "Early Assessment" || stageLabel === "Late Assessment") && <InstrumentStatusSlider market={market} instrument={instrument} />}
+        {(stageLabel === "Assessment") && <InstrumentStatusSlider market={market} instrument={instrument} />}
       </div>
 
     </div>
@@ -1005,8 +1008,22 @@ export const CreditlineDetails = ({ vault, market, instrument }: { vault: VaultI
 
 // liquid || nonliquid, erc20 || erc721
 
-export const CreditlineCollateralCard = ({ instrument }) => {
+export const CreditlineCollateralCard = ({ instrument, height = 80, width = 80 }) => {
   let { collateral, oracle, loanStatus, collateralType, collateralBalance } = instrument;
+
+  const { account, loginAccount } = useUserStore();
+
+  const [symbol, setSymbol] = useState("");
+  useEffect(() => {
+    async function load() {
+      const _symbol = await fetchERC20Symbol(account, loginAccount.library, collateral);
+      setSymbol(_symbol);
+    }
+
+    if (account && loginAccount && collateral && collateralType === 0) {
+      load();
+    }
+  }, [account, loginAccount, collateral, collateralType])
 
   let collateralTypeWord
   switch (collateralType) {
@@ -1025,49 +1042,54 @@ export const CreditlineCollateralCard = ({ instrument }) => {
   }
 
   return (
-    <div className={Styles.creditlineCollateralCard}>
-
+    <div className={classNames(Styles.creditlineCollateralCard, {
+      [Styles.Uncollateralized]: collateralType === 3,
+    })}>
+      <h3>
+        Collateral
+      </h3>
       <div>
-        <h3>
-          Collateral
-        </h3>
-        <img src={Icon_Mapping["AUTO"]} style={{ height: 80, width: 80 }} />
+        <div>
+
+          <span>{symbol}</span>
+          <img src={Icon_Mapping[symbol]} style={{ height, width }} />
+        </div>
+        <div className={Styles.OutcomesTable}>
+          <div>
+            <span>
+              Oracle
+            </span>
+            <span>
+              <ExternalLink icon={true} URL={"https://mumbai.polygonscan.com/address/" + oracle} label={"Chainlink"} />
+            </span>
+          </div>
+          <div>
+            <span>
+              Collateral Type
+            </span>
+            <span>
+              {collateralTypeWord}
+            </span>
+          </div>
+          <div>
+            <span>
+              Collateral
+            </span>
+            <span>
+              <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + { collateral }} />
+            </span>
+          </div>
+          {(collateralType === 0 || collateralType === 1) && <div>
+            <span>
+              Collateral Required
+            </span>
+            <span>
+              {collateralBalance}
+            </span>
+          </div>}
+        </div>
       </div>
 
-      <div className={Styles.OutcomesTable}>
-        <div>
-          <span>
-            Oracle
-          </span>
-          <span>
-            <ExternalLink icon={true} URL={"https://mumbai.polygonscan.com/address/" + oracle} label={"Chainlink"} />
-          </span>
-        </div>
-        <div>
-          <span>
-            Collateral Type
-          </span>
-          <span>
-            {collateralTypeWord}
-          </span>
-        </div>
-        <div>
-          <span>
-            Collateral
-          </span>
-          <span>
-            <ExternalLink label={"Block Explorer"} icon={true} URL={"https://mumbai.polygonscan.com/address/" + { collateral }} />
-          </span>
-        </div>
-        {(collateralType === 0 || collateralType === 1) && <div>
-          <span>
-            Collateral Balance
-          </span>
-          <span>
-            {collateralBalance}
-          </span>
-        </div>}
-      </div>
     </div>
   )
   // collateral: string;

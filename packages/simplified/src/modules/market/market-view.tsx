@@ -316,6 +316,15 @@ export const InstrumentStatusLabel: React.FC = ({ label, small=false }: {label: 
   </span>
 )
 
+export const CheckLabel: React.FC = ({ label }: {label: string, small: boolean}) => (
+  <span className={classNames(Styles.CheckLabel)}>
+    <span>
+      {label}
+      {ConfirmedCheck}
+    </span>
+  </span>
+)
+
 const WinningOutcomeLabel = ({ winningOutcome, type, remainingTime }) => (
   <span className={Styles.WinningOutcomeLabel}>
     <span>Instrument Status</span>
@@ -650,13 +659,14 @@ const MarketView = ({ defaultMarket = null }) => {
   if (!rammMarket || Object.entries(market_[marketId]).length == 0 ) return <EmptyMarketView />;
   const marketStage = getMarketStage(rammMarket);
   const instrType = getInstrumentType(instrument);
+  const duringAssessment = instrument?.duringAssessment;
 
   const canBuy = (instrType === IType.FIXED && marketStage === MarketStage.ASSESSMENT) || (instrType === IType.PERPETUAL);
 
   return (
     <div className={classNames(Styles.MarketView, {
-      [Styles.PoolInstrument]: false,//instrType == IType.PERPETUAL,
-      [Styles.CreditlineInstrument]: instrType == IType.FIXED
+      [Styles.PoolInstrument]: instrType == IType.PERPETUAL,
+      [Styles.NoTradingForm]: (instrType == IType.FIXED && !duringAssessment),
     })}>
       <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
       <section>
@@ -671,69 +681,6 @@ const MarketView = ({ defaultMarket = null }) => {
             {isPool && <InstrumentLink id={instruments[Id]?.marketId} path={"pool"} label={"To Pool"} paramName={"id"} />}
           </div>
         </div>
-
-
-        { /*<p>{"Buy longZCB of this instrument if you think it will be profitable, shortZCB otherwise"}</p>*/}
-
-        {/* <span>Instrument Type: {instrumentTypeWord}</span> */}
-        {/* <h3>Profit Mechanism</h3>
-        <p>{isPool ?
-          "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
-          : "Buy longZCB if you believe the borrower will repay by maturity or collateral can be liquidated in the event of default. longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p>
-
-        {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
-        isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />
-        <div>
-          <h4>Overview</h4>
-
-          <p> {/*instruments[Id]?.description
-            {instrumentOverview}</p>
-          <SecondaryThemeButton
-            text="More Info"
-            action={() =>
-              setModal({
-
-                type: "MODAL_CONFIRM_TRANSACTION",
-                title: "Instrument Information",
-                includeButton: false,
-
-                // transactionButtonText: "Redeem",
-                // transactionAction: ({ onTrigger = null, onCancel = null }) => 
-                // {
-                //   onTrigger && onTrigger();
-                //   redeem({account, loginAccount, marketId, amount})
-                // },
-                targetDescription: {
-                  //market,
-                  label: "Overview",  //isMint ? "Market" : "Pool",
-                  subLabel: instrumentDescription
-                },
-                footer:
-                {
-                  text: "-",
-                },
-
-                name: "Details",
-                breakdowns: instrumentBreakDown
-                // [
-                //      instrumentBreakDown[0]
-
-                //      // {
-                //      //   heading: "What you'll recieve",
-                //      //   infoNumbers: [
-                //      //     {
-                //      //       label: "Underlying",
-                //      //       value: 1,                              
-                //      //     },
-                //      //   ],
-                //      // },
-                //    ]          
-
-              })
-            }
-            customClass={ButtonStyles.TinyTransparentButton}
-          />
-        </div> */}
         {type === 0 ? (
           <section>
             <CreditlineDetails vault={vault} market={rammMarket} instrument={instrument} />
@@ -858,7 +805,7 @@ const MarketView = ({ defaultMarket = null }) => {
             </ul>)}
 
 
-        {account && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
+        {account && Object.entries(market_).length > 0 && <RammPositionsSection market={market_[marketId]} assetName={asset} manager={account} instrument={instrument} vault={vault} />}
 
         {/* 
         <div
@@ -876,17 +823,6 @@ const MarketView = ({ defaultMarket = null }) => {
           </div>
         )
         }
-
-        {/* <PositionsView marketId={marketId} isApproved={isApproved} /> */}
-
-        {/* <div
-          className={classNames(Styles.Details, {
-            [Styles.isClosed]: !showMoreDetails,
-          })}
-        >
-          {details.length === 0 && <p>{description1}</p>}
-
-        </div> */}
 
 
         <div className={Styles.TransactionsTable}>

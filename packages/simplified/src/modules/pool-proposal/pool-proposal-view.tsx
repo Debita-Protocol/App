@@ -236,7 +236,6 @@ const PoolProposalView: React.FC = () => {
       </span>
       <ValueLabel label={"Pool Contract Deployment"} value={instrumentAddress} />
     </div>
-
   )
 
   const submitProposal = useCallback(async () => {

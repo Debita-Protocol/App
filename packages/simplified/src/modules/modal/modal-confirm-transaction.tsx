@@ -108,6 +108,7 @@ const breakdowns_ = [
                 // }}
                 initialAmount={amount}
                 maxValue={maxValue}
+                balance={maxValue}
             />)
         }
         

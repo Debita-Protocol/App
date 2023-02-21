@@ -4,13 +4,14 @@
   display: flex;
   flex-flow: column nowrap;
   padding: @size-40 @size-88 @size-48;
+  align-items: center;
   > section {
     margin-bottom: @size-10;
     &.Nav {
       display: flex;
       flex-flow:row nowrap;
       justify-content:flex-start;
-      padding-left:@size-10;
+      // padding-left:@size-10;
       > div {
         font-weight:@weight-bold;
         font-size: @size-30;
@@ -249,12 +250,32 @@
   .ThemeBorder;
   display: flex;
   flex-flow: column nowrap;
-  align-items: flex-start;
   padding: @size-24 @size-24;
   background-color: var(--primary-bg);
-  width: 350px;
-  height: 300px;
+  width: 400px;
+  height: 400px;
   position: relative;
+
+  &.Trusted {
+    > section:first-of-type {
+      >div:first-of-type {
+        display:grid;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+  }
+  
+  button {
+    border: @size-1 solid var(--success);
+    background: var(--success);
+    color: var(--inverted-primary-text);
+    border-radius: @size-8;
+    padding: @size-4 @size-4;
+    .text-14-bold;
+    width: 75px;
+    height: 40px;
+  }
+
   > div:first-of-type {
     display: flex;
     flex-flow: column nowrap;
@@ -263,19 +284,28 @@
     margin-bottom: @size-10;
     // width: 100%;
     > span:first-of-type {
-      font-size: @size-20;
+      font-size: @size-24;
       font-weight: @weight-bold;
-      color: var(--secondary-text);
+      color: var(--primary-text);
     }
+  }
+
+  >div {
+    width: 100%;
   }
   > section {
     display: flex;
     width:100%;
-    display: grid;
-    height: 65%;
-    grid-template-columns: 1fr 1fr ;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: flex-start;
+
 
     > div:first-of-type {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      width: 100%;
+      grid-gap: @size-8;
       > div {
         margin-bottom: @size-16;
       }
@@ -291,7 +321,6 @@
         font-size: @size-12;
         font-weight: @weight-semi-bold;
         color: var(--secondary-text);
-        padding-left: @size-16;
           > svg {
             height: @size-16;
             width: @size-16;
@@ -301,10 +330,10 @@
     }
   }
 
-  > div:last-of-type {
-    position: absolute;
-    bottom: 40px;
-  }
+  // > div:last-of-type {
+  //   position: absolute;
+  //   bottom: 40px;
+  // }
 
   .LoanCardButtons {
     display: flex;
@@ -312,45 +341,6 @@
     align-items: center;
     justify-content: space-evenly;
     width: 80%;
-  }
-  &.Trusted {
-    > section:first-of-type {
-      display: flex;
-      flex-flow: row nowrap;
-      > div:first-of-type {
-        display: flex;
-        flex-flow: column nowrap;
-        
-        width: 50%;
-        > div {
-          display: flex;
-          flex-flow: row nowrap;
-          align-items: flex-end;
-          justify-content: flex-start;
-          margin-bottom: @size-10;
-          height:60px;
-          > div:first-of-type {
-            min-width: 110px;
-          }
-        }
-      }
-
-      > div:nth-of-type(2) {
-        display: flex;
-        flex-flow: column nowrap;
-        width: 50%;
-        > div:first-of-type {
-          margin-top: 25px;
-        }
-        > div {
-          display: flex;
-          flex-flow: row nowrap;
-        }
-        >div:nth-of-type(2) {
-          margin-top:40px;
-        }
-      }
-    }
   }
 }
 
@@ -362,7 +352,7 @@
   border-radius: @size-10;
   > section {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-gap: @size-24;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: @size-36;
   }
 }

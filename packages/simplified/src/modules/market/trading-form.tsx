@@ -587,13 +587,6 @@ export const TradingForm = ({
     ) : null;
   };
 
-  // console.log("breakdown:", breakdown);
-  // console.log("canMakeTrade:", canMakeTrade);
-  // console.log("isLevered: ", isLevered);
-  // console.log("isIssue: ", isIssue);
-  // console.log("leverageFactor: ", leverageFactor);
-
-
   return (
     <div className={Styles.TradingForm}>
       <div>
@@ -618,7 +611,7 @@ export const TradingForm = ({
             title={"Issue New longZCB and automatic supply to this instrument"}
             subtitle={"Every 1 longZCB issued, leverageFactor * longZCB price underlying is supplied"} />}
 
-        {!isIssue && <OutcomesGrid
+        { <OutcomesGrid
           outcomes={outcomes}
           selectedOutcome={selectedOutcome}
           setSelectedOutcome={(outcome) => {
@@ -634,7 +627,7 @@ export const TradingForm = ({
         />}
         <div>
           <AddMetaMaskToken tokenSymbol={"longZCB"} tokenAddress={longZCB_ad} />
-          {<AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />}
+          <AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />
         </div>
 
         {/*<TinyThemeButton
@@ -647,6 +640,7 @@ export const TradingForm = ({
           initialAmount={amount}
           error={amountError}
           maxValue={(isLimit ? (isLong ? longZCBbalance : shortZCBbalance) : (isLong ?  vaultBalances[vaultId]?.base : shortZCBbalance))}
+          balance={(isLimit ? (isLong ? longZCBbalance : shortZCBbalance) : (isLong ?  vaultBalances[vaultId]?.base : shortZCBbalance))}
           //disabled={!hasLiquidity || hasWinner}
           disabled={!canbuy}
           // rate={getRate()}
@@ -661,6 +655,7 @@ export const TradingForm = ({
           initialAmount={orderPrice}
           error={priceError}
           maxValue={null}
+          balance={null}
           //disabled={!hasLiquidity || hasWinner}
           disabled={!canbuy}
           // rate={getRate()}

@@ -40,6 +40,7 @@ interface ModalConfirmTransactionProps {
     collateral?: Collateral;
     instrument?: PoolInstrument;
     isAdd?: boolean;
+    maxValue?: string;
 }
 
 const ModalRepayView = ({
@@ -53,6 +54,7 @@ const ModalRepayView = ({
     instrument,
     collateral,
     footer = null,
+    maxValue,
 }: ModalConfirmTransactionProps) => {
     const [buttonText, setButtonText] = useState(transactionButtonText);
     const [amount, setAmount] = useState("0");
@@ -80,7 +82,8 @@ const ModalRepayView = ({
                         setAmount(val);
                     }}
                     initialAmount={""}
-                    maxValue={vaultBalance}
+                    maxValue={maxValue}
+                    balance={vaultBalance}
                 />
                 <SecondaryThemeButton
                     action={() => transactionAction(amount)}

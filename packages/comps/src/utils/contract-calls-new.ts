@@ -891,7 +891,7 @@ export const getContractData = async (account: string, provider: Web3Provider): 
                         collateralType: instr.creditlineData.collateralType,
                         principalRepaid: toDisplay(instr.creditlineData.principalRepayed.toString()),
                         interestRepaid: toDisplay(instr.creditlineData.interestRepayed.toString()),
-                        totalOwed: toDisplay(instr.creditlineData.totalOwed.toString()),
+                        totalOwed: toDisplay(instr.creditlineData.totalOwed.toString())
                     }
                 )
             }
@@ -1210,7 +1210,7 @@ export const createCreditLineInstrument = async (
     collateral: string,
     collateral_balance: string,
     collateral_type: string
-): Promise<string> => {
+): Promise<{ response: TransactionResponse, instrumentAddress: string }> => {
     const creditlineFactory = new ContractFactory(CreditlineData.abi, CreditlineData.bytecode, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(notionalInterest)).toString();
     // console.log("vault: ", vault);
@@ -1218,6 +1218,7 @@ export const createCreditLineInstrument = async (
     // console.log("principal: ", principal);
     // console.log("faceValue: ", faceValue);
     // console.log("duration: ", duration);
+    console.log("collateralType: ", collateral_type);
     const creditline = await creditlineFactory.deploy(
         vault,
         account,
@@ -1230,9 +1231,12 @@ export const createCreditLineInstrument = async (
         collateral_balance,
         collateral_type
     );
-    await creditline.deployed();
-    const { address: instrument_address } = creditline;
-    return instrument_address;
+    //const { address: instrument_address } = creditline;
+    
+    return {
+        response: creditline.deployTransaction,
+        instrumentAddress: creditline.address
+    }
 }
 
 // must verify that account is owner of instrument_address?
@@ -1250,7 +1254,7 @@ export const createCreditlineMarket = async (
 ): Promise<TransactionResponse> => {
     const controller = new Contract(controller_address, ControllerData.abi, provider.getSigner(account));
     const faceValue = new BN(principal).plus(new BN(expectedYield)).toFixed(0);
-    const tx: TransactionResponse = await controller.initiateMarket(
+    return controller.initiateMarket(
         account,
         {
             name: formatBytes32String(name),
@@ -1278,10 +1282,7 @@ export const createCreditlineMarket = async (
             }
         },
         vaultId
-    );
-    await tx.wait(1);
-
-    return tx;
+    )
 }
 
 // export const getUserPoolData = async (
@@ -1593,7 +1594,8 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    // let creditline = new Contract("0x11645F563412661d93343D74543c852e194341E0", CreditlineData.abi, provider.getSigner(account));
+    let creditline = new Contract("0x9238bB9E76e93400D5ebBB7e5Df2474da03c4Fa7", CreditlineData.abi, provider.getSigner(account));
+    console.log("collateralType: ", await creditline.collateral_type());
     // let vault = new Contract("0x018F3069F99248F7e74062a7aD542Ff4fCf52B49", VaultData.abi, provider.getSigner(account))
     // let pool = new Contract("0x0250d77651B7a1827dcaA0A7af1CB3528Fd67608", PoolInstrumentData.abi, provider.getSigner(account))
 
@@ -1636,7 +1638,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     //     await tx.wait();
     // }
 
-    await scriptSetup(account, provider);
+    // await scriptSetup(account, provider);
 }
 
 
@@ -1707,7 +1709,7 @@ const scriptSetup = async (account, provider) => {
             instrumentAddress
         )
 
-        const creditline_ad = await createCreditLineInstrument(
+        const { response: creditlineResponse, instrumentAddress: creditline_ad} = await createCreditLineInstrument(
             account,
             provider,
             vault_ad,
@@ -1732,6 +1734,13 @@ const scriptSetup = async (account, provider) => {
             );
         await tx.wait()
     }
+}
+
+export const fetchERC20Symbol = async (account: string, loginAccount: Web3Provider, tokenAddress: string): Promise<string> => {
+    console.log("fetching symbol for " + tokenAddress)
+    const erc20 = new Contract(tokenAddress, ERC20Data.abi, loginAccount.getSigner(account));
+    const symbol = await erc20.symbol();
+    return symbol;
 }
 
 const createVault = async (
@@ -1792,4 +1801,16 @@ export const isValidERC721 = async (account: string, library: Web3Provider, addr
     } catch (e) {
         return false;
     }
+}
+
+export const getERC20Balance = async (account: string, library: Web3Provider, erc20: string, address: string): Promise<string> => {
+    const contract = new Contract(erc20, ERC20Data.abi, library.getSigner(account));
+    const balance = await contract.balanceOf(address);
+    return new BN(balance.toString()).shiftedBy(-18).toString();
+}
+
+export const creditlineDeposit = async (account: string, library: Web3Provider, creditline: string, collateralBalance: string): Promise<TransactionResponse> => {
+    const contract = new Contract(creditline, CreditlineData.abi, library.getSigner(account));
+    const tx = await contract.depositCollateral(new BN(collateralBalance).shiftedBy(18).toFixed(0));
+    return tx;
 }

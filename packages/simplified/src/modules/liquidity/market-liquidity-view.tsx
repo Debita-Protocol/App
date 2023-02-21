@@ -845,6 +845,7 @@ const MintForm = ({
             updateCash={updateCash}
             updateAmountError={() => null}
             disabled={false}
+            balance={userMaxAmount}
           //error={hasAmountErrors}
           />)}
           {isAdd && <Leverage leverageFactor={leverageFactor} setLeverageFactor={setLeverageFactor} />}
@@ -1208,6 +1209,7 @@ const LiquidityForm = ({
           updateCash={updateCash}
           updateAmountError={() => null}
           error={hasAmountErrors}
+          balance={userMaxAmount}
         />
 
         <div className={Styles.PricesAndOutcomes}>

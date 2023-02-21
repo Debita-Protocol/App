@@ -74,8 +74,12 @@
   }
 
   > div:last-of-type {
+    display: flex;
+    flex-flow: column nowrap;
+
     > button {
       .SimplifiedActionButton;
+      margin-bottom: @size-20;
     }
   }
 }
@@ -177,4 +181,11 @@
     background-color: var(--tertiary-bg);
     color: var(--primary-text);
   }
+}
+
+.DeployedLabel {
+  .ThemeBorder;
+  margin-top: @size-10;
+  padding:@size-10;
+  background-color: var(--primary-bg);
 }

@@ -77,6 +77,8 @@ export interface AmountInputProps {
   isBuy?: boolean;
   disabled?: boolean;
   toggleUnderlying?: Function; 
+  balanceLabel?: string;
+  balance: string;
 }
 
 export interface ModalAmountInputProps {
@@ -96,6 +98,7 @@ export interface ModalAmountInputProps {
   toggleUnderlying?: Function; 
   dropdown?: React.FC,
   tooltip?: React.FC,
+  balance?: string,
   maxValueLabel?: string
 }
 
@@ -113,7 +116,9 @@ export const AmountInput = ({
   ammCash,
   isBuy = true,
   disabled = false,
+  balanceLabel="balance:",
   toggleUnderlying, 
+  balance
 }: AmountInputProps) => {
   const { isLogged } = useAppStatusStore();
   const currencyName = chosenCash;
@@ -145,8 +150,8 @@ export const AmountInput = ({
         <span onClick={setMax}>
         {isLogged && maxValue&&(
           <>
-            <span>balance:</span>{" "}
-            {handleValueRamm(maxValue, currencyName)}
+            <span>{balanceLabel}</span>{" "}
+            {handleValueRamm(balance, currencyName)}
             {/*isBuy ? formatCash(maxValue, ammCash?.name).full : formatSimpleShares(maxValue).roundedFormatted*/}
           </>
         )}

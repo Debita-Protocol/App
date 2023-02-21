@@ -83,6 +83,7 @@ const ModalRedeem = ({
                 disabled={inputDisabled}
                 initialAmount={initialAmount}
                 maxValue={maxValue}
+                balance={maxValue}
             />
         <SecondaryThemeButton
           action={() => transactionAction(amount)}

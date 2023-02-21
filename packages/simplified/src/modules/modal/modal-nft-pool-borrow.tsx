@@ -39,6 +39,7 @@ const ModalNFTPoolBorrow = (
                 initialAmount={"0"}
                 maxValue={borrow_max}
                 ammCash={want}
+                balance={borrow_max}
             />
             <PrimaryThemeButton 
                 text="Borrow"
