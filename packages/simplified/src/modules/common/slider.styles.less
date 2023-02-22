@@ -149,6 +149,8 @@
   }
 
   .InputSlider {
+    display: flex;
+    flex-flow: row nowrap;
     > span {
       margin-right:@size-20;
       display: flex;
@@ -165,7 +167,7 @@
         font-size: @size-20;
         font-weight: @weight-bold;
         color: var(--primary-text);
-        background-color: var(--primary-bg);
+        background-color: var(--secondary-bg);
         color: var(--primary-text);
         height: @size-26;
         width: 120px;
@@ -208,6 +210,7 @@
         align-items: center;
         > div:first-of-type {
             width: 250px;
+            top: -5px;
         }
         > div:last-of-type {
             display: flex;

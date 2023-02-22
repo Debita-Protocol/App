@@ -78,7 +78,7 @@ import ModalConnectWallet from "./components/modal/modal-connect-wallet";
 import { ToggleSwitch, BuySellToggleSwitch } from "./components/common/toggle-switch";
 import { Toasts } from "./components/toasts/toasts";
 import {MarketCardProvider, MarketCardContext} from "./components/market-card/market-card-context"; 
-import {market_manager_address, leverage_manager_address} from "./data/constants"; 
+import {market_manager_address, leverage_manager_address, order_manager_address} from "./data/constants"; 
 
 export const ContractCalls = _ContractCalls;
 export const ContractCalls2 = _ContractCalls2;
@@ -129,7 +129,8 @@ export const Stores = {
 export const GRAPH_QUERIES = queries;
 
 export const leverageManager = leverage_manager_address; 
-export const marketManager = market_manager_address; 
+export const marketManager = market_manager_address;
+export const orderManager = order_manager_address;
 export const ConnectAccount = {
   ConnectAccount: _ConnectAccount,
   ConnectAccountProvider: _ConnectAccountProvider,

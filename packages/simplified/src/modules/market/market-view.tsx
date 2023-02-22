@@ -668,7 +668,7 @@ const MarketView = ({ defaultMarket = null }) => {
       [Styles.PoolInstrument]: instrType == IType.PERPETUAL,
       [Styles.NoTradingForm]: (instrType == IType.FIXED && !duringAssessment),
     })}>
-      <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} />
+      {/* <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} /> */}
       <section>
         <NetworkMismatchBanner />
         {!(reputationScore && isManager) && <ManagerWarning />}
@@ -680,6 +680,19 @@ const MarketView = ({ defaultMarket = null }) => {
             {!!instruments[Id]?.name && <h1>{instruments[Id]?.name}</h1>}
             {isPool && <InstrumentLink id={instruments[Id]?.marketId} path={"pool"} label={"To Pool"} paramName={"id"} />}
           </div>
+        </div>
+        <h3>Profit Mechanism</h3>
+        <p>{isPool ?
+          "Buying longZCB will automatically supply capital to the instrument from its parent vault. Profit for longZCB is compounded every second. Participants can redeem their longZCB to realize profit. "
+          : "Buy longZCB if you believe the borrower will repay by maturity or collateral can be liquidated in the event of default. longZCB can be redeemed after instrument's maturity. Redemption price is 1 if successful, but can go down to 0."}</p>
+
+        {startTimestamp ? <span>{getMarketEndtimeFull(startTimestamp, timeFormat)}</span> : <span />}
+        {/*isFinalized && winningOutcome && <WinningOutcomeLabel winningOutcome={winningOutcome} />*/}
+        <div>
+          <h4>Overview</h4>
+
+          <p> {/*instruments[Id]?.description*/}
+            {instrumentOverview}</p>
         </div>
         {type === 0 ? (
           <section>
@@ -1197,7 +1210,7 @@ export const RammPositionsSection = ({
 
 const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, vault, manager }) => {
   const { ramm } = useUserStore();
-  const { duringAssessment, alive, bondPool: { longZCBPrice, b, longZCB: { balance: longZCBbalance }, shortZCB: { balance: shortZCBbalance } } } = market;
+  const { duringAssessment, alive, bondPool: { longZCBPrice } } = market;
 
   const { account, loginAccount } = useUserStore();
 
@@ -1213,7 +1226,11 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
     shortZCBCollateral = mm_pair.shortZCBCollateral;
   }
   const leveragePositions = ramm?.leveragePositions;
+  const zcbBalances = ramm?.zcbBalances;
   const { marketId } = market;
+
+  const longZCBbalance = zcbBalances && zcbBalances[marketId] ? zcbBalances[marketId].longZCB : 0;
+  const shortZCBbalance = zcbBalances && zcbBalances[marketId] ? zcbBalances[marketId].shortZCB : 0;
 
   const initPrice = instrument?.initPrice;
 
@@ -1222,7 +1239,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
 
   const instrType = getInstrumentType(instrument);
   const marketStage = getMarketStage(market);
-
+  console.log("longZCBCollateral: ", longZCBCollateral);
   let longEntryPrice = Number(longZCBbalance) > 0 ? new BN(Number(longZCBCollateral)).dividedBy(Number(longZCBbalance)) : 0;
   let shortEntryPrice = Number(shortZCBbalance) > 0 ? new BN(Number(shortZCBCollateral)).dividedBy(Number(shortZCBbalance)) : 0;
   // unrealized = handleValue(new BN(Number(longZCBPrice)).minus(longEntryPrice).multipliedBy(longZCBbalance).toFixed(3), assetName),
@@ -1235,7 +1252,7 @@ const RammPositionTable = ({ market, activeTab, assetName, mm_pair, instrument, 
   let subLabel = "Successful resolution"
   if (activeTab === "0") {
     // longZCB
-
+    console.log("here: ", longZCBbalance);
     data_row = [
       longZCBbalance,
       handleValue(new BN(Number(longZCBbalance) * Number(longZCBPrice)).toFixed(3), assetName),

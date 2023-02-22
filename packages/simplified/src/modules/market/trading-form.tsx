@@ -19,13 +19,13 @@ import {
   useApprovalStatus,
   ApprovalHooks,
   PARA_CONFIG,
-  useDataStore2, marketManager, leverageManager
+  useDataStore2, marketManager, leverageManager, orderManager
 } from "@augurproject/comps";
 import type { AmmOutcome, Cash, EstimateTradeResult, AmmExchange, Instrument, CoreMarketInfo, VaultInfo } from "@augurproject/comps/build/types";
 import { Slippage, Leverage, LimitOrderSelector } from "../common/slippage";
 import getUSDC from "../../utils/get-usdc";
 import { AddMetaMaskToken } from "modules/common/labels";
-import { BaseSlider } from "modules/common/slider";
+import { BaseSlider, InputSlider } from "modules/common/slider";
 import { MarketStage, getMarketStage, round } from "utils/helpers";
 import { RammButtonSwitch, RammBuyLabel, ToggleSwitch } from "@augurproject/comps/build/components/common/toggle-switch";
 import { SingleCheckbox, SingleRammCheckbox } from "@augurproject/comps/build/components/common/selection";
@@ -81,7 +81,6 @@ interface InfoNumbersProps {
 }
 
 export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
-  console.log("InfoNumbers", infoNumbers)
   return (
     <div
       className={classNames(Styles.OrderInfo, {
@@ -108,6 +107,8 @@ export const InfoNumbers = ({ infoNumbers, unedited }: InfoNumbersProps) => {
 
 const getEnterBreakdown = (isUnderlying: boolean, breakdown: EstimateTradeResult | null, cash: Cash, isLevered, isLimit) => {
   const isLeverage = Number(breakdown?.debt) > 0;
+
+  console.log("enter breakdown: ", breakdown);
 
   if (isLimit) {
     return [];
@@ -286,6 +287,9 @@ export const TradingForm = ({
   const { isLogged } = useAppStatusStore();
   const { cashes, blocknumber } = useDataStore();
   const { vaults: vaults, instruments: instruments, markets } = useDataStore2()
+  const [isLimit, setIsLimit] = useState(false);
+  const [longAllowance, setLongAllowance] = useState(false);
+  const [shortAllowance, setShortAllowance ] = useState(false);
 
   const {
     showTradingForm,
@@ -324,13 +328,15 @@ export const TradingForm = ({
   
   const [isApprovedTrade, setIsApprovedTrade] = useState(true);
   const [isNotVerified, setIsNotVerified] = useState(false);
+  const [pendingTransaction, setPendingTransaction] = useState(false);
+  const isPool = instruments[marketId]?.isPool;
+
+  const isIssue = isPool && !duringAssessment;
+  const isBuy = orderType === BUY;
 
   // const [bondbreakdown, setBondBreakDown] = useState<EstimateTradeResult | null>(null);
-  const isPool = instruments[marketId]?.isPool;
-  
-  const isIssue = isPool && !duringAssessment;
 
-  const outcomes = useMemo(() => (
+  const outcomes = useMemo(() => ( !isIssue || isLimit ?
     [
       {
         name: "longZCB",
@@ -342,12 +348,19 @@ export const TradingForm = ({
         id: 1,
         price: round(String(1 - Number(longZCBPrice)), 4)
       }
+    ] : [
+      {
+        name: "longZCB",
+        id: 0,
+        price: round(longZCBPrice, 4)
+      }
     ]
-  ), [longZCBPrice]);
-
-
+  ), [longZCBPrice, isIssue, isLimit]);
+  
 
   const [selectedOutcome, setSelectedOutcome] = useState(outcomes[0]);
+  const selectedOutcomeId = selectedOutcome?.id;
+  const isLong = selectedOutcomeId == 0 ? true : false;
 
   // underlying for buying longzcb, shortzcb for buying shortzcb
   const isUnderlying = selectedOutcome.id == 0;
@@ -356,13 +369,12 @@ export const TradingForm = ({
   const [waitingToSign, setWaitingToSign] = useState(false);
 
 
-  const isBuy = orderType === BUY;
   // const approvalAction = isBuy ? ApprovalAction.ENTER_POSITION : ApprovalAction.EXIT_POSITION;
   // const outcomeShareToken = selectedOutcome?.shareToken;
   // const approvalStatus = true;
 
   const hasLiquidity = true;
-  const selectedOutcomeId = selectedOutcome?.id;
+
   // const marketShares = balances?.marketShares && balances?.marketShares[amm?.marketId];
   // const hasWinner = amm?.market.hasWinner;
   // const outcomeSharesRaw = JSON.stringify(marketShares?.outcomeSharesRaw);
@@ -370,35 +382,67 @@ export const TradingForm = ({
   const priceError = orderPrice !== "" && (isNaN(Number(orderPrice)) || Number(orderPrice) === 0 || Number(orderPrice) < 0 || Number(orderPrice) > 1);
   const buttonError = amountError ? ERROR_AMOUNT : (priceError ? ERROR_PRICE : "");
 
-  const isLong = selectedOutcomeId == 0 ? true : false;
-  const [isLevered, setIsLevered] = useState(false);
-  const [isLimit, setIsLimit] = useState(false);
 
-  const [canbuy, setCanBuy] = useState(true);
+  const [isLevered, setIsLevered] = useState(false);
+
+
+
   const [canRedeem, setCanRedeem] = useState(false);
   const [hedgeQuantity, setHedgeQuantity] = useState("1");
   const [traderBudget, setTraderBudget] = useState("1");
   const [userBalance, setUserBalance] = useState("1");
   const [leverageFactor, setLeverageFactor] = useState(1);
-  const [MMAllowance, setMMAllowance] = useState(false);
+  const [underlyingAllowance, setUnderlyingAllowance] = useState(false);
+
+
 
   useEffect(async () => {
     if (account && loginAccount) {
       const maxUint = 2 ** 255
 
-      const allowance = await getERC20Allowance(
+      const underlyingAllowance = await getERC20Allowance(
         underlying_address,
         loginAccount.library,
         account,
         marketManager
       )
-      if (allowance && Number(allowance) >= maxUint)
-        setMMAllowance(true);
+      if (underlyingAllowance && Number(underlyingAllowance) >= maxUint) {
+        setUnderlyingAllowance(true);
+      } else {
+        setUnderlyingAllowance(false);
+      }
+
+      const longZCBAllowance = await getERC20Allowance(
+        underlying_address,
+        loginAccount.library,
+        account,
+        orderManager
+      )
+
+      if (longZCBAllowance && Number(longZCBAllowance) >= maxUint) {
+        setLongAllowance(true);
+      } else {
+        setLongAllowance(false);
+      }
+
+      const shortZCBAllowance = await getERC20Allowance(
+        underlying_address,
+        loginAccount.library,
+        account,
+        orderManager
+      )
+
+      if (shortZCBAllowance && Number(shortZCBAllowance) >= maxUint) {
+        setShortAllowance(true);
+      } else {
+        setShortAllowance(false);
+      }
+        
 
       if (reputationScore == "0") setIsNotVerified(true);
       else setIsNotVerified(false);
     }
-  }, [account, amount])
+  }, [account, amount, market, vault, instrument])
 
 
   useEffect(() => {
@@ -419,10 +463,10 @@ export const TradingForm = ({
 
   const getEstimate = useCallback(async () => {
     const isShort = selectedOutcomeId == 0 ? false : true
-    const breakdown = await estimateTrade(account, loginAccount.library, Number(marketId), amount, isLevered, leverageFactor, isUnderlying, isShort, isIssue, isLimit)
+    const breakdown = await estimateTrade(account, loginAccount.library, Number(marketId), amount, isLevered, leverageFactor, isUnderlying, isShort, isIssue, isLimit, orderPrice)
     console.log("breakdown fxn", breakdown)
     setBreakdown(breakdown);  
-  }, [breakdown, amount ,account, loginAccount, marketId, isLevered, leverageFactor, isUnderlying, isLong, selectedOutcome, isIssue, isLimit])
+  }, [underlyingAllowance, breakdown, amount ,account, loginAccount, marketId, isLevered, leverageFactor, isUnderlying, isLong, selectedOutcome, isIssue, isLimit, orderPrice])
   
   useEffect(() => {
     let isMounted = true;
@@ -439,7 +483,7 @@ export const TradingForm = ({
     return () => {
       isMounted = false;
     };
-  }, [orderType, selectedOutcomeId, amount, account, isLevered, leverageFactor, isUnderlying, isIssue, selectedOutcome]);
+  }, [orderPrice, underlyingAllowance, longAllowance, shortAllowance, orderType, selectedOutcomeId, amount, account, isLevered, leverageFactor, isUnderlying, isIssue, selectedOutcome]);
 
   const canMakeTrade: CanTradeProps = useMemo(() => {
     let actionText = buttonError || (isLimit ? "Submit" : orderType);
@@ -452,7 +496,6 @@ export const TradingForm = ({
       actionText = "Can only mint after approved"
       disabled = true;
     } else if (typeof breakdown == "string") {
-      console.log('breakdown', breakdown);
       if (breakdown == "execution reverted: ERC20: transfer amount exceeds allowance") {
         actionText = "Not approved";
         disabled = true;
@@ -471,18 +514,19 @@ export const TradingForm = ({
       }
       else {
         actionText = breakdown;
-        disabled = isIssue ? false : true;
+        disabled = true;
       }
 
 
     } else if (marketStage === MarketStage.RESOLVED) {
       actionText = RESOLVED_MARKET;
       disabled = true;
-    } else if (!canbuy) {
-      console.log('??')
-      actionText = "Trade Restricted"
-      disabled = isIssue ? false : true;
-    } else if (isLimit && Number(orderPrice) == 0) {
+    } 
+    // else if (!canbuy) {
+    //   actionText = "Trade Restricted"
+    //   disabled = isIssue ? false : true;
+    // }
+     else if (isLimit && Number(orderPrice) == 0) {
       actionText = "Enter Price";
       disabled = true;
     } else if (Number(amount) === 0 || isNaN(Number(amount)) || amount === "") {
@@ -511,7 +555,7 @@ export const TradingForm = ({
       actionText,
       subText,
     };
-  }, [MMAllowance, isIssue, orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, isLimit]);
+  }, [underlyingAllowance, isIssue, orderType, amount, buttonError, breakdown, userBalance, hasLiquidity, waitingToSign, isLimit]);
 
   const testVerify = () => {
     setUpManager(account, loginAccount.library).then((response) => {
@@ -519,6 +563,9 @@ export const TradingForm = ({
     })
     setIsNotVerified(false)
   }
+
+  console.log("longAllowance", longAllowance)
+  console.log("shortAllowance", shortAllowance)
 
   const makeTrade = useCallback(() => {
     // const minOutput = breakdown?.outputValue;
@@ -587,6 +634,10 @@ export const TradingForm = ({
     ) : null;
   };
 
+
+  console.log("canMakeTrade", canMakeTrade, isLimit, isLong, isIssue, leverageFactor, longZCBbalance, breakdown);
+
+
   return (
     <div className={Styles.TradingForm}>
       <div>
@@ -617,6 +668,9 @@ export const TradingForm = ({
           setSelectedOutcome={(outcome) => {
             setSelectedOutcome(outcome);
             setAmount("");
+            setIsLevered(false);
+            setLeverageFactor(1);
+            setOrderPrice("");
           }}
           orderType={orderType}
           ammCash={underlying}
@@ -627,7 +681,7 @@ export const TradingForm = ({
         />}
         <div>
           <AddMetaMaskToken tokenSymbol={"longZCB"} tokenAddress={longZCB_ad} />
-          <AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />
+          {((isIssue && isLimit) || (!isIssue)) && <AddMetaMaskToken tokenSymbol={"shortZCB"} tokenAddress={shortZCB_ad} />}
         </div>
 
         {/*<TinyThemeButton
@@ -642,7 +696,7 @@ export const TradingForm = ({
           maxValue={(isLimit ? (isLong ? longZCBbalance : shortZCBbalance) : (isLong ?  vaultBalances[vaultId]?.base : shortZCBbalance))}
           balance={(isLimit ? (isLong ? longZCBbalance : shortZCBbalance) : (isLong ?  vaultBalances[vaultId]?.base : shortZCBbalance))}
           //disabled={!hasLiquidity || hasWinner}
-          disabled={!canbuy}
+          disabled={(!isLimit && !underlyingAllowance) || (isLimit && isLong && !longAllowance) || (isLimit && !isLong && !shortAllowance)}
           // rate={getRate()}
           isBuy={orderType === BUY}
           toggleUnderlying={null}
@@ -657,13 +711,13 @@ export const TradingForm = ({
           maxValue={null}
           balance={null}
           //disabled={!hasLiquidity || hasWinner}
-          disabled={!canbuy}
+          disabled={(isLimit && isLong && !longAllowance) || (isLimit && !isLong && !shortAllowance)}
           // rate={getRate()}
           isBuy={orderType === BUY}
         />)}
         {!isLimit && !isIssue && false && <Slippage />}
         {/* <Leverage leverageFactor = {leverageFactor} setLeverageFactor={setLeverageFactor}/> */}
-        {(!isIssue && !isLimit && isLong) && <div className={classNames(Styles.LeverageSlider, {
+        {(!isLimit && isLong) && <div className={classNames(Styles.LeverageSlider, {
           [Styles.showSelection]: isLevered && isBuy
         })}>
           <div>
@@ -676,27 +730,64 @@ export const TradingForm = ({
             <SingleRammCheckbox label="" initialSelected={isLevered} updateSelected={(val) => setIsLevered(val)} />
           </div>
           <div>
-            <div>
+            <InputSlider value={leverageFactor} onSetValue={(val) => setLeverageFactor(val)} max={5} min={1} label={"x"} step={0.01} marks={[]}/>
+            {/* <div>
               {leverageFactor}x
             </div>
-            <BaseSlider value={leverageFactor} onChange={(val) => setLeverageFactor(val)} max={5} min={1} defaultValue={1} step={0.01} />
+            <BaseSlider value={leverageFactor} onChange={(val) => setLeverageFactor(val)} max={5} min={1} defaultValue={1} step={0.01} /> */}
           </div>
         </div>}
 
         <InfoNumbers infoNumbers={formatBreakdown(isUnderlying, isBuy, breakdown, underlying, isLevered, isLimit)} />
 
-        {account && !MMAllowance &&
+        {/* {pendingTransaction && (
+          <SecondaryThemeButton
+          disabled={true}
+          action={null}
+          text={"Pending Transaction"}
+          subText={""}
+          error={""}
+          customClass={ButtonStyles.BuySellButton}
+          />
+        )} */}
+        {account && !underlyingAllowance &&
           (<ApprovalButton
             {...{
-              spender_: marketManager,
+              spender_: orderManager,
               underlyingAddress: underlying_address,
+              setIsApprovedTrade: setUnderlyingAllowance,
+              setPendingTransaction: setPendingTransaction
             }}
           />)}
+        {account && isLimit && isLong && !longAllowance && (
+          <ApprovalButton
 
-        {account && !canRedeem && MMAllowance && (<SecondaryThemeButton
+            {...{
+              spender_: orderManager,
+              buttonText: "Approve Underlying",
+              underlyingAddress: underlying_address,
+              setIsApprovedTrade: setLongAllowance,
+              setPendingTransaction: setPendingTransaction
+            }}
+          />
+        )}
+        {account && isLimit && !isLong && !shortAllowance && (
+          <ApprovalButton
+
+            {...{
+              spender_: orderManager,
+              buttonText: "Approve Underlying",
+              underlyingAddress: underlying_address,
+              setIsApprovedTrade: setShortAllowance,
+              setPendingTransaction: setPendingTransaction
+            }}
+          />
+        )}
+
+        {(account && !canRedeem && underlyingAllowance && ((isLimit && isLong && longAllowance) || (isLimit && !isLong && shortAllowance) || !isLimit)) && (<SecondaryThemeButton
           disabled={canMakeTrade.disabled || !isApprovedTrade}
-          action={!isLimit ? makeTrade : null}
-          text={!isLimit ? (isIssue ? "Issue New longZCB" : canMakeTrade.actionText) : "limit orders still in development"}
+          action={makeTrade}
+          text={canMakeTrade.actionText}
           subText={canMakeTrade.subText}
           error={buttonError}
           customClass={ButtonStyles.BuySellButton}
@@ -760,6 +851,9 @@ export const ApprovalButton = ({
   spender_,
   underlyingAddress,
   setIsApprovedTrade = null,
+  setPendingTransaction = null,
+  buttonText="Approve Underlying",
+  subText=""
 }: {
   amm?: AmmExchange;
   cash?: Cash;
@@ -771,7 +865,10 @@ export const ApprovalButton = ({
   shareToken?: string;
   customClass?: any;
   ds?: boolean;
-  setIsApprovedTrade?: Function
+  setIsApprovedTrade?: Function,
+  setPendingTransaction?: Function,
+  buttonText?: string,
+  subText?: string
 }) => {
   const [isPendingTx, setIsPendingTx] = useState(false);
   const {
@@ -783,13 +880,12 @@ export const ApprovalButton = ({
   const ammFactory = amm?.ammFactoryAddress;
   const marketDescription = `${amm?.market?.title} ${amm?.market?.description}`;
   const rewardContractAddress = " "//getRewardsContractAddress(amm.marketFactoryAddress);
-  useEffect(() => {
-    // make sure to flip local state off if we are approved, logged, pending
-    if (isApproved && loginAccount && isPendingTx) {
-      setIsPendingTx(false);
-    }
-  }, [isApproved, loginAccount, isPendingTx]);
-  // console.log('?????', marketManager, underlyingAddress); 
+  // useEffect(() => {
+  //   // make sure to flip local state off if we are approved, logged, pending
+  //   if (isApproved && loginAccount && isPendingTx) {
+  //     setIsPendingTx(false);
+  //   }
+  // }, [isApproved, loginAccount, isPendingTx]);
 
   const approve =
     useCallback(async () => {
@@ -797,23 +893,15 @@ export const ApprovalButton = ({
       let address = "0xc90AfD78f79068184d79beA3b615cAB32D0DC45D";
       // let spender = marketManager//rewardContractAddress || ammFactory; 
       let spender = spender_;
-      console.log('spender', spender, underlyingAddress);
       let text = "Approving Underlying";
-      const tx = await approvalAction(underlyingAddress, text, spender, loginAccount)
-        .then((response) => {
-          const { hash } = response;
-          addTransaction({
-            hash,
-            chainId: loginAccount.chainId,
-            seen: false,
-            status: TX_STATUS.PENDING,
-            from: loginAccount.account,
-            addedTime: new Date().getTime(),
-            message: `Approving spender`,
-            marketDescription: spender_,
-          });
-        }).catch((error) => {
-          console.log("minting failure", error?.message);
+      // setPendingTransaction(true);
+      setIsPendingTx(true);
+      try {
+        const {tx, response} = await approvalAction(underlyingAddress, text, spender, loginAccount);
+        addTransaction(tx);
+        await response.wait();
+      } catch (err) {
+        console.log("approval error:", err?.message);
           addTransaction({
             hash: "Approve failed",
             chainId: loginAccount.chainId,
@@ -824,34 +912,15 @@ export const ApprovalButton = ({
             message: `Approving spender`,
             marketDescription: spender_,
           });
-        })
+      }
+      setIsPendingTx(false);
+      
       setIsApprovedTrade && setIsApprovedTrade(true)
 
     }, [cash, loginAccount, shareToken, amm])
 
   if (!loginAccount || isApproved) {
     return null;
-  }
-
-  let buttonText = "";
-  let subText = "";
-  switch (actionType) {
-    case ApprovalAction.ENTER_POSITION: {
-      buttonText = "Approve to Buy";
-      break;
-    }
-    case ApprovalAction.EXIT_POSITION: {
-      buttonText = "Approve to Sell";
-      break;
-    }
-    case ApprovalAction.REMOVE_LIQUIDITY: {
-      buttonText = "Approve Removal";
-      subText = "(approve to see removal estimation)";
-      break;
-    }
-    default:
-      buttonText = `Approve Underlying`;
-      break;
   }
   return (
     <SecondaryThemeButton
