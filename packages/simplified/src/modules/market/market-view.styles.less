@@ -66,6 +66,7 @@
         }
       }
 
+
       > div,
       > ul,
       > span,
@@ -96,6 +97,16 @@
   }
 }
 
+&.TabBar {
+  display: flex;
+  flex-flow: row nowrap;
+  border-bottom: @size-1 solid var(--theme-border);
+  > div {
+    font-size: @size-24;
+    font-weight: 500;
+    padding: @size-16 @size-24;
+  }
+}
 
 .EmptyMarketView {
   > section {
@@ -356,7 +367,6 @@
     }
   }
 }
-
 
 .UpperStatsRow {
   .ThemeBorder;
@@ -1100,9 +1110,11 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  margin-top: @size-24;
 
   >h3 {
     margin-bottom: @size-20;
+    .text-30-bold;
   }
 
   > div:nth-of-type(5) {
@@ -1279,10 +1291,12 @@
   border-radius: @size-8;
   display: flex;
   flex-direction: column;
+  margin-top:@size-24;
   width: 100%;
 
   >h3 {
     margin-bottom: @size-10;
+    .text-30-bold;
   }
 
   > div:last-of-type {
@@ -1448,6 +1462,12 @@
 .RammPositionSection {
   display: flex;
   flex-flow: column nowrap;
+  margin-top:@size-24;
+  margin-bottom: @size-24;
+  > h3 {
+    .text-30-bold;
+    margin-bottom: @size-10;
+  }
   
   //header
   > div:first-of-type {
@@ -1474,16 +1494,8 @@
   width: 100%;
   overflow: auto;
   .ThemeBorder;
-  background: var(--quaternary-bg);
+  background: var(--primary-bg);
   padding: @size-8;
-
-  &.Long {
-    > thead {
-      > th:nth-of-type(5) {
-
-      }
-    }
-  }
 
   >thead {
     width:100%;
