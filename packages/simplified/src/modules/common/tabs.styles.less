@@ -1,5 +1,17 @@
 @import (reference) '~assets/styles/shared';
 
+.Tab {
+    display: flex;
+    // border-bottom: 0.5px solid var(--theme-border);
+    border-top-right-radius: var(--theme-primary-radius);
+    border-top-left-radius: var(--theme-primary-radius);
+    background-color: var(--tertiary-bg);
+}
+
 .Active {
-    border-bottom: @size-2 solid var(--color-brand);
+    border: 0.5px solid var(--theme-border);
+
+    border-bottom: none;
+    margin-bottom: -1px;
+    background-color: var(--secondary-bg);
 }

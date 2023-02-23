@@ -20,7 +20,7 @@ export const TabNavItem: React.FC = ({ id, title, activeTab, setActiveTab }) => 
     };
     
    return (
-      <div onClick={handleClick} className={classNames({ [Styles.Active]: activeTab === id})}>
+      <div onClick={handleClick}>
         { title }
       </div>
     );

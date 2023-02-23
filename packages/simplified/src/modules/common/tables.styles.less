@@ -651,3 +651,52 @@
 .MarginTop {
   margin-top: @size-24;
 }
+
+.InfoTable {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 0px;
+  border: 0.5px solid var(--theme-border);
+  border-radius: 8px;
+  background: var(--tertiary-bg);
+
+  > div:nth-of-type(even) {
+    border-bottom: 0.5px solid var(--theme-border);
+    border-left: 0.5px solid var(--theme-border);
+  }
+
+  > div:nth-of-type(odd) {
+    border-right: 0.5px solid var(--theme-border);
+    border-bottom: 0.5px solid var(--theme-border);
+  }
+
+
+  > div {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-between;
+    padding: @size-16;
+
+    > div:first-of-type {
+      font-size: @size-14;
+      font-weight: 500;
+      margin-bottom: @size-10;
+
+      color: var(--primary-text);
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      flex-flow: row nowrap;
+
+      > span:first-of-type {
+        margin-right: @size-8;
+      }
+    }
+    > div:last-of-type {
+      font-size: @size-24;
+      font-weight: 500;
+
+      color: var(--primary-text);
+    }
+  }
+}

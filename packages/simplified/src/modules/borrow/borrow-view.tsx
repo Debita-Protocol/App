@@ -5,7 +5,7 @@ import { useDataStore2, useUserStore } from "@augurproject/comps"
 import Styles from "./borrow-view.styles.less";
 
 import classNames from "classnames";
-import {TabContent, TabNavItem} from "./Tabs";
+import {TabContent, TabNavItem} from "../common/tabs";
 import { InstrumentInfos, VaultInfos, CoreInstrumentData, PoolInstrument, CoreMarketInfos} from "@augurproject/comps/build/types"
 import { PoolCard, LoadingPoolCard } from "./PoolCard";
 import { LoanCard } from "./UserLoanCard";

@@ -1035,6 +1035,10 @@ export const getRammData = async (
         const longZCBBalance = await longZCBContract.balanceOf(account);
         const shortZCBBalance = await shortZCBContract.balanceOf(account);
 
+        console.log("longZCB:", longZCBBalance.toString());
+        console.log("shortZCB:", shortZCBBalance.toString());
+
+
         zcbBalances[key] = {
             longZCB: toDisplay(longZCBBalance.toString()),
             shortZCB: toDisplay(shortZCBBalance.toString())
@@ -1193,6 +1197,7 @@ export const getRammData = async (
                 // removableCollateral: removableCollaterals
             };
         }
+        console.log("zcbBalances: ", zcbBalances);
     }))
 
     return {
@@ -1506,13 +1511,13 @@ export const poolAddInterest = async (
 
 // scripts
 
-const scriptVaultNames = ["ETH Options Vault", "USDC Lending Pool Vault"]
+const scriptVaultNames = ["ETH Vault", "USDC Vault"]
 const scriptCashAddresses = [weth_address, usdc_address]
 
 const fakeVaults = [
     {
         vaultId: 1,
-        description: "ETH Options Vault",
+        description: "ETH Vault",
         cash: weth_address,
         onlyVerified: false,
         r: "0",
@@ -1531,7 +1536,7 @@ const fakeVaults = [
     },
     {
         vaultId: 2,
-        description: "USDC Lending Pool Vault",
+        description: "USDC Vault",
         cash: usdc_address,
         onlyVerified: false,
         r: "0",
@@ -1593,7 +1598,7 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const vaultFactory = new Contract(vault_factory_address, VaultFactoryData.abi, signer);
     const fetcher = new Contract(fetcher_address, FetcherData.abi, signer);
     const reputationManager = new Contract(reputation_manager_address, ReputationManagerData.abi, signer);
-    const cash = new Contract("0xF44d295fC46cc72f8A2b7d91F57e32949dD6B249", ERC20Data.abi, signer);
+    const cash = new Contract("0x901C639175261533ff4a6EEcDCE6B51a7ABAaD4f", ERC20Data.abi, signer);
     const nft = new Contract("0x8b8f72a08780CB4deA2179d049472d57eB3Fe9e6", TestNFTData.abi, signer);
     const cashFactory = new ContractFactory(CashData.abi, CashData.bytecode, provider.getSigner(account));
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
@@ -1601,11 +1606,14 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
 
     const dataHandler = new Contract(storage_handler_address, StorageHandlerData.abi, signer);
     
+    const weth = new Contract(weth_address, ERC20Data.abi, signer);
 
+    console.log("balanceOf: ", (await cash.balanceOf(account)).toString());
 
-    //tx = await marketManager.callStatic.issuePoolBond("1", new BN(1).shiftedBy(18).toFixed(0));
+    // set the allowance of the marketmanager to 0 
+    // tx = await weth.approve(market_manager_address, "0");
+    
     //console.log("Contract setup: ", await dataHandler.viewCurrentPricing("1"));
-    console.log("instrumentDatas: ", await dataHandler.InstrumentDatas("1"));
     //let creditline = new Contract("0x0Ea9e22BC54b08Cc25aFdef0e01ce1e8BC50c044", CreditlineData.abi, provider.getSigner(account));
     //tx =  await creditline.repay(new BN(1).shiftedBy(18).toFixed(0));
     // console.log("totalOwed: ", await creditline.loanStatus())

@@ -834,9 +834,9 @@ export interface EstimateTradeResult {
   outputValue: string;
   maxProfit: string;
   tradeFees: string;
-  remainingShares?: string;
   ratePerCash: string;
   priceImpact: string;
+  remainingShares?: string;
   outcomeShareTokensIn?: string[];
   maxSellAmount?: string;
   debt?: string; 

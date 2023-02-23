@@ -199,7 +199,7 @@ export const approveERC20 = async (
   spender: string,
   loginAccount: LoginAccount,
   amount: string = String(new BN(2 ** 255).minus(1).toFixed())
-) => {
+): Promise<{tx:any, response: TransactionResponse}> => {
   const { chainId, account, library } = loginAccount;
   if (!spender) {
     console.error("no spender");
@@ -220,7 +220,7 @@ export const approveERC20 = async (
       gasLimit: 1000000,
     });
     const { hash } = response;
-    return {
+    return {tx:{
       hash,
       chainId: String(chainId),
       addedTime: new Date().getTime(),
@@ -230,7 +230,7 @@ export const approveERC20 = async (
       from: account,
       message: `Approve ${approvingName || "for use"}`,
       approval: { tokenAddress: tokenAddress, spender: spender },
-    };
+    }, response };
   } catch (error) {
     console.debug("Failed to approve token", error);
     throw error;
@@ -297,7 +297,7 @@ export async function estimateTrade(
   // open: boolean,
   issue: boolean = false,
   isLimit: boolean = false,
-  //orderPrice
+  orderPrice
 ): Promise<EstimateTradeResult | string> {
 
   const marketmanager = new ethers.Contract(
@@ -313,22 +313,30 @@ export async function estimateTrade(
   let priceImpact;
 
   if (isLimit) {
-    //const orderManager = new ethers.Contract(order_manager_address, orderManagerAbi["abi"], getProviderOrSigner(library, account));
-    if (isShort) {
-      // return {}
-    } else {
-      // return {}
+    const orderManager = new ethers.Contract(order_manager_address, orderManagerAbi["abi"], getProviderOrSigner(library, account));
+    try {
+      console.log(
+        "amount: ", amount,
+         "orderPrice: ", orderPrice
+      )
+      const order = await orderManager.callStatic.submitOrder(marketId, new BN(amount).shiftedBy(18).toFixed(0), !isShort, new BN(orderPrice).shiftedBy(18).toFixed(0));
+    } catch (e) {
+      error = e;
+    }
+    console.log("limit error", error);
+    if (error != null) {
+      return error?.data?.message;
     }
 
     // const orderId = await orderManager.callStatic.submitOrder();
     return {
-      tradeFees: "0",
-      averagePrice: "0",
-      maxProfit: "0",
-      ratePerCash: "0",
-      priceImpact: "0",
-      outputValue: "0"
-    };
+      averagePrice: "",
+      outputValue: "",
+      maxProfit: "",
+      tradeFees: "",
+      ratePerCash: "",
+      priceImpact: ""
+    }
   }
 
   if (isLevered && leverageFactor > 1 && !isShort) {
@@ -342,12 +350,16 @@ export async function estimateTrade(
         console.log("error: ", e);
         error = e
       });
-      console.log('result', result);
+
+      if (error != null) {
+        return error?.data?.message
+      }
+      console.log('result:', result.toString());
       let issueQty = new BN(result.toString()).shiftedBy(-18).toFixed(4);
       const avgPrice = trimDecimalValue(String(Number(amount) * Number(leverageFactor) / Number(issueQty)));
 
       return {
-        outputValue: result, //issueqty
+        outputValue: issueQty,
         tradeFees: "0",
         averagePrice: avgPrice,
         maxProfit, 
@@ -555,8 +567,10 @@ export async function tradeZCB(
   let scaledAmount = new BN(Number(amount)).shiftedBy(18).toFixed(0);
 
   if (issue) {
-    console.log('issue???', marketId);
-    tx = await marketmanager.issuePoolBond(marketId, scaledAmount);
+    if (long) {
+      console.log('issue???', marketId);
+      tx = await marketmanager.issuePoolBond(marketId, scaledAmount);
+    }
   }
 
   else {
@@ -3504,7 +3518,6 @@ export const getERC20Allowance = async (
   const contract = new ethers.Contract(tokenAddress, cashabi["abi"], getProviderOrSigner(provider, account));
   // const contract = getErc20Contract(tokenAddress, provider, account);
   const result = await contract.allowance(account, spender);
-  console.log('allowance result', result.toString());
   const allowanceAmount = String(new BN(String(result)));
 
   return allowanceAmount;

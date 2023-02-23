@@ -508,6 +508,36 @@ export const PositionTable = ({
   );
 };
 
+export interface ValueLabelPair {
+  value: string;
+  label: string;
+  tooltip?: string;
+}
+
+export const InfoTable = ({
+  dataPairs
+}: {
+  dataPairs: ValueLabelPair[]
+}): React.FC => {
+  return (
+    <div className={Styles.InfoTable}>
+      {dataPairs.map((pair, index) => (
+        <div key={index} >
+          <div>
+            <span>
+              {pair.label}
+            </span>
+            {pair.tooltip && generateTooltip(pair.tooltip, pair.label )}
+          </div>
+          <div>
+            {pair.value}
+          </div>
+      </div>
+    ))}
+    </div>
+  )
+}
+
 // TODO: the "40%"" below should be replaced with a real rewards calc to
 // provide a 0%-100% string value to fill the progress bar.
 export const BonusReward = ({
