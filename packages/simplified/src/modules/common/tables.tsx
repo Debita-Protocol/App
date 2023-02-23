@@ -520,13 +520,14 @@ export const InfoTable = ({
   dataPairs: ValueLabelPair[]
 }): React.FC => {
   return (
-    <div>
+    <div className={Styles.InfoTable}>
       {dataPairs.map((pair, index) => (
-        <div key={index} className={Styles.InfoTable}>
+        <div key={index} >
           <div>
             <span>
               {pair.label}
             </span>
+            {pair.tooltip && generateTooltip(pair.tooltip, pair.label )}
           </div>
           <div>
             {pair.value}

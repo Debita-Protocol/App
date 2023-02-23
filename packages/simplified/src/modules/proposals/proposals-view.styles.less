@@ -9,11 +9,11 @@
     > section:first-of-type {
         display: flex;
         flex-flow: row nowrap;
-        width: 90%;
+        width: 100%;
         display: flex;
         flex-flow: row nowrap;
         justify-content: flex-start;
-        border-bottom: @size-2 solid var(--theme-border);
+        border-bottom: @size-1 solid var(--theme-border);
         margin-bottom:@size-16;
         > div {
             padding:@size-8;
@@ -21,10 +21,6 @@
             font-size: @size-30;
             // .text-24-semi-bold;
             height:100%;
-            border-bottom: @size-2 solid var(--theme-border);
-            &.Active {
-                border-bottom: @size-2 solid var(--color-brand);
-              }
         }
         
     }

@@ -5,7 +5,7 @@ import makePath from "./make-path";
 import makeQuery from "./make-query";
 // @ts-ignore
 import Styles from "./proposals-view.styles.less";
-import {TabNavItem, TabContent} from "./tabs";
+import {TabNavItem, TabContent} from "../common/tabs";
 import CreditLineProposalView from "../creditline-proposal/creditline-proposal-view";
 import GeneralInstrumentForm from "./general-instrument-form";
 import PoolProposalView from "../pool-proposal/pool-proposal-view";

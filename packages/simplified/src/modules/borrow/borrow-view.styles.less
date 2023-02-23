@@ -11,16 +11,9 @@
       display: flex;
       flex-flow:row nowrap;
       justify-content:flex-start;
+      width: 100%;
+      border-bottom: @size-1 solid var(--theme-border);
       // padding-left:@size-10;
-      > div {
-        font-weight:@weight-bold;
-        font-size: @size-30;
-        padding: @size-8 @size-16 0;
-        border-bottom: @size-2 solid var(--primary-text);
-        &.Active {
-          border-bottom: @size-2 solid var(--color-brand);
-        }
-      }
     }
   }
 

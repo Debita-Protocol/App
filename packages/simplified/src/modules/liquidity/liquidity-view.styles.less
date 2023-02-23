@@ -206,7 +206,7 @@
 
         >span:first-of-type {
           font-size: @size-22;
-          font-weight: 700;
+          font-weight: 500;
           color: var(--primary-text);
           line-height: 140%;
 
@@ -639,7 +639,7 @@
   display: flex;
   flex-flow: column nowrap;
   width: 100%;
-  .ThemeBorder;
+  // .ThemeBorder;
   // width: fit-content;
   background-color: var(--primary-bg);
   border-top : @size-1 solid var(--theme-border);
@@ -746,16 +746,16 @@
   }
 
   > div:first-of-type {
-    display: flex;
-    flex-flow: column nowrap;
-    > div {
-      display: flex;
-      flex-flow: row nowrap;
-      margin-bottom: @size-16;
-      > div {
-        margin-right: @size-30;
-      }
-    }
+    // display: flex;
+    // flex-flow: column nowrap;
+    // > div {
+    //   display: flex;
+    //   flex-flow: row nowrap;
+    //   margin-bottom: @size-16;
+    //   > div {
+    //     margin-right: @size-30;
+    //   }
+    // }
   }
   // border-top: @size-1 solid var(--theme-border);
   // width: 100%;
@@ -926,28 +926,16 @@
   grid-template-columns: 1fr 1fr;
   width: 100%;
   &.Trusted {
-    > div:first-of-type {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-gap: @size-20;
-    }
+    min-width: 1px;
   }
 
-  >div:first-of-type{
-    margin-bottom: @size-20;
+  > div:first-of-type {
+    margin-top: @size-20;
     grid-column: 1 / span 2;
-    grid-row: 1;
-    display: flex;
-    width:100%;
-    flex-flow: row nowrap;
-    justify-content: flex-start;
-    > div {
-      margin-right: @size-24;
-    }
   }
 
   >div:nth-of-type(2) {
-    grid-column: 1 / span2;
+    grid-column: 1 / span 2;
     grid-row: 2;
     width:100%;
   }

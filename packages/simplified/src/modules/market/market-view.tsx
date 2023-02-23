@@ -669,13 +669,13 @@ const MarketView = ({ defaultMarket = null }) => {
       [Styles.NoTradingForm]: (instrType == IType.FIXED && !duringAssessment),
     })}>
       {/* <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} /> */}
-      <section>
+      <section class="mt-200">
         <NetworkMismatchBanner />
         {!(reputationScore && isManager) && <ManagerWarning />}
 
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
-          <RammCategoryLabel big text={instrumentTypeWord} />
+          <RammCategoryLabel text={instrumentTypeWord} />
           <div>
             {!!instruments[Id]?.name && <h1>{instruments[Id]?.name}</h1>}
             {isPool && <InstrumentLink id={instruments[Id]?.marketId} path={"pool"} label={"To Pool"} paramName={"id"} />}
