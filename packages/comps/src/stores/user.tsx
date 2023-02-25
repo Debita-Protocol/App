@@ -62,13 +62,20 @@ export const UserProvider = ({ children }: any) => {
     }
 
     getUserData().then((ramm)=> {
-      isMounted && updateRammData(ramm)
+      if (ramm.reputationScore === "") {
+        return;
+      } else if (isMounted) {
+        updateRammData(ramm);
+      }
     })
 
     intervalId = setInterval(() => {
       getUserData().then((ramm) => {
-        isMounted &&
-          updateRammData(ramm)
+        if (ramm.reputationScore === "") {
+          return;
+        } else if (isMounted) {
+          updateRammData(ramm);
+        }
       });
     }, 1200);
 

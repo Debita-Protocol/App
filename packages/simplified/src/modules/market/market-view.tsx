@@ -525,7 +525,6 @@ const MarketView = ({ defaultMarket = null }) => {
     actions: { addTransaction },
     ramm: { reputationScore, vaultBalances, zcbBalances }
   } = useUserStore();
-  const isManager = reputationScore > 0;
   const Id = Number(marketId)
   useEffect(() => {
     if (!market) {
@@ -703,7 +702,7 @@ const MarketView = ({ defaultMarket = null }) => {
       {/* <SEO {...MARKETS_LIST_HEAD_TAGS} title={instruments[Id]?.name[0]} ogTitle={instruments[Id]?.name[0]} twitterTitle={instruments[Id]?.name[0]} /> */}
       <section>
         <NetworkMismatchBanner />
-        {!(reputationScore && isManager) && <ManagerWarning />}
+        {!(reputationScore && reputationScore > 0) && <ManagerWarning />}
 
         {isMobile && <ReportingStateLabel {...{ reportingState, big: true }} />}
         <div className={Styles.topRow}>
