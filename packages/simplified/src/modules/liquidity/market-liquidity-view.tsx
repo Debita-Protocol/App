@@ -17,6 +17,7 @@ import { InfoNumbers, ApprovalButton } from "../market/trading-form";
 import { BigNumber as BN } from "bignumber.js";
 import { TabNavItem, TabContent } from "../common/tabs"
 import _ from "lodash";
+import { PieChart } from 'react-minimal-pie-chart';
 import {
   ContractCalls,
   useDataStore,
@@ -56,6 +57,7 @@ import { constants } from "buffer";
 import { VaultChartSection, VaultHistoryChart } from "../common/charts";
 import { getDayFormat, getTimeFormat } from "@augurproject/comps/build/utils/date-utils";
 import { formatCashPrice, optionsBlank } from "@augurproject/comps/build/utils/format-number";
+import { round } from "utils/helpers";
 
 
 const {
@@ -161,12 +163,12 @@ const getLeverageBreakdown = (
       tooltipText: "Tooltip",
       tooltipKey: "tooltip",
     },
-    {
-      label: "Underlying borrowed",
-      value: "0",
-      tooltipText: "Tooltip",
-      tooltipKey: "tooltip",
-    },
+    // {
+    //   label: "Underlying borrowed",
+    //   value: "0",
+    //   tooltipText: "Tooltip",
+    //   tooltipKey: "tooltip",
+    // },
     {
       label: "Vault Shares Owed",
       value: "0",
@@ -244,10 +246,11 @@ export const MarketLiquidityView = () => {
   })
   filteredInstruments = filteredInstruments.filter((instrument) => instrument.vaultId == vaultId);
   const [exposurePercentages, setExposurePercentages] = useState<number[]>([]);
+  const [APRs, setAPRs] = useState<number[]>([]);
+  const [firstLosses, setFirstLosses] = useState<number[]>([]);
 
   if (filteredInstruments.length > 0 && exposurePercentages.length == 0) {
-    let x = Array(filteredInstruments.length).fill(0);
-    x[0] = 100;
+    let x = Array(filteredInstruments.length).fill(100 / filteredInstruments.length);
     setExposurePercentages(x);
   }
 
@@ -380,7 +383,11 @@ export const MarketLiquidityView = () => {
             </article> */}
             <section>
               {Object.values(filteredInstruments).map((instrument: any, index) => (
-                <VaultInstrumentCard instrument={instrument} exposurePercentages={exposurePercentages} i={index} setExposurePercentages={setExposurePercentages}/>
+                <VaultInstrumentCard instrument={instrument} 
+                exposurePercentages={exposurePercentages} i={index} setExposurePercentages={setExposurePercentages}
+                firstLosses={firstLosses} setFirstLosses={setFirstLosses}
+                APRs={APRs} setAPRs={setAPRs} amount={amount}
+                />
               ))}
             </section>
           </section>
@@ -389,7 +396,11 @@ export const MarketLiquidityView = () => {
 
         <MintForm {...{
           vaultId, selectedAction, setSelectedAction, amount, setAmount,
-          underlying_address, exchangeRate: Number(exchangeRate)
+          underlying_address, exchangeRate: Number(exchangeRate),
+          exposurePercentages,
+          filteredInstruments,
+          firstLosses,
+          APRs,
         }} />
       </section>
       <div>
@@ -644,6 +655,10 @@ interface MintFormProps {
   setAmount: (string) => void;
   underlying_address: string;
   exchangeRate: number;
+  exposurePercentages: number[];
+  filteredInstruments: any[];
+  firstLosses: number[];
+  APRs: number[];
 }
 
 const MintForm = ({
@@ -653,7 +668,11 @@ const MintForm = ({
   amount,
   setAmount,
   underlying_address,
-  exchangeRate
+  exchangeRate,
+  exposurePercentages,
+  filteredInstruments,
+  firstLosses,
+  APRs
 }: MintFormProps) => {
   const {
     account,
@@ -663,6 +682,18 @@ const MintForm = ({
     ramm: { reputationScore, vaultBalances, zcbBalances }
   } = useUserStore();
   const [vaultAllowance, setVaultAllowance] = useState(false);
+  const colors = ["#1f71b5", "#d81159", "#ffbc42", "#73d2de"];
+
+  const pieData = filteredInstruments.length > 0 ? exposurePercentages.map((p, i) => (
+    {
+      value: p,
+      color: colors[i],
+      title: filteredInstruments[i].name,
+    }
+  )) : [];
+
+
+  console.log("pieData", pieData);
 
 
   const {
@@ -744,6 +775,17 @@ const MintForm = ({
   // >
   //   {isMint ? "Manage Leverage Form" : isRemove ? "Mint Form" : "Redeem Form"}
   // </button>)}
+  let totalAPR = 0;
+  APRs.forEach((apr, index) => {
+    totalAPR += Number(apr) * exposurePercentages[index] / 100;
+  })
+
+  let totalFirstLoss = 0;
+  firstLosses.forEach((firstLoss, index) => {
+    totalFirstLoss += Number(firstLoss)
+    })
+  console.log("totalFirstLoss", totalFirstLoss)
+  console.log("firstLosses", firstLosses)
   return (
     <section
       className={classNames(Styles.LiquidityForm, {
@@ -854,7 +896,7 @@ const MintForm = ({
             balance={userMaxAmount}
           //error={hasAmountErrors}
           />)}
-          {isAdd && <Leverage leverageFactor={leverageFactor} setLeverageFactor={setLeverageFactor} />}
+          {/* {isAdd && <Leverage leverageFactor={leverageFactor} setLeverageFactor={setLeverageFactor} />} */}
           {
             isAdd && leverageFactor > 0 && (
               <WarningBanner
@@ -871,13 +913,13 @@ const MintForm = ({
               {isAdd && (<div className={Styles.Breakdown}>
                 <InfoNumbers
                   infoNumbers={[
-                    {
-                      label: "Underlying Borrowing",
-                      value: (Number(leverageFactor) * Number(amount)).toString()
-                    },
+                    // {
+                    //   label: "Underlying Borrowing",
+                    //   value: (Number(leverageFactor) * Number(amount)).toString()
+                    // },
                     {
                       label: "Total First Loss Capital Provided",
-                      value: Number(amount).toString()
+                      value: round(String(totalFirstLoss),3)
                     },
                     // {
                     //   label: "Total Underlying Exposure",
@@ -891,8 +933,8 @@ const MintForm = ({
                     // },
 
                     {
-                      label: "Estimated APR",
-                      value: String((leverageFactor + 1) * Number(vaults[vaultId].goalAPR)),
+                      label: "Total Estimated APR",
+                      value: round(String(totalAPR),3),
                       tooltipText: "(Vault Estimated APR - borrow rate) * leverage multiplier ",
                       tooltipKey: "estimatedapr",
                       // isRemove? (Number(amount)* exchangeRate).toString()
@@ -945,6 +987,27 @@ const MintForm = ({
               </div>
             </>
           )}
+          {isAdd && (
+            <div className={Styles.PieSection}>
+              <label>
+                Instrument Exposure Breakdown:
+              </label>
+              <PieChart data={pieData} radius={50} totalValue={100} lengthAngle={360} label={(e: any) => {
+                console.log("e: ", e)
+                return String(e.dataEntry.title);
+              }}
+                labelPosition={50}
+                labelStyle={{
+                  fontSize: '0.3rem',
+                  fontFamily: 'Inter',
+                  color: '#FFFFFF',
+                }}
+              />
+            </div>
+
+          )
+
+          }
           <div className={Styles.Breakdown}>
             {isRemove && (
               <WarningBanner

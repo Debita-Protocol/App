@@ -1153,7 +1153,8 @@ export const CreditlineCollateralCard = ({ instrument, height = 80, width = 80 }
 }
 
 
-export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExposurePercentages }: any): React.FC => {
+export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExposurePercentages, 
+  firstLosses, setFirstLosses, APRs, setAPRs, amount }: any): React.FC => {
 
   const {
     settings: { timeFormat, theme },
@@ -1181,8 +1182,10 @@ export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExp
 
   const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
 
-  const [seniorPercentage, setSeniorPercentage] = useState(100);
+  // fake data
+  const [seniorAPR, setSeniorAPR] = useState(round(String(Math.random() % 3), 2))
 
+  const [seniorPercentage, setSeniorPercentage] = useState(100);
   let InstrumentDetails;
   switch (type) {
     case 0:
@@ -1201,7 +1204,24 @@ export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExp
       )
       break;
   }
+  useEffect(
+    () => {
+      setFirstLosses((prev) => {
+        let FL = prev;
+        FL[i] = round(String(Number(amount)*exposurePercentages[i]/100 * (100-Number(seniorPercentage)) / 100),2)
+        return FL;
+      })
+      
+    }, [exposurePercentages, firstLosses, seniorPercentage, amount]
+  )
 
+  useEffect (()=>{
+    setAPRs((prev)=>{
+      let APR = prev;
+      APR[i] = round(String(Number(seniorAPR) + Number(100 - seniorPercentage) / 100),2)
+      return APR;
+    })
+  },[seniorAPR, seniorPercentage])
   return (
     <article
       className={classNames(Styles.VaultInstrumentMarketCard, {
@@ -1212,85 +1232,92 @@ export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExp
       })}
     >
       <section>
-        <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
-          <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{ height: 40, width: 40 }} />
-          <span>
-            <span>{instrument.name}</span>
-            <RammCategoryLabel text={instrument?.isPool ? "  Perpetual" : "Fixed Term"} />
-          </span>
-        </MarketLink>
-
-        <ValueLabel label="TVL" value={handleValueRamm(instrument?.balance.toString())}/>
-        <ValueLabel label="APR" value={roundDown((((1 + Number(instrument?.seniorAPR) / 1e18) ** 31536000) - 1) * 100, 2) + "%"}/>
-        <ValueLabel label="First Loss Capital" value={handleValueRamm(instrument?.managerStake.toString())}/>
-        <ValueLabel label="Risk Score" value={score}/>
         <div>
-        <DualLabelSlider
-          max={100} 
-          min={0} 
-          step={1} 
-          append={"%"} 
-          label1={"Senior"} 
-          label2={"Junior"} 
-          value={seniorPercentage} 
-          onSetValue={setSeniorPercentage}
-        />
-        <SingleLabelSlider
-          max={100} 
-          min={0} 
-          step={1} 
-          append={"%"} 
-          label={"Exposure"}
-          value={exposurePercentages[i]} 
-          onSetValue={(val) => {
-            const newExposurePercentages = [...exposurePercentages];
-            let initial = exposurePercentages[i];
-            let j = i == exposurePercentages.length -  1 ? 0 : i + 1;
-            if (val > initial) {
-              newExposurePercentages[j] = newExposurePercentages[j] - (val - initial);
-            } else {
-              newExposurePercentages[j] = newExposurePercentages[j] + (initial - val);
-            }
-            newExposurePercentages[i] = val;
-            if (newExposurePercentages[j] < 0 || newExposurePercentages[i] < 0 || newExposurePercentages[j] > 100 || newExposurePercentages[i] > 100) {
-              return;
-            }
-            setExposurePercentages(newExposurePercentages);
-          }}
-        />
-        </div>
-    
-        <div>
-          <div className={Styles.MobileLabel}>
-            <span>Approved</span>
-            <span>{(approved ? "  Yes" : "No")}</span>
+          <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+            <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{ height: 50, width: 50 }} />
+            <span>
+              <span>{instrument.name}</span>
+              <RammCategoryLabel text={instrument?.isPool ? "  Perpetual" : "Fixed Term"} />
+            </span>
+          </MarketLink>
+          <div>
+            <ValueLabel label="TVL" value={handleValueRamm(instrument?.balance.toString())}/>
+            <ValueLabel label="Senior APR" value={seniorAPR + "%"}/>
+            <ValueLabel label="User APR" value={ APRs[i] + "%"}/>
+            <ValueLabel label="Total First Loss Capital" value={handleValueRamm(instrument?.managerStake.toString())}/>
+            <ValueLabel label="User First Loss Capital" value={firstLosses[i]}/>
+            <ValueLabel label="Risk Score" value={score}/>
           </div>
-          {isMobile ?
-            (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
-              <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
-
-              {<SecondaryThemeButton
-                text={instrument?.name}
-                small
-                disabled={false}
-                action={() =>
-                  history.push({
-                    pathname: makePath(MARKET),
-                    search: makeQuery({
-                      [MARKET_ID_PARAM_NAME]: marketId,
-                    }),
-                  })
-                }
-              />}
-
-            </MarketLink>)
-
-            : (
-              <label onClick={() => setExpanded(!expanded)}>
-                <SizedChevronFlip pointDown={expanded} width={40} height={40} />
-              </label>
-            )}
         </div>
+        <div>
+          <div>
+          <DualLabelSlider
+            max={100} 
+            min={0} 
+            step={1} 
+            append={"%"} 
+            label1={"Senior"} 
+            label2={"Junior"} 
+            value={seniorPercentage} 
+            onSetValue={setSeniorPercentage}
+          />
+          <SingleLabelSlider
+            max={100} 
+            min={0} 
+            step={1} 
+            append={"%"} 
+            label={"Exposure"}
+            value={exposurePercentages[i]} 
+            onSetValue={(val) => {
+              const newExposurePercentages = [...exposurePercentages];
+              let initial = exposurePercentages[i];
+              let j = i == exposurePercentages.length -  1 ? 0 : i + 1;
+              if (val > initial) {
+                newExposurePercentages[j] = newExposurePercentages[j] - (val - initial);
+              } else {
+                newExposurePercentages[j] = newExposurePercentages[j] + (initial - val);
+              }
+              newExposurePercentages[i] = val;
+              if (newExposurePercentages[j] < 0 || newExposurePercentages[i] < 0 || newExposurePercentages[j] > 100 || newExposurePercentages[i] > 100) {
+                return;
+              }
+              setExposurePercentages(newExposurePercentages);
+            }}
+          />
+          </div>
+          <div>
+            <div className={Styles.MobileLabel}>
+              <span>Approved</span>
+              <span>{(approved ? "  Yes" : "No")}</span>
+            </div>
+            {isMobile ?
+              (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+                <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+
+                {<SecondaryThemeButton
+                  text={instrument?.name}
+                  small
+                  disabled={false}
+                  action={() =>
+                    history.push({
+                      pathname: makePath(MARKET),
+                      search: makeQuery({
+                        [MARKET_ID_PARAM_NAME]: marketId,
+                      }),
+                    })
+                  }
+                />}
+
+              </MarketLink>)
+
+              : (
+                <label onClick={() => setExpanded(!expanded)}>
+                  <SizedChevronFlip pointDown={expanded} width={40} height={40} />
+                </label>
+              )}
+          </div>
+        </div>
+
 
       </section>
 
