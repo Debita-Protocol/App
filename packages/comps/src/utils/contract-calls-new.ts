@@ -1604,11 +1604,13 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
     const nftFactroy = new ContractFactory(TestNFTData.abi, TestNFTData.bytecode, provider.getSigner(account));
     let tx;
 
-    const dataHandler = new Contract(storage_handler_address, StorageHandlerData.abi, signer);
-    
-    const weth = new Contract(weth_address, ERC20Data.abi, signer);
+    console.log("isVerified: ", await controller.isVerified("0x58605D60E2964Aa36D6cB4da23d9f9dDeC9Bc4f7"));
 
-    console.log("balanceOf: ", (await cash.balanceOf(account)).toString());
+    // const dataHandler = new Contract(storage_handler_address, StorageHandlerData.abi, signer);
+    
+    // const weth = new Contract(weth_address, ERC20Data.abi, signer);
+
+    // console.log("balanceOf: ", (await cash.balanceOf(account)).toString());
 
     // set the allowance of the marketmanager to 0 
     // tx = await weth.approve(market_manager_address, "0");
@@ -1644,19 +1646,28 @@ export const ContractSetup = async (account: string, provider: Web3Provider) => 
 
     // await tx.wait();
 
-    // let early_managers = ["0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
-    // "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
-    // "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
-    // "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
-    // "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
-    // "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
-    // "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
-    // "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838"]
+//     let early_managers = [
+//         "0x4D53611dd18A1dEAceB51f94168Ccf9812b3476e",
+// "0x53d09055E5B96B676816b1bCBBc20fF00df6F8Ab",
+// "0x27D4E6Fe4F5acA5EcCf4a1C7694AcE7451060BfC",
+// "0x637Fed24D31822d36a74FD9e35fa5b9F05820EF0",
+// "0x92dAD04BEDd8B6F26042C5eC2CbF24423716Eb66",
+// "0xF5c7e89021183cb51409829f07EedB855c6b83DE",
+// "0x688aa4F5F3182bd7dEf7c2087Bf29a67354973ae",
+// "0xd0793C144c7E09c3D7e0da7a8384c31D0577f838",
+// "0xBF96648F3F1E3696DEB00ACac41A7fA1b00d2901",
+// "0x58605D60E2964Aa36D6cB4da23d9f9dDeC9Bc4f7",
+// "0x621e5a7859008deed8165666d8a19102a5d6d82b",
+// "0xeDb278b7C170dFa91A9AbF288A0ABe9B9C5848A8",
+// "0x3B499967bD9aa035E53610A88A2c976f3e899B17",
+// "0xe908237e7e5b7Dda98F52BAde58C917f23fcb1c5",
+// "0x857D8F7Bf5aCF623147D322bba1A142b44fA076C"
+//     ]
         
-    // for (let i=0; i < early_managers.length; i++) {
-    //     let tx = await controller.verifyAddress(early_managers[i]);
-    //     await tx.wait();
-    // }
+//     for (let i=0; i < early_managers.length; i++) {
+//         let tx = await controller.verifyAddress(early_managers[i]);
+//         await tx.wait();
+//     }
 
     // await scriptSetup(account, provider);
 }

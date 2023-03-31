@@ -44,8 +44,9 @@ import { RammCategoryLabel, RammValueLabel, ValueLabel } from "@augurproject/com
 import { ExternalLink, VaultLink } from "@augurproject/comps/build/utils/links/links";
 import { getMarketStage, getMarketStageLabel, round } from "utils/helpers";
 import ChevronFlip, { SizedChevronFlip } from "modules/common/chevron-flip";
-import { InstrumentStatusSlider } from "modules/common/slider";
+import { DualLabelSlider, InstrumentStatusSlider, SingleLabelSlider } from "modules/common/slider";
 import { fetchERC20Symbol } from "@augurproject/comps/build/utils/contract-calls-new";
+import { handleValueRamm } from "@augurproject/comps/build/utils/format-number";
 
 const { ADD, CREATE, REMOVE, ALL_MARKETS, OTHER, POPULAR_CATEGORIES_ICONS, SPORTS, MARKET_ID_PARAM_NAME } = Constants;
 const {
@@ -1149,4 +1150,152 @@ export const CreditlineCollateralCard = ({ instrument, height = 80, width = 80 }
   // principalRepayed: string;
   // interestRepayed: string;
   // totalOwed: string;
+}
+
+
+export const VaultInstrumentCard = ({ instrument, exposurePercentages, i, setExposurePercentages }: any): React.FC => {
+
+  const {
+    settings: { timeFormat, theme },
+  } = useSimplifiedStore();
+  const { markets, vaults } = useDataStore2();
+
+  const [expanded, setExpanded] = useState(false);
+
+  const { actions: { setModal }, isMobile } = useAppStatusStore();
+  const history = useHistory();
+
+  // const { vaults: vaults, instruments: instruments }: { vaults: VaultInfos, instruments: InstrumentInfos} = useDataStore2();
+  const { marketId, vaultId } = instrument;
+  const type = Number(instrument?.instrumentType);
+
+
+  const instrumentField = InstrumentField({ instrumentType: Number(type), instrument: instrument });
+  const instrumentOverview = InstrumentOverviewFormat({ instrumenType: Number(type) })
+  const instrumentDescription = InstumentDescriptionFormat({ instrumenType: Number(type), fields: instrumentField });
+  const instrumentBreakDown = InstrumentBreakDownFormat({ instrumentType: type, field: instrumentField });
+
+  const vault = useMemo(() => vaults[instrument?.vaultId], [instrument, vaults]);
+  const market = useMemo(() => markets[marketId], [marketId, markets]);
+  const [score, setScore] = useState(round(String(Math.random() % 1), 2));
+
+  const approved = (!markets[marketId]?.duringAssessment && markets[marketId]?.alive)
+
+  const [seniorPercentage, setSeniorPercentage] = useState(100);
+
+  let InstrumentDetails;
+  switch (type) {
+    case 0:
+      // creditline
+      InstrumentDetails = (
+        <CreditlineDropDownCard instrument={instrument} vault={vault} market={market} />
+      )
+      break;
+    case 1:
+      // covered call
+      break;
+    case 2:
+      // lending pool
+      InstrumentDetails = (
+        <PoolDropDownCard instrument={instrument} vault={vault} market={market} />
+      )
+      break;
+  }
+
+  return (
+    <article
+      className={classNames(Styles.VaultInstrumentMarketCard, {
+        [Styles.HasUserLiquidity]: true,
+        [Styles.Expanded]: expanded,
+        [Styles.Final]: true,
+        [Styles.Light]: theme === "Dark" ? false : true
+      })}
+    >
+      <section>
+        <MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+          <img src={Icon_Mapping[vaults[vaultId]?.want?.symbol]} style={{ height: 40, width: 40 }} />
+          <span>
+            <span>{instrument.name}</span>
+            <RammCategoryLabel text={instrument?.isPool ? "  Perpetual" : "Fixed Term"} />
+          </span>
+        </MarketLink>
+
+        <ValueLabel label="TVL" value={handleValueRamm(instrument?.balance.toString())}/>
+        <ValueLabel label="APR" value={roundDown((((1 + Number(instrument?.seniorAPR) / 1e18) ** 31536000) - 1) * 100, 2) + "%"}/>
+        <ValueLabel label="First Loss Capital" value={handleValueRamm(instrument?.managerStake.toString())}/>
+        <ValueLabel label="Risk Score" value={score}/>
+        <div>
+        <DualLabelSlider
+          max={100} 
+          min={0} 
+          step={1} 
+          append={"%"} 
+          label1={"Senior"} 
+          label2={"Junior"} 
+          value={seniorPercentage} 
+          onSetValue={setSeniorPercentage}
+        />
+        <SingleLabelSlider
+          max={100} 
+          min={0} 
+          step={1} 
+          append={"%"} 
+          label={"Exposure"}
+          value={exposurePercentages[i]} 
+          onSetValue={(val) => {
+            const newExposurePercentages = [...exposurePercentages];
+            let initial = exposurePercentages[i];
+            let j = i == exposurePercentages.length -  1 ? 0 : i + 1;
+            if (val > initial) {
+              newExposurePercentages[j] = newExposurePercentages[j] - (val - initial);
+            } else {
+              newExposurePercentages[j] = newExposurePercentages[j] + (initial - val);
+            }
+            newExposurePercentages[i] = val;
+            if (newExposurePercentages[j] < 0 || newExposurePercentages[i] < 0 || newExposurePercentages[j] > 100 || newExposurePercentages[i] > 100) {
+              return;
+            }
+            setExposurePercentages(newExposurePercentages);
+          }}
+        />
+        </div>
+    
+        <div>
+          <div className={Styles.MobileLabel}>
+            <span>Approved</span>
+            <span>{(approved ? "  Yes" : "No")}</span>
+          </div>
+          {isMobile ?
+            (<MarketLink id={marketId?.toString()} dontGoToMarket={false}>
+              <p style={{ fontWeight: 'bold' }}> {bin2String(instrument.name)}</p>
+
+              {<SecondaryThemeButton
+                text={instrument?.name}
+                small
+                disabled={false}
+                action={() =>
+                  history.push({
+                    pathname: makePath(MARKET),
+                    search: makeQuery({
+                      [MARKET_ID_PARAM_NAME]: marketId,
+                    }),
+                  })
+                }
+              />}
+
+            </MarketLink>)
+
+            : (
+              <label onClick={() => setExpanded(!expanded)}>
+                <SizedChevronFlip pointDown={expanded} width={40} height={40} />
+              </label>
+            )}
+        </div>
+
+      </section>
+
+      {expanded && InstrumentDetails}
+
+    </article>
+  );
 }

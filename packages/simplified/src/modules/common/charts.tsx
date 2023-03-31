@@ -107,7 +107,7 @@ interface HighcartsChart extends Highcharts.Chart {
 
 const calculateRangeSelection = (rangeSelection, market) => {
   const marketStart = market.creationTimestamp;
-  console.log("marketStart: ", marketStart)
+  // console.log("marketStart: ", marketStart)
   let { startTime, tick } = RANGE_OPTIONS[rangeSelection];
   if (rangeSelection === 3) {
     // allTime:
@@ -144,10 +144,10 @@ const determineLastPrice = (sortedOutcomeTrades, startTime) => {
 };
 
 const determineLastValue = (sortedOutcomeTrades, startTime) => {
-  console.log("sortedOutcomeTrades: ", sortedOutcomeTrades)
-  console.log(
-    "startTime: ", startTime
-  )
+  // console.log("sortedOutcomeTrades: ", sortedOutcomeTrades)
+  // console.log(
+  //   "startTime: ", startTime
+  // )
   let lastPrice = 0;
   const index = sortedOutcomeTrades.sort((a, b) => b.timestamp - a.timestamp).findIndex((t) => startTime > t.timestamp);
   const sortTS = sortedOutcomeTrades[index]?.timestamp;
@@ -348,7 +348,7 @@ const handleSeries = (priceTimeArray, selectedOutcomes, formattedOutcomes, mostR
       mostRecentTradetime = priceTimeData[length - 1].timestamp;
     }
     const data = priceTimeData.map((pts) => [pts.timestamp, createBigNumber(pts.price).toNumber()]);
-    console.log("data ", data)
+    // console.log("data ", data)
     const outcome = formattedOutcomes[index];
     const baseSeriesOptions = {
       name: outcome.label,
@@ -651,7 +651,7 @@ export const ZCBPriceChartSection = ({ marketId, snapshots }) => {
     setSelectedOutcomes(updates);
   };
   const [selectedOutcomes, setSelectedOutcomes] = useState(formattedOutcomes.map((outcome) => true));
-  console.log("selectedOutcomes: ", selectedOutcomes)
+  // console.log("selectedOutcomes: ", selectedOutcomes)
   const [rangeSelection, setRangeSelection] = useState(3);
   const [showMore, setShowMore] = useState(false);
   return (
@@ -701,7 +701,7 @@ export const ZCBPriceHistoryChart = ({
 }) => {
   const container = useRef(null);
   const priceTimeArray = processZCBPriceTimeData(snapshots, market, rangeSelection);
-  console.log("priceTimeArray: ", priceTimeArray);
+  // console.log("priceTimeArray: ", priceTimeArray);
   const options = useMemo(() => {
     return getZCBOptions({
       maxPrice: createBigNumber(1),
@@ -778,7 +778,7 @@ const processZCBPriceTimeData = (snapshots = [], market, rangeSelection) => {
       amountToUse = FinalTradeOfPeriod.amount;
     }
     const nextPrice = createBigNumber(priceToUse).toFixed(4);
-    console.log("nextPrice: ", nextPrice)
+    // console.log("nextPrice: ", nextPrice)
     longZCBs.push({
       price: nextPrice,
       amount: amountToUse,
@@ -815,12 +815,12 @@ export const VaultChartSection = ({ title, vaultId, snapshots, formattedOutcomes
     setSelectedOutcomes(updates);
   };
   const [selectedOutcomes, setSelectedOutcomes] = useState(formattedOutcomes.map((outcome) => true));
-  console.log("selectedOutcomes: ", selectedOutcomes)
+  // console.log("selectedOutcomes: ", selectedOutcomes)
   const [rangeSelection, setRangeSelection] = useState(3);
   const [showMore, setShowMore] = useState(false);
-  console.log('snapshots: ', snapshots)
+  // console.log('snapshots: ', snapshots)
   let creationTimestamp = snapshots.length > 0 ? Number(_.minBy(_.flatten(snapshots), (item:any) => item.timestamp).timestamp) : 0;
-  console.log("creationTimestamp: ", creationTimestamp)
+  // console.log("creationTimestamp: ", creationTimestamp)
 
   let colors = [1,2,3];
   let gradients = [1,2,3];
@@ -964,7 +964,7 @@ const processVaultTimeData = (transactions = [], formattedOutcomes, creationTime
 
 const calculateVaultRangeSelection = (rangeSelection, creationTimestamp) => {
   const marketStart = creationTimestamp;
-  console.log("marketStart: ", marketStart)
+  // console.log("marketStart: ", marketStart)
   let { startTime, tick } = RANGE_OPTIONS[rangeSelection];
   if (rangeSelection === 3) {
     // allTime:

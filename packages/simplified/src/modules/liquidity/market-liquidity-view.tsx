@@ -49,7 +49,7 @@ import {
   POOL_SORT_TYPE_TEXT,
   INSTRUMENT_SORT_TYPES, INSTRUMENT_SORT_TYPE_TEXT
 } from "../constants";
-import { InstrumentCard, SortableHeaderButton } from "./liquidity-view";
+import { VaultInstrumentCard, SortableHeaderButton } from "./liquidity-view";
 import { useQuery } from '@apollo/client';
 import { GET_VAULT_SNAPSHOTS } from "@augurproject/comps/build/apollo-ramm/queries";
 import { constants } from "buffer";
@@ -243,6 +243,13 @@ export const MarketLiquidityView = () => {
     return instrument
   })
   filteredInstruments = filteredInstruments.filter((instrument) => instrument.vaultId == vaultId);
+  const [exposurePercentages, setExposurePercentages] = useState<number[]>([]);
+
+  if (filteredInstruments.length > 0 && exposurePercentages.length == 0) {
+    let x = Array(filteredInstruments.length).fill(0);
+    x[0] = 100;
+    setExposurePercentages(x);
+  }
 
   const vault = vaults[Number(vaultId)]
 
@@ -251,7 +258,7 @@ export const MarketLiquidityView = () => {
     return <div className={classNames(Styles.MarketLiquidityView)}>Vault Not Found.</div>;
   }
 
-  const {name, description, exchangeRate, want} = vault;
+  const { name, description, exchangeRate, want } = vault;
 
   const vault_address = vault?.address;
   const underlying_address = vault?.want.address;
@@ -353,49 +360,48 @@ export const MarketLiquidityView = () => {
 
       </div>
       <section>
-        <div>
-        <ExchangeChartSection vault={vault} prices={prices}/>
-        <ChartsSection vault={vault} prices={prices}/>
+        <div className={Styles.Instruments}>
+          <h4>Instruments</h4>
+          <section>
+            {/* <article>
+              <span>Instrument Name</span>
+              {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
+                <SortableHeaderButton
+                  {...{
+                    sortType,
+                    setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
+                    sortBy,
+                    text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
+                    key: `${sortType}-sortable-button`,
+                  }}
+                />
+              ))}
+              <span />
+            </article> */}
+            <section>
+              {Object.values(filteredInstruments).map((instrument: any, index) => (
+                <VaultInstrumentCard instrument={instrument} exposurePercentages={exposurePercentages} i={index} setExposurePercentages={setExposurePercentages}/>
+              ))}
+            </section>
+          </section>
         </div>
-        
-      <MintForm {...{
-        vaultId, selectedAction, setSelectedAction, amount, setAmount,
-        underlying_address, exchangeRate: Number(exchangeRate)
-      }} />
-      </section>
 
+
+        <MintForm {...{
+          vaultId, selectedAction, setSelectedAction, amount, setAmount,
+          underlying_address, exchangeRate: Number(exchangeRate)
+        }} />
+      </section>
+      <div>
+        <ExchangeChartSection vault={vault} prices={prices} />
+        <ChartsSection vault={vault} prices={prices} />
+      </div>
 
       {/*<LiquidityForm {...{ market, selectedAction, setSelectedAction, BackToLPPageAction, amount, setAmount }} />
       {selectedAction !== MINT_SETS && selectedAction !== RESET_PRICES && <LiquidityWarningFooter />}*/ }
       {/*<LiquidityWarningFooter />*/}
 
-      <div className={LiqStyles.LiquidityView}>
-        <h4>Instruments</h4>
 
-        <section>
-          <article>
-            <span>Instrument Name</span>
-            {Object.keys(INSTRUMENT_SORT_TYPES).map((sortType) => (
-              <SortableHeaderButton
-                {...{
-                  sortType,
-                  setSortBy: (sortBy) => updatePoolsViewSettings({ sortBy }),
-                  sortBy,
-                  text: INSTRUMENT_SORT_TYPE_TEXT[sortType],
-                  key: `${sortType}-sortable-button`,
-                }}
-              />
-            ))}
-            <span />
-          </article>
-          <section>
-          {Object.values(filteredInstruments).map((instrument: any) => (
-            <InstrumentCard instrument={instrument} />
-          ))}
-          </section>
-        </section>
-      </div>
-      {/* <ChartsSection vault={vault} prices={prices} /> */}
     </div>
   );
 };
@@ -688,7 +694,7 @@ const MintForm = ({
   };
 
   useEffect(() => {
-    const fetchAllowance =  async () => {
+    const fetchAllowance = async () => {
       const maxUint = 2 ** 255
       const allowance = await getERC20Allowance(
         vaults[vaultId]?.want.address,
@@ -700,7 +706,7 @@ const MintForm = ({
         setVaultAllowance(true);
       }
     }
-     if (account) {
+    if (account) {
       fetchAllowance();
     }
   }, [account, amount, vaults, instruments])
@@ -757,7 +763,7 @@ const MintForm = ({
           {"Mint"}
         </button>)}
 
-        { (<button
+        {(<button
           className={classNames({ [Styles.selected]: isMint })}
           onClick={() => {
             setAmount("0");
@@ -780,7 +786,7 @@ const MintForm = ({
         {/*!shareBalance && notMintOrReset && earlyBonus && <span>Eligible for bonus rewards</span>*/}
       </header>
       <main>
-      {/* 
+        {/* 
         {isRemove && (<AmountInput
           heading={"Rewind Amount"}
           ammCash={cash}
@@ -860,7 +866,7 @@ const MintForm = ({
               />
             )
           }
-          {true && (
+          {(
             <>
               {isAdd && (<div className={Styles.Breakdown}>
                 <InfoNumbers
@@ -869,10 +875,10 @@ const MintForm = ({
                       label: "Underlying Borrowing",
                       value: (Number(leverageFactor) * Number(amount)).toString()
                     },
-                    {
-                      label: "Total Underlying Exposure",
-                      value: ((Number(leverageFactor) + 1) * Number(amount)).toString()
-                    },
+                    // {
+                    //   label: "Total Underlying Exposure",
+                    //   value: ((Number(leverageFactor) + 1) * Number(amount)).toString()
+                    // },
                     {
                       label: "Current borrow rate",
                       value: "2.3% APR",
@@ -1657,9 +1663,9 @@ const ChartsSection = ({ vault, prices }) => {
     }
   })
 
-  console.log("symbol:", want.symbol);
-  console.log("vault: ", vault);
-  console.log("prices: ", prices);
+  // console.log("symbol:", want.symbol);
+  // console.log("vault: ", vault);
+  // console.log("prices: ", prices);
 
 
   let assetFormattedOutcomes = [
@@ -1686,7 +1692,7 @@ const ChartsSection = ({ vault, prices }) => {
   let exchangeRateArray = [];
   let assetArray = [];
   let ratesArray = [];
-  console.log("data: ", data);
+  // console.log("data: ", data);
   data && data.vault && _.forEach(data.vault.snapshots, (item) => {
     let timestamp = item.timestamp;
     exchangeRateArray.push({
@@ -1728,8 +1734,8 @@ const ChartsSection = ({ vault, prices }) => {
 
   let options = useAssetGetOptions(assetArray);
 
-  console.log("assetArray: ", assetArray);
-  console.log("options: ", options);
+  // console.log("assetArray: ", assetArray);
+  // console.log("options: ", options);
   // exchange rate chart
   // let optionsExchange = useExchangeGetOptions(exchangeRateArray);
   // let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
@@ -1742,7 +1748,7 @@ const ChartsSection = ({ vault, prices }) => {
     ) : (
       <div className={Styles.ChartsSection}>
         <div>
-        <VaultChartSection title={"TVL"} options={options} vaultId={vault.vaultId} snapshots={assetArray} formattedOutcomes={assetFormattedOutcomes} />
+          <VaultChartSection title={"TVL"} options={options} vaultId={vault.vaultId} snapshots={assetArray} formattedOutcomes={assetFormattedOutcomes} />
         </div>
       </div>
 
@@ -1784,7 +1790,7 @@ const ExchangeChartSection = ({ vault, prices }) => {
   let exchangeRateArray = [];
   let assetArray = [];
   let ratesArray = [];
-  console.log("data Exchange: ", data);
+  // console.log("data Exchange: ", data);
   data && data.vault && _.forEach(data.vault.snapshots, (item) => {
     let timestamp = item.timestamp;
     exchangeRateArray.push({
@@ -1828,7 +1834,7 @@ const ExchangeChartSection = ({ vault, prices }) => {
   console.log("exchangeRateArray: ", exchangeRateArray);
   // exchange rate chart
   let optionsExchange = useExchangeGetOptions(exchangeRateArray);
-  let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item:any) => item.timestamp).timestamp;
+  let creationTimestamp = data && data.vault && _.minBy(data.vault.snapshots, (item: any) => item.timestamp).timestamp;
 
   return (<section>
     {loading ? (
@@ -1838,9 +1844,9 @@ const ExchangeChartSection = ({ vault, prices }) => {
     ) : (
       <div className={Styles.ChartsSection}>
         <div>
-        <VaultChartSection title={"Exchange Rate History"} options={optionsExchange} vaultId={vaultId} snapshots={exchangeRateArray} formattedOutcomes={exchangeFormattedOutcomes} selectableOutcomes={false} />
+          <VaultChartSection title={"Exchange Rate History"} options={optionsExchange} vaultId={vaultId} snapshots={exchangeRateArray} formattedOutcomes={exchangeFormattedOutcomes} selectableOutcomes={false} />
 
-        {/* <VaultHistoryChart {...{ rangeSelection: 3, selectedOutcomes: [true], creationTimestamp, options:optionsExchange, snapshots:exchangeRateArray, formattedOutcomes:exchangeFormattedOutcomes, colors:[1], gradients:[1]}}/> */}
+          {/* <VaultHistoryChart {...{ rangeSelection: 3, selectedOutcomes: [true], creationTimestamp, options:optionsExchange, snapshots:exchangeRateArray, formattedOutcomes:exchangeFormattedOutcomes, colors:[1], gradients:[1]}}/> */}
         </div>
       </div>
     )
@@ -1860,19 +1866,19 @@ const useAssetGetOptions = (arr) => {
     maxValue = 1;
     minValue = 0;
   } else if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
-    maxValue = Number(maxItem.value) + Number(maxItem.value)/2;
-    minValue = Number(minItem.value) - Number(minItem.value)/2;
-  } else if (maxItem && minItem){
+    maxValue = Number(maxItem.value) + Number(maxItem.value) / 2;
+    minValue = Number(minItem.value) - Number(minItem.value) / 2;
+  } else if (maxItem && minItem) {
     let delta = Number(maxItem.value) - Number(minItem.value);
-    maxValue = Math.max(Number(maxItem.value) + delta/20,0);
-    minValue = Math.max(Number(minItem.value) - delta/20,0);
+    maxValue = Math.max(Number(maxItem.value) + delta / 20, 0);
+    minValue = Math.max(Number(minItem.value) - delta / 20, 0);
   }
 
 
   return useMemo(() => {
     if (!maxItem || !minItem) {
       return {}
-    } 
+    }
     let options = {
       lang: {
         noData: "No Chart Data",
@@ -1912,7 +1918,7 @@ const useAssetGetOptions = (arr) => {
         gridLineColor: null,
         lineWidth: 0,
         labels: {
-          formatter () {
+          formatter() {
             const that = this as any;
             let timestamp = that.value;
             const {
@@ -1953,7 +1959,8 @@ const useAssetGetOptions = (arr) => {
           });
           out += "</ul>";
           return out;
-      }},
+        }
+      },
       time: {
         useUTC: false,
       },
@@ -1972,18 +1979,18 @@ const useExchangeGetOptions = (arr) => {
   let minValue;
   // it max and min are the same, add 1 to max and subtract 1 from min
   if (maxItem && minItem && Number(maxItem.value) === Number(minItem.value)) {
-    maxValue = Number(maxItem.value) + Number(maxItem.value)/2;
-    minValue = Number(minItem.value) - Number(minItem.value)/2;
-  } else if (maxItem && minItem){
+    maxValue = Number(maxItem.value) + Number(maxItem.value) / 2;
+    minValue = Number(minItem.value) - Number(minItem.value) / 2;
+  } else if (maxItem && minItem) {
     let delta = Number(maxItem.value) - Number(minItem.value);
-    maxValue = Math.max(Number(maxItem.value) + delta/20,0);
-    minValue = Math.max(Number(minItem.value) - delta/20,0);
+    maxValue = Math.max(Number(maxItem.value) + delta / 20, 0);
+    minValue = Math.max(Number(minItem.value) - delta / 20, 0);
   }
 
   return useMemo(() => {
     if (!maxItem || !minItem) {
       return {}
-    } 
+    }
     let options = {
       lang: {
         noData: "No Chart Data",
@@ -2026,7 +2033,7 @@ const useExchangeGetOptions = (arr) => {
         gridLineColor: null,
         lineWidth: 0,
         labels: {
-          formatter () {
+          formatter() {
             const that = this as any;
             let timestamp = that.value;
             const {

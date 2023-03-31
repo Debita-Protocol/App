@@ -202,6 +202,55 @@ export const AmountInput = ({
   );
 };
 
+export const TrancheAmountInputField =(
+  {
+    prepend,
+    symbol,
+    initialAmount,
+    updateInitialAmount,
+    title,
+    disabled,
+    append,
+    appendSymbol,
+    onChange
+  }:{
+    prepend?: boolean,
+    symbol?: string,
+    initialAmount: number,
+    updateInitialAmount: Function,
+    title?: string,
+    disabled?: boolean,
+    append?: boolean,
+    appendSymbol?: string,
+    onChange:Function
+  }
+) => {
+  return (
+    <div
+    className={classNames(Styles.TrancheAmountInputField)}
+  >
+    <span>{prepend && symbol}</span>
+    <input
+      type="number"
+      onChange={onChange}
+      title={title}
+      value={initialAmount}
+      placeholder="0"
+      disabled={disabled}
+      onWheel={(e: any) => e?.target?.blur()}
+    />
+    {append && (
+      // <span className={Styles.CurrencyLabel}>
+      //   {icon} {label}
+      // </span>
+      <span className={Styles.CurrencyLabel}>
+        {appendSymbol}
+      </span>
+    )}
+  </div>
+  )
+}
+
 export const ModalAmountInput = ({
   updateInitialAmount,
   initialAmount,

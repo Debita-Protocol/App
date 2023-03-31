@@ -229,3 +229,85 @@
         }
     }
   }
+
+  .DualLabelSlider {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    width:100%;
+    // .ThemeBorder;
+    // background-color: var(--tertiary-bg);
+    padding:@size-8;
+    padding-bottom: 30px;
+    > div:first-of-type {
+      width: 100%;
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      > div {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: flex-start;
+        > div:first-of-type {
+          display: flex;
+          flex-flow: row nowrap;
+          align-items: center;
+          justify-content: space-evenly;
+          > label {
+            .text-12-bold;
+            color: var(--secondary-text);
+            margin-bottom: @size-3;
+          }
+        } 
+      }
+    }
+
+    >div:nth-of-type(2) {
+      width: 100%;
+    }
+  }
+
+  .SingleLabelSlider {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+    width:100%;
+    // .ThemeBorder;
+    // background-color: var(--tertiary-bg);
+    padding:@size-8;
+    padding-bottom: 30px;
+    > div:first-of-type {
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: flex-start;
+      align-items: flex-start;
+      width:100%;
+      > div {
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: flex-start;
+        > div:first-of-type {
+          display: flex;
+          flex-flow: row nowrap;
+          align-items: center;
+          justify-content: space-evenly;
+          > label {
+            .text-12-bold;
+            color: var(--secondary-text);
+            margin-bottom: @size-3;
+          }
+        } 
+      }
+    }
+
+    >div:nth-of-type(2) {
+      width: 100%;
+      > div:first-of-type {
+        >div:first-of-type {
+          background: var(--warning);
+        }
+      }
+    }
+  }
