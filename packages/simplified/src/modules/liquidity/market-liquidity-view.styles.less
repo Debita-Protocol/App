@@ -352,6 +352,14 @@
       display: grid;
       grid-template-columns: 1fr;
       grid-template-rows: min-content;
+      >div:first-of-type{
+        margin-bottom:@size-10;
+      }
+
+      >svg{
+        width:150px;
+        height:150px;
+      }
       // grid-gap: @size-32 0;
     }
   }
@@ -401,9 +409,30 @@
           padding-bottom: @size-24;
           border-bottom: @size-1 solid var(--theme-border);
         }
+
+        >div:first-of-type{
+          margin-bottom:@size-10;
+        }
       }
 
     }
+  }
+}
+
+.PieSection {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: @size-12;
+
+  > svg {
+    width: 150px;
+    height: 150px;
+  }
+
+  >label {
+    .text-14-bold;
   }
 }
 
@@ -510,6 +539,9 @@
 
       > section.BreakdownAndAction {
         grid-gap: @size-24;
+        >div:first-of-type{
+          margin-bottom:@size-10;
+        }
       }
     }
 
