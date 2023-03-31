@@ -298,7 +298,7 @@ export const Leverage = ({leverageFactor, setLeverageFactor}) => {
         <span>{leverageFactor}x</span>
         <ChevronFlip pointDown={showSelection} />
       </label>
-      <ul>
+      {showSelection && <ul>
         <div>
           <li>
             <TinyThemeButton
@@ -396,7 +396,7 @@ export const Leverage = ({leverageFactor, setLeverageFactor}) => {
             />
           </div>
         </li>
-      </ul>
+      </ul>}
       {error && <span>{error}</span>}
     </section>
   );

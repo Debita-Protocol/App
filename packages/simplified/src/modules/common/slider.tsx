@@ -6,6 +6,8 @@ import Styles from "./slider.styles.less";
 import { MarketStage, getMarketStage, round } from "utils/helpers";
 import classNames from "classnames";
 import { CoreMarketInfo, CreditlineInstrument, Instrument, PoolInstrument } from "@augurproject/comps/build/types";
+import { TrancheAmountInputField } from "@augurproject/comps/build/components/common/inputs";
+import { generateTooltip } from "@augurproject/comps/build/components/common/labels";
 
 
 //https://zillow.github.io/react-slider/ -> more attributes to customize
@@ -113,7 +115,7 @@ export const InputSlider: React.FC = ({
     return (
         <div className={Styles.InputSlider}>
             <span>
-                <input type="number" value={Number(value)}  onChange={(e) => {
+                <input type="number" value={Number(value)} onChange={(e) => {
                     if (Number(e.target.value) > max) {
                         onSetValue(max)
                     }
@@ -124,32 +126,32 @@ export const InputSlider: React.FC = ({
                     }
                 }} />
                 <div>
-                {label}
+                    {label}
                 </div>
-                
+
             </span>
             <div>
-            <BaseSlider
-                max={Number(max)}
-                min={Number(min)}
-                value={value}
-                step={step}
-                onChange={(val) => {
-                    onSetValue(val)
-                    setSliderMoved(true);
-                }}
-            />
-            <div>
-                {marks && marks.map((mark, index) => {
-                    return (
-                        <div key={index} className={Styles.Mark}>
-                            {mark}
+                <BaseSlider
+                    max={Number(max)}
+                    min={Number(min)}
+                    value={value}
+                    step={step}
+                    onChange={(val) => {
+                        onSetValue(val)
+                        setSliderMoved(true);
+                    }}
+                />
+                <div>
+                    {marks && marks.map((mark, index) => {
+                        return (
+                            <div key={index} className={Styles.Mark}>
+                                {mark}
                             </div>)
-                }
-                )}
+                    }
+                    )}
+                </div>
             </div>
-            </div>
-            
+
         </div>
     )
 }
@@ -288,6 +290,152 @@ export const Stages = ({ stages }) => {
                     </div>
                 )
             })}
+        </div>
+    )
+}
+
+export const DualLabelSlider: React.FC = ({
+    value,
+    onSetValue,
+    max,
+    min,
+    step,
+    label1,
+    label2,
+    append
+}: {
+    value: number,
+    onSetValue: Function,
+    max: number,
+    min: number,
+    step: number,
+    label1: string,
+    label2: string,
+    append?: string
+}) => {
+
+    return (
+        <div className={Styles.DualLabelSlider}>
+            <div>
+                <div>
+                    <div>
+                        <label>
+                            {label1}
+                        </label>
+                        {generateTooltip("senior tranche", "senior")}
+                    </div>
+                    <div>
+                        <TrancheAmountInputField initialAmount={(value)} updateInitialAmount={onSetValue} 
+                        append={true} appendSymbol={"%"}
+                        onChange={(e) => {
+                            if (Number(e.target.value) > max) {
+                                onSetValue(max)
+                            }
+                            else if (Number(e.target.value) > 0) {
+                                onSetValue(Number(e.target.value))
+                            } else {
+                                onSetValue(0)
+                            }
+                        }}
+                        />
+                    </div>
+                </div>
+                <div>
+                    <div>
+                        <label>
+                            {label2}
+                        </label>
+                        {generateTooltip("junior tranche", "junior")}
+                    </div>
+
+
+                    <div>
+                        <TrancheAmountInputField 
+                        initialAmount={max - value} updateInitialAmount={(a) => onSetValue(String(max - Number(a)))}
+                        append={true} appendSymbol={"%"}
+                        onChange={(e) => {
+                            if (Number(e.target.value) > max) {
+                                onSetValue(0)
+                            }
+                            else if (Number(e.target.value) > 0) {
+                                onSetValue(max - Number(e.target.value))
+                            } else {
+                                onSetValue(max)
+                            }
+                        }}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div>
+                <BaseSlider
+                    max={max}
+                    min={min}
+                    value={value}
+                    step={step}
+                    onChange={(val) => {
+                        onSetValue(val)
+                    }}
+                />
+            </div>
+        </div>
+    )
+}
+
+export const SingleLabelSlider: React.FC = ({
+    value,
+    onSetValue,
+    max,
+    min,
+    step,
+    label,
+}: {
+    value: number,
+    onSetValue: Function,
+    max: number,
+    min: number,
+    step: number,
+    label: string,
+}) => {
+
+    return (
+        <div className={Styles.SingleLabelSlider}>
+            <div>
+                <div>
+                    <div>
+                        <label>
+                            {label}
+                        </label>
+                        {generateTooltip("exposure percentage", "exposure")}
+                    </div>
+                    <div>
+                        <TrancheAmountInputField initialAmount={(value)} updateInitialAmount={onSetValue} 
+                        append={true} appendSymbol={"%"}
+                        onChange={(e) => {
+                            if (Number(e.target.value) > max) {
+                                onSetValue(max)
+                            }
+                            else if (Number(e.target.value) > 0) {
+                                onSetValue(Number(e.target.value))
+                            } else {
+                                onSetValue(0)
+                            }
+                        }}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div>
+                <BaseSlider
+                    max={max}
+                    min={min}
+                    value={value}
+                    step={step}
+                    onChange={(val) => {
+                        onSetValue(val)
+                    }}
+                />
+            </div>
         </div>
     )
 }

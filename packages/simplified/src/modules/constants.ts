@@ -278,15 +278,16 @@ export const INSTRUMENT_SORT_TYPES = {
   ISPOOL: "ISPOOL", 
   TVL: "TVL",
   APR: "APR",
-  PERCENTAGE: "PERCENTAGE", 
-  APPROVED: "APPROVED", 
+  FL: "PERCENTAGE", 
+  SCORE: "APPROVED", 
 }
 export const INSTRUMENT_SORT_TYPE_TEXT = {
-  ISPOOL: "Type", 
+  ISPOOL: "Type",
+  // PROTECTION: "First Loss Cap.",
   TVL: "TVL",
   APR: "Est. APR",
-  PERCENTAGE: "Exposure %", 
-  APPROVED: "Approved", 
+  FL: "First Loss",
+  SCORE: "Risk Score", 
 }
 
 export const POOL_SORT_TYPE_TEXT = {
