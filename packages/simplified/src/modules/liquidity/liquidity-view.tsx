@@ -1102,7 +1102,7 @@ export const CreditlineCollateralCard = ({ instrument, height = 80, width = 80 }
         <div>
 
           <span>{symbol}</span>
-          <img src={Icon_Mapping[symbol]} style={{ height, width }} />
+          <img src={Icon_Mapping["USDC"]} style={{ height, width }} />
         </div>
         <div className={Styles.OutcomesTable}>
           <div>

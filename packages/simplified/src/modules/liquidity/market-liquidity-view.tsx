@@ -875,16 +875,20 @@ const MintForm = ({
                       label: "Underlying Borrowing",
                       value: (Number(leverageFactor) * Number(amount)).toString()
                     },
+                    {
+                      label: "Total First Loss Capital Provided",
+                      value: Number(amount).toString()
+                    },
                     // {
                     //   label: "Total Underlying Exposure",
                     //   value: ((Number(leverageFactor) + 1) * Number(amount)).toString()
                     // },
-                    {
-                      label: "Current borrow rate",
-                      value: "2.3% APR",
-                      tooltipText: "Only applicable with non 0 leverage",
-                      tooltipKey: "borrowrate",
-                    },
+                    // {
+                    //   label: "Current borrow rate",
+                    //   value: "2.3% APR",
+                    //   tooltipText: "Only applicable with non 0 leverage",
+                    //   tooltipKey: "borrowrate",
+                    // },
 
                     {
                       label: "Estimated APR",
